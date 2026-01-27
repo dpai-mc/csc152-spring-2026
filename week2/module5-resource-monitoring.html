@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Week 2 Module 5: Interactive learning module on server resource monitoring and performance analysis">
+    <title>CSC 152 - Module 5: Resource Monitoring and Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #dc2626;
+            --secondary-color: #ef4444;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #dc2626;
+            --bg-color: #fef2f2;
+            --card-bg: #ffffff;
+            --text-primary: #7f1d1d;
+            --text-secondary: #991b1b;
+            --border-color: #fecaca;
+            --shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+            --shadow-lg: 0 10px 25px rgba(220, 38, 38, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            color: var(--text-primary);
+            background: var(--bg-color);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        header .subtitle {
+            opacity: 0.95;
+            font-size: 1.15rem;
+            margin-bottom: 1rem;
+        }
+
+        .duration {
+            opacity: 0.9;
+            font-size: 0.95rem;
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            margin-top: 0.5rem;
+        }
+
+        .progress-container {
+            background: rgba(255,255,255,0.25);
+            height: 10px;
+            border-radius: 5px;
+            margin-top: 1.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: white;
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+            border-radius: 5px;
+        }
+
+        .section {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            border-bottom: 4px solid var(--primary-color);
+            padding-bottom: 0.75rem;
+            font-weight: 700;
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            margin: 2rem 0 1rem 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .key-concept {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            padding: 1.75rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .key-concept h4 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .key-concept h4::before {
+            content: "\1F4CA";
+            font-size: 1.5rem;
+        }
+
+        .terminal {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border: 2px solid #333;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .terminal-header {
+            color: #888;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .terminal-prompt {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .terminal-output {
+            color: #ddd;
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        .command-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .command-button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+        }
+
+        .annotation {
+            background: #fff8dc;
+            padding: 1rem;
+            border-left: 4px solid var(--warning-color);
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .annotation-title {
+            font-weight: bold;
+            color: var(--warning-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .tool-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .tool-card {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(220, 38, 38, 0.2);
+            border-color: var(--primary-color);
+        }
+
+        .tool-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .tool-feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin: 0.75rem 0;
+        }
+
+        .tool-feature::before {
+            content: "âœ"";
+            color: var(--success-color);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .quiz-container {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border: 2px solid #86efac;
+        }
+
+        .quiz-question {
+            margin-bottom: 2rem;
+        }
+
+        .quiz-question h4 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .quiz-option {
+            display: block;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: white;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            background: #f9fafb;
+            border-color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .quiz-option input[type="radio"] {
+            margin-right: 0.75rem;
+        }
+
+        .feedback {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background: #d1fae5;
+            border: 2px solid var(--success-color);
+            color: #065f46;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background: #fee2e2;
+            border: 2px solid var(--error-color);
+            color: #7f1d1d;
+            display: block;
+        }
+
+        .windows-ui {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .windows-titlebar {
+            background: linear-gradient(to bottom, #e0e0e0, #d0d0d0);
+            padding: 0.5rem 1rem;
+            border-radius: 6px 6px 0 0;
+            margin: -1.5rem -1.5rem 1rem -1.5rem;
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .metric-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .metric-box {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .metric-bar {
+            background: #e5e7eb;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-color), var(--warning-color));
+            transition: width 0.3s ease;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 5px solid var(--warning-color);
+            margin: 1.5rem 0;
+        }
+
+        .warning-box h4 {
+            color: #92400e;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .warning-box h4::before {
+            content: "\26A0\FE0F";
+            font-size: 1.3rem;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 5px solid var(--success-color);
+            margin: 1.5rem 0;
+        }
+
+        .success-box h4 {
+            color: #065f46;
+            margin-bottom: 0.75rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .comparison-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .comparison-table tr:hover {
+            background: #fef2f2;
+        }
+
+        .interactive-demo {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            margin: 2rem 0;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .slider-control {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .slider-control label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .slider-control input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+        }
+
+        .scenario-box {
+            background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border-left: 5px solid #7c3aed;
+        }
+
+        .scenario-box h4 {
+            color: #5b21b6;
+            margin-bottom: 1rem;
+        }
+
+        ul {
+            margin-left: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        li {
+            margin: 0.5rem 0;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: var(--primary-color);
+            font-size: 0.9em;
+        }
+
+        .completion-banner {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            margin: 2rem 0;
+            display: none;
+        }
+
+        .completion-banner h3 {
+            color: white;
+            margin: 0 0 1rem 0;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            header {
+                padding: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.6rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .tool-comparison,
+            .metric-display {
+                grid-template-columns: 1fr;
+            }
+
+            .terminal {
+                font-size: 0.8rem;
+                padding: 1rem;
+            }
+        }
+
+        /* Screen reader only content */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header role="banner">
+            <h1>Module 5: Resource Monitoring and Analysis</h1>
+            <p class="subtitle">Master the tools and techniques for monitoring server performance on Linux and Windows systems</p>
+            <span class="duration">&#x23F1;&#xFE0F; Estimated Time: 50-60 minutes</span>
+            <div class="progress-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </header>
+
+        <main role="main">
+            <!-- Introduction Section -->
+            <section class="section" id="introduction">
+                <h2>Introduction to Server Monitoring</h2>
+                
+                <p>Server monitoring is a critical skill for system administrators. Effective monitoring allows you to identify performance bottlenecks, diagnose problems before they cause outages, plan for capacity upgrades, and maintain optimal system performance. In this module, you'll learn to use both Linux and Windows monitoring tools to analyze CPU usage, memory consumption, disk I/O, and network activity.</p>
+
+                <div class="key-concept">
+                    <h4>Why Server Monitoring Matters</h4>
+                    <p>Without proper monitoring, you're operating blind. Performance problems can go undetected until they cause service outages or data loss. Regular monitoring enables you to:</p>
+                    <ul>
+                        <li><strong>Detect bottlenecks:</strong> Identify which resource (CPU, memory, disk, network) is limiting performance</li>
+                        <li><strong>Prevent outages:</strong> Catch problems early before they escalate to failures</li>
+                        <li><strong>Plan capacity:</strong> Know when to add resources based on growth trends</li>
+                        <li><strong>Troubleshoot effectively:</strong> Use data to diagnose the root cause of issues</li>
+                        <li><strong>Optimize performance:</strong> Make informed decisions about system tuning</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Monitoring Without Action is Useless</h4>
+                    <p>Simply collecting metrics isn't enough. You must establish baselines for normal operation, set appropriate alert thresholds, regularly review monitoring data, and take action when problems are detected. Monitoring tools are only valuable when combined with a proactive approach to system management.</p>
+                </div>
+            </section>
+
+            <!-- Linux Monitoring Tools Section -->
+            <section class="section" id="linux-tools">
+                <h2>Linux Monitoring Tools</h2>
+
+                <p>Linux provides a rich set of command-line tools for monitoring system resources. These tools are lightweight, scriptable, and available on virtually every Linux distribution. We'll explore the most essential monitoring commands that every system administrator should master.</p>
+
+                <h3>Understanding top: Real-Time Process Monitoring</h3>
+
+                <div class="terminal" role="region" aria-label="Linux terminal simulation">
+                    <div class="terminal-header">
+                        <span>user@server:~$</span>
+                    </div>
+                    <div class="terminal-prompt">$ top</div>
+                    <div class="terminal-output" id="topOutput">top - 14:23:45 up 15 days,  3:42,  2 users,  load average: 2.15, 1.98, 1.85
+Tasks: 312 total,   2 running, 310 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 35.2 us,  4.1 sy,  0.0 ni, 59.8 id,  0.7 wa,  0.0 hi,  0.2 si,  0.0 st
+MiB Mem :  32768.0 total,   4231.2 free,  18456.8 used,  10080.0 buff/cache
+MiB Swap:   8192.0 total,   7234.5 free,    957.5 used.  12890.3 avail Mem
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+ 2341 mysql     20   0  2.845g  1.234g  15256 S  45.2  3.9   1234:56 mysqld
+ 1823 www-data  20   0  345.2m  123.4m  12345 S  12.3  0.4    456:78 apache2
+ 3456 postgres  20   0  1.234g  456.7m  23456 S   8.9  1.4    234:56 postgres
+ 4567 root      20   0  156.2m   23.4m   8901 S   2.1  0.1     45:67 systemd
+ 5678 nginx     20   0  234.5m   67.8m  11234 S   1.8  0.2     78:90 nginx</div>
+                </div>
+
+                <button class="command-button" onclick="simulateCommand('top')">Run top Command</button>
+
+                <div class="annotation">
+                    <div class="annotation-title">Understanding the top Header</div>
+                    <ul>
+                        <li><strong>Load average (2.15, 1.98, 1.85):</strong> Average number of processes waiting for CPU over 1, 5, and 15 minutes. Compare to number of CPU cores.</li>
+                        <li><strong>Tasks:</strong> Total processes and their states. Zombie processes indicate terminated processes whose parent hasn't cleaned them up.</li>
+                        <li><strong>%Cpu(s):</strong> CPU time breakdown:
+                            <ul>
+                                <li><code>us</code> (35.2%): User space processes</li>
+                                <li><code>sy</code> (4.1%): System/kernel processes</li>
+                                <li><code>id</code> (59.8%): Idle time (available capacity)</li>
+                                <li><code>wa</code> (0.7%): I/O wait (processes waiting for disk)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Memory:</strong> Total, free, used, and cache. Linux uses "free" memory for caching to improve performance.</li>
+                    </ul>
+                </div>
+
+                <div class="key-concept">
+                    <h4>Interpreting Load Average</h4>
+                    <p>The load average is one of the most important metrics in Linux. It represents the average number of processes that are either running or waiting to run.</p>
+                    <ul>
+                        <li>On a system with 4 CPU cores, a load average of 2.0 means the system is 50% utilized</li>
+                        <li>Load equal to the number of cores means 100% utilization</li>
+                        <li>Load higher than the number of cores means processes are waiting for CPU time</li>
+                        <li>Compare all three averages: increasing trend suggests growing load; decreasing trend suggests load spike has passed</li>
+                    </ul>
+                </div>
+
+                <h3>htop: Enhanced Interactive Monitoring</h3>
+
+                <p><code>htop</code> is an improved version of <code>top</code> with a more user-friendly interface, color-coded output, and easier process management. While not always installed by default, it's available in most distribution repositories.</p>
+
+                <div class="tool-comparison">
+                    <div class="tool-card">
+                        <h4>top</h4>
+                        <div class="tool-feature">Available on all Linux systems by default</div>
+                        <div class="tool-feature">Basic text interface</div>
+                        <div class="tool-feature">Lightweight and fast</div>
+                        <div class="tool-feature">Standard on production servers</div>
+                        <div class="tool-feature">Requires memorizing keyboard shortcuts</div>
+                    </div>
+                    <div class="tool-card">
+                        <h4>htop</h4>
+                        <div class="tool-feature">Must be installed separately</div>
+                        <div class="tool-feature">Color-coded, visual interface</div>
+                        <div class="tool-feature">Shows all CPU cores individually</div>
+                        <div class="tool-feature">Mouse support for selections</div>
+                        <div class="tool-feature">Tree view of process relationships</div>
+                    </div>
+                </div>
+
+                <h3>vmstat: Virtual Memory Statistics</h3>
+
+                <p>The <code>vmstat</code> command provides a quick overview of system performance, including CPU, memory, swap, and I/O statistics. It's particularly useful for identifying memory pressure and swap activity.</p>
+
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <span>user@server:~$</span>
+                    </div>
+                    <div class="terminal-prompt">$ vmstat 1 5</div>
+                    <div class="terminal-output">procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 2  0  98304  4231  1024  10080    0    0    12    45  234  456 35  4 60  1  0
+ 1  0  98304  4198  1024  10085    0    0     8    52  245  467 38  5 56  1  0
+ 3  0  98304  4165  1024  10090    0    0    15    48  256  478 42  6 51  1  0
+ 2  0  98304  4132  1024  10095    0    0    11    55  267  489 40  5 54  1  0
+ 1  0  98304  4099  1024  10100    0    0     9    49  278  490 36  4 59  1  0</div>
+                </div>
+
+                <button class="command-button" onclick="simulateCommand('vmstat')">Run vmstat Command</button>
+
+                <div class="annotation">
+                    <div class="annotation-title">Understanding vmstat Output</div>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Meaning</th>
+                                <th>What to Watch For</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>r (procs)</strong></td>
+                                <td>Processes waiting for CPU</td>
+                                <td>Higher than # of cores = CPU bottleneck</td>
+                            </tr>
+                            <tr>
+                                <td><strong>b (procs)</strong></td>
+                                <td>Processes in uninterruptible sleep</td>
+                                <td>High values = I/O bottleneck</td>
+                            </tr>
+                            <tr>
+                                <td><strong>si (swap)</strong></td>
+                                <td>Swap in from disk (KB/s)</td>
+                                <td>Non-zero = memory pressure</td>
+                            </tr>
+                            <tr>
+                                <td><strong>so (swap)</strong></td>
+                                <td>Swap out to disk (KB/s)</td>
+                                <td>Non-zero = severe memory pressure</td>
+                            </tr>
+                            <tr>
+                                <td><strong>wa (cpu)</strong></td>
+                                <td>I/O wait percentage</td>
+                                <td>High values (>15%) = slow disk</td>
+                            </tr>
+                            <tr>
+                                <td><strong>id (cpu)</strong></td>
+                                <td>Idle percentage</td>
+                                <td>Low values (<20%) = high utilization</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Watch for Swap Activity</h4>
+                    <p>The <code>si</code> and <code>so</code> columns (swap in/out) are critical indicators of memory problems. Any sustained non-zero values mean the system is using swap space, which is orders of magnitude slower than RAM. Consistent swap activity indicates you need more physical memory. Even systems with plenty of free disk space for swap will suffer severe performance degradation when actively swapping.</p>
+                </div>
+
+                <h3>Additional Linux Monitoring Commands</h3>
+
+                <div class="tool-comparison">
+                    <div class="tool-card">
+                        <h4>free -h</h4>
+                        <p>Displays memory usage in human-readable format. Shows total, used, free, shared, cache, and available memory.</p>
+                        <div class="tool-feature">Quick memory overview</div>
+                        <div class="tool-feature">Distinguish cache from used memory</div>
+                    </div>
+                    <div class="tool-card">
+                        <h4>iostat -x 1</h4>
+                        <p>Shows extended disk I/O statistics including utilization, await time, and service time for each device.</p>
+                        <div class="tool-feature">Identify slow disks</div>
+                        <div class="tool-feature">Monitor IOPS and throughput</div>
+                    </div>
+                    <div class="tool-card">
+                        <h4>lscpu</h4>
+                        <p>Displays detailed CPU architecture information including number of cores, threads, cache sizes, and virtualization capabilities.</p>
+                        <div class="tool-feature">Hardware inventory</div>
+                        <div class="tool-feature">Verify CPU features</div>
+                    </div>
+                    <div class="tool-card">
+                        <h4>lsblk</h4>
+                        <p>Lists all block devices (disks and partitions) with their mount points, sizes, and types.</p>
+                        <div class="tool-feature">Storage device inventory</div>
+                        <div class="tool-feature">Check partition layout</div>
+                    </div>
+                </div>
+
+                <div class="quiz-container">
+                    <div class="quiz-question">
+                        <h4>Knowledge Check: Linux Monitoring</h4>
+                        <p><strong>Question 1:</strong> A server has 4 CPU cores and vmstat shows a load average of 8.45. What does this indicate?</p>
+                        <label class="quiz-option">
+                            <input type="radio" name="q1" value="a">
+                            The system is running efficiently at 50% capacity
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q1" value="b">
+                            The system is overloaded - more processes are waiting than cores available
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q1" value="c">
+                            The system has plenty of available capacity
+                        </label>
+                        <div id="q1-feedback" class="feedback"></div>
+                    </div>
+
+                    <div class="quiz-question">
+                        <h4><strong>Question 2:</strong> In vmstat output, what does consistent non-zero values in the "si" and "so" columns indicate?</h4>
+                        <label class="quiz-option">
+                            <input type="radio" name="q2" value="a">
+                            The disk is performing well
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q2" value="b">
+                            The system has memory pressure and is actively swapping
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q2" value="c">
+                            The network is congested
+                        </label>
+                        <div id="q2-feedback" class="feedback"></div>
+                    </div>
+
+                    <div class="quiz-question">
+                        <h4><strong>Question 3:</strong> Which tool would you use to see a hierarchical tree view of process parent-child relationships?</h4>
+                        <label class="quiz-option">
+                            <input type="radio" name="q3" value="a">
+                            top
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q3" value="b">
+                            vmstat
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q3" value="c">
+                            htop (with F5 tree view enabled)
+                        </label>
+                        <div id="q3-feedback" class="feedback"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Windows Monitoring Tools Section -->
+            <section class="section" id="windows-tools">
+                <h2>Windows Monitoring Tools</h2>
+
+                <p>Windows Server provides several graphical and command-line tools for monitoring system performance. These tools offer similar functionality to their Linux counterparts but are optimized for the Windows environment and integrate well with Windows-specific features like Active Directory and IIS.</p>
+
+                <h3>Task Manager: Quick Performance Overview</h3>
+
+                <div class="windows-ui">
+                    <div class="windows-titlebar">Task Manager - Performance</div>
+                    
+                    <div class="metric-display">
+                        <div class="metric-box">
+                            <div class="metric-label">CPU</div>
+                            <div class="metric-value">35%</div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" style="width: 35%"></div>
+                            </div>
+                            <small>2.4 GHz | 8 cores</small>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Memory</div>
+                            <div class="metric-value">58%</div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" style="width: 58%"></div>
+                            </div>
+                            <small>18.5 GB / 32 GB</small>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Disk (C:)</div>
+                            <div class="metric-value">45%</div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" style="width: 45%"></div>
+                            </div>
+                            <small>Active time | 2 ms avg</small>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Network</div>
+                            <div class="metric-value">234 Mbps</div>
+                            <div class="metric-bar">
+                                <div class="metric-fill" style="width: 23%"></div>
+                            </div>
+                            <small>Send: 45 | Receive: 189</small>
+                        </div>
+                    </div>
+
+                    <div class="key-concept">
+                        <h4>Task Manager Performance Tab Features</h4>
+                        <ul>
+                            <li><strong>CPU:</strong> Real-time utilization, speed, core count, virtualization status</li>
+                            <li><strong>Memory:</strong> In use, available, committed memory, cache breakdown</li>
+                            <li><strong>Disk:</strong> Active time percentage, average response time, read/write throughput</li>
+                            <li><strong>Network:</strong> Send/receive rates, adapter type, connection status</li>
+                            <li><strong>GPU:</strong> Graphics and compute utilization (on systems with dedicated GPUs)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-title">Understanding Windows Memory Reporting</div>
+                    <p>Windows memory management differs from Linux. The "In use" memory includes both active application memory and cached data. However, Windows can instantly reclaim cached memory when applications need it. The "Available" memory is the sum of free memory plus memory that can be quickly reclaimed from cache. When evaluating if you need more RAM, focus on the "Available" metric rather than "In use."</p>
+                </div>
+
+                <h3>Resource Monitor: Detailed System Analysis</h3>
+
+                <p>Resource Monitor (resmon.exe) provides more detailed information than Task Manager, with separate tabs for CPU, Memory, Disk, and Network monitoring. It shows per-process resource usage and allows you to identify exactly which application or service is consuming resources.</p>
+
+                <div class="tool-comparison">
+                    <div class="tool-card">
+                        <h4>Task Manager</h4>
+                        <div class="tool-feature">Quick overview of system health</div>
+                        <div class="tool-feature">Simple process management</div>
+                        <div class="tool-feature">Startup program control</div>
+                        <div class="tool-feature">Best for: Immediate troubleshooting</div>
+                    </div>
+                    <div class="tool-card">
+                        <h4>Resource Monitor</h4>
+                        <div class="tool-feature">Detailed per-process metrics</div>
+                        <div class="tool-feature">Real-time filtering and searching</div>
+                        <div class="tool-feature">Disk queue length monitoring</div>
+                        <div class="tool-feature">Best for: Deep performance analysis</div>
+                    </div>
+                    <div class="tool-card">
+                        <h4>Performance Monitor</h4>
+                        <div class="tool-feature">Customizable counter selection</div>
+                        <div class="tool-feature">Long-term data logging</div>
+                        <div class="tool-feature">Alert configuration</div>
+                        <div class="tool-feature">Best for: Trending and alerting</div>
+                    </div>
+                </div>
+
+                <h3>Performance Monitor (perfmon): Advanced Metrics and Logging</h3>
+
+                <p>Performance Monitor is Windows' most powerful monitoring tool. It allows you to select from hundreds of performance counters, log data over time, set alerts based on thresholds, and analyze historical performance trends. It's essential for capacity planning and long-term performance tracking.</p>
+
+                <div class="scenario-box">
+                    <h4>Example Scenario: Diagnosing Disk Bottleneck</h4>
+                    <p><strong>Symptoms:</strong> Application becomes slow during peak hours, users report delays</p>
+                    <p><strong>Investigation using Performance Monitor:</strong></p>
+                    <ol>
+                        <li>Add counter: <code>\PhysicalDisk(_Total)\Avg. Disk Queue Length</code></li>
+                        <li>Add counter: <code>\PhysicalDisk(_Total)\% Disk Time</code></li>
+                        <li>Add counter: <code>\PhysicalDisk(_Total)\Avg. Disk sec/Read</code></li>
+                        <li>Monitor during peak hours</li>
+                    </ol>
+                    <p><strong>Analysis:</strong></p>
+                    <ul>
+                        <li>Disk Queue Length consistently > 2: Disk cannot keep up with I/O requests</li>
+                        <li>% Disk Time > 90%: Disk is constantly busy</li>
+                        <li>Avg. Disk sec/Read > 15ms: Slow response times</li>
+                    </ul>
+                    <p><strong>Solution:</strong> Upgrade to SSD storage or add more disks in RAID configuration</p>
+                </div>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Performance Counter</th>
+                            <th>What It Measures</th>
+                            <th>Healthy Range</th>
+                            <th>Problem Indicator</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>% Processor Time</td>
+                            <td>CPU utilization</td>
+                            <td>< 80% average</td>
+                            <td>Sustained > 85%</td>
+                        </tr>
+                        <tr>
+                            <td>Available MBytes</td>
+                            <td>Free physical memory</td>
+                            <td>> 10% of total</td>
+                            <td>< 5% of total</td>
+                        </tr>
+                        <tr>
+                            <td>Pages/sec</td>
+                            <td>Memory paging rate</td>
+                            <td>< 20 sustained</td>
+                            <td>Consistently > 100</td>
+                        </tr>
+                        <tr>
+                            <td>Avg. Disk Queue Length</td>
+                            <td>Pending disk I/O requests</td>
+                            <td>< 2 per disk</td>
+                            <td>> 2 sustained</td>
+                        </tr>
+                        <tr>
+                            <td>% Disk Time</td>
+                            <td>Disk busy percentage</td>
+                            <td>< 80% average</td>
+                            <td>Sustained > 90%</td>
+                        </tr>
+                        <tr>
+                            <td>Network Bytes Total/sec</td>
+                            <td>Network throughput</td>
+                            <td>< 70% of capacity</td>
+                            <td>> 80% of capacity</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="warning-box">
+                    <h4>Don't Confuse Memory "In Use" with a Problem</h4>
+                    <p>High memory usage (70-80%) is normal and actually desirable in Windows. The operating system caches frequently accessed files in memory to improve performance. This cached memory can be instantly freed if applications need it. Only be concerned if "Available Memory" drops below 10% of total RAM or if you see high page file usage (indicated by the Pages/sec counter).</p>
+                </div>
+
+                <h3>PowerShell for Monitoring</h3>
+
+                <p>Windows PowerShell provides scriptable access to performance counters and system information. This is particularly useful for automating monitoring tasks, collecting data for analysis, or integrating with monitoring systems.</p>
+
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <span>PS C:\></span>
+                    </div>
+                    <div class="terminal-prompt">PS> Get-Counter '\Processor(_Total)\% Processor Time' -SampleInterval 1 -MaxSamples 5</div>
+                    <div class="terminal-output">Timestamp                 CounterSamples
+---------                 --------------
+1/27/2026 2:23:45 PM      \\SERVER\processor(_total)\% processor time : 35.234
+1/27/2026 2:23:46 PM      \\SERVER\processor(_total)\% processor time : 38.156
+1/27/2026 2:23:47 PM      \\SERVER\processor(_total)\% processor time : 42.987
+1/27/2026 2:23:48 PM      \\SERVER\processor(_total)\% processor time : 40.123
+1/27/2026 2:23:49 PM      \\SERVER\processor(_total)\% processor time : 36.789</div>
+                </div>
+
+                <div class="quiz-container">
+                    <div class="quiz-question">
+                        <h4>Knowledge Check: Windows Monitoring</h4>
+                        <p><strong>Question 4:</strong> A Windows server shows 28 GB memory "In use" out of 32 GB total, but "Available" shows 6 GB. Is more RAM needed?</p>
+                        <label class="quiz-option">
+                            <input type="radio" name="q4" value="a">
+                            Yes, memory usage is too high at 87%
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q4" value="b">
+                            No, 6 GB available is sufficient - Windows is using memory efficiently
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q4" value="c">
+                            Cannot determine without more information
+                        </label>
+                        <div id="q4-feedback" class="feedback"></div>
+                    </div>
+
+                    <div class="quiz-question">
+                        <h4><strong>Question 5:</strong> Performance Monitor shows "Avg. Disk Queue Length" consistently at 12. What does this indicate?</h4>
+                        <label class="quiz-option">
+                            <input type="radio" name="q5" value="a">
+                            The disk subsystem is healthy and performing well
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q5" value="b">
+                            There is a significant disk I/O bottleneck
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q5" value="c">
+                            The disk is experiencing normal load
+                        </label>
+                        <div id="q5-feedback" class="feedback"></div>
+                    </div>
+
+                    <div class="quiz-question">
+                        <h4><strong>Question 6:</strong> Which Windows tool is best for setting up automated alerts when CPU usage exceeds 85% for more than 5 minutes?</h4>
+                        <label class="quiz-option">
+                            <input type="radio" name="q6" value="a">
+                            Task Manager
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q6" value="b">
+                            Resource Monitor
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q6" value="c">
+                            Performance Monitor (perfmon) with alert configuration
+                        </label>
+                        <div id="q6-feedback" class="feedback"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Comparative Analysis Section -->
+            <section class="section" id="comparison">
+                <h2>Linux vs. Windows Monitoring: Comparative Analysis</h2>
+
+                <p>Both Linux and Windows provide comprehensive monitoring capabilities, but they approach the problem differently. Understanding these differences helps you choose the right tool for each situation and appreciate the philosophy behind each operating system's design.</p>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Aspect</th>
+                            <th>Linux</th>
+                            <th>Windows</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Primary Interface</strong></td>
+                            <td>Command-line tools (top, vmstat, iostat)</td>
+                            <td>Graphical tools (Task Manager, perfmon)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Real-time Monitoring</strong></td>
+                            <td>top, htop (text-based, universal)</td>
+                            <td>Task Manager, Resource Monitor (GUI-based)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Scripting</strong></td>
+                            <td>Excellent - all tools output parseable text</td>
+                            <td>Good - PowerShell provides scriptable access</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Historical Data</strong></td>
+                            <td>Requires separate tools (sar, collectd)</td>
+                            <td>Built into Performance Monitor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Remote Monitoring</strong></td>
+                            <td>Native over SSH - no special setup</td>
+                            <td>Requires RDP or remote PowerShell</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Learning Curve</strong></td>
+                            <td>Steeper - requires command-line knowledge</td>
+                            <td>Gentler - GUI is intuitive</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Performance Impact</strong></td>
+                            <td>Minimal - text-only display</td>
+                            <td>Slightly higher - graphical rendering</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Customization</strong></td>
+                            <td>Highly customizable via scripts</td>
+                            <td>Customizable via perfmon counter selection</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="key-concept">
+                    <h4>When to Use Each Approach</h4>
+                    <ul>
+                        <li><strong>Use Linux command-line tools when:</strong> Working over SSH, need scriptable output, minimal system impact required, or working with headless servers</li>
+                        <li><strong>Use Windows GUI tools when:</strong> Need visual representation of data, working locally on server, prefer point-and-click interface, or need to quickly show metrics to stakeholders</li>
+                        <li><strong>Use scripting (bash/PowerShell) when:</strong> Automating monitoring tasks, collecting data for analysis, integrating with monitoring systems, or need custom alert conditions</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Best Practices Section -->
+            <section class="section" id="best-practices">
+                <h2>Monitoring Best Practices</h2>
+
+                <p>Effective monitoring requires more than just running tools. You need a systematic approach that includes establishing baselines, setting appropriate thresholds, regular review procedures, and action plans for when problems are detected.</p>
+
+                <h3>Establish Performance Baselines</h3>
+
+                <p>Before you can identify abnormal behavior, you must understand normal behavior. Collect metrics during typical operation to establish baselines for CPU usage, memory consumption, disk I/O, and network traffic. These baselines vary dramatically by workload type - a database server's normal looks very different from a web server's normal.</p>
+
+                <div class="success-box">
+                    <h4>How to Establish Baselines</h4>
+                    <ul>
+                        <li>Monitor system during normal business hours for at least one week</li>
+                        <li>Collect data at regular intervals (every 5-15 minutes)</li>
+                        <li>Note patterns: daily cycles, weekly trends, monthly spikes</li>
+                        <li>Document expected ranges for each metric</li>
+                        <li>Update baselines after major changes (hardware upgrades, software updates)</li>
+                    </ul>
+                </div>
+
+                <h3>Set Appropriate Alert Thresholds</h3>
+
+                <p>Alert thresholds should be based on your baselines, not arbitrary numbers. A threshold that's too sensitive creates alert fatigue; too lenient and you'll miss problems. Consider both absolute values and sustained duration.</p>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Warning Threshold</th>
+                            <th>Critical Threshold</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CPU Usage</td>
+                            <td>75% average</td>
+                            <td>90% average</td>
+                            <td>5 minutes sustained</td>
+                        </tr>
+                        <tr>
+                            <td>Available Memory</td>
+                            <td>< 20% of total</td>
+                            <td>< 10% of total</td>
+                            <td>2 minutes sustained</td>
+                        </tr>
+                        <tr>
+                            <td>Disk Queue Length</td>
+                            <td>> 2 per disk</td>
+                            <td>> 5 per disk</td>
+                            <td>5 minutes sustained</td>
+                        </tr>
+                        <tr>
+                            <td>Disk Response Time</td>
+                            <td>> 20ms average</td>
+                            <td>> 50ms average</td>
+                            <td>3 minutes sustained</td>
+                        </tr>
+                        <tr>
+                            <td>Swap Activity (Linux)</td>
+                            <td>Any swap out (so)</td>
+                            <td>Sustained swap activity</td>
+                            <td>Immediate / 1 minute</td>
+                        </tr>
+                        <tr>
+                            <td>Load Average (Linux)</td>
+                            <td>1.5x # of cores</td>
+                            <td>2x # of cores</td>
+                            <td>5 minutes sustained</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Regular Review Schedule</h3>
+
+                <div class="tool-comparison">
+                    <div class="tool-card">
+                        <h4>Daily Reviews</h4>
+                        <div class="tool-feature">Check for active alerts</div>
+                        <div class="tool-feature">Review overnight backups</div>
+                        <div class="tool-feature">Verify critical services running</div>
+                        <div class="tool-feature">5-10 minutes per server</div>
+                    </div>
+                    <div class="tool-card">
+                        <h4>Weekly Reviews</h4>
+                        <div class="tool-feature">Analyze performance trends</div>
+                        <div class="tool-feature">Review error logs</div>
+                        <div class="tool-feature">Check for updates/patches</div>
+                        <div class="tool-feature">30 minutes per server</div>
+                    </div>
+                    <div class="tool-card">
+                        <h4>Monthly Reviews</h4>
+                        <div class="tool-feature">Capacity planning assessment</div>
+                        <div class="tool-feature">Review and update documentation</div>
+                        <div class="tool-feature">Test disaster recovery procedures</div>
+                        <div class="tool-feature">1-2 hours per server</div>
+                    </div>
+                </div>
+
+                <h3>Common Monitoring Mistakes to Avoid</h3>
+
+                <div class="warning-box">
+                    <h4>Alert Fatigue</h4>
+                    <p>Setting thresholds too low results in constant alerts that get ignored. Start conservative and tighten thresholds gradually based on actual problem patterns. An alert should always require action - if you consistently ignore an alert, adjust the threshold.</p>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Monitoring Without Action Plans</h4>
+                    <p>Every alert should have a documented response procedure. What do you do when CPU hits 90%? When memory is exhausted? When disk is full? Document your responses so any team member can handle alerts effectively.</p>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Focusing Only on Individual Metrics</h4>
+                    <p>System performance is interconnected. High CPU might be caused by memory shortage forcing excessive swapping. Slow application response might be due to disk I/O bottlenecks. Always look at the complete picture, not isolated metrics.</p>
+                </div>
+
+                <div class="warning-box">
+                    <h4>Neglecting Trends and Patterns</h4>
+                    <p>Real-time monitoring shows current state, but trends reveal future problems. A server at 60% memory usage today but gaining 5% per week will be in trouble in 8 weeks. Identify trends early to plan upgrades proactively.</p>
+                </div>
+            </section>
+
+            <!-- Practical Scenarios Section -->
+            <section class="section" id="scenarios">
+                <h2>Practical Troubleshooting Scenarios</h2>
+
+                <p>Let's apply your monitoring knowledge to real-world scenarios. For each scenario, identify the problem using monitoring data and determine the appropriate solution.</p>
+
+                <div class="scenario-box">
+                    <h4>Scenario 1: Web Server Response Time Degradation</h4>
+                    <p><strong>Symptoms:</strong> Website becomes noticeably slower during afternoon hours (2-4 PM daily)</p>
+                    <p><strong>Monitoring Data:</strong></p>
+                    <ul>
+                        <li>CPU usage: 45% average, plenty of idle capacity</li>
+                        <li>Memory: 24GB used / 32GB total, 8GB available</li>
+                        <li>Disk queue length: 8-12 sustained during slow periods</li>
+                        <li>Disk response time: 45-60ms during slow periods</li>
+                        <li>Network utilization: 30% of capacity</li>
+                    </ul>
+                    <p><strong>Analysis:</strong> The disk subsystem is the bottleneck. High queue length (>2) and slow response times (>20ms) indicate the disk cannot keep up with I/O requests. CPU, memory, and network have adequate capacity.</p>
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li><strong>Immediate:</strong> Identify and optimize or schedule disk-intensive operations outside peak hours</li>
+                        <li><strong>Short-term:</strong> Add memory to increase disk cache</li>
+                        <li><strong>Long-term:</strong> Upgrade to SSD storage or implement RAID configuration for better I/O performance</li>
+                    </ul>
+                </div>
+
+                <div class="scenario-box">
+                    <h4>Scenario 2: Linux Database Server Memory Issues</h4>
+                    <p><strong>Symptoms:</strong> Database queries that normally take 2-3 seconds now take 30-60 seconds</p>
+                    <p><strong>vmstat Output:</strong></p>
+                    <ul>
+                        <li>r: 1-2 (not CPU bound)</li>
+                        <li>free memory: 512 MB (out of 16 GB total)</li>
+                        <li>si (swap in): 2500 KB/s consistently</li>
+                        <li>so (swap out): 1200 KB/s consistently</li>
+                        <li>wa (I/O wait): 25% average</li>
+                    </ul>
+                    <p><strong>Analysis:</strong> Severe memory pressure causing active swapping. The system has exhausted physical RAM and is using swap space, which is orders of magnitude slower. High I/O wait confirms disk activity from swapping.</p>
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li><strong>Immediate:</strong> Identify and stop or reduce non-critical processes consuming memory</li>
+                        <li><strong>Immediate:</strong> Restart database service to clear memory leaks (if applicable)</li>
+                        <li><strong>Required:</strong> Add physical RAM - the system is undersized for the workload</li>
+                        <li><strong>Long-term:</strong> Optimize database queries and implement connection pooling to reduce memory requirements</li>
+                    </ul>
+                </div>
+
+                <div class="scenario-box">
+                    <h4>Scenario 3: Windows File Server CPU Spike</h4>
+                    <p><strong>Symptoms:</strong> File server becomes unresponsive every morning around 8:30 AM</p>
+                    <p><strong>Task Manager Data:</strong></p>
+                    <ul>
+                        <li>CPU: Spikes to 100% at 8:30 AM daily</li>
+                        <li>Memory: 16GB / 32GB used (healthy)</li>
+                        <li>Disk: 20% active time (healthy)</li>
+                        <li>Network: 400 Mbps (adequate)</li>
+                        <li>Top process during spike: antivirus scan (80% CPU)</li>
+                    </ul>
+                    <p><strong>Analysis:</strong> Scheduled antivirus scan coincides with peak usage time when employees arrive and access files. The resource conflict causes poor performance.</p>
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li><strong>Immediate:</strong> Reschedule antivirus scan to off-peak hours (e.g., 2:00 AM)</li>
+                        <li><strong>Short-term:</strong> Configure antivirus to use lower CPU priority</li>
+                        <li><strong>Long-term:</strong> Implement staggered scans or exclude frequently-accessed directories from scheduled scans</li>
+                    </ul>
+                </div>
+
+                <div class="quiz-container">
+                    <div class="quiz-question">
+                        <h4>Your Turn: Analyze This Scenario</h4>
+                        <p><strong>Scenario 4:</strong> A Linux web server shows these metrics:</p>
+                        <ul>
+                            <li>Load average: 12.5, 11.8, 10.2 (8-core system)</li>
+                            <li>top shows: 90% us, 5% sy, 3% id, 2% wa</li>
+                            <li>Memory: 28GB / 32GB used, 4GB free, no swap activity</li>
+                            <li>iostat: All disks show <5ms response time</li>
+                        </ul>
+                        <p><strong>Question 7:</strong> What is the primary bottleneck?</p>
+                        <label class="quiz-option">
+                            <input type="radio" name="q7" value="a">
+                            Memory shortage
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q7" value="b">
+                            CPU oversubscription
+                        </label>
+                        <label class="quiz-option">
+                            <input type="radio" name="q7" value="c">
+                            Disk I/O limitation
+                        </label>
+                        <div id="q7-feedback" class="feedback"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Summary Section -->
+            <section class="section" id="summary">
+                <h2>Module Summary</h2>
+
+                <p>Server monitoring is an essential skill that enables you to maintain system health, diagnose problems efficiently, and plan for future capacity needs. You've learned to use both Linux and Windows monitoring tools, understand key performance metrics, and apply systematic troubleshooting approaches.</p>
+
+                <h3>Key Takeaways</h3>
+
+                <div class="key-concept">
+                    <h4>Essential Linux Tools</h4>
+                    <ul>
+                        <li><strong>top/htop:</strong> Real-time process monitoring with CPU and memory usage</li>
+                        <li><strong>vmstat:</strong> Virtual memory statistics, critical for identifying swap activity</li>
+                        <li><strong>iostat:</strong> Disk I/O performance and identification of slow disks</li>
+                        <li><strong>free:</strong> Memory usage overview distinguishing cache from actual usage</li>
+                        <li><strong>Load average:</strong> Compare to CPU core count to identify oversubscription</li>
+                    </ul>
+                </div>
+
+                <div class="key-concept">
+                    <h4>Essential Windows Tools</h4>
+                    <ul>
+                        <li><strong>Task Manager:</strong> Quick overview of CPU, memory, disk, and network performance</li>
+                        <li><strong>Resource Monitor:</strong> Detailed per-process resource consumption analysis</li>
+                        <li><strong>Performance Monitor:</strong> Customizable counter selection, logging, and alerting</li>
+                        <li><strong>PowerShell:</strong> Scriptable access to performance counters for automation</li>
+                    </ul>
+                </div>
+
+                <div class="key-concept">
+                    <h4>Critical Performance Indicators</h4>
+                    <ul>
+                        <li><strong>CPU Bottleneck:</strong> High utilization (>85%) with processes waiting, or load average exceeding core count</li>
+                        <li><strong>Memory Pressure:</strong> Low available memory (<10% of total) or swap activity (Linux si/so, Windows Pages/sec)</li>
+                        <li><strong>Disk Bottleneck:</strong> High queue length (>2), high response time (>20ms), or high disk time percentage (>90%)</li>
+                        <li><strong>Network Congestion:</strong> Utilization approaching interface capacity or high packet loss</li>
+                    </ul>
+                </div>
+
+                <div class="success-box">
+                    <h4>Monitoring Best Practices Review</h4>
+                    <ul>
+                        <li>Establish baselines during normal operation to understand typical behavior</li>
+                        <li>Set alert thresholds based on baselines, not arbitrary values</li>
+                        <li>Monitor trends over time, not just current state</li>
+                        <li>Look at complete system picture - metrics are interconnected</li>
+                        <li>Document response procedures for each alert type</li>
+                        <li>Review monitoring data regularly (daily, weekly, monthly)</li>
+                        <li>Take action on alerts - monitoring without response is useless</li>
+                    </ul>
+                </div>
+
+                <h3>Connecting to Server Hardware</h3>
+
+                <p>This monitoring module connects directly to the hardware topics you studied earlier this week:</p>
+
+                <ul>
+                    <li><strong>Module 1 (Processors):</strong> CPU monitoring tools show how core count and clock speed affect performance under load</li>
+                    <li><strong>Module 2 (Memory):</strong> Memory monitoring validates the importance of adequate RAM and reveals when ECC memory detects errors</li>
+                    <li><strong>Module 3 (Storage):</strong> Disk monitoring demonstrates the performance difference between HDD, SATA SSD, and NVMe</li>
+                    <li><strong>Module 4 (Networking/Power):</strong> Network monitoring shows NIC utilization and validates bandwidth planning decisions</li>
+                </ul>
+
+                <p>Effective monitoring proves hardware decisions. When you see swap activity, you know you need more RAM. When disk queue length is high, you know you need faster storage. Monitoring transforms hardware specifications from abstract numbers into concrete performance impacts.</p>
+
+                <div class="completion-banner" id="completionBanner">
+                    <h3>&#x2705; Module 5 Complete!</h3>
+                    <p>Congratulations! You now understand how to monitor server resources on both Linux and Windows platforms.</p>
+                    <p>You're ready to proceed to the Week 2 assignments and apply your monitoring skills.</p>
+                </div>
+            </section>
+        </main>
+
+        <footer role="contentinfo" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+            <p>CSC 152: Network Operating Systems and Administration | Week 2 Module 5</p>
+            <p>Mendocino College Computer Science Department</p>
+        </footer>
+    </div>
+
+    <script>
+        // Progress tracking
+        let sectionsCompleted = 0;
+        const totalSections = 6;
+
+        function updateProgress() {
+            const percentage = (sectionsCompleted / totalSections) * 100;
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressBar').setAttribute('aria-valuenow', percentage);
+            
+            if (sectionsCompleted === totalSections) {
+                document.getElementById('completionBanner').style.display = 'block';
+                document.getElementById('completionBanner').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Track section visibility for progress
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !entry.target.dataset.visited) {
+                    entry.target.dataset.visited = 'true';
+                    sectionsCompleted++;
+                    updateProgress();
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('.section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Command simulation
+        function simulateCommand(cmd) {
+            const outputElement = document.getElementById(cmd + 'Output');
+            if (outputElement) {
+                outputElement.style.opacity = '0.5';
+                setTimeout(() => {
+                    outputElement.style.opacity = '1';
+                    alert(`Command '${cmd}' executed successfully!\n\nIn a real terminal, you would see updated real-time data. This simulation shows example output for learning purposes.`);
+                }, 500);
+            }
+        }
+
+        // Quiz functionality
+        const quizAnswers = {
+            q1: 'b',
+            q2: 'b',
+            q3: 'c',
+            q4: 'b',
+            q5: 'b',
+            q6: 'c',
+            q7: 'b'
+        };
+
+        const quizExplanations = {
+            q1: {
+                correct: 'Correct! With a load average of 8.45 and only 4 CPU cores, the system has more than twice as many processes waiting for CPU time as there are cores available. This indicates the system is overloaded.',
+                incorrect: 'Not quite. A load average of 8.45 on a 4-core system means the system has more than twice as many processes waiting as cores available, indicating overload.'
+            },
+            q2: {
+                correct: 'Correct! Non-zero values in si (swap in) and so (swap out) indicate the system is actively using swap space because physical RAM is exhausted. This causes severe performance degradation.',
+                incorrect: 'Not quite. The si and so columns show swap activity - moving data between RAM and disk. This indicates memory pressure, not disk or network issues.'
+            },
+            q3: {
+                correct: 'Correct! htop (when F5 tree view is enabled) shows process relationships in a hierarchical tree, making it easy to see which processes are children of which parents.',
+                incorrect: 'Not quite. While top and vmstat are useful tools, htop with F5 tree view enabled specifically shows the process hierarchy.'
+            },
+            q4: {
+                correct: 'Correct! Windows reports high "In use" memory because it caches frequently accessed data. The 6 GB "Available" represents memory that can be used immediately. This is healthy operation.',
+                incorrect: 'Not quite. Windows uses free RAM for caching to improve performance. The "Available" metric (6 GB) shows memory that can be instantly freed if needed. This is healthy.'
+            },
+            q5: {
+                correct: 'Correct! An average disk queue length consistently above 2 indicates the disk subsystem cannot keep up with I/O requests. This is a clear bottleneck.',
+                incorrect: 'Not quite. A healthy disk queue length should be below 2 per disk. A sustained value of 12 indicates a significant bottleneck.'
+            },
+            q6: {
+                correct: 'Correct! Performance Monitor (perfmon) allows you to configure alerts based on performance counters with specific thresholds and durations, exactly what\'s needed here.',
+                incorrect: 'Not quite. While Task Manager and Resource Monitor show current performance, only Performance Monitor allows you to set up automated alerts with specific thresholds and durations.'
+            },
+            q7: {
+                correct: 'Correct! The load average (12.5 on an 8-core system) and high user CPU (90%) with minimal idle time indicate CPU oversubscription. Memory is adequate with no swapping, and disk response is fast.',
+                incorrect: 'Not quite. Examine the clues: load average much higher than cores (12.5 vs 8), 90% CPU usage in user space, only 3% idle, no swap activity, and fast disk response. This points to CPU bottleneck.'
+            }
+        };
+
+        // Setup quiz listeners
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const questionName = this.name;
+                const selectedAnswer = this.value;
+                const feedbackElement = document.getElementById(questionName + '-feedback');
+                const correctAnswer = quizAnswers[questionName];
+                
+                if (selectedAnswer === correctAnswer) {
+                    feedbackElement.className = 'feedback correct';
+                    feedbackElement.innerHTML = '<strong>&#x2705; Correct!</strong> ' + quizExplanations[questionName].correct;
+                } else {
+                    feedbackElement.className = 'feedback incorrect';
+                    feedbackElement.innerHTML = '<strong>&#x274C; Incorrect.</strong> ' + quizExplanations[questionName].incorrect;
+                }
+            });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.classList.contains('quiz-option')) {
+                e.target.querySelector('input[type="radio"]').checked = true;
+                e.target.querySelector('input[type="radio"]').dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Announce progress to screen readers
+        function announceProgress(message) {
+            const announcement = document.createElement('div');
+            announcement.className = 'sr-only';
+            announcement.setAttribute('role', 'status');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.textContent = message;
+            document.body.appendChild(announcement);
+            setTimeout(() => announcement.remove(), 1000);
+        }
+
+        // Update progress announcements
+        const originalUpdateProgress = updateProgress;
+        updateProgress = function() {
+            originalUpdateProgress();
+            announceProgress(`Section completed. Progress: ${Math.round((sectionsCompleted / totalSections) * 100)}%`);
+        };
+    </script>
+</body>
+</html>
