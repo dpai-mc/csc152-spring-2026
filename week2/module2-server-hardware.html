@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Hardware Architecture & Components - CSC 152 Week 2</title>
+    <style>
+        :root {
+            --primary: #2c5f8d;
+            --secondary: #3d7fb8;
+            --accent: #1b998b;
+            --text: #1a1a2e;
+            --text-light: #6b7280;
+            --bg: #fafbfc;
+            --card: #ffffff;
+            --border: #e5e7eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.7;
+            color: var(--text);
+            background: var(--bg);
+            padding: 2rem 1rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.8rem; margin: 2rem 0 1rem; color: var(--primary); }
+        h3 { font-size: 1.4rem; margin: 1.5rem 0 1rem; color: var(--secondary); }
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .nav-tab {
+            padding: 1rem 1.5rem;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .nav-tab:hover {
+            background: #f3f4f6;
+            border-color: var(--primary);
+        }
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .key-concept-box {
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+            border-left: 4px solid #3b82f6;
+        }
+        .key-concept-box h4 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        .example-box {
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-left: 4px solid #f59e0b;
+        }
+        .warning-box {
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-left: 4px solid #ef4444;
+        }
+        .success-box {
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            border-left: 4px solid #10b981;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+        }
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        tr:hover { background: #f9fafb; }
+        .interactive-demo {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+            border: 2px solid var(--border);
+        }
+        .slider-container {
+            margin: 2rem 0;
+        }
+        .slider-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+        .visual-output {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .output-item {
+            flex: 1;
+            min-width: 250px;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+        }
+        .output-label {
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        .output-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .quiz-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+            border: 2px solid var(--border);
+        }
+        .quiz-option {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .quiz-option:hover {
+            background: #f3f4f6;
+            border-color: var(--primary);
+        }
+        .quiz-option.selected {
+            background: #e0f2fe;
+            border-color: var(--primary);
+        }
+        .quiz-option.correct {
+            background: #d1fae5;
+            border-color: var(--success);
+        }
+        .quiz-option.incorrect {
+            background: #fee2e2;
+            border-color: var(--danger);
+        }
+        .quiz-feedback {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+        }
+        .quiz-feedback.show { display: block; }
+        .quiz-feedback.correct {
+            background: #d1fae5;
+            border: 2px solid var(--success);
+        }
+        .quiz-feedback.incorrect {
+            background: #fee2e2;
+            border: 2px solid var(--danger);
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+        }
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: var(--border);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--primary));
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .comparison-table {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .comparison-card {
+            padding: 1.5rem;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .comparison-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .comparison-card h4 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        .comparison-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .comparison-card li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .comparison-card li:last-child {
+            border-bottom: none;
+        }
+        .calculator-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            margin: 2rem 0;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-group small {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        .calculator-result {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            border-radius: 8px;
+            border: 2px solid var(--success);
+            display: none;
+        }
+        .calculator-result.show {
+            display: block;
+        }
+        .result-metric {
+            margin: 1rem 0;
+        }
+        .result-metric-label {
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+        .result-metric-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--success);
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.4rem; }
+            .nav-tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+            .card { padding: 1.5rem; }
+            .visual-output { flex-direction: column; }
+            .comparison-table { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖥️ Server Hardware Architecture & Components</h1>
+            <p style="opacity: 0.9; font-size: 1.1rem;">CSC 152 - Week 2: Understanding the Physical Foundation of Server Infrastructure</p>
+        </header>
+
+        <div class="nav-tabs">
+            <div class="nav-tab active" onclick="switchTab(event, 'processors')">1. Processors</div>
+            <div class="nav-tab" onclick="switchTab(event, 'memory')">2. Memory</div>
+            <div class="nav-tab" onclick="switchTab(event, 'storage')">3. Storage</div>
+            <div class="nav-tab" onclick="switchTab(event, 'network')">4. Network</div>
+            <div class="nav-tab" onclick="switchTab(event, 'power')">5. Power & Cooling</div>
+            <div class="nav-tab" onclick="switchTab(event, 'quiz')">📝 Quiz</div>
+        </div>
+        <!-- PART 2A: PROCESSORS SECTION -->
+        <div id="processors" class="content-section active">
+            <div class="card">
+                <h2>Server Processors and Computing Power</h2>
+                <p>Server processors are the computational heart of any server system. Unlike consumer desktop processors, server CPUs prioritize reliability, multi-threaded performance, and 24/7 operation over single-threaded gaming performance or integrated graphics.</p>
+
+                <div class="key-concept-box">
+                    <h4>💡 Key Concept: Server vs. Desktop CPUs</h4>
+                    <p>Server CPUs differ from desktop processors in several critical ways:</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 1rem;">
+                        <li><strong>ECC memory support</strong> - Error correction to prevent data corruption</li>
+                        <li><strong>More cores</strong> - 8-64+ cores vs. 4-16 in desktop CPUs</li>
+                        <li><strong>Larger cache sizes</strong> - Up to 256MB L3 cache for faster data access</li>
+                        <li><strong>Multi-socket support</strong> - Multiple CPUs working together in one system</li>
+                        <li><strong>Higher reliability ratings</strong> - Designed for continuous operation</li>
+                        <li><strong>Lower clock speeds</strong> - Prioritize efficiency and heat management</li>
+                    </ul>
+                </div>
+
+                <h3>Understanding Cores and Threads</h3>
+                <p>Cores are independent processing units within a CPU. Each core can execute instructions independently. Modern server processors contain multiple cores (8, 16, 32, 64, or more) enabling true parallel processing.</p>
+                
+                <p><strong>Hyper-Threading</strong> (Intel) or <strong>SMT</strong> (AMD) allows each physical core to handle two threads simultaneously, appearing as two logical processors to the operating system.</p>
+
+                <div class="interactive-demo">
+                    <h3>🎮 Interactive: Core and Thread Visualization</h3>
+                    <div class="slider-container">
+                        <label class="slider-label">Number of Physical Cores: <span id="core-count-display">8</span></label>
+                        <input type="range" id="core-count" min="1" max="64" value="8" step="1" oninput="updateCoreSimulation()">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label class="slider-label">
+                            <input type="checkbox" id="hyperthreading" onchange="updateCoreSimulation()" checked> 
+                            Enable Hyper-Threading/SMT
+                        </label>
+                    </div>
+
+                    <div class="visual-output">
+                        <div class="output-item">
+                            <div class="output-label">Physical Cores</div>
+                            <div class="output-value" id="physical-cores">8</div>
+                        </div>
+                        <div class="output-item">
+                            <div class="output-label">Logical Processors</div>
+                            <div class="output-value" id="logical-processors">16</div>
+                        </div>
+                        <div class="output-item">
+                            <div class="output-label">Max Concurrent Threads</div>
+                            <div class="output-value" id="max-threads">16</div>
+                        </div>
+                    </div>
+
+                    <div class="success-box" style="margin-top: 1.5rem;">
+                        <p id="core-explanation">With 8 physical cores and hyper-threading enabled, the operating system sees 16 logical processors and can run 16 threads simultaneously.</p>
+                    </div>
+                </div>
+
+                <div class="quiz-container">
+                    <h3>Quick Check: Cores vs. Threads</h3>
+                    <p><strong>Question:</strong> A server has a 24-core processor with hyper-threading enabled. How many logical processors does the operating system see?</p>
+                    
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">A. 12 logical processors</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">B. 24 logical processors</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">C. 48 logical processors</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">D. 96 logical processors</div>
+                    
+                    <div class="quiz-feedback correct">
+                        ✓ Correct! With hyper-threading, each physical core presents as 2 logical processors: 24 cores × 2 = 48 logical processors.
+                    </div>
+                    <div class="quiz-feedback incorrect">
+                        ✗ Not quite. Remember: with hyper-threading, each physical core is presented to the OS as 2 logical processors. Try: 24 cores × 2 = ?
+                    </div>
+                </div>
+
+                <h3>Major Processor Families</h3>
+                
+                <table>
+                    <tr>
+                        <th>Intel Xeon Tier</th>
+                        <th>Core Count</th>
+                        <th>Use Case</th>
+                        <th>Price Range</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Bronze</strong></td>
+                        <td>4-8 cores</td>
+                        <td>Entry-level servers, basic workloads</td>
+                        <td>$300-$600</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Silver</strong></td>
+                        <td>8-16 cores</td>
+                        <td>Mid-range servers, virtualization</td>
+                        <td>$500-$1,000</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gold</strong></td>
+                        <td>16-28 cores</td>
+                        <td>High-performance computing, databases</td>
+                        <td>$1,000-$2,500</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Platinum</strong></td>
+                        <td>24-40+ cores</td>
+                        <td>Mission-critical, large-scale virtualization</td>
+                        <td>$2,500-$10,000+</td>
+                    </tr>
+                </table>
+
+                <div class="example-box">
+                    <h4>Example: Intel Xeon Gold 6330</h4>
+                    <ul style="margin-left: 1.5rem;">
+                        <li><strong>Cores:</strong> 28 physical cores (56 threads with HT)</li>
+                        <li><strong>Base Clock:</strong> 2.0 GHz</li>
+                        <li><strong>Turbo Boost:</strong> Up to 3.5 GHz</li>
+                        <li><strong>Cache:</strong> 42 MB L3</li>
+                        <li><strong>TDP:</strong> 205W</li>
+                        <li><strong>Memory Support:</strong> DDR4-3200, up to 6TB</li>
+                        <li><strong>Price:</strong> ~$1,400-$1,800</li>
+                    </ul>
+                </div>
+
+                <div class="example-box">
+                    <h4>AMD EPYC Processors</h4>
+                    <p>AMD EPYC processors offer high core counts and competitive performance:</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Chiplet Architecture:</strong> Multiple smaller dies for higher core counts (up to 96 cores)</li>
+                        <li><strong>Advantages:</strong> Excellent price/performance, high memory bandwidth, better manufacturing yields</li>
+                        <li><strong>Best for:</strong> Virtualization hosts, cloud infrastructure, high-density workloads</li>
+                        <li><strong>When to choose AMD:</strong> Workloads that scale with more cores, budget-conscious deployments</li>
+                    </ul>
+                </div>
+
+                <div class="key-concept-box">
+                    <h4>🖥️ Hardware Virtualization Extensions</h4>
+                    <p>Modern processors include hardware virtualization support essential for running virtual machines efficiently:</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Intel VT-x / AMD-V:</strong> Hardware extensions for virtualization</li>
+                        <li><strong>Benefits:</strong> Near-native VM performance, hardware-level isolation, advanced features (nested virtualization, PCI passthrough)</li>
+                        <li><strong>Without these:</strong> Much slower software emulation, limited capabilities, not suitable for production</li>
+                    </ul>
+                    
+                    <div class="example-box" style="margin-top: 1rem;">
+                        <h4>Checking Virtualization Support in Linux</h4>
+                        <pre style="background: #2d3748; color: #e2e8f0; padding: 1rem; border-radius: 4px; overflow-x: auto;">$ lscpu | grep Virtualization
+Virtualization:      VT-x
+Virtualization type: full</pre>
+                        <p style="margin-top: 0.5rem;">This output shows Intel VT-x is enabled and the system supports full hardware virtualization.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- PART 2B: MEMORY SECTION -->
+        <div id="memory" class="content-section">
+            <div class="card">
+                <h2>Memory Architecture and Management</h2>
+                <p>Server memory (RAM) is critical for system performance and reliability. Unlike consumer memory, server RAM prioritizes data integrity through error correction and supports much larger capacities.</p>
+
+                <h3>RAM Types and Evolution</h3>
+                <table>
+                    <tr>
+                        <th>Generation</th>
+                        <th>Year</th>
+                        <th>Speed Range</th>
+                        <th>Voltage</th>
+                        <th>Max Module Size</th>
+                        <th>Status</th>
+                    </tr>
+                    <tr>
+                        <td>DDR3</td>
+                        <td>2007</td>
+                        <td>1066-1600 MHz</td>
+                        <td>1.5V</td>
+                        <td>32 GB</td>
+                        <td>Legacy systems</td>
+                    </tr>
+                    <tr>
+                        <td>DDR4</td>
+                        <td>2014</td>
+                        <td>2133-3200 MHz</td>
+                        <td>1.2V</td>
+                        <td>128 GB</td>
+                        <td>Current standard</td>
+                    </tr>
+                    <tr>
+                        <td>DDR5</td>
+                        <td>2020</td>
+                        <td>4800-6400+ MHz</td>
+                        <td>1.1V</td>
+                        <td>256 GB</td>
+                        <td>Newest generation</td>
+                    </tr>
+                </table>
+
+                <div class="key-concept-box">
+                    <h4>🛡️ Error-Correcting Code (ECC) Memory</h4>
+                    <p>ECC memory is a fundamental requirement for servers because it detects and corrects memory errors that occur naturally due to:</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Cosmic radiation:</strong> High-energy particles flipping bits in memory</li>
+                        <li><strong>Electrical interference:</strong> EMI causing data corruption</li>
+                        <li><strong>Hardware degradation:</strong> Aging components becoming less reliable</li>
+                    </ul>
+
+                    <p style="margin-top: 1rem;"><strong>How ECC Works:</strong></p>
+                    <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li>Adds extra bits to each memory word (e.g., 72 bits for 64-bit data)</li>
+                        <li>Calculates parity information for error detection</li>
+                        <li>Can detect 2-bit errors and correct 1-bit errors automatically</li>
+                        <li>Logs correctable errors for monitoring</li>
+                    </ol>
+                </div>
+
+                <div class="comparison-table">
+                    <div class="comparison-card">
+                        <h4>✓ ECC Memory</h4>
+                        <ul>
+                            <li>Detects and corrects errors</li>
+                            <li>Prevents data corruption</li>
+                            <li>Essential for servers</li>
+                            <li>~2-3% performance penalty</li>
+                            <li>~10-15% cost premium</li>
+                            <li><strong>Use for:</strong> All production servers</li>
+                        </ul>
+                    </div>
+
+                    <div class="comparison-card">
+                        <h4>✗ Non-ECC Memory</h4>
+                        <ul>
+                            <li>No error detection</li>
+                            <li>Silent data corruption possible</li>
+                            <li>OK for desktops, not servers</li>
+                            <li>Slightly faster</li>
+                            <li>Lower cost</li>
+                            <li><strong>Use for:</strong> Consumer systems only</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="quiz-container">
+                    <h3>Quick Check: ECC Memory</h3>
+                    <p><strong>Question:</strong> Why is ECC memory essential for servers despite the small performance penalty?</p>
+                    
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">A. It's faster than non-ECC memory</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">B. It detects and corrects memory errors preventing data corruption</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">C. It's required by law for commercial servers</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">D. It uses less power than non-ECC memory</div>
+                    
+                    <div class="quiz-feedback correct">
+                        ✓ Correct! ECC memory detects and corrects single-bit errors, preventing data corruption that could cause system crashes or data loss. The small performance penalty (~2-3%) is worth the reliability improvement for servers.
+                    </div>
+                    <div class="quiz-feedback incorrect">
+                        ✗ Not quite. Think about what "Error-Correcting Code" means and why data integrity is critical for servers.
+                    </div>
+                </div>
+
+                <h3>Memory Capacity Planning</h3>
+                <table>
+                    <tr>
+                        <th>Workload Type</th>
+                        <th>Recommended RAM</th>
+                        <th>Reasoning</th>
+                    </tr>
+                    <tr>
+                        <td>Web Server</td>
+                        <td>8-32 GB</td>
+                        <td>Modest memory needs, depends on traffic volume</td>
+                    </tr>
+                    <tr>
+                        <td>Database Server</td>
+                        <td>32-256+ GB</td>
+                        <td>Large datasets benefit from being cached in RAM</td>
+                    </tr>
+                    <tr>
+                        <td>File Server</td>
+                        <td>16-64 GB</td>
+                        <td>File system caching improves performance</td>
+                    </tr>
+                    <tr>
+                        <td>Virtualization Host</td>
+                        <td>64-512+ GB</td>
+                        <td>Each VM needs dedicated memory allocation</td>
+                    </tr>
+                    <tr>
+                        <td>In-Memory Database</td>
+                        <td>256GB-4TB+</td>
+                        <td>Entire dataset must fit in RAM</td>
+                    </tr>
+                </table>
+
+                <div class="interactive-demo">
+                    <h3>🧮 Memory Calculator: Virtualization Host</h3>
+                    <p>Calculate memory requirements for a virtualization server:</p>
+                    
+                    <div class="calculator-form">
+                        <div class="form-group">
+                            <label>Number of Virtual Machines:</label>
+                            <input type="number" id="vm-count" min="1" max="100" value="10">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Average RAM per VM (GB):</label>
+                            <input type="number" id="ram-per-vm" min="1" max="64" value="4">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Hypervisor Overhead (GB):</label>
+                            <input type="number" id="hypervisor-overhead" min="4" max="32" value="8">
+                            <small>Proxmox/ESXi typically uses 4-8 GB</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Buffer/Overhead Percentage:</label>
+                            <select id="buffer-percentage">
+                                <option value="10">10% (Minimal)</option>
+                                <option value="20" selected>20% (Recommended)</option>
+                                <option value="30">30% (Conservative)</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="calculateMemory()">Calculate Required RAM</button>
+                    </div>
+
+                    <div class="calculator-result" id="memory-result">
+                        <h4>Memory Calculation Results</h4>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Base VM Memory Required:</div>
+                            <div class="result-metric-value" id="base-memory">40 GB</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Hypervisor Overhead:</div>
+                            <div class="result-metric-value" id="overhead-memory">8 GB</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Buffer (20%):</div>
+                            <div class="result-metric-value" id="buffer-memory">9.6 GB</div>
+                        </div>
+                        <div class="result-metric" style="border-top: 2px solid var(--success); padding-top: 1rem; margin-top: 1rem;">
+                            <div class="result-metric-label">TOTAL RAM REQUIRED:</div>
+                            <div class="result-metric-value" id="total-memory" style="font-size: 2.5rem;">57.6 GB</div>
+                        </div>
+                        <div class="success-box" style="margin-top: 1rem;">
+                            <p id="memory-recommendation"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="key-concept-box">
+                    <h4>Multi-Channel Memory Architecture</h4>
+                    <p>Modern servers use multi-channel memory configurations to increase bandwidth:</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Single-channel:</strong> 1x bandwidth (legacy systems only)</li>
+                        <li><strong>Dual-channel:</strong> 2x bandwidth (install RAM in pairs)</li>
+                        <li><strong>Quad-channel:</strong> 4x bandwidth (install in sets of 4)</li>
+                        <li><strong>Six-channel:</strong> 6x bandwidth (high-end servers)</li>
+                        <li><strong>Eight-channel:</strong> 8x bandwidth (highest-end systems)</li>
+                    </ul>
+                    
+                    <p style="margin-top: 1rem;"><strong>⚠️ Important:</strong> For optimal performance, install memory modules in matched sets. Mismatched configurations may work but won't achieve full bandwidth.</p>
+                </div>
+            </div>
+        </div>
+        <!-- PART 2C: STORAGE SECTION -->
+        <div id="storage" class="content-section">
+            <div class="card">
+                <h2>Server Storage Technologies</h2>
+                <p>Server storage has evolved dramatically, with solid-state technology largely replacing traditional spinning disks for primary storage. Understanding the tradeoffs between different storage technologies is essential for designing efficient server systems.</p>
+
+                <h3>Storage Technology Comparison</h3>
+                <div class="comparison-table">
+                    <div class="comparison-card">
+                        <h4>💿 HDD (Hard Disk Drive)</h4>
+                        <ul>
+                            <li><strong>Technology:</strong> Spinning magnetic platters</li>
+                            <li><strong>Speed:</strong> 100-200 MB/s</li>
+                            <li><strong>IOPS:</strong> 100-200</li>
+                            <li><strong>Latency:</strong> 10-15ms</li>
+                            <li><strong>Capacity:</strong> Up to 20TB</li>
+                            <li><strong>Cost:</strong> $15-25 per TB</li>
+                            <li><strong>Best for:</strong> Archival, backups, cold data</li>
+                        </ul>
+                    </div>
+
+                    <div class="comparison-card">
+                        <h4>⚡ SATA SSD</h4>
+                        <ul>
+                            <li><strong>Technology:</strong> NAND flash via SATA</li>
+                            <li><strong>Speed:</strong> 500-550 MB/s</li>
+                            <li><strong>IOPS:</strong> 50k-100k</li>
+                            <li><strong>Latency:</strong> 0.1ms</li>
+                            <li><strong>Capacity:</strong> Up to 8TB</li>
+                            <li><strong>Cost:</strong> $50-100 per TB</li>
+                            <li><strong>Best for:</strong> General-purpose servers</li>
+                        </ul>
+                    </div>
+
+                    <div class="comparison-card">
+                        <h4>🚀 NVMe SSD</h4>
+                        <ul>
+                            <li><strong>Technology:</strong> NAND flash via PCIe</li>
+                            <li><strong>Speed:</strong> 3,000-7,000 MB/s</li>
+                            <li><strong>IOPS:</strong> 500k-1M+</li>
+                            <li><strong>Latency:</strong> 0.02ms</li>
+                            <li><strong>Capacity:</strong> Up to 16TB</li>
+                            <li><strong>Cost:</strong> $80-150 per TB</li>
+                            <li><strong>Best for:</strong> High-performance databases</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="key-concept-box">
+                    <h4>📊 Key Storage Metrics Explained</h4>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>MB/s (Throughput):</strong> How much data can be transferred per second - important for sequential operations like large file transfers</li>
+                        <li><strong>IOPS (Input/Output Operations Per Second):</strong> How many read/write operations can be performed - critical for databases with many small operations</li>
+                        <li><strong>Latency:</strong> Time delay for each operation - affects responsiveness and real-time performance</li>
+                    </ul>
+                </div>
+
+                <h3>RAID Configurations</h3>
+                <table>
+                    <tr>
+                        <th>RAID Level</th>
+                        <th>Min Drives</th>
+                        <th>Usable Capacity</th>
+                        <th>Fault Tolerance</th>
+                        <th>Use Case</th>
+                    </tr>
+                    <tr>
+                        <td><strong>RAID 0</strong></td>
+                        <td>2</td>
+                        <td>100%</td>
+                        <td>None</td>
+                        <td>Maximum performance, non-critical data</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RAID 1</strong></td>
+                        <td>2</td>
+                        <td>50%</td>
+                        <td>1 drive failure</td>
+                        <td>High availability, boot drives</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RAID 5</strong></td>
+                        <td>3</td>
+                        <td>67-80%</td>
+                        <td>1 drive failure</td>
+                        <td>Balanced performance and redundancy</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RAID 6</strong></td>
+                        <td>4</td>
+                        <td>50-75%</td>
+                        <td>2 drive failures</td>
+                        <td>Critical data, large arrays</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RAID 10</strong></td>
+                        <td>4</td>
+                        <td>50%</td>
+                        <td>1 drive per mirror</td>
+                        <td>High performance + redundancy</td>
+                    </tr>
+                </table>
+
+                <div class="warning-box">
+                    <h4>⚠️ Important RAID Considerations</h4>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>RAID is NOT a backup:</strong> Protects against drive failure but not deletion, corruption, or disaster</li>
+                        <li><strong>Rebuild time risk:</strong> Large drives take days to rebuild - second drive failure during rebuild is catastrophic</li>
+                        <li><strong>RAID 5 warning:</strong> Not recommended for drives >1TB due to rebuild risks - use RAID 6 instead</li>
+                        <li><strong>Performance impact:</strong> RAID 5/6 have write penalty due to parity calculations</li>
+                    </ul>
+                </div>
+
+                <div class="quiz-container">
+                    <h3>Quick Check: Storage Technologies</h3>
+                    <p><strong>Question:</strong> A database server needs maximum IOPS for handling thousands of concurrent small read/write operations. Which storage technology is most appropriate?</p>
+                    
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">A. HDD in RAID 5</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">B. SATA SSD in RAID 1</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">C. NVMe SSD in RAID 10</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">D. Single large HDD</div>
+                    
+                    <div class="quiz-feedback correct">
+                        ✓ Correct! NVMe SSDs provide the highest IOPS (500k-1M+), and RAID 10 offers both performance and redundancy without the write penalty of RAID 5/6. This is ideal for high-performance databases.
+                    </div>
+                    <div class="quiz-feedback incorrect">
+                        ✗ Not quite. Consider which technology provides the highest IOPS and what RAID configuration balances performance with redundancy.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PART 2D: NETWORK SECTION -->
+        <div id="network" class="content-section">
+            <div class="card">
+                <h2>Network Interface Cards (NICs)</h2>
+                <p>Network connectivity is critical for server operations. Modern servers use high-speed network interfaces to handle demanding workloads and ensure reliable connectivity.</p>
+
+                <h3>Network Speed Evolution</h3>
+                <table>
+                    <tr>
+                        <th>Speed</th>
+                        <th>Standard</th>
+                        <th>Typical Application</th>
+                    </tr>
+                    <tr>
+                        <td>1 Gbps</td>
+                        <td>Gigabit Ethernet</td>
+                        <td>Entry-level servers, web servers, file servers</td>
+                    </tr>
+                    <tr>
+                        <td>10 Gbps</td>
+                        <td>10 Gigabit Ethernet</td>
+                        <td>Data center standard, virtualization hosts, database servers</td>
+                    </tr>
+                    <tr>
+                        <td>25 Gbps</td>
+                        <td>25GbE</td>
+                        <td>Modern data centers, high-density virtualization, storage</td>
+                    </tr>
+                    <tr>
+                        <td>40 Gbps</td>
+                        <td>40GbE</td>
+                        <td>Backbone connections, inter-switch links, storage networks</td>
+                    </tr>
+                    <tr>
+                        <td>100 Gbps</td>
+                        <td>100GbE</td>
+                        <td>High-performance computing, HPC clusters, large-scale cloud</td>
+                    </tr>
+                </table>
+
+                <div class="key-concept-box">
+                    <h4>🔌 NIC Selection Criteria</h4>
+                    <p>Choosing the right network interface involves several factors:</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Bandwidth requirements:</strong> Current and future traffic needs</li>
+                        <li><strong>Number of ports:</strong> Dual-port for redundancy, quad-port for higher density</li>
+                        <li><strong>Protocol offload:</strong> TCP/IP, iSCSI, RDMA support reduces CPU load</li>
+                        <li><strong>SR-IOV support:</strong> Important for virtualization performance</li>
+                        <li><strong>Power consumption:</strong> Can be significant in high-density deployments</li>
+                    </ul>
+                </div>
+
+                <h3>Network Redundancy and Bonding</h3>
+                <div class="comparison-table">
+                    <div class="comparison-card">
+                        <h4>Active-Passive (Failover)</h4>
+                        <ul>
+                            <li><strong>Configuration:</strong> One NIC active, one standby</li>
+                            <li><strong>Bandwidth:</strong> 1x (single link)</li>
+                            <li><strong>Redundancy:</strong> Yes</li>
+                            <li><strong>Use case:</strong> High availability</li>
+                            <li><strong>Failover time:</strong> Seconds</li>
+                        </ul>
+                    </div>
+
+                    <div class="comparison-card">
+                        <h4>Active-Active (LACP)</h4>
+                        <ul>
+                            <li><strong>Configuration:</strong> Multiple NICs aggregated</li>
+                            <li><strong>Bandwidth:</strong> Nx (combined)</li>
+                            <li><strong>Redundancy:</strong> Yes</li>
+                            <li><strong>Use case:</strong> Performance + HA</li>
+                            <li><strong>Failover time:</strong> Sub-second</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="success-box">
+                    <p><strong>Best Practice:</strong> For virtualization hosts, use NICs with SR-IOV support. For database and storage servers, consider NICs with iSCSI or RDMA offload capabilities to reduce CPU overhead.</p>
+                </div>
+
+                <div class="quiz-container">
+                    <h3>Quick Check: Network Interfaces</h3>
+                    <p><strong>Question:</strong> A virtualization host with 20 VMs needs network connectivity. What is the minimum recommended NIC configuration?</p>
+                    
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">A. Single 1 Gbps NIC</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">B. Single 10 Gbps NIC</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">C. Dual 10 Gbps NICs</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">D. Quad 1 Gbps NICs</div>
+                    
+                    <div class="quiz-feedback correct">
+                        ✓ Correct! Dual 10 Gbps NICs provide both adequate bandwidth for 20 VMs and redundancy. If one NIC fails, the server maintains connectivity. Single NIC configurations create a single point of failure.
+                    </div>
+                    <div class="quiz-feedback incorrect">
+                        ✗ Not quite. Consider both bandwidth requirements (20 VMs sharing the connection) and redundancy (what happens if a NIC fails?).
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- PART 2E: POWER & COOLING SECTION -->
+        <div id="power" class="content-section">
+            <div class="card">
+                <h2>Power and Cooling Requirements</h2>
+                <p>Power and cooling are critical infrastructure considerations for server deployments. Inadequate power or cooling can cause system instability, hardware failures, and data loss.</p>
+
+                <div class="key-concept-box">
+                    <h4>⚡ Power Terminology</h4>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Watts (W):</strong> Actual power consumed by the server</li>
+                        <li><strong>Volt-Amperes (VA):</strong> Apparent power including reactive load</li>
+                        <li><strong>Power Factor:</strong> Ratio of W to VA (typically 0.9-0.95 for servers)</li>
+                        <li><strong>BTU/hr:</strong> Heat output (1W = 3.41 BTU/hr)</li>
+                        <li><strong>TDP (Thermal Design Power):</strong> Maximum heat dissipation under load</li>
+                    </ul>
+                </div>
+
+                <h3>Power Usage Calculator</h3>
+                <div class="interactive-demo">
+                    <h3>🧮 Server Power Calculator</h3>
+                    <div class="calculator-form">
+                        <div class="form-group">
+                            <label>CPU Power (TDP in Watts):</label>
+                            <input type="number" id="cpu-power" min="50" max="500" value="205">
+                            <small>Example: Intel Xeon Gold 6330 = 205W</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Number of CPUs:</label>
+                            <select id="cpu-count">
+                                <option value="1">1 CPU (Single Socket)</option>
+                                <option value="2" selected>2 CPUs (Dual Socket)</option>
+                                <option value="4">4 CPUs (Quad Socket)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Memory (GB):</label>
+                            <input type="number" id="memory-power" min="16" max="1024" value="128">
+                            <small>Estimate: ~0.5W per GB of DDR4</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Storage Drives:</label>
+                            <input type="number" id="drive-count" min="0" max="24" value="4">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Storage Type:</label>
+                            <select id="drive-type">
+                                <option value="8">HDD (~8W each)</option>
+                                <option value="3" selected>SSD (~3W each)</option>
+                                <option value="5">NVMe (~5W each)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>NICs:</label>
+                            <select id="nic-power">
+                                <option value="5">1 Gbps (~5W)</option>
+                                <option value="15" selected>10 Gbps (~15W)</option>
+                                <option value="25">25 Gbps (~25W)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Expansion Cards (PCIe):</label>
+                            <input type="number" id="pcie-power" min="0" max="300" value="25">
+                            <small>GPUs, RAID controllers, etc.</small>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="calculatePower()">Calculate Power Requirements</button>
+                    </div>
+
+                    <div class="calculator-result" id="power-result">
+                        <h4>Power Calculation Results</h4>
+                        <div class="result-metric">
+                            <div class="result-metric-label">CPU Power:</div>
+                            <div class="result-metric-value" id="cpu-power-result">410 W</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Memory Power:</div>
+                            <div class="result-metric-value" id="memory-power-result">64 W</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Storage Power:</div>
+                            <div class="result-metric-value" id="storage-power-result">12 W</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Network Power:</div>
+                            <div class="result-metric-value" id="network-power-result">15 W</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Other Components:</div>
+                            <div class="result-metric-value" id="other-power-result">25 W</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Motherboard/Fans (~50W):</div>
+                            <div class="result-metric-value">50 W</div>
+                        </div>
+                        <div class="result-metric" style="border-top: 2px solid var(--success); padding-top: 1rem; margin-top: 1rem;">
+                            <div class="result-metric-label">Total System Power:</div>
+                            <div class="result-metric-value" id="total-power" style="font-size: 2rem;">576 W</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Heat Output (BTU/hr):</div>
+                            <div class="result-metric-value" id="btu-output" style="font-size: 2rem;">1,964</div>
+                        </div>
+                        <div class="result-metric">
+                            <div class="result-metric-label">Recommended PSU Size:</div>
+                            <div class="result-metric-value" id="psu-size" style="font-size: 2rem;">750 W</div>
+                        </div>
+                        <div class="success-box" style="margin-top: 1rem;">
+                            <p id="power-recommendation"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Power Supply Units (PSUs)</h3>
+                <div class="key-concept-box">
+                    <h4>PSU Requirements and Redundancy</h4>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Sizing:</strong> PSU should be rated for 125-150% of maximum system power draw</li>
+                        <li><strong>Efficiency:</strong> Look for 80 Plus Platinum or Titanium (90-94% efficient)</li>
+                        <li><strong>Redundancy:</strong> Production servers should have redundant PSUs (N+1 or N+N)</li>
+                        <li><strong>Hot-swap:</strong> Enterprise PSUs can be replaced without shutting down</li>
+                    </ul>
+                </div>
+
+                <h3>Cooling Requirements</h3>
+                <div class="key-concept-box">
+                    <h4>🌡️ Temperature Guidelines</h4>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Optimal operating range:</strong> 18-27°C (64-81°F)</li>
+                        <li><strong>Maximum inlet temperature:</strong> 35°C (95°F) per ASHRAE standards</li>
+                        <li><strong>Relative humidity:</strong> 40-60% (prevent static and condensation)</li>
+                        <li><strong>Hot aisle/cold aisle:</strong> Organize racks to separate hot and cold air</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <h4>⚠️ Cooling Best Practices</h4>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Never block airflow:</strong> Ensure proper spacing and cable management</li>
+                        <li><strong>Monitor temperatures:</strong> Use IPMI/BMC to track CPU and ambient temps</li>
+                        <li><strong>Plan for redundancy:</strong> Cooling system failures can be catastrophic</li>
+                        <li><strong>Consider hot aisle containment:</strong> Improves efficiency in data centers</li>
+                        <li><strong>Account for seasonal variation:</strong> Summer heat loads are higher</li>
+                    </ul>
+                </div>
+
+                <div class="example-box">
+                    <h4>Example: Small Server Room Cooling</h4>
+                    <p><strong>Scenario:</strong> 10 servers, 600W average power each = 6,000W total</p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li><strong>Heat output:</strong> 6,000W × 3.41 = 20,460 BTU/hr</li>
+                        <li><strong>Required AC capacity:</strong> ~24,000 BTU/hr (2 tons, with 20% buffer)</li>
+                        <li><strong>Recommendation:</strong> Two 12,000 BTU/hr units for redundancy</li>
+                        <li><strong>Annual cooling cost:</strong> ~$1,500-$3,000 depending on location and rates</li>
+                    </ul>
+                </div>
+
+                <div class="quiz-container">
+                    <h3>Quick Check: Power and Cooling</h3>
+                    <p><strong>Question:</strong> A server draws 400W of power. How much heat does it generate that must be removed by cooling?</p>
+                    
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">A. 400 BTU/hr</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, true)">B. 1,364 BTU/hr</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">C. 400 W</div>
+                    <div class="quiz-option" onclick="checkAnswer(this, false)">D. 3,410 BTU/hr</div>
+                    
+                    <div class="quiz-feedback correct">
+                        ✓ Correct! Power consumption equals heat output. To convert: 400W × 3.41 BTU/W = 1,364 BTU/hr. This is the cooling capacity needed to remove the heat from this server.
+                    </div>
+                    <div class="quiz-feedback incorrect">
+                        ✗ Not quite. Remember: 1 Watt = 3.41 BTU/hr. Every watt of power consumed becomes heat that must be removed.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- PART 2F: FINAL QUIZ SECTION -->
+        <div id="quiz" class="content-section">
+            <div class="card">
+                <h2>📝 Comprehensive Knowledge Check</h2>
+                <p>Test your understanding of server hardware concepts covered in this module. This assessment covers all five sections.</p>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="quiz-progress" style="width: 0%;">0%</div>
+                </div>
+
+                <div class="quiz-container">
+                    <h3>Question <span id="current-question">1</span> of 10</h3>
+                    <div id="quiz-question"></div>
+                    <div id="quiz-options"></div>
+                    <div id="quiz-result"></div>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn btn-primary" id="quiz-submit" onclick="submitQuizAnswer()">Submit Answer</button>
+                        <button class="btn btn-secondary" id="quiz-next" onclick="nextQuizQuestion()" style="display: none;">Next Question</button>
+                    </div>
+                </div>
+
+                <div class="card" id="quiz-summary" style="display: none;">
+                    <h3>Quiz Complete! 🎉</h3>
+                    <div class="visual-output">
+                        <div class="output-item">
+                            <div class="output-label">Your Score</div>
+                            <div class="output-value" id="final-score">0/10</div>
+                        </div>
+                        <div class="output-item">
+                            <div class="output-label">Percentage</div>
+                            <div class="output-value" id="final-percentage">0%</div>
+                        </div>
+                    </div>
+                    <div id="performance-feedback" style="margin-top: 2rem;"></div>
+                    <button class="btn btn-primary" onclick="resetQuiz()" style="margin-top: 1rem;">Retake Quiz</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- End of container -->
+    <script>
+        // Tab switching function
+        function switchTab(event, tabName) {
+            const sections = document.querySelectorAll('.content-section');
+            sections.forEach(section => section.classList.remove('active'));
+            
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Core simulation update
+        function updateCoreSimulation() {
+            const cores = parseInt(document.getElementById('core-count').value);
+            const htEnabled = document.getElementById('hyperthreading').checked;
+            const logicalProcessors = htEnabled ? cores * 2 : cores;
+            
+            document.getElementById('core-count-display').textContent = cores;
+            document.getElementById('physical-cores').textContent = cores;
+            document.getElementById('logical-processors').textContent = logicalProcessors;
+            document.getElementById('max-threads').textContent = logicalProcessors;
+            
+            const htText = htEnabled ? 'hyper-threading enabled' : 'hyper-threading disabled';
+            document.getElementById('core-explanation').textContent = 
+                `With ${cores} physical cores and ${htText}, the operating system sees ${logicalProcessors} logical processors and can run ${logicalProcessors} threads simultaneously.`;
+        }
+
+        // Quiz answer checking for embedded quizzes
+        function checkAnswer(element, isCorrect) {
+            const options = element.parentElement.querySelectorAll('.quiz-option');
+            options.forEach(opt => {
+                opt.style.pointerEvents = 'none';
+                opt.classList.remove('correct', 'incorrect');
+            });
+            
+            if (isCorrect) {
+                element.classList.add('correct');
+                const feedback = element.parentElement.querySelector('.quiz-feedback.correct');
+                feedback.classList.add('show');
+            } else {
+                element.classList.add('incorrect');
+                const correctOption = element.parentElement.querySelector('[onclick*="true"]');
+                if (correctOption) correctOption.classList.add('correct');
+                const feedback = element.parentElement.querySelector('.quiz-feedback.incorrect');
+                feedback.classList.add('show');
+            }
+        }
+
+        // Memory calculator
+        function calculateMemory() {
+            const vmCount = parseInt(document.getElementById('vm-count').value);
+            const ramPerVm = parseInt(document.getElementById('ram-per-vm').value);
+            const hypervisor = parseInt(document.getElementById('hypervisor-overhead').value);
+            const bufferPct = parseInt(document.getElementById('buffer-percentage').value);
+            
+            const baseMemory = vmCount * ramPerVm;
+            const subtotal = baseMemory + hypervisor;
+            const buffer = subtotal * (bufferPct / 100);
+            const total = subtotal + buffer;
+            
+            document.getElementById('base-memory').textContent = baseMemory + ' GB';
+            document.getElementById('overhead-memory').textContent = hypervisor + ' GB';
+            document.getElementById('buffer-memory').textContent = buffer.toFixed(1) + ' GB';
+            document.getElementById('total-memory').textContent = total.toFixed(1) + ' GB';
+            
+            // Round up to nearest common RAM configuration
+            let recommended;
+            if (total <= 32) recommended = '32 GB';
+            else if (total <= 64) recommended = '64 GB';
+            else if (total <= 128) recommended = '128 GB';
+            else if (total <= 256) recommended = '256 GB';
+            else if (total <= 384) recommended = '384 GB';
+            else if (total <= 512) recommended = '512 GB';
+            else recommended = Math.ceil(total / 128) * 128 + ' GB';
+            
+            document.getElementById('memory-recommendation').textContent = 
+                `Recommendation: Install ${recommended} of server-grade ECC memory in a balanced configuration across memory channels for optimal performance.`;
+            
+            document.getElementById('memory-result').classList.add('show');
+        }
+
+        // Power calculator
+        function calculatePower() {
+            const cpuPower = parseInt(document.getElementById('cpu-power').value);
+            const cpuCount = parseInt(document.getElementById('cpu-count').value);
+            const memoryGb = parseInt(document.getElementById('memory-power').value);
+            const driveCount = parseInt(document.getElementById('drive-count').value);
+            const driveType = parseInt(document.getElementById('drive-type').value);
+            const nicPower = parseInt(document.getElementById('nic-power').value);
+            const pciePower = parseInt(document.getElementById('pcie-power').value);
+            
+            const cpuTotal = cpuPower * cpuCount;
+            const memoryPower = Math.round(memoryGb * 0.5);
+            const storagePower = driveCount * driveType;
+            const otherPower = 50; // motherboard, fans, etc.
+            
+            const totalPower = cpuTotal + memoryPower + storagePower + nicPower + pciePower + otherPower;
+            const btuOutput = Math.round(totalPower * 3.41);
+            
+            // Recommend PSU with 30% headroom
+            let psuSize;
+            if (totalPower <= 400) psuSize = 550;
+            else if (totalPower <= 550) psuSize = 750;
+            else if (totalPower <= 750) psuSize = 1000;
+            else if (totalPower <= 1000) psuSize = 1200;
+            else psuSize = Math.ceil(totalPower * 1.3 / 100) * 100;
+            
+            document.getElementById('cpu-power-result').textContent = cpuTotal + ' W';
+            document.getElementById('memory-power-result').textContent = memoryPower + ' W';
+            document.getElementById('storage-power-result').textContent = storagePower + ' W';
+            document.getElementById('network-power-result').textContent = nicPower + ' W';
+            document.getElementById('other-power-result').textContent = pciePower + ' W';
+            document.getElementById('total-power').textContent = totalPower + ' W';
+            document.getElementById('btu-output').textContent = btuOutput.toLocaleString();
+            document.getElementById('psu-size').textContent = psuSize + ' W';
+            
+            document.getElementById('power-recommendation').textContent = 
+                `For this configuration, use redundant ${psuSize}W power supplies (1+1 configuration) rated 80 Plus Platinum or higher for efficiency. The cooling system must handle ${btuOutput} BTU/hr of heat output.`;
+            
+            document.getElementById('power-result').classList.add('show');
+        }
+
+        // Comprehensive Quiz Data
+        const quizQuestions = [
+            {
+                question: "A 32-core processor with hyper-threading presents how many logical processors to the operating system?",
+                options: ["16", "32", "64", "128"],
+                correct: 2,
+                explanation: "With hyper-threading, each physical core presents as 2 logical processors: 32 × 2 = 64 logical processors."
+            },
+            {
+                question: "Which storage technology provides the highest IOPS for database servers?",
+                options: ["HDD in RAID 5", "SATA SSD", "NVMe SSD", "Single HDD"],
+                correct: 2,
+                explanation: "NVMe SSDs provide the highest IOPS (500k-1M+), making them ideal for database servers with many concurrent operations."
+            },
+            {
+                question: "Why is ECC memory essential for production servers?",
+                options: ["It's faster", "It detects and corrects memory errors", "It's cheaper", "It uses less power"],
+                correct: 1,
+                explanation: "ECC memory detects and corrects single-bit errors, preventing data corruption and system crashes."
+            },
+            {
+                question: "What RAID level provides redundancy with the best write performance?",
+                options: ["RAID 0", "RAID 1", "RAID 5", "RAID 10"],
+                correct: 3,
+                explanation: "RAID 10 (mirrored stripes) provides redundancy without the write penalty of RAID 5/6 parity calculations."
+            },
+            {
+                question: "A server consuming 500W generates approximately how much heat?",
+                options: ["500 BTU/hr", "1000 BTU/hr", "1705 BTU/hr", "3410 BTU/hr"],
+                correct: 2,
+                explanation: "Power consumption equals heat output: 500W × 3.41 BTU/W = 1,705 BTU/hr."
+            },
+            {
+                question: "For a virtualization host with 50 VMs, which CPU configuration is most appropriate?",
+                options: ["8 cores @ 4.0 GHz", "16 cores @ 3.5 GHz", "32 cores @ 2.4 GHz", "Single-core @ 5.0 GHz"],
+                correct: 2,
+                explanation: "More cores enable running more VMs with dedicated resources. Core count is more important than clock speed for virtualization."
+            },
+            {
+                question: "What is the primary advantage of SR-IOV for virtual machines?",
+                options: ["Lower cost", "Near-native network performance", "Easier configuration", "Better security"],
+                correct: 1,
+                explanation: "SR-IOV allows VMs to directly access the NIC, bypassing the hypervisor for near-native performance."
+            },
+            {
+                question: "Which memory configuration provides the best bandwidth?",
+                options: ["Single-channel", "Dual-channel", "Quad-channel", "All the same"],
+                correct: 2,
+                explanation: "Quad-channel provides 4x memory bandwidth compared to single-channel, improving performance for memory-intensive workloads."
+            },
+            {
+                question: "Why should production servers have redundant PSUs?",
+                options: ["More power output", "Prevents downtime from PSU failure", "Better efficiency", "Lower cost"],
+                correct: 1,
+                explanation: "Redundant PSUs ensure the server continues operating even if one PSU fails, eliminating a single point of failure."
+            },
+            {
+                question: "What is the optimal temperature range for server operation?",
+                options: ["10-15°C", "18-27°C", "30-35°C", "35-40°C"],
+                correct: 1,
+                explanation: "18-27°C (64-81°F) is optimal per ASHRAE guidelines. Too cold wastes energy; too hot reduces reliability."
+            }
+        ];
+
+        let currentQuizQuestion = 0;
+        let quizScore = 0;
+        let quizAnswered = [];
+
+        function loadQuizQuestion() {
+            const question = quizQuestions[currentQuizQuestion];
+            document.getElementById('current-question').textContent = currentQuizQuestion + 1;
+            document.getElementById('quiz-question').innerHTML = `<p><strong>${question.question}</strong></p>`;
+            
+            let optionsHtml = '';
+            question.options.forEach((option, index) => {
+                optionsHtml += `<div class="quiz-option" data-index="${index}" onclick="selectQuizAnswer(${index})">${String.fromCharCode(65 + index)}. ${option}</div>`;
+            });
+            document.getElementById('quiz-options').innerHTML = optionsHtml;
+            document.getElementById('quiz-result').innerHTML = '';
+            document.getElementById('quiz-submit').style.display = 'inline-block';
+            document.getElementById('quiz-next').style.display = 'none';
+        }
+
+        function selectQuizAnswer(index) {
+            const options = document.querySelectorAll('#quiz-options .quiz-option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            options[index].classList.add('selected');
+        }
+
+        function submitQuizAnswer() {
+            const selected = document.querySelector('#quiz-options .quiz-option.selected');
+            if (!selected) {
+                alert('Please select an answer');
+                return;
+            }
+            
+            const selectedIndex = parseInt(selected.dataset.index);
+            const question = quizQuestions[currentQuizQuestion];
+            const isCorrect = selectedIndex === question.correct;
+            
+            if (isCorrect) {
+                quizScore++;
+                selected.classList.add('correct');
+            } else {
+                selected.classList.add('incorrect');
+                const correctOption = document.querySelectorAll('#quiz-options .quiz-option')[question.correct];
+                correctOption.classList.add('correct');
+            }
+            
+            quizAnswered.push(isCorrect);
+            
+            const resultDiv = document.getElementById('quiz-result');
+            resultDiv.className = 'quiz-feedback show ' + (isCorrect ? 'correct' : 'incorrect');
+            resultDiv.innerHTML = `<p><strong>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</strong></p><p>${question.explanation}</p>`;
+            
+            document.getElementById('quiz-submit').style.display = 'none';
+            document.getElementById('quiz-next').style.display = 'inline-block';
+            
+            const options = document.querySelectorAll('#quiz-options .quiz-option');
+            options.forEach(opt => opt.style.pointerEvents = 'none');
+            
+            updateQuizProgress();
+        }
+
+        function nextQuizQuestion() {
+            currentQuizQuestion++;
+            if (currentQuizQuestion < quizQuestions.length) {
+                loadQuizQuestion();
+            } else {
+                showQuizSummary();
+            }
+        }
+
+        function updateQuizProgress() {
+            const progress = ((currentQuizQuestion + 1) / quizQuestions.length) * 100;
+            document.getElementById('quiz-progress').style.width = progress + '%';
+            document.getElementById('quiz-progress').textContent = Math.round(progress) + '%';
+        }
+
+        function showQuizSummary() {
+            document.querySelector('.quiz-container').style.display = 'none';
+            document.getElementById('quiz-summary').style.display = 'block';
+            
+            const percentage = Math.round((quizScore / quizQuestions.length) * 100);
+            document.getElementById('final-score').textContent = `${quizScore}/${quizQuestions.length}`;
+            document.getElementById('final-percentage').textContent = percentage + '%';
+            
+            let feedback = '';
+            if (percentage >= 90) {
+                feedback = '<div class="success-box"><h4>🌟 Excellent Work!</h4><p>You have demonstrated strong mastery of server hardware concepts. You are well-prepared to work with server infrastructure.</p></div>';
+            } else if (percentage >= 70) {
+                feedback = '<div class="success-box"><h4>✓ Good Job!</h4><p>You have a solid understanding of server hardware. Review the topics you missed to strengthen your knowledge.</p></div>';
+            } else if (percentage >= 50) {
+                feedback = '<div class="warning-box"><h4>⚠️ Needs Improvement</h4><p>You understand some concepts but should review the material more thoroughly. Focus on the areas where you struggled.</p></div>';
+            } else {
+                feedback = '<div class="warning-box"><h4>📚 Additional Study Recommended</h4><p>Consider reviewing all sections of this module again. Focus on understanding the key concepts and their practical applications.</p></div>';
+            }
+            
+            document.getElementById('performance-feedback').innerHTML = feedback;
+            document.getElementById('quiz-progress').style.width = '100%';
+            document.getElementById('quiz-progress').textContent = '100%';
+        }
+
+        function resetQuiz() {
+            currentQuizQuestion = 0;
+            quizScore = 0;
+            quizAnswered = [];
+            document.querySelector('.quiz-container').style.display = 'block';
+            document.getElementById('quiz-summary').style.display = 'none';
+            document.getElementById('quiz-progress').style.width = '0%';
+            document.getElementById('quiz-progress').textContent = '0%';
+            loadQuizQuestion();
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            updateCoreSimulation();
+            loadQuizQuestion();
+        });
+    </script>
+</body>
+</html>
