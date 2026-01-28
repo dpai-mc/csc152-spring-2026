@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Lab 2: Server Hardware Configuration and Monitoring assignment with interactive tools and submission guidelines">
+    <title>CSC 152 - Lab 2: Server Hardware Configuration & Monitoring</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #7c3aed;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --error-color: #dc2626;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-color);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .lab-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .info-card {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-card strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .info-card span {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .section {
+            background: var(--card-bg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            margin: 1.5rem 0 1rem 0;
+            font-size: 1.4rem;
+        }
+
+        h4 {
+            color: var(--text-primary);
+            margin: 1rem 0 0.5rem 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .alert {
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border-color: var(--primary-color);
+            color: #1e40af;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-color: var(--warning-color);
+            color: #92400e;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border-color: var(--success-color);
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border-color: var(--error-color);
+            color: #991b1b;
+        }
+
+        .objective-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .objective-list li {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: #f8fafc;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+        }
+
+        .objective-list li::before {
+            content: "✓";
+            color: var(--success-color);
+            font-weight: bold;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .part-header {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 2rem 0 1rem 0;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .part-header h3 {
+            color: var(--primary-color);
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .points-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .vm-specs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .vm-card {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .vm-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .vm-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .spec-item {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: #f8fafc;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .spec-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .spec-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .checklist li:hover {
+            border-color: var(--primary-color);
+        }
+
+        .checklist input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: var(--success-color);
+        }
+
+        .checklist label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .calculator-container {
+            background: #f8fafc;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .calculator-title {
+            color: var(--primary-color);
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-group {
+            margin: 1rem 0;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:focus {
+            outline: 3px solid rgba(37, 99, 235, 0.3);
+            outline-offset: 2px;
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+        }
+
+        .btn-secondary:hover {
+            background: #6d28d9;
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            border: 2px solid var(--success-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-item {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .result-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--success-color);
+        }
+
+        .command-box {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            position: relative;
+        }
+
+        .command-box code {
+            display: block;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .rubric-table {
+            margin: 2rem 0;
+        }
+
+        .rubric-table td:first-child {
+            font-weight: 600;
+            width: 60%;
+        }
+
+        .rubric-table td:last-child {
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .submission-panel {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border: 2px solid var(--primary-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .submission-panel h3 {
+            color: var(--primary-color);
+            margin: 0 0 1rem 0;
+        }
+
+        .file-format {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .progress-tracker {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            position: sticky;
+            top: 20px;
+        }
+
+        .progress-tracker h3 {
+            color: var(--primary-color);
+            margin: 0 0 1.5rem 0;
+            font-size: 1.3rem;
+        }
+
+        .progress-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .progress-item:hover {
+            background: #f8fafc;
+        }
+
+        .progress-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 3px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .progress-circle.completed {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+        }
+
+        .progress-text {
+            flex: 1;
+            color: var(--text-secondary);
+        }
+
+        .progress-item.completed .progress-text {
+            color: var(--text-primary);
+        }
+
+        .tip-box {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-left: 4px solid var(--warning-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .tip-box h4 {
+            color: var(--warning-color);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Accessibility improvements */
+        *:focus-visible {
+            outline: 3px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* Screen reader only content */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .vm-specs-container {
+                grid-template-columns: 1fr;
+            }
+
+            .calculator-container {
+                padding: 1.5rem;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 0.75rem;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .section {
+                box-shadow: none;
+                border: 1px solid var(--border-color);
+                page-break-inside: avoid;
+            }
+
+            .btn, .calculator-container {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header role="banner">
+            <h1>Lab 2: Server Hardware Configuration & Monitoring</h1>
+            <p>Hands-on experience with virtual server hardware and resource monitoring</p>
+            <div class="lab-info">
+                <div class="info-card">
+                    <strong>Total Points</strong>
+                    <span>26 points</span>
+                </div>
+                <div class="info-card">
+                    <strong>Due Date</strong>
+                    <span>Feb 3, 2026</span>
+                </div>
+                <div class="info-card">
+                    <strong>Format</strong>
+                    <span>PDF/DOCX</span>
+                </div>
+                <div class="info-card">
+                    <strong>Submission</strong>
+                    <span>Canvas</span>
+                </div>
+            </div>
+        </header>
+
+        <main role="main">
+            <!-- Lab Overview -->
+            <section class="section" aria-labelledby="overview-heading">
+                <h2 id="overview-heading">Lab Overview</h2>
+                <p>In this lab, you will gain hands-on experience configuring virtual server hardware for different workload scenarios, monitoring server resource utilization using built-in tools, and analyzing performance metrics to identify bottlenecks. You'll work with your personal Proxmox hypervisor to create three virtual machines with different hardware configurations, then use monitoring tools to assess their performance characteristics.</p>
+                
+                <ul class="objective-list" role="list">
+                    <li>Configure virtual server hardware for different workload scenarios</li>
+                    <li>Monitor server resource utilization using built-in tools</li>
+                    <li>Analyze performance metrics and identify bottlenecks</li>
+                    <li>Document hardware specifications and monitoring results</li>
+                    <li>Calculate power consumption and cooling requirements</li>
+                    <li>Recommend appropriate hardware upgrades based on analysis</li>
+                </ul>
+
+                <div class="alert alert-info" role="alert">
+                    <strong>📋 Prerequisites:</strong> Before starting this lab, ensure you have completed the <a href="proxmox-connection-guide.html" style="color: var(--primary-color); font-weight: 600;">Proxmox Connection Setup</a> and can successfully access your personal Proxmox hypervisor. You should also have reviewed all Week 2 learning modules (Processors, Memory, Storage, Networking, and Power/Cooling).
+                    <br><br>
+                    <strong>🖥️ Your Proxmox Resources:</strong> Each student has been provisioned with a personal Proxmox Virtual Environment (PVE) containing:
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; line-height: 1.8;">
+                        <li><strong>6 vCPUs</strong> (virtual CPU cores) - shared across all your VMs</li>
+                        <li><strong>24 GB RAM</strong> - total memory available to allocate to VMs</li>
+                        <li><strong>200 GB HDD</strong> - total storage capacity for all VMs and their disks</li>
+                    </ul>
+                    <em>Important: Plan your VM allocations carefully to stay within these total resource limits!</em>
+                </div>
+            </section>
+
+            <!-- Getting Started -->
+            <section class="section" aria-labelledby="getting-started-heading">
+                <h2 id="getting-started-heading">Getting Started</h2>
+                
+                <h3>Required Tools & Resources</h3>
+                <div class="checklist" role="list">
+                    <li>
+                        <input type="checkbox" id="tool1" aria-label="Check when you have access to Proxmox">
+                        <label for="tool1">Access to your personal Proxmox hypervisor</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="tool2" aria-label="Check when you have reviewed Week 2 modules">
+                        <label for="tool2">Completed all Week 2 learning modules</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="tool3" aria-label="Check when you have a word processor ready">
+                        <label for="tool3">Word processor (Microsoft Word, Google Docs, or LibreOffice)</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="tool4" aria-label="Check when you have screenshot capability">
+                        <label for="tool4">Screenshot tool for documenting your work</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="tool5" aria-label="Check when you have a calculator ready">
+                        <label for="tool5">Calculator for power calculations</label>
+                    </li>
+                </div>
+
+                <div class="tip-box" role="complementary">
+                    <h4>💡 Pro Tip: Lab Report Organization</h4>
+                    <p>Create your lab report document first with all section headers and placeholder text. As you complete each part of the lab, fill in the corresponding section immediately. This approach ensures you don't forget any required elements and makes the submission process much smoother.</p>
+                </div>
+
+                <div class="tip-box" role="complementary">
+                    <h4>💡 Pro Tip: Resource Planning Strategy</h4>
+                    <p>With limited resources (6 vCPUs, 24 GB RAM, 200 GB storage), think about workload priorities. The database server typically needs the most resources for performance. The file server needs more storage but can work with fewer CPU cores. The web server needs balanced resources. A common approach: allocate 50% of resources to your highest-priority workload, then divide the remainder between the other two VMs.</p>
+                </div>
+            </section>
+
+            <!-- Part A: Virtual Hardware Configuration -->
+            <section class="section" aria-labelledby="part-a-heading">
+                <div class="part-header">
+                    <h3 id="part-a-heading">
+                        <span>Part A: Virtual Hardware Configuration</span>
+                        <span class="points-badge">8 points</span>
+                    </h3>
+                    <p>Create three virtual machines with different hardware configurations optimized for specific workload scenarios.</p>
+                </div>
+
+                <h4>Task Overview</h4>
+                <p>You will create three virtual machines on your Proxmox hypervisor, each configured for a different use case. Document the specifications and justify your hardware choices based on the workload requirements.</p>
+
+                <div class="alert alert-warning" role="alert">
+                    <strong>⚠️ Resource Planning Constraints:</strong> Your Proxmox environment has <strong>6 vCPUs, 24 GB RAM, and 200 GB storage</strong> total. You must divide these resources among your three VMs. Consider:
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem; line-height: 1.8;">
+                        <li><strong>CPU:</strong> Total vCPUs across all VMs should not exceed 6 (though you can overcommit slightly, e.g., 2+2+2=6 or 1+2+3=6)</li>
+                        <li><strong>RAM:</strong> Total RAM allocated should not exceed 24 GB (recommend leaving ~2-4 GB for the host, so allocate ~20-22 GB total)</li>
+                        <li><strong>Storage:</strong> Total disk space should not exceed 200 GB (recommend ~150-180 GB for VMs, leaving space for snapshots and overhead)</li>
+                    </ul>
+                    <strong>Example allocation:</strong> Web Server (1 vCPU, 4 GB RAM, 40 GB disk) + Database Server (3 vCPUs, 12 GB RAM, 80 GB disk) + File Server (2 vCPUs, 6 GB RAM, 60 GB disk) = 6 vCPUs, 22 GB RAM, 180 GB disk ✓
+                </div>
+
+                <div class="vm-specs-container">
+                    <div class="vm-card">
+                        <h4>🌐 VM 1: Web Server</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Optimized for serving web content with moderate concurrent users</p>
+                        <div class="spec-item">
+                            <span class="spec-label">CPU Cores</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">RAM</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Storage Type</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Storage Size</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Network</span>
+                            <span class="spec-value">1 NIC minimum</span>
+                        </div>
+                    </div>
+
+                    <div class="vm-card">
+                        <h4>💾 VM 2: Database Server</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">High I/O performance for transactional database workloads</p>
+                        <div class="spec-item">
+                            <span class="spec-label">CPU Cores</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">RAM</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Storage Type</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Storage Size</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Network</span>
+                            <span class="spec-value">1-2 NICs</span>
+                        </div>
+                    </div>
+
+                    <div class="vm-card">
+                        <h4>📁 VM 3: File Server</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Large storage capacity for file sharing and backup</p>
+                        <div class="spec-item">
+                            <span class="spec-label">CPU Cores</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">RAM</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Storage Type</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Storage Size</span>
+                            <span class="spec-value">Your choice</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Network</span>
+                            <span class="spec-value">1-2 NICs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h4>Required Documentation for Part A</h4>
+                <ol style="margin-left: 2rem; line-height: 2;">
+                    <li><strong>Configuration Table:</strong> Create a table showing the specifications for all three VMs side-by-side</li>
+                    <li><strong>Screenshots:</strong> Capture the hardware configuration screen from Proxmox for each VM</li>
+                    <li><strong>Justification:</strong> For each VM, write 2-3 paragraphs (150-200 words each) explaining:
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li>Why you chose the specific CPU configuration</li>
+                            <li>How you determined the RAM allocation</li>
+                            <li>Why you selected that storage type and size</li>
+                            <li>How the configuration matches the workload requirements</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <div class="alert alert-warning" role="alert">
+                    <strong>⚠️ Important:</strong> Your hardware choices should be realistic for the given scenario AND must fit within your Proxmox resource limits (6 vCPUs, 24 GB RAM, 200 GB storage total). A web server doesn't need 64GB of RAM, and a database server shouldn't have only 1 CPU core. Reference the Week 2 modules and vendor specifications to inform your decisions, while respecting your environment's constraints.
+                </div>
+
+                <h4>Part A Grading Rubric</h4>
+                <table class="rubric-table" role="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Criterion</th>
+                            <th scope="col">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Three VMs created with complete specifications documented</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td>Clear screenshots showing hardware configuration in Proxmox</td>
+                            <td>1 pt</td>
+                        </tr>
+                        <tr>
+                            <td>Detailed justification for each VM's CPU and RAM allocation</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td>Appropriate storage type and size selection with rationale</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td>Configurations are realistic and workload-appropriate</td>
+                            <td>1 pt</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part A Total</strong></td>
+                            <td><strong>8 pts</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Part B: Resource Monitoring -->
+            <section class="section" aria-labelledby="part-b-heading">
+                <div class="part-header">
+                    <h3 id="part-b-heading">
+                        <span>Part B: Server Resource Monitoring</span>
+                        <span class="points-badge">10 points</span>
+                    </h3>
+                    <p>Monitor server resources using built-in tools and analyze performance metrics.</p>
+                </div>
+
+                <h4>Task Overview</h4>
+                <p>Install an operating system on at least one of your virtual machines (Ubuntu Server or Rocky Linux recommended) and use various monitoring tools to assess resource utilization. You'll capture baseline metrics and analyze performance characteristics.</p>
+
+                <h3>Linux Monitoring Commands</h3>
+                <p>Use these commands to gather system information and monitor resources. Run each command and document the output.</p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">CPU Information</h4>
+                        <div class="command-box">
+                            <button class="copy-btn" onclick="copyCommand(this)" aria-label="Copy command">Copy</button>
+                            <code>lscpu</code>
+                        </div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.95rem;">Displays CPU architecture, cores, threads, and virtualization capabilities</p>
+                    </div>
+
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Memory Usage</h4>
+                        <div class="command-box">
+                            <button class="copy-btn" onclick="copyCommand(this)" aria-label="Copy command">Copy</button>
+                            <code>free -h</code>
+                        </div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.95rem;">Shows total, used, and available memory in human-readable format</p>
+                    </div>
+
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Storage Devices</h4>
+                        <div class="command-box">
+                            <button class="copy-btn" onclick="copyCommand(this)" aria-label="Copy command">Copy</button>
+                            <code>lsblk</code>
+                        </div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.95rem;">Lists all block devices and their mount points</p>
+                    </div>
+
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Disk Usage</h4>
+                        <div class="command-box">
+                            <button class="copy-btn" onclick="copyCommand(this)" aria-label="Copy command">Copy</button>
+                            <code>df -h</code>
+                        </div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.95rem;">Reports filesystem disk space usage</p>
+                    </div>
+
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Real-Time Monitoring</h4>
+                        <div class="command-box">
+                            <button class="copy-btn" onclick="copyCommand(this)" aria-label="Copy command">Copy</button>
+                            <code>top</code>
+                        </div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.95rem;">Interactive process viewer showing CPU and memory usage (press 'q' to quit)</p>
+                    </div>
+
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">I/O Statistics</h4>
+                        <div class="command-box">
+                            <button class="copy-btn" onclick="copyCommand(this)" aria-label="Copy command">Copy</button>
+                            <code>iostat -x 1 5</code>
+                        </div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.95rem;">Extended disk I/O stats, updated every 1 second for 5 iterations</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-info" role="alert">
+                    <strong>📝 Note:</strong> If <code>iostat</code> is not installed, you can install it using: <code>sudo apt install sysstat</code> (Ubuntu/Debian) or <code>sudo dnf install sysstat</code> (Rocky Linux/RHEL)
+                </div>
+
+                <h4>Required Documentation for Part B</h4>
+                <ol style="margin-left: 2rem; line-height: 2;">
+                    <li><strong>System Specifications Report:</strong>
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li>Output from <code>lscpu</code> showing CPU details</li>
+                            <li>Output from <code>free -h</code> showing memory allocation</li>
+                            <li>Output from <code>lsblk</code> and <code>df -h</code> showing storage</li>
+                        </ul>
+                    </li>
+                    <li><strong>Performance Monitoring Screenshots:</strong>
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li>Screenshot of <code>top</code> command showing running processes</li>
+                            <li>Screenshot of <code>iostat</code> output</li>
+                        </ul>
+                    </li>
+                    <li><strong>Baseline Measurements Table:</strong> Create a table documenting:
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li>Total CPU cores and current utilization percentage</li>
+                            <li>Total RAM, used RAM, and available RAM</li>
+                            <li>Total storage capacity and used space</li>
+                            <li>Average disk I/O operations per second (IOPS)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Analysis Report:</strong> Write 2-3 paragraphs (200-300 words total) discussing:
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li>What the monitoring data reveals about current resource usage</li>
+                            <li>Whether any resources are under-utilized or approaching capacity</li>
+                            <li>How you would identify a bottleneck using these tools</li>
+                            <li>What additional monitoring might be helpful</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <div class="tip-box" role="complementary">
+                    <h4>💡 Pro Tip: Understanding the Output</h4>
+                    <p>When interpreting monitoring data, focus on patterns rather than single snapshots. High CPU usage isn't necessarily bad if the server is actively processing work. Similarly, Linux typically uses most available RAM for caching (this is good!). Look at the "available" memory rather than "free" memory to understand true availability.</p>
+                </div>
+
+                <h4>Part B Grading Rubric</h4>
+                <table class="rubric-table" role="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Criterion</th>
+                            <th scope="col">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Complete system specifications documented with command outputs</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td>Clear screenshots of monitoring tools (top, iostat)</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td>Comprehensive baseline measurements table</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td>Thoughtful analysis of resource utilization patterns</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td>Discussion of bottleneck identification methods</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part B Total</strong></td>
+                            <td><strong>10 pts</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Part C: Hardware Analysis -->
+            <section class="section" aria-labelledby="part-c-heading">
+                <div class="part-header">
+                    <h3 id="part-c-heading">
+                        <span>Part C: Hardware Analysis & Upgrade Planning</span>
+                        <span class="points-badge">8 points</span>
+                    </h3>
+                    <p>Calculate power requirements and recommend hardware upgrades based on performance analysis.</p>
+                </div>
+
+                <h4>Task 1: Power Consumption Calculations</h4>
+                <p>Calculate the total power consumption and cooling requirements for a small server deployment. Use the following scenario:</p>
+
+                <div style="background: #f8fafc; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0;">
+                    <h4 style="color: var(--primary-color);">Scenario: Small Business Server Room</h4>
+                    <p style="margin: 1rem 0;"><strong>Equipment to be deployed:</strong></p>
+                    <ul style="margin-left: 2rem; line-height: 1.8;">
+                        <li>3 × 1U rack servers (350W each under typical load)</li>
+                        <li>2 × Network switches (45W each)</li>
+                        <li>1 × Storage array (200W)</li>
+                        <li>1 × UPS system (efficiency factor: 0.95)</li>
+                    </ul>
+                    <p style="margin: 1rem 0;"><strong>Calculate:</strong></p>
+                    <ol style="margin-left: 2rem; line-height: 1.8;">
+                        <li>Total power consumption in Watts</li>
+                        <li>Required UPS capacity in VA (Volt-Amperes)</li>
+                        <li>Heat output in BTU/hour</li>
+                        <li>Required cooling capacity in BTU/hour (add 20% overhead for inefficiency)</li>
+                    </ol>
+                </div>
+
+                <div class="calculator-container">
+                    <div class="calculator-title">
+                        🧮 Power & Cooling Calculator
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Use this calculator to verify your manual calculations. Show all work in your lab report!</p>
+                    
+                    <div class="input-group">
+                        <label for="server-count">Number of Servers:</label>
+                        <input type="number" id="server-count" value="3" min="1" aria-label="Number of servers">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="server-watts">Power per Server (Watts):</label>
+                        <input type="number" id="server-watts" value="350" min="1" aria-label="Power per server in watts">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="switch-count">Number of Switches:</label>
+                        <input type="number" id="switch-count" value="2" min="0" aria-label="Number of network switches">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="switch-watts">Power per Switch (Watts):</label>
+                        <input type="number" id="switch-watts" value="45" min="0" aria-label="Power per switch in watts">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="storage-watts">Storage Array Power (Watts):</label>
+                        <input type="number" id="storage-watts" value="200" min="0" aria-label="Storage array power in watts">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="ups-efficiency">UPS Efficiency (0.0 - 1.0):</label>
+                        <input type="number" id="ups-efficiency" value="0.95" min="0.5" max="1.0" step="0.01" aria-label="UPS efficiency as a decimal">
+                    </div>
+                    
+                    <button class="btn" onclick="calculatePower()" aria-label="Calculate power requirements">
+                        Calculate Requirements
+                    </button>
+                    
+                    <div id="power-results" class="result-box">
+                        <h4 style="color: var(--success-color); margin-bottom: 1rem;">Calculation Results</h4>
+                        <div class="result-item">
+                            <span class="result-label">Total Power Consumption:</span>
+                            <span class="result-value" id="total-watts">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Required UPS Capacity:</span>
+                            <span class="result-value" id="ups-va">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Heat Output:</span>
+                            <span class="result-value" id="heat-btu">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Cooling Capacity Required:</span>
+                            <span class="result-value" id="cooling-btu">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning" role="alert">
+                    <strong>⚠️ Show Your Work:</strong> In your lab report, you must show all calculation steps manually. The calculator is for verification only. Include formulas and explain each step of your calculation process.
+                </div>
+
+                <h4>Task 2: Hardware Upgrade Recommendation</h4>
+                <p>Based on your monitoring data from Part B, recommend and justify one hardware upgrade for your virtual machine. Consider realistic scenarios where performance could be improved.</p>
+
+                <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0;">
+                    <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Upgrade Scenarios to Consider</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                        <div style="padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                            <strong style="color: var(--primary-color);">🔧 CPU Upgrade</strong>
+                            <p style="margin-top: 0.5rem; font-size: 0.95rem; color: var(--text-secondary);">Increase cores for compute-intensive workloads or high concurrency</p>
+                        </div>
+                        <div style="padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                            <strong style="color: var(--primary-color);">💾 Memory Upgrade</strong>
+                            <p style="margin-top: 0.5rem; font-size: 0.95rem; color: var(--text-secondary);">Add RAM for memory-intensive applications or caching</p>
+                        </div>
+                        <div style="padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                            <strong style="color: var(--primary-color);">📦 Storage Upgrade</strong>
+                            <p style="margin-top: 0.5rem; font-size: 0.95rem; color: var(--text-secondary);">Switch to faster storage (HDD → SSD → NVMe) or increase capacity</p>
+                        </div>
+                        <div style="padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                            <strong style="color: var(--primary-color);">🌐 Network Upgrade</strong>
+                            <p style="margin-top: 0.5rem; font-size: 0.95rem; color: var(--text-secondary);">Add NICs or increase bandwidth for network-intensive applications</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h4>Required Documentation for Part C</h4>
+                <ol style="margin-left: 2rem; line-height: 2;">
+                    <li><strong>Power Calculations:</strong> Show all work for:
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li>Total power consumption (W)</li>
+                            <li>UPS capacity requirements (VA)</li>
+                            <li>Heat generation (BTU/hr)</li>
+                            <li>Cooling requirements (BTU/hr)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Upgrade Recommendation Report:</strong> Write 2-3 paragraphs (200-300 words) including:
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li>Which VM you're upgrading and which component</li>
+                            <li>Current specifications vs. proposed specifications</li>
+                            <li>Evidence from Part B monitoring that justifies the upgrade</li>
+                            <li>Expected performance improvements</li>
+                            <li>Cost consideration (research realistic pricing)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Cost-Benefit Analysis:</strong> Create a simple table showing:
+                        <ul style="margin-left: 2rem; margin-top: 0.5rem;">
+                            <li>Estimated cost of the upgrade</li>
+                            <li>Expected performance gain (percentage or specific metrics)</li>
+                            <li>Potential risks or drawbacks</li>
+                            <li>Whether you recommend proceeding with the upgrade (yes/no with justification)</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <div class="tip-box" role="complementary">
+                    <h4>💡 Pro Tip: Research Real Pricing</h4>
+                    <p>Visit vendor websites (Dell, HPE, Lenovo) or retailer sites (Newegg, Amazon Business) to find realistic pricing for hardware components. Enterprise-grade server components often cost significantly more than consumer equivalents. Document your sources!</p>
+                </div>
+
+                <h4>Part C Grading Rubric</h4>
+                <table class="rubric-table" role="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Criterion</th>
+                            <th scope="col">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Power calculations are accurate with all work shown</td>
+                            <td>3 pts</td>
+                        </tr>
+                        <tr>
+                            <td>Hardware upgrade recommendation is well-justified and realistic</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td>Monitoring data from Part B supports the upgrade decision</td>
+                            <td>1 pt</td>
+                        </tr>
+                        <tr>
+                            <td>Cost-benefit analysis includes realistic pricing and considerations</td>
+                            <td>2 pts</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part C Total</strong></td>
+                            <td><strong>8 pts</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Submission Guidelines -->
+            <section class="section" aria-labelledby="submission-heading">
+                <h2 id="submission-heading">Submission Guidelines</h2>
+                
+                <div class="submission-panel">
+                    <h3>📤 How to Submit Your Lab Report</h3>
+                    <p style="margin-bottom: 1rem;">Submit a single document containing all three parts of the lab (A, B, and C) to the Canvas assignment by the due date.</p>
+                    
+                    <div class="file-format">
+                        <h4 style="margin-bottom: 0.5rem;">✅ Acceptable Formats</h4>
+                        <ul style="margin-left: 1.5rem; line-height: 1.8;">
+                            <li><strong>PDF</strong> (preferred) - best for preserving formatting</li>
+                            <li><strong>DOCX</strong> (Microsoft Word) - ensure compatibility with Office 365</li>
+                            <li><strong>Google Docs</strong> - ensure sharing permissions are set to "Anyone with the link can view"</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Required Document Structure</h3>
+                <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0;">
+                    <ol style="margin-left: 1.5rem; line-height: 2;">
+                        <li><strong>Title Page</strong>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Lab title and number</li>
+                                <li>Your name</li>
+                                <li>Course name and section</li>
+                                <li>Submission date</li>
+                            </ul>
+                        </li>
+                        <li><strong>Part A: Virtual Hardware Configuration</strong>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Configuration comparison table</li>
+                                <li>Screenshots from Proxmox (labeled)</li>
+                                <li>Justification paragraphs for each VM</li>
+                            </ul>
+                        </li>
+                        <li><strong>Part B: Server Resource Monitoring</strong>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>System specifications (command outputs)</li>
+                                <li>Monitoring screenshots</li>
+                                <li>Baseline measurements table</li>
+                                <li>Analysis report</li>
+                            </ul>
+                        </li>
+                        <li><strong>Part C: Hardware Analysis</strong>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>Power consumption calculations (show all work)</li>
+                                <li>Upgrade recommendation report</li>
+                                <li>Cost-benefit analysis table</li>
+                            </ul>
+                        </li>
+                        <li><strong>References</strong>
+                            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>List any vendor websites, specification sheets, or other sources consulted</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+
+                <h3>Submission Checklist</h3>
+                <div class="checklist" role="list">
+                    <li>
+                        <input type="checkbox" id="submit1" aria-label="Confirm title page is complete">
+                        <label for="submit1">Title page with all required information</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit2" aria-label="Confirm Part A is complete">
+                        <label for="submit2">Part A includes table, screenshots, and justifications for all 3 VMs</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit3" aria-label="Confirm Part B is complete">
+                        <label for="submit3">Part B includes command outputs, screenshots, table, and analysis</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit4" aria-label="Confirm Part C calculations are shown">
+                        <label for="submit4">Part C shows all calculation work (not just answers)</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit5" aria-label="Confirm Part C upgrade is complete">
+                        <label for="submit5">Part C includes upgrade recommendation with cost-benefit analysis</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit6" aria-label="Confirm all screenshots are labeled">
+                        <label for="submit6">All screenshots are clear, properly sized, and labeled with captions</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit7" aria-label="Confirm document formatting is professional">
+                        <label for="submit7">Document is professionally formatted with consistent fonts and spacing</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit8" aria-label="Confirm spell check is complete">
+                        <label for="submit8">Document has been spell-checked and proofread</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit9" aria-label="Confirm word count requirements are met">
+                        <label for="submit9">All written sections meet the word count requirements</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit10" aria-label="Confirm references are included">
+                        <label for="submit10">References section includes all sources consulted</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit11" aria-label="Confirm file format is correct">
+                        <label for="submit11">File is in PDF or DOCX format (PDF preferred)</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="submit12" aria-label="Confirm file name is correct">
+                        <label for="submit12">File is named correctly: LastName_FirstName_Lab2.pdf</label>
+                    </li>
+                </div>
+
+                <div class="alert alert-error" role="alert">
+                    <strong>⚠️ Late Submission Policy:</strong> Labs submitted after the due date will be penalized according to the course syllabus policy. Plan to submit at least 30 minutes before the deadline to account for potential technical issues.
+                </div>
+            </section>
+
+            <!-- Common Mistakes -->
+            <section class="section" aria-labelledby="mistakes-heading">
+                <h2 id="mistakes-heading">Common Mistakes to Avoid</h2>
+                
+                <div style="display: grid; gap: 1rem; margin: 1.5rem 0;">
+                    <div class="alert alert-warning" role="alert">
+                        <strong>❌ Missing Screenshots:</strong> Every configuration and monitoring activity requires visual proof. Screenshots must be clear, properly cropped, and include relevant portions of the screen (including VM names or timestamps when applicable).
+                    </div>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <strong>❌ Calculator-Only Calculations:</strong> Using just the calculator results without showing manual work will result in point deductions. You must demonstrate understanding of the formulas and conversion factors.
+                    </div>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <strong>❌ Unrealistic Hardware Choices:</strong> Allocating resources that exceed your Proxmox limits (6 vCPUs, 24 GB RAM, 200 GB storage total) or allocating inappropriately shows lack of planning. For example, giving one VM 20 GB of RAM leaves almost nothing for the other two VMs. Similarly, a simple web server doesn't need 4 vCPUs, and a database server shouldn't get only 512MB RAM.
+                    </div>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <strong>❌ Generic Justifications:</strong> "This seems like enough" or "I picked this because it's in the middle" aren't adequate justifications. Explain your reasoning based on workload characteristics and requirements.
+                    </div>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <strong>❌ Ignoring Monitoring Data:</strong> If your Part C upgrade recommendation doesn't reference specific findings from Part B, you're not connecting the dots. Use your monitoring data to justify upgrade decisions.
+                    </div>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <strong>❌ Missing Units:</strong> Always include units in your calculations (W, VA, BTU/hr, GB, GHz, etc.). Numbers without units are meaningless in technical documentation.
+                    </div>
+                </div>
+
+                <div class="tip-box" role="complementary">
+                    <h4>💡 Success Strategy</h4>
+                    <p>The most successful lab reports tell a coherent story: Part A shows thoughtful hardware planning, Part B provides monitoring evidence, and Part C uses that evidence to make informed upgrade recommendations. Each part should reference and build upon the previous parts.</p>
+                </div>
+            </section>
+
+            <!-- Help & Resources -->
+            <section class="section" aria-labelledby="help-heading">
+                <h2 id="help-heading">Getting Help</h2>
+                
+                <h3>Resources Available</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">📚 Course Materials</h4>
+                        <ul style="margin-left: 1.5rem; line-height: 1.8; font-size: 0.95rem;">
+                            <li>Week 2 learning modules</li>
+                            <li>Vendor specification sheets</li>
+                            <li>Professor Messer videos</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">👥 Peer Support</h4>
+                        <ul style="margin-left: 1.5rem; line-height: 1.8; font-size: 0.95rem;">
+                            <li>Discussion forums</li>
+                            <li>Study groups</li>
+                            <li>Lab time collaboration</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">🎓 Instructor Help</h4>
+                        <ul style="margin-left: 1.5rem; line-height: 1.8; font-size: 0.95rem;">
+                            <li>Office hours</li>
+                            <li>Email questions</li>
+                            <li>Lab assistance</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: white; border: 2px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 0.5rem;">🔧 Technical Help</h4>
+                        <ul style="margin-left: 1.5rem; line-height: 1.8; font-size: 0.95rem;">
+                            <li>Proxmox documentation</li>
+                            <li>Linux man pages</li>
+                            <li>IT help desk</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="alert alert-info" role="alert">
+                    <strong>💬 When Asking for Help:</strong> Be specific about what you've tried and where you're stuck. Include screenshots if experiencing technical issues. Reference specific parts of the assignment you need clarification on. The more specific your question, the better help you'll receive!
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer style="text-align: center; padding: 2rem; color: var(--text-secondary); border-top: 2px solid var(--border-color); margin-top: 3rem;">
+            <p>CSC 152 - Network Operating Systems and Administration</p>
+            <p style="margin-top: 0.5rem;">Mendocino College | Week 2 Lab Assignment</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">For questions or technical issues, contact your instructor or visit Canvas.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Copy command to clipboard function
+        function copyCommand(button) {
+            const commandBox = button.parentElement;
+            const code = commandBox.querySelector('code');
+            const text = code.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = 'rgba(5, 150, 105, 0.2)';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = 'rgba(255,255,255,0.1)';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                button.textContent = 'Failed';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+
+        // Power calculator function
+        function calculatePower() {
+            const serverCount = parseInt(document.getElementById('server-count').value) || 0;
+            const serverWatts = parseInt(document.getElementById('server-watts').value) || 0;
+            const switchCount = parseInt(document.getElementById('switch-count').value) || 0;
+            const switchWatts = parseInt(document.getElementById('switch-watts').value) || 0;
+            const storageWatts = parseInt(document.getElementById('storage-watts').value) || 0;
+            const upsEfficiency = parseFloat(document.getElementById('ups-efficiency').value) || 0.95;
+
+            // Calculate total power consumption
+            const totalWatts = (serverCount * serverWatts) + 
+                             (switchCount * switchWatts) + 
+                             storageWatts;
+
+            // Calculate UPS capacity (VA)
+            const upsVA = Math.ceil(totalWatts / upsEfficiency);
+
+            // Calculate heat output (BTU/hr)
+            // 1 Watt = 3.412 BTU/hr
+            const heatBTU = Math.round(totalWatts * 3.412);
+
+            // Calculate cooling requirement (add 20% overhead)
+            const coolingBTU = Math.round(heatBTU * 1.2);
+
+            // Display results
+            document.getElementById('total-watts').textContent = totalWatts + ' W';
+            document.getElementById('ups-va').textContent = upsVA + ' VA';
+            document.getElementById('heat-btu').textContent = heatBTU.toLocaleString() + ' BTU/hr';
+            document.getElementById('cooling-btu').textContent = coolingBTU.toLocaleString() + ' BTU/hr';
+
+            // Show results box
+            const resultsBox = document.getElementById('power-results');
+            resultsBox.classList.add('show');
+
+            // Announce result to screen readers
+            const announcement = `Calculations complete. Total power: ${totalWatts} watts. Required UPS capacity: ${upsVA} VA. Heat output: ${heatBTU} BTU per hour. Cooling capacity required: ${coolingBTU} BTU per hour.`;
+            announceToScreenReader(announcement);
+        }
+
+        // Screen reader announcement helper
+        function announceToScreenReader(message) {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('role', 'status');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.className = 'sr-only';
+            announcement.textContent = message;
+            document.body.appendChild(announcement);
+            setTimeout(() => {
+                document.body.removeChild(announcement);
+            }, 1000);
+        }
+
+        // Checklist progress tracking
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const parent = checkbox.parentElement;
+                if (checkbox.checked) {
+                    parent.style.background = 'linear-gradient(135deg, #f0fdf4, #dcfce7)';
+                    parent.style.borderColor = 'var(--success-color)';
+                } else {
+                    parent.style.background = 'white';
+                    parent.style.borderColor = 'var(--border-color)';
+                }
+                updateProgress();
+            });
+        });
+
+        // Update progress tracking
+        function updateProgress() {
+            const totalItems = document.querySelectorAll('.checklist input[type="checkbox"]').length;
+            const checkedItems = document.querySelectorAll('.checklist input[type="checkbox"]:checked').length;
+            const percentage = Math.round((checkedItems / totalItems) * 100);
+            
+            // This could update a progress bar if we add one
+            console.log(`Progress: ${percentage}% (${checkedItems}/${totalItems} items)`);
+        }
+
+        // Keyboard navigation enhancement
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add keyboard support for checklist items
+            document.querySelectorAll('.checklist li').forEach(item => {
+                item.setAttribute('tabindex', '0');
+                item.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const checkbox = item.querySelector('input[type="checkbox"]');
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                    }
+                });
+            });
+
+            // Smooth scroll for internal links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                        target.focus();
+                    }
+                });
+            });
+        });
+
+        // Print-friendly formatting
+        window.addEventListener('beforeprint', () => {
+            // Expand all collapsed sections if we had any
+            console.log('Preparing document for printing...');
+        });
+    </script>
+</body>
+</html>
