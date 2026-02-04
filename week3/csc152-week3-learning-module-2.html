@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 2: Linux File System Hierarchy | CSC 152</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .module-info {
+            font-size: 1.2em;
+            opacity: 0.95;
+            margin-top: 10px;
+        }
+
+        .progress-container {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section h2:hover {
+            color: #764ba2;
+        }
+
+        .section h2 .toggle-icon {
+            margin-left: auto;
+            font-size: 0.8em;
+            transition: transform 0.3s ease;
+        }
+
+        .section h2.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            max-height: 10000px;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+
+        .section-content.collapsed {
+            max-height: 0;
+        }
+
+        .concept-box {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .concept-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .concept-box h4 {
+            color: #764ba2;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .tree-diagram {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            font-size: 0.95em;
+            line-height: 1.8;
+        }
+
+        .tree-diagram::before {
+            content: 'Linux File System Tree';
+            display: block;
+            color: #a0aec0;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #4a5568;
+            padding-bottom: 10px;
+        }
+
+        .directory-card {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .directory-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .directory-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .directory-card .purpose {
+            color: #2d2d2d;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .directory-card .examples {
+            color: #555;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        .directory-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding-top: 0;
+        }
+
+        .directory-card.expanded .directory-details {
+            max-height: 500px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 15px;
+        }
+
+        .example-code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            position: relative;
+            font-size: 0.95em;
+        }
+
+        .example-code::before {
+            content: 'Example';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.8em;
+            color: #a0aec0;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #f7fafc;
+        }
+
+        .comparison-table code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .activity-box {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 2px solid #667eea;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 10px;
+        }
+
+        .activity-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .activity-question {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .activity-question h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .activity-question label {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .activity-question label:hover {
+            background: #e2e8f0;
+            transform: translateX(5px);
+        }
+
+        .activity-question input[type="radio"],
+        .activity-question input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .activity-question input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            margin: 5px 0;
+        }
+
+        .activity-question input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .activity-question textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+        }
+
+        .activity-question textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .drag-drop-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .drag-items, .drop-zones {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 300px;
+        }
+
+        .drag-items h5, .drop-zones h5 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .draggable-item {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 5px;
+            cursor: move;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .draggable-item:hover {
+            background: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .draggable-item.dragging {
+            opacity: 0.5;
+        }
+
+        .drop-zone {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            min-height: 50px;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone.drag-over {
+            background: #e2e8f0;
+            border-color: #667eea;
+        }
+
+        .drop-zone .zone-label {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .check-answer-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .check-answer-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            display: block;
+        }
+
+        .feedback.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+            display: block;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: #856404;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: #0c5460;
+        }
+
+        .warning-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: #721c24;
+        }
+
+        .key-term {
+            font-weight: bold;
+            color: #667eea;
+            cursor: help;
+            border-bottom: 2px dotted #667eea;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .checklist li:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .checklist li::before {
+            content: '☐';
+            font-size: 1.5em;
+            margin-right: 15px;
+            color: #667eea;
+        }
+
+        .checklist li.checked::before {
+            content: '☑';
+            color: #28a745;
+        }
+
+        .checklist li.checked {
+            background: #d4edda;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        footer {
+            background: #2d3748;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+            }
+            .button-group {
+                display: none;
+            }
+            .section-content {
+                max-height: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            .content {
+                padding: 20px;
+            }
+            .section {
+                padding: 20px;
+            }
+            .comparison-table {
+                font-size: 0.85em;
+            }
+            .drag-drop-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .learning-objectives {
+            list-style: none;
+            counter-reset: objective-counter;
+            padding: 0;
+        }
+
+        .learning-objectives li {
+            counter-increment: objective-counter;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .learning-objectives li:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .learning-objectives li::before {
+            content: counter(objective-counter);
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .learning-objectives li.completed {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .learning-objectives li.completed::after {
+            content: "✓";
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #28a745;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .cslo-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+
+        .analogy-box {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .analogy-box::before {
+            content: "💡 Analogy";
+            display: block;
+            font-weight: bold;
+            color: #e65100;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .path-practice {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .path-practice .current-location {
+            background: #667eea;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        .matching-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .matching-column {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .matching-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: #f7fafc;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .interactive-explorer {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .explorer-prompt {
+            color: #48bb78;
+            margin-bottom: 10px;
+        }
+
+        .explorer-input {
+            background: #1a202c;
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
+            padding: 10px;
+            width: 100%;
+            font-family: 'Courier New', monospace;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .explorer-output {
+            background: #1a202c;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CSC 152 - Module 2</h1>
+            <div class="module-info">Linux File System Hierarchy</div>
+            <div class="module-info" style="font-size: 1em; margin-top: 5px;">Week 3 - Introduction to Linux Server Administration</div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="moduleProgress">0%</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- Learning Objectives Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    🎯 Learning Objectives
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    <p style="margin-bottom: 20px;">By the end of this module, you will be able to:</p>
+                    <ul class="learning-objectives" id="objectives">
+                        <li data-objective="1">Explain the Filesystem Hierarchy Standard (FHS) and its purpose</li>
+                        <li data-objective="2">Identify the purpose of major directories in the Linux file system</li>
+                        <li data-objective="3">Navigate the file system using absolute and relative paths</li>
+                        <li data-objective="4">Understand the "everything is a file" philosophy</li>
+                    </ul>
+                    <div style="margin-top: 20px;">
+                        <span class="cslo-badge">CSLO 1: Manage and maintain servers</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Core Concepts Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    📚 Core Concepts
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    
+                    <!-- Concept 1: FHS Overview -->
+                    <div class="concept-box">
+                        <h3>2.1 The Filesystem Hierarchy Standard (FHS)</h3>
+                        
+                        <p><strong>Definition:</strong> The <span class="key-term">Filesystem Hierarchy Standard (FHS)</span> defines the directory structure and directory contents in Unix-like operating systems, ensuring consistency across different Linux distributions.</p>
+
+                        <h4>Purpose of FHS:</h4>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li><strong>Predictability:</strong> Administrators know where to find files across different systems</li>
+                            <li><strong>Consistency:</strong> Scripts and tools work across distributions</li>
+                            <li><strong>Organization:</strong> Logical separation of system files, user data, and configuration</li>
+                            <li><strong>Maintainability:</strong> Easier to backup, secure, and troubleshoot systems</li>
+                        </ul>
+
+                        <div class="analogy-box">
+                            Think of FHS like the Dewey Decimal System in libraries. Just as you know fiction is in the 800s and science is in the 500s, Linux administrators know configuration files are in <code>/etc</code> and logs are in <code>/var/log</code>, regardless of which library (distribution) they're in.
+                        </div>
+
+                        <h4>Root Directory Structure:</h4>
+                        <p>Everything in Linux starts at the root directory, represented by a single forward slash (<code>/</code>). All other directories branch from here, creating a tree-like structure.</p>
+
+                        <div class="tree-diagram">/                          (root)
+├── bin/                   (essential user binaries)
+├── boot/                  (boot loader files)
+├── dev/                   (device files)
+├── etc/                   (configuration files)
+├── home/                  (user home directories)
+│   ├── alice/
+│   ├── bob/
+│   └── charlie/
+├── root/                  (root user's home)
+├── var/                   (variable data)
+│   ├── log/              (log files)
+│   ├── www/              (web server content)
+│   └── mail/             (mail spools)
+├── usr/                   (user programs)
+│   ├── bin/              (user binaries)
+│   ├── local/            (locally installed software)
+│   └── share/            (shared data)
+└── tmp/                   (temporary files)</div>
+                    </div>
+
+                    <!-- Concept 2: Essential Directories -->
+                    <div class="concept-box">
+                        <h3>2.2 Essential Directories Explained</h3>
+                        
+                        <p style="margin-bottom: 20px;">Click on each directory to expand and learn more about its purpose, contents, and real-world usage:</p>
+
+                        <!-- /bin Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/bin - Essential User Binaries</h4>
+                            <div class="purpose">Contains essential command-line utilities needed for system boot and repair</div>
+                            <div class="examples">Examples: ls, cp, mv, cat, bash, grep</div>
+                            <div class="directory-details">
+                                <p><strong>Why Essential:</strong> These commands must be available even if <code>/usr</code> isn't mounted</p>
+                                <p><strong>Typical Size:</strong> 10-20 MB</p>
+                                <div class="example-code"># These commands are in /bin and work even in single-user mode
+ls /bin/ls          # Lists itself
+cp /bin/ls /tmp/    # Copy works because cp is in /bin</div>
+                            </div>
+                        </div>
+
+                        <!-- /sbin Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/sbin - System Binaries (Administrator)</h4>
+                            <div class="purpose">System administration commands requiring root privileges</div>
+                            <div class="examples">Examples: fdisk, ifconfig, reboot, shutdown, iptables</div>
+                            <div class="directory-details">
+                                <p><strong>Access:</strong> Typically requires <code>sudo</code> or root user</p>
+                                <p><strong>Typical Size:</strong> 15-30 MB</p>
+                                <div class="example-code"># Regular users can't run these directly
+ifconfig            # Shows network interfaces
+sudo reboot         # Restart system (requires root)</div>
+                            </div>
+                        </div>
+
+                        <!-- /etc Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/etc - Configuration Files</h4>
+                            <div class="purpose">System-wide configuration files and scripts</div>
+                            <div class="examples">Examples: /etc/passwd, /etc/fstab, /etc/ssh/sshd_config</div>
+                            <div class="directory-details">
+                                <p><strong>Characteristics:</strong> Text files, human-readable, no binaries</p>
+                                <p><strong>Typical Size:</strong> 50-200 MB</p>
+                                <div class="example-code"># View user accounts
+cat /etc/passwd
+
+# Check SSH configuration
+sudo less /etc/ssh/sshd_config
+
+# Most config files are plain text
+file /etc/fstab     # Output: ASCII text</div>
+                            </div>
+                        </div>
+
+                        <!-- /home Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/home - User Home Directories</h4>
+                            <div class="purpose">Personal directories for regular users</div>
+                            <div class="examples">Structure: /home/username/</div>
+                            <div class="directory-details">
+                                <p><strong>Contents:</strong> User files, documents, personal configurations</p>
+                                <p><strong>Permissions:</strong> Each user owns their home directory</p>
+                                <p><strong>Typical Size:</strong> Varies (often the largest directory)</p>
+                                <div class="example-code"># Each user has their own space
+/home/alice/        # Alice's files
+/home/bob/          # Bob's files
+
+# Users can't access each other's homes by default
+ls /home/alice/     # Works if you're alice
+ls /home/bob/       # Permission denied if you're alice</div>
+                            </div>
+                        </div>
+
+                        <!-- /root Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/root - Root User's Home</h4>
+                            <div class="purpose">Home directory for the root (administrator) user</div>
+                            <div class="examples">Isolated from /home for security and accessibility</div>
+                            <div class="directory-details">
+                                <p><strong>Why Separate:</strong> Root's home is under <code>/</code> to be accessible even if <code>/home</code> isn't mounted</p>
+                                <p><strong>Security:</strong> Isolated from regular user directories</p>
+                                <p><strong>Typical Size:</strong> Usually small (10-100 MB)</p>
+                            </div>
+                        </div>
+
+                        <!-- /var Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/var - Variable Data</h4>
+                            <div class="purpose">Data that changes frequently during system operation</div>
+                            <div class="examples">Key subdirectories: /var/log/, /var/www/, /var/mail/</div>
+                            <div class="directory-details">
+                                <p><strong>Key Subdirectories:</strong></p>
+                                <ul style="margin-left: 20px;">
+                                    <li><code>/var/log/</code> - System and application logs</li>
+                                    <li><code>/var/www/</code> - Web server content</li>
+                                    <li><code>/var/mail/</code> - User mailboxes</li>
+                                    <li><code>/var/tmp/</code> - Temporary files preserved between reboots</li>
+                                    <li><code>/var/lib/</code> - Application state data</li>
+                                </ul>
+                                <p><strong>Typical Size:</strong> Grows over time (can be very large)</p>
+                                <div class="example-code"># View system logs
+sudo tail -f /var/log/syslog          # Ubuntu
+sudo tail -f /var/log/messages        # Rocky Linux
+
+# Check web server content
+ls /var/www/html/
+
+# Logs grow over time - monitor space
+du -sh /var/log/</div>
+                            </div>
+                        </div>
+
+                        <!-- /tmp Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/tmp - Temporary Files</h4>
+                            <div class="purpose">Temporary files created by applications</div>
+                            <div class="examples">Cleared on reboot, world-writable</div>
+                            <div class="directory-details">
+                                <p><strong>Characteristics:</strong></p>
+                                <ul style="margin-left: 20px;">
+                                    <li>World-writable (any user can write)</li>
+                                    <li>Cleared on reboot (usually)</li>
+                                    <li>Not for important data</li>
+                                </ul>
+                                <p><strong>Typical Size:</strong> 100MB-1GB</p>
+                                <div class="example-code"># Create temporary file
+echo "test data" > /tmp/mytest.txt
+
+# After reboot, file is gone
+reboot
+ls /tmp/mytest.txt    # File not found</div>
+                            </div>
+                        </div>
+
+                        <!-- /usr Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/usr - User Programs</h4>
+                            <div class="purpose">Read-only user data and programs</div>
+                            <div class="examples">Subdirectories: /usr/bin/, /usr/sbin/, /usr/local/</div>
+                            <div class="directory-details">
+                                <p><strong>Key Subdirectories:</strong></p>
+                                <ul style="margin-left: 20px;">
+                                    <li><code>/usr/bin/</code> - User command binaries</li>
+                                    <li><code>/usr/sbin/</code> - System administration binaries</li>
+                                    <li><code>/usr/local/</code> - Locally installed software</li>
+                                    <li><code>/usr/share/</code> - Shared data (docs, icons)</li>
+                                </ul>
+                                <p><strong>Typical Size:</strong> 2-10 GB</p>
+                            </div>
+                        </div>
+
+                        <!-- /boot Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/boot - Boot Loader Files</h4>
+                            <div class="purpose">Files needed to boot the system</div>
+                            <div class="examples">Kernel, initial ramdisk (initramfs), bootloader config</div>
+                            <div class="directory-details">
+                                <p><strong>Contents:</strong> Kernel, initial ramdisk (initramfs), bootloader config</p>
+                                <div class="warning-box">
+                                    <strong>Critical:</strong> Damage here can make system unbootable. Always be careful when working in /boot!
+                                </div>
+                                <p><strong>Typical Size:</strong> 200-500 MB</p>
+                            </div>
+                        </div>
+
+                        <!-- /dev Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/dev - Device Files</h4>
+                            <div class="purpose">Device files representing hardware</div>
+                            <div class="examples">/dev/sda (hard disk), /dev/null (null device), /dev/random</div>
+                            <div class="directory-details">
+                                <p><strong>Examples:</strong></p>
+                                <ul style="margin-left: 20px;">
+                                    <li><code>/dev/sda</code> - First hard disk</li>
+                                    <li><code>/dev/sda1</code> - First partition on first disk</li>
+                                    <li><code>/dev/null</code> - Null device (discards all data)</li>
+                                    <li><code>/dev/random</code> - Random number generator</li>
+                                </ul>
+                                <p><strong>Special:</strong> These aren't real files; they're interfaces to kernel drivers</p>
+                                <div class="example-code"># List block devices
+ls -l /dev/sd*
+
+# Send output to nowhere
+echo "This disappears" > /dev/null
+
+# Read random data
+head -c 10 /dev/random | base64</div>
+                            </div>
+                        </div>
+
+                        <!-- /proc Directory -->
+                        <div class="directory-card" onclick="toggleDirectory(this)">
+                            <h4>/proc - Process Information (Virtual)</h4>
+                            <div class="purpose">Virtual filesystem providing process and system information</div>
+                            <div class="examples">/proc/cpuinfo, /proc/meminfo, /proc/[PID]/</div>
+                            <div class="directory-details">
+                                <p><strong>Characteristics:</strong></p>
+                                <ul style="margin-left: 20px;">
+                                    <li>Not real files on disk</li>
+                                    <li>Generated by kernel on-the-fly</li>
+                                    <li>Provides system information</li>
+                                </ul>
+                                <div class="example-code"># View CPU information
+cat /proc/cpuinfo
+
+# Check memory usage
+cat /proc/meminfo
+
+# These files don't exist on disk
+ls -lh /proc/cpuinfo    # Shows size as 0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Concept 3: Everything is a File -->
+                    <div class="concept-box">
+                        <h3>2.3 The "Everything is a File" Philosophy</h3>
+                        
+                        <p><strong>Concept:</strong> In Linux, almost everything is represented as a file, including:</p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Regular files (documents, images)</li>
+                            <li>Directories (special files listing other files)</li>
+                            <li>Device drivers (hardware interfaces)</li>
+                            <li>Sockets (network connections)</li>
+                            <li>Pipes (inter-process communication)</li>
+                        </ul>
+
+                        <h4>Why This Matters:</h4>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li><strong>Uniform Interface:</strong> Same commands work on different types of "files"</li>
+                            <li><strong>Simplicity:</strong> One set of tools (read, write, open, close) works for everything</li>
+                            <li><strong>Flexibility:</strong> Can treat hardware like files, making scripting easier</li>
+                        </ul>
+
+                        <div class="example-code"># Reading from a regular file
+cat document.txt
+
+# Reading from a device file
+cat /dev/sda1
+
+# Reading from a virtual file
+cat /proc/cpuinfo
+
+# All use the same 'cat' command!</div>
+                    </div>
+
+                    <!-- Concept 4: Absolute vs Relative Paths -->
+                    <div class="concept-box">
+                        <h3>2.4 Absolute vs. Relative Paths</h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #2196f3;">
+                                <h4 style="color: #1976d2; margin-bottom: 10px;">Absolute Path</h4>
+                                <ul style="margin-left: 20px;">
+                                    <li>Starts from root directory (<code>/</code>)</li>
+                                    <li>Complete path from root to target</li>
+                                    <li>Works from anywhere in the filesystem</li>
+                                    <li>Example: <code>/home/alice/documents/report.txt</code></li>
+                                </ul>
+                            </div>
+                            <div style="background: #f3e5f5; padding: 20px; border-radius: 8px; border-left: 4px solid #9c27b0;">
+                                <h4 style="color: #7b1fa2; margin-bottom: 10px;">Relative Path</h4>
+                                <ul style="margin-left: 20px;">
+                                    <li>Starts from current directory</li>
+                                    <li>Depends on where you are</li>
+                                    <li>Uses <code>.</code> (current) and <code>..</code> (parent)</li>
+                                    <li>Example: <code>documents/report.txt</code></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h4>Navigation Examples:</h4>
+                        <div class="example-code"># Current location: /home/alice/
+
+# Absolute path - works from anywhere
+cat /home/alice/documents/report.txt
+
+# Relative path - depends on current location
+cat documents/report.txt              # Same file
+
+# Go up one directory
+cd ..                                  # Now in /home/
+
+# Go up two directories
+cd ../..                               # Now in /
+
+# Go to home directory
+cd ~                                   # Back to /home/alice/
+
+# Go to previous directory
+cd -                                   # Back to /</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Activities Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    🎮 Interactive Activities
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    
+                    <!-- Activity 1: File System Scavenger Hunt -->
+                    <div class="activity-box">
+                        <h3>Activity 2.1: File System Scavenger Hunt</h3>
+                        <p><strong>Objective:</strong> Navigate the Linux file system and understand directory purposes</p>
+                        
+                        <div class="info-box">
+                            <strong>Setup:</strong> Use your installed Linux server from Lab 3. Open a terminal and complete the following tasks.
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Item 1: Find Your SSH Server Configuration</h4>
+                            <p><strong>Location:</strong></p>
+                            <input type="text" id="ssh-location" placeholder="/etc/ssh/sshd_config">
+                            
+                            <p style="margin-top: 15px;"><strong>Command you used to find it:</strong></p>
+                            <input type="text" id="ssh-command" placeholder="Enter the command">
+                            
+                            <button class="check-answer-btn" onclick="checkSSHLocation()">Check Answer</button>
+                            <div class="feedback" id="feedback-ssh"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Item 2: Find a System Log File</h4>
+                            <p><strong>Location:</strong></p>
+                            <input type="text" id="log-location" placeholder="/var/log/syslog or /var/log/messages">
+                            
+                            <p style="margin-top: 15px;"><strong>Command to view last 5 lines:</strong></p>
+                            <input type="text" id="log-command" placeholder="Enter the command">
+                            
+                            <button class="check-answer-btn" onclick="checkLogLocation()">Check Answer</button>
+                            <div class="feedback" id="feedback-log"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Item 3: Find the List of System Users</h4>
+                            <p><strong>Location:</strong></p>
+                            <input type="text" id="users-location" placeholder="/etc/passwd">
+                            
+                            <p style="margin-top: 15px;"><strong>Command to count users:</strong></p>
+                            <input type="text" id="users-command" placeholder="Enter the command">
+                            
+                            <button class="check-answer-btn" onclick="checkUsersLocation()">Check Answer</button>
+                            <div class="feedback" id="feedback-users"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Reflection</h4>
+                            <p><strong>Which directory was hardest to navigate? Why? How does the FHS make administration easier?</strong></p>
+                            <textarea id="reflection-scavenger" placeholder="Type your reflection here (minimum 100 words)..."></textarea>
+                            <button class="check-answer-btn" onclick="saveReflection('scavenger')">Save Response</button>
+                            <div class="feedback" id="feedback-scavenger"></div>
+                        </div>
+                    </div>
+
+                    <!-- Activity 2: Path Translation -->
+                    <div class="activity-box">
+                        <h3>Activity 2.2: Path Translation Exercise</h3>
+                        <p><strong>Objective:</strong> Master absolute and relative path concepts</p>
+                        
+                        <div class="path-practice">
+                            <p style="margin-bottom: 15px;"><strong>Scenario:</strong> You are currently in the directory:</p>
+                            <div class="current-location">Current: /home/alice/projects/website/</div>
+                            
+                            <p style="margin-top: 20px;"><strong>For each task, provide BOTH an absolute path and a relative path:</strong></p>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Task 1: List contents of /home/alice/documents/</h4>
+                            <p><strong>Absolute path command:</strong></p>
+                            <input type="text" id="path1-abs" placeholder="ls /home/alice/documents/">
+                            
+                            <p style="margin-top: 10px;"><strong>Relative path command:</strong></p>
+                            <input type="text" id="path1-rel" placeholder="ls ../../documents/">
+                            
+                            <button class="check-answer-btn" onclick="checkPath1()">Check Answer</button>
+                            <div class="feedback" id="feedback-path1"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Task 2: Change to /var/www/html/</h4>
+                            <p><strong>Absolute path command:</strong></p>
+                            <input type="text" id="path2-abs" placeholder="cd /var/www/html/">
+                            
+                            <p style="margin-top: 10px;"><strong>Relative path command:</strong></p>
+                            <input type="text" id="path2-rel" placeholder="cd ../../../../var/www/html/">
+                            
+                            <button class="check-answer-btn" onclick="checkPath2()">Check Answer</button>
+                            <div class="feedback" id="feedback-path2"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Task 3: Copy index.html to /tmp/</h4>
+                            <p><strong>Absolute path command:</strong></p>
+                            <input type="text" id="path3-abs" placeholder="cp /home/alice/projects/website/index.html /tmp/">
+                            
+                            <p style="margin-top: 10px;"><strong>Relative path command:</strong></p>
+                            <input type="text" id="path3-rel" placeholder="cp index.html /tmp/">
+                            
+                            <button class="check-answer-btn" onclick="checkPath3()">Check Answer</button>
+                            <div class="feedback" id="feedback-path3"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Challenge Questions</h4>
+                            <p><strong>1. When would you prefer absolute paths over relative paths?</strong></p>
+                            <textarea id="when-absolute" placeholder="Type your answer..."></textarea>
+                            
+                            <p style="margin-top: 15px;"><strong>2. When would relative paths be more convenient?</strong></p>
+                            <textarea id="when-relative" placeholder="Type your answer..."></textarea>
+                            
+                            <button class="check-answer-btn" onclick="savePathReflection()">Save Responses</button>
+                            <div class="feedback" id="feedback-path-reflection"></div>
+                        </div>
+                    </div>
+
+                    <!-- Activity 3: Directory Purpose Matching -->
+                    <div class="activity-box">
+                        <h3>Activity 2.3: Directory Purpose Matching Game</h3>
+                        <p><strong>Objective:</strong> Reinforce understanding of directory purposes</p>
+                        
+                        <div class="activity-question">
+                            <h4>Match each file/scenario to the most appropriate directory</h4>
+                            
+                            <p style="margin-bottom: 15px;"><strong>Directories:</strong> A=/bin, B=/etc, C=/home, D=/var/log, E=/tmp, F=/usr/local, G=/root, H=/boot, I=/dev, J=/proc</p>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <p><strong>1. Web server access logs from yesterday</strong></p>
+                                    <input type="text" id="match-1" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                                <div>
+                                    <p><strong>2. Your personal documents and photos</strong></p>
+                                    <input type="text" id="match-2" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                                <div>
+                                    <p><strong>3. The 'ls' command binary</strong></p>
+                                    <input type="text" id="match-3" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                                <div>
+                                    <p><strong>4. SSH server configuration file</strong></p>
+                                    <input type="text" id="match-4" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                                <div>
+                                    <p><strong>5. Linux kernel image</strong></p>
+                                    <input type="text" id="match-5" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                                <div>
+                                    <p><strong>6. Temporary file created by an application</strong></p>
+                                    <input type="text" id="match-6" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                                <div>
+                                    <p><strong>7. Locally compiled custom application</strong></p>
+                                    <input type="text" id="match-7" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                                <div>
+                                    <p><strong>8. Root administrator's personal scripts</strong></p>
+                                    <input type="text" id="match-8" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                                <div>
+                                    <p><strong>9. First hard disk device</strong></p>
+                                    <input type="text" id="match-9" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                                <div>
+                                    <p><strong>10. Current CPU usage information</strong></p>
+                                    <input type="text" id="match-10" placeholder="Enter letter" maxlength="1" style="width: 60px; text-transform: uppercase;">
+                                </div>
+                            </div>
+
+                            <button class="check-answer-btn" onclick="checkMatching()">Check All Answers</button>
+                            <div class="feedback" id="feedback-matching"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Knowledge Check Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    ✅ Knowledge Check
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    
+                    <div class="activity-question">
+                        <h4>Question 1: Which directory contains system-wide configuration files?</h4>
+                        <label>
+                            <input type="radio" name="q1" value="a">
+                            /config
+                        </label>
+                        <label>
+                            <input type="radio" name="q1" value="b">
+                            /etc
+                        </label>
+                        <label>
+                            <input type="radio" name="q1" value="c">
+                            /sys
+                        </label>
+                        <label>
+                            <input type="radio" name="q1" value="d">
+                            /conf
+                        </label>
+                        <button class="check-answer-btn" onclick="checkQ1()">Check Answer</button>
+                        <div class="feedback" id="feedback-q1"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 2: Where would you find system log files?</h4>
+                        <label>
+                            <input type="radio" name="q2" value="a">
+                            /logs
+                        </label>
+                        <label>
+                            <input type="radio" name="q2" value="b">
+                            /system/logs
+                        </label>
+                        <label>
+                            <input type="radio" name="q2" value="c">
+                            /var/log
+                        </label>
+                        <label>
+                            <input type="radio" name="q2" value="d">
+                            /etc/log
+                        </label>
+                        <button class="check-answer-btn" onclick="checkQ2()">Check Answer</button>
+                        <div class="feedback" id="feedback-q2"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 3: True or False</h4>
+                        <p><strong>The /proc directory contains real files stored on disk.</strong></p>
+                        <label>
+                            <input type="radio" name="q3" value="true">
+                            True
+                        </label>
+                        <label>
+                            <input type="radio" name="q3" value="false">
+                            False
+                        </label>
+                        <button class="check-answer-btn" onclick="checkQ3()">Check Answer</button>
+                        <div class="feedback" id="feedback-q3"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 4: True or False</h4>
+                        <p><strong>Regular users can write to /tmp by default.</strong></p>
+                        <label>
+                            <input type="radio" name="q4" value="true">
+                            True
+                        </label>
+                        <label>
+                            <input type="radio" name="q4" value="false">
+                            False
+                        </label>
+                        <button class="check-answer-btn" onclick="checkQ4()">Check Answer</button>
+                        <div class="feedback" id="feedback-q4"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 5: Short Answer</h4>
+                        <p><strong>Explain why the root user's home directory is /root instead of /home/root.</strong></p>
+                        <textarea id="q5-answer" placeholder="Type your answer here (minimum 50 words)..."></textarea>
+                        <button class="check-answer-btn" onclick="checkQ5()">Submit Answer</button>
+                        <div class="feedback" id="feedback-q5"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 6: Short Answer</h4>
+                        <p><strong>What does the Filesystem Hierarchy Standard (FHS) ensure?</strong></p>
+                        <textarea id="q6-answer" placeholder="Type your answer here (minimum 50 words)..."></textarea>
+                        <button class="check-answer-btn" onclick="checkQ6()">Submit Answer</button>
+                        <div class="feedback" id="feedback-q6"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Directory Reference Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    📖 Quick Directory Reference
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    <div class="concept-box">
+                        <h3>Essential Directory Quick Reference</h3>
+                        
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Directory</th>
+                                    <th>Purpose</th>
+                                    <th>Examples</th>
+                                    <th>Typical Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>/</code></td>
+                                    <td>Root of the filesystem</td>
+                                    <td>Top-level directory</td>
+                                    <td>N/A</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/bin</code></td>
+                                    <td>Essential user binaries</td>
+                                    <td>ls, cp, mv, cat</td>
+                                    <td>10-20 MB</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/sbin</code></td>
+                                    <td>System binaries (admin)</td>
+                                    <td>fdisk, ifconfig, reboot</td>
+                                    <td>15-30 MB</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/etc</code></td>
+                                    <td>Configuration files</td>
+                                    <td>/etc/passwd, /etc/fstab</td>
+                                    <td>50-200 MB</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/home</code></td>
+                                    <td>User home directories</td>
+                                    <td>/home/username</td>
+                                    <td>Varies (largest)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/root</code></td>
+                                    <td>Root user's home</td>
+                                    <td>Administrator's files</td>
+                                    <td>10-100 MB</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/var</code></td>
+                                    <td>Variable data</td>
+                                    <td>Logs, databases, websites</td>
+                                    <td>Grows over time</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/tmp</code></td>
+                                    <td>Temporary files</td>
+                                    <td>Cleared on reboot</td>
+                                    <td>100MB-1GB</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/usr</code></td>
+                                    <td>User programs and data</td>
+                                    <td>/usr/bin, /usr/local</td>
+                                    <td>2-10 GB</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/boot</code></td>
+                                    <td>Boot loader files</td>
+                                    <td>Kernel, initramfs</td>
+                                    <td>200-500 MB</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/dev</code></td>
+                                    <td>Device files</td>
+                                    <td>/dev/sda, /dev/null</td>
+                                    <td>Virtual</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/proc</code></td>
+                                    <td>Process information</td>
+                                    <td>Virtual filesystem</td>
+                                    <td>Virtual</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="highlight-box" style="margin-top: 20px;">
+                            <strong>Pro Tip:</strong> You don't need to memorize every detail. Focus on understanding the organization and purpose. The more you use Linux, the more natural these locations become. Keep this reference handy when working in the command line!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    📝 Module Summary
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    <div class="concept-box">
+                        <h3>Key Takeaways</h3>
+                        <ul class="checklist" id="takeaways">
+                            <li>The FHS provides consistency across all Linux distributions</li>
+                            <li>/etc contains system configuration files (text-based, human-readable)</li>
+                            <li>/var holds variable data like logs, databases, and web content</li>
+                            <li>/home contains user personal files and directories</li>
+                            <li>/root is the administrator's home directory (separate from /home)</li>
+                            <li>Absolute paths start with / and work from anywhere</li>
+                            <li>Relative paths depend on your current location</li>
+                            <li>"Everything is a file" - devices, processes, and directories are all treated as files</li>
+                            <li>/proc and /dev are virtual filesystems (not real files on disk)</li>
+                            <li>/tmp is cleared on reboot - never store important data there</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>Next Steps:</strong> In Module 3, you'll learn command-line navigation and file operations to actually work with the file system you've learned about here. You'll use commands like cd, ls, pwd, mkdir, cp, mv, and rm to navigate and manipulate files and directories.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="window.print()">🖨️ Print Module</button>
+                <button class="btn btn-secondary" onclick="resetProgress()">↻ Reset Progress</button>
+                <button class="btn btn-primary" onclick="completeModule()">✓ Mark Module Complete</button>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+            <p>Module 2: Linux File System Hierarchy | Mendocino College</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">© 2026 | Week 3 of 17</p>
+        </footer>
+    </div>
+
+    <script>
+        // Progress tracking
+        let completedObjectives = new Set();
+        let completedActivities = 0;
+        const totalObjectives = 4;
+        const totalActivities = 9; // scavenger(3) + paths(3) + matching(1) + q1-q4(4) - but we'll count unique activities
+        
+        // Track which activities have been completed
+        let activityStatus = {
+            ssh: false,
+            log: false,
+            users: false,
+            path1: false,
+            path2: false,
+            path3: false,
+            matching: false,
+            q1: false,
+            q2: false,
+            q3: false,
+            q4: false
+        };
+
+        // Toggle sections
+        function toggleSection(header) {
+            header.classList.toggle('collapsed');
+            const content = header.nextElementSibling;
+            content.classList.toggle('collapsed');
+        }
+
+        // Toggle directory cards
+        function toggleDirectory(card) {
+            card.classList.toggle('expanded');
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const objectiveProgress = (completedObjectives.size / totalObjectives) * 50;
+            const activityProgress = (completedActivities / 11) * 50; // 11 total checkable activities
+            const totalProgress = objectiveProgress + activityProgress;
+            
+            const progressBar = document.getElementById('moduleProgress');
+            progressBar.style.width = totalProgress + '%';
+            progressBar.textContent = Math.round(totalProgress) + '%';
+        }
+
+        // Handle objective clicks
+        document.querySelectorAll('.learning-objectives li').forEach(item => {
+            item.addEventListener('click', function() {
+                const objectiveId = this.getAttribute('data-objective');
+                
+                if (this.classList.contains('completed')) {
+                    this.classList.remove('completed');
+                    completedObjectives.delete(objectiveId);
+                } else {
+                    this.classList.add('completed');
+                    completedObjectives.add(objectiveId);
+                }
+                
+                updateProgress();
+            });
+        });
+
+        // Handle checklist items
+        document.querySelectorAll('.checklist li').forEach(item => {
+            item.addEventListener('click', function() {
+                this.classList.toggle('checked');
+            });
+        });
+
+        // Activity checks
+        function checkSSHLocation() {
+            const location = document.getElementById('ssh-location').value.trim();
+            const command = document.getElementById('ssh-command').value.trim();
+            const feedback = document.getElementById('feedback-ssh');
+            
+            if (!location || !command) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide both the location and command.';
+                return;
+            }
+            
+            const correctLocation = location.includes('/etc/ssh/sshd_config') || location.includes('/etc/ssh/');
+            const hasCommand = command.length > 0;
+            
+            if (correctLocation && hasCommand) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> SSH server configuration is typically found in <code>/etc/ssh/sshd_config</code>. You can view it with commands like <code>cat /etc/ssh/sshd_config</code> or <code>sudo less /etc/ssh/sshd_config</code> (sudo needed for full access). This follows the FHS standard where system configurations live in /etc.';
+                if (!activityStatus.ssh) {
+                    completedActivities++;
+                    activityStatus.ssh = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Not quite.</strong> SSH configuration files are stored in <code>/etc/ssh/</code>, specifically <code>/etc/ssh/sshd_config</code>. Remember: /etc contains system configuration files.';
+            }
+        }
+
+        function checkLogLocation() {
+            const location = document.getElementById('log-location').value.trim();
+            const command = document.getElementById('log-command').value.trim();
+            const feedback = document.getElementById('feedback-log');
+            
+            if (!location || !command) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide both the location and command.';
+                return;
+            }
+            
+            const correctLocation = location.includes('/var/log/');
+            const correctCommand = command.includes('tail') && (command.includes('-5') || command.includes('-n 5'));
+            
+            if (correctLocation) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> System logs are in <code>/var/log/</code>. Ubuntu uses <code>/var/log/syslog</code> and Rocky Linux uses <code>/var/log/messages</code>. To view the last 5 lines, use <code>sudo tail -n 5 /var/log/syslog</code> or <code>sudo tail -5 /var/log/messages</code>. The /var directory holds variable data that changes frequently.';
+                if (!activityStatus.log) {
+                    completedActivities++;
+                    activityStatus.log = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Not quite.</strong> System log files are stored in <code>/var/log/</code>. Try <code>/var/log/syslog</code> (Ubuntu) or <code>/var/log/messages</code> (Rocky Linux). Use <code>sudo tail -n 5 filename</code> to view the last 5 lines.';
+            }
+        }
+
+        function checkUsersLocation() {
+            const location = document.getElementById('users-location').value.trim();
+            const command = document.getElementById('users-command').value.trim();
+            const feedback = document.getElementById('feedback-users');
+            
+            if (!location || !command) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide both the location and command.';
+                return;
+            }
+            
+            const correctLocation = location.includes('/etc/passwd');
+            const correctCommand = command.includes('wc') && command.includes('-l');
+            
+            if (correctLocation) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> User account information is stored in <code>/etc/passwd</code>. To count users, use <code>wc -l /etc/passwd</code> or <code>cat /etc/passwd | wc -l</code>. Note: This file is readable by all users (it doesn\'t contain actual passwords - those are in /etc/shadow which requires root access).';
+                if (!activityStatus.users) {
+                    completedActivities++;
+                    activityStatus.users = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Not quite.</strong> User account information is in <code>/etc/passwd</code>. To count lines (users), use <code>wc -l /etc/passwd</code>. Remember: /etc contains configuration files.';
+            }
+        }
+
+        function saveReflection(type) {
+            const textarea = document.getElementById(`reflection-${type}`);
+            const feedback = document.getElementById(`feedback-${type}`);
+            
+            if (textarea.value.trim().length < 100) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide a more detailed response (at least 100 characters).';
+                return;
+            }
+            
+            feedback.className = 'feedback info';
+            feedback.innerHTML = '<strong>Response saved!</strong> Good reflection. Key points to consider: The FHS provides consistency across distributions, making it easier to find files, write portable scripts, and troubleshoot issues. Once you learn the structure, you can navigate any Linux system confidently.';
+        }
+
+        function checkPath1() {
+            const abs = document.getElementById('path1-abs').value.trim().toLowerCase();
+            const rel = document.getElementById('path1-rel').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback-path1');
+            
+            if (!abs || !rel) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide both absolute and relative path commands.';
+                return;
+            }
+            
+            const correctAbs = abs.includes('ls') && abs.includes('/home/alice/documents');
+            const correctRel = rel.includes('ls') && (rel.includes('../..') || rel.includes('../../documents'));
+            
+            if (correctAbs && correctRel) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Excellent!</strong> Absolute: <code>ls /home/alice/documents/</code> works from anywhere. Relative: <code>ls ../../documents/</code> goes up two levels (to /home/alice/) then into documents/. Both achieve the same result!';
+                if (!activityStatus.path1) {
+                    completedActivities++;
+                    activityStatus.path1 = true;
+                    updateProgress();
+                }
+            } else if (correctAbs && !correctRel) {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Absolute path correct!</strong> For the relative path, remember you\'re in <code>/home/alice/projects/website/</code>. You need to go up two levels (<code>../..</code>) to reach /home/alice/, then into documents/. Try: <code>ls ../../documents/</code>';
+            } else if (!correctAbs && correctRel) {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Relative path correct!</strong> For the absolute path, you need the complete path from root: <code>ls /home/alice/documents/</code>. Absolute paths always start with /.';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Not quite.</strong> Absolute path should be <code>ls /home/alice/documents/</code> (complete path from root). Relative path should be <code>ls ../../documents/</code> (go up two levels, then into documents).';
+            }
+        }
+
+        function checkPath2() {
+            const abs = document.getElementById('path2-abs').value.trim().toLowerCase();
+            const rel = document.getElementById('path2-rel').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback-path2');
+            
+            if (!abs || !rel) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide both absolute and relative path commands.';
+                return;
+            }
+            
+            const correctAbs = abs.includes('cd') && abs.includes('/var/www/html');
+            const correctRel = rel.includes('cd') && rel.includes('../../../..') && rel.includes('var/www/html');
+            
+            if (correctAbs && correctRel) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Perfect!</strong> Absolute: <code>cd /var/www/html/</code> works from anywhere. Relative: <code>cd ../../../../var/www/html/</code> goes up four levels to root (/), then down to /var/www/html/. This shows why absolute paths are often easier for distant locations!';
+                if (!activityStatus.path2) {
+                    completedActivities++;
+                    activityStatus.path2 = true;
+                    updateProgress();
+                }
+            } else if (correctAbs && !correctRel) {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Absolute path correct!</strong> For relative path from <code>/home/alice/projects/website/</code> to <code>/var/www/html/</code>, you need to go up to root first: <code>cd ../../../../var/www/html/</code>. Count the levels!';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Try again.</strong> Absolute: <code>cd /var/www/html/</code>. Relative: <code>cd ../../../../var/www/html/</code> (four levels up to root, then down to destination).';
+            }
+        }
+
+        function checkPath3() {
+            const abs = document.getElementById('path3-abs').value.trim().toLowerCase();
+            const rel = document.getElementById('path3-rel').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback-path3');
+            
+            if (!abs || !rel) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide both absolute and relative path commands.';
+                return;
+            }
+            
+            const correctAbs = abs.includes('cp') && abs.includes('/home/alice/projects/website/index.html') && abs.includes('/tmp');
+            const correctRel = rel.includes('cp') && rel.includes('index.html') && abs.includes('/tmp') && !rel.includes('/home');
+            
+            if (correctAbs && correctRel) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Excellent!</strong> Absolute: <code>cp /home/alice/projects/website/index.html /tmp/</code> uses full paths for both source and destination. Relative: <code>cp index.html /tmp/</code> uses relative path for source (current directory) and absolute for destination. Note: You can mix absolute and relative paths in the same command!';
+                if (!activityStatus.path3) {
+                    completedActivities++;
+                    activityStatus.path3 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Not quite.</strong> Absolute: <code>cp /home/alice/projects/website/index.html /tmp/</code>. Relative: <code>cp index.html /tmp/</code> (index.html is in current directory, /tmp/ is absolute path for destination).';
+            }
+        }
+
+        function savePathReflection() {
+            const absolute = document.getElementById('when-absolute').value.trim();
+            const relative = document.getElementById('when-relative').value.trim();
+            const feedback = document.getElementById('feedback-path-reflection');
+            
+            if (absolute.length < 30 || relative.length < 30) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide more detailed responses for both questions (at least 30 characters each).';
+                return;
+            }
+            
+            feedback.className = 'feedback info';
+            feedback.innerHTML = '<strong>Responses saved!</strong> Good thinking! Absolute paths are preferred for: scripts (work from any location), cron jobs, documentation, and when working across distant directories. Relative paths are convenient for: working within a project directory, shorter typing for nearby files, and when the absolute path is very long.';
+        }
+
+        function checkMatching() {
+            const answers = {
+                1: 'D',  // Web server logs -> /var/log
+                2: 'C',  // Personal documents -> /home
+                3: 'A',  // ls command -> /bin
+                4: 'B',  // SSH config -> /etc
+                5: 'H',  // Kernel image -> /boot
+                6: 'E',  // Temporary file -> /tmp
+                7: 'F',  // Custom app -> /usr/local
+                8: 'G',  // Root's scripts -> /root
+                9: 'I',  // Hard disk device -> /dev
+                10: 'J'  // CPU usage -> /proc
+            };
+            
+            let correct = 0;
+            let total = 10;
+            let details = [];
+            
+            for (let i = 1; i <= 10; i++) {
+                const userAnswer = document.getElementById(`match-${i}`).value.trim().toUpperCase();
+                if (userAnswer === answers[i]) {
+                    correct++;
+                    details.push(`✓ Question ${i}: Correct`);
+                } else {
+                    details.push(`✗ Question ${i}: Incorrect (Correct answer: ${answers[i]})`);
+                }
+            }
+            
+            const feedback = document.getElementById('feedback-matching');
+            const percentage = (correct / total) * 100;
+            
+            if (percentage === 100) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = `<strong>Perfect Score!</strong> You got all ${correct} out of ${total} correct! You have a solid understanding of the Linux directory structure.<br><br>${details.join('<br>')}`;
+                if (!activityStatus.matching) {
+                    completedActivities++;
+                    activityStatus.matching = true;
+                    updateProgress();
+                }
+            } else if (percentage >= 70) {
+                feedback.className = 'feedback info';
+                feedback.innerHTML = `<strong>Good effort!</strong> You got ${correct} out of ${total} correct (${percentage}%). Review the incorrect answers below:<br><br>${details.join('<br>')}<br><br><strong>Key reminders:</strong> /var/log for logs, /etc for configs, /home for users, /dev for devices, /proc for process info.`;
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = `<strong>Keep practicing!</strong> You got ${correct} out of ${total} correct (${percentage}%). Review the directory purposes in the Core Concepts section.<br><br>${details.join('<br>')}`;
+            }
+        }
+
+        function checkQ1() {
+            const selected = document.querySelector('input[name="q1"]:checked');
+            const feedback = document.getElementById('feedback-q1');
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === 'b') {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> <code>/etc</code> (pronounced "et-see" or "etsy") contains system-wide configuration files. These are text-based files that control how services and applications behave. Examples include network configuration, user accounts, service settings, and more.';
+                if (!activityStatus.q1) {
+                    completedActivities++;
+                    activityStatus.q1 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Incorrect.</strong> The correct answer is <code>/etc</code>. This directory contains all system-wide configuration files in text format. Remember: <strong>etc</strong> = <strong>e</strong>ditable <strong>t</strong>ext <strong>c</strong>onfiguration.';
+            }
+        }
+
+        function checkQ2() {
+            const selected = document.querySelector('input[name="q2"]:checked');
+            const feedback = document.getElementById('feedback-q2');
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === 'c') {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> System log files are located in <code>/var/log/</code>. The <code>/var</code> directory contains variable data - files that change frequently during normal system operation. Logs grow as the system runs, making /var the perfect location.';
+                if (!activityStatus.q2) {
+                    completedActivities++;
+                    activityStatus.q2 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Incorrect.</strong> Log files are in <code>/var/log/</code>. The /var directory contains variable data that changes during operation. Common logs include /var/log/syslog (Ubuntu) and /var/log/messages (Rocky Linux).';
+            }
+        }
+
+        function checkQ3() {
+            const selected = document.querySelector('input[name="q3"]:checked');
+            const feedback = document.getElementById('feedback-q3');
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === 'false') {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> The <code>/proc</code> directory is a <em>virtual</em> filesystem. The files you see there don\'t actually exist on disk - they\'re generated by the kernel on-the-fly when you read them. Try <code>ls -lh /proc/cpuinfo</code> and you\'ll see the size is 0 bytes!';
+                if (!activityStatus.q3) {
+                    completedActivities++;
+                    activityStatus.q3 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Incorrect.</strong> The /proc directory is <em>virtual</em> - these files don\'t exist on disk. They\'re created by the kernel when you access them. Try <code>ls -lh /proc/cpuinfo</code> and notice the size is 0 bytes.';
+            }
+        }
+
+        function checkQ4() {
+            const selected = document.querySelector('input[name="q4"]:checked');
+            const feedback = document.getElementById('feedback-q4');
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === 'true') {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> <code>/tmp</code> is world-writable by default, meaning any user can create files there. This is intentional - it\'s a shared space for temporary files. However, this also means you shouldn\'t store sensitive data in /tmp. The sticky bit permission prevents users from deleting each other\'s files.';
+                if (!activityStatus.q4) {
+                    completedActivities++;
+                    activityStatus.q4 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Incorrect.</strong> <code>/tmp</code> is world-writable by default. Any user can create files there. It\'s designed as a shared temporary space. Files are typically cleared on reboot, and the sticky bit prevents users from deleting each other\'s files.';
+            }
+        }
+
+        function checkQ5() {
+            const answer = document.getElementById('q5-answer').value.trim();
+            const feedback = document.getElementById('feedback-q5');
+            
+            if (answer.length < 50) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide a more detailed answer (at least 50 characters).';
+                return;
+            }
+            
+            feedback.className = 'feedback info';
+            feedback.innerHTML = '<strong>Response submitted!</strong> Key points: The root user\'s home directory is <code>/root</code> (not <code>/home/root</code>) because it needs to be accessible even if the <code>/home</code> filesystem isn\'t mounted. During system recovery or single-user mode, /home might not be available, but the administrator still needs access to their files and configurations. Placing /root directly under the root filesystem (/) ensures it\'s always accessible.';
+        }
+
+        function checkQ6() {
+            const answer = document.getElementById('q6-answer').value.trim();
+            const feedback = document.getElementById('feedback-q6');
+            
+            if (answer.length < 50) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide a more detailed answer (at least 50 characters).';
+                return;
+            }
+            
+            feedback.className = 'feedback info';
+            feedback.innerHTML = '<strong>Response submitted!</strong> The FHS ensures: (1) <strong>Consistency</strong> across different Linux distributions - files are in the same locations, (2) <strong>Predictability</strong> - administrators know where to find things, (3) <strong>Portability</strong> - scripts work across systems, (4) <strong>Maintainability</strong> - easier to backup, secure, and troubleshoot. Without FHS, every distribution could organize files differently, making system administration much more difficult.';
+        }
+
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset all progress? This will clear your completed objectives and activities.')) {
+                completedObjectives.clear();
+                completedActivities = 0;
+                activityStatus = {
+                    ssh: false,
+                    log: false,
+                    users: false,
+                    path1: false,
+                    path2: false,
+                    path3: false,
+                    matching: false,
+                    q1: false,
+                    q2: false,
+                    q3: false,
+                    q4: false
+                };
+                
+                document.querySelectorAll('.learning-objectives li').forEach(item => {
+                    item.classList.remove('completed');
+                });
+                
+                document.querySelectorAll('.checklist li').forEach(item => {
+                    item.classList.remove('checked');
+                });
+                
+                document.querySelectorAll('.feedback').forEach(item => {
+                    item.style.display = 'none';
+                });
+                
+                document.querySelectorAll('input[type="radio"]').forEach(item => {
+                    item.checked = false;
+                });
+                
+                document.querySelectorAll('input[type="text"]').forEach(item => {
+                    item.value = '';
+                });
+                
+                document.querySelectorAll('textarea').forEach(item => {
+                    item.value = '';
+                });
+                
+                updateProgress();
+            }
+        }
+
+        function completeModule() {
+            const objectivesComplete = completedObjectives.size === totalObjectives;
+            const activitiesComplete = completedActivities >= 8; // At least 8 of 11 activities
+            
+            if (objectivesComplete && activitiesComplete) {
+                alert('🎉 Congratulations! You have completed Module 2: Linux File System Hierarchy.\n\nYou now understand:\n• The Filesystem Hierarchy Standard (FHS)\n• Major Linux directories and their purposes\n• Absolute vs. relative paths\n• The "everything is a file" philosophy\n\nYou\'re ready to proceed to Module 3: Command-Line Navigation and File Operations!');
+            } else {
+                const remainingObj = totalObjectives - completedObjectives.size;
+                const remainingAct = Math.max(0, 8 - completedActivities);
+                alert(`You're making progress! To complete this module:\n\n• ${remainingObj} learning objective(s) remaining\n• ${remainingAct} more activit(ies) to complete\n\nClick on objectives to mark them complete, and finish the interactive activities.`);
+            }
+        }
+
+        // Initialize progress bar
+        updateProgress();
+    </script>
+</body>
+</html>
