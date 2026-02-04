@@ -1,0 +1,2433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 3: Command-Line Navigation and File Operations | CSC 152</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .module-info {
+            font-size: 1.2em;
+            opacity: 0.95;
+            margin-top: 10px;
+        }
+
+        .progress-container {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section h2:hover {
+            color: #764ba2;
+        }
+
+        .section h2 .toggle-icon {
+            margin-left: auto;
+            font-size: 0.8em;
+            transition: transform 0.3s ease;
+        }
+
+        .section h2.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            max-height: 15000px;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+
+        .section-content.collapsed {
+            max-height: 0;
+        }
+
+        .concept-box {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .concept-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .concept-box h4 {
+            color: #764ba2;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .command-card {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .command-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .command-card h4 {
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .command-syntax {
+            background: #2d3748;
+            color: #48bb78;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .example-code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            position: relative;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .example-code::before {
+            content: 'Example';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.8em;
+            color: #a0aec0;
+        }
+
+        .terminal-simulator {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            min-height: 200px;
+        }
+
+        .terminal-header {
+            background: #2d3748;
+            padding: 10px;
+            border-radius: 5px 5px 0 0;
+            margin: -20px -20px 15px -20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .terminal-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-button.close { background: #fc5c65; }
+        .terminal-button.minimize { background: #fed330; }
+        .terminal-button.maximize { background: #26de81; }
+
+        .terminal-prompt {
+            color: #48bb78;
+            margin-bottom: 5px;
+        }
+
+        .terminal-prompt::before {
+            content: 'user@server:~$ ';
+        }
+
+        .terminal-input {
+            background: transparent;
+            border: none;
+            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+            width: 100%;
+            font-size: 1em;
+            outline: none;
+            padding: 5px 0;
+        }
+
+        .terminal-output {
+            color: #cbd5e0;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #f7fafc;
+        }
+
+        .comparison-table code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .activity-box {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 2px solid #667eea;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 10px;
+        }
+
+        .activity-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .activity-question {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .activity-question h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .activity-question label {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .activity-question label:hover {
+            background: #e2e8f0;
+            transform: translateX(5px);
+        }
+
+        .activity-question input[type="radio"],
+        .activity-question input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .activity-question input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            margin: 5px 0;
+        }
+
+        .activity-question input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .activity-question textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+        }
+
+        .activity-question textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .check-answer-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .check-answer-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            display: block;
+        }
+
+        .feedback.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+            display: block;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box strong {
+            color: #856404;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: #0c5460;
+        }
+
+        .warning-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            color: #721c24;
+        }
+
+        .key-term {
+            font-weight: bold;
+            color: #667eea;
+            cursor: help;
+            border-bottom: 2px dotted #667eea;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .checklist li:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .checklist li::before {
+            content: '☐';
+            font-size: 1.5em;
+            margin-right: 15px;
+            color: #667eea;
+        }
+
+        .checklist li.checked::before {
+            content: '☑';
+            color: #28a745;
+        }
+
+        .checklist li.checked {
+            background: #d4edda;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        footer {
+            background: #2d3748;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+            }
+            .button-group {
+                display: none;
+            }
+            .section-content {
+                max-height: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            .content {
+                padding: 20px;
+            }
+            .section {
+                padding: 20px;
+            }
+            .comparison-table {
+                font-size: 0.85em;
+            }
+        }
+
+        .learning-objectives {
+            list-style: none;
+            counter-reset: objective-counter;
+            padding: 0;
+        }
+
+        .learning-objectives li {
+            counter-increment: objective-counter;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .learning-objectives li:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .learning-objectives li::before {
+            content: counter(objective-counter);
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .learning-objectives li.completed {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .learning-objectives li.completed::after {
+            content: "✓";
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #28a745;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .cslo-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+
+        .option-badge {
+            display: inline-block;
+            background: #e2e8f0;
+            color: #2d3748;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-family: 'Courier New', monospace;
+            margin: 3px;
+        }
+
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .interactive-terminal {
+            background: #1a202c;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .terminal-title {
+            color: #a0aec0;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .command-input-group {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .command-prompt-text {
+            color: #48bb78;
+            font-family: 'Courier New', monospace;
+            margin-right: 10px;
+        }
+
+        .command-input-field {
+            flex: 1;
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            border-radius: 5px;
+        }
+
+        .command-input-field:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .execute-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-left: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+
+        .execute-btn:hover {
+            background: #38a169;
+        }
+
+        .command-output {
+            background: #2d3748;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            color: #cbd5e0;
+            font-family: 'Courier New', monospace;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .practice-scenario {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .practice-scenario h4 {
+            color: #e65100;
+            margin-bottom: 10px;
+        }
+
+        .mistake-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .mistake-box::before {
+            content: '❌ Common Mistake';
+            display: block;
+            font-weight: bold;
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+
+        .correct-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .correct-box::before {
+            content: '✓ Correct Approach';
+            display: block;
+            font-weight: bold;
+            color: #155724;
+            margin-bottom: 10px;
+        }
+
+        .tab-container {
+            margin: 20px 0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: #e2e8f0;
+            color: #2d3748;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover {
+            background: #cbd5e0;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CSC 152 - Module 3</h1>
+            <div class="module-info">Command-Line Navigation and File Operations</div>
+            <div class="module-info" style="font-size: 1em; margin-top: 5px;">Week 3 - Introduction to Linux Server Administration</div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="moduleProgress">0%</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- Learning Objectives Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    🎯 Learning Objectives
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    <p style="margin-bottom: 20px;">By the end of this module, you will be able to:</p>
+                    <ul class="learning-objectives" id="objectives">
+                        <li data-objective="1">Execute basic navigation commands (pwd, cd, ls)</li>
+                        <li data-objective="2">Perform file and directory operations (mkdir, touch, cp, mv, rm)</li>
+                        <li data-objective="3">View file contents using various commands</li>
+                        <li data-objective="4">Understand command syntax and options</li>
+                        <li data-objective="5">Use tab completion and command history effectively</li>
+                    </ul>
+                    <div style="margin-top: 20px;">
+                        <span class="cslo-badge">CSLO 1: Manage and maintain servers</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Core Concepts Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    📚 Core Concepts
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    
+                    <!-- Concept 1: Command Structure -->
+                    <div class="concept-box">
+                        <h3>3.1 Understanding Command Structure</h3>
+                        
+                        <p><strong>Basic Command Syntax:</strong></p>
+                        <div class="command-syntax">command [options] [arguments]</div>
+
+                        <h4>Components:</h4>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li><strong>Command:</strong> The program to execute (<code>ls</code>, <code>cd</code>, <code>cat</code>)</li>
+                            <li><strong>Options:</strong> Modify command behavior (usually start with <code>-</code> or <code>--</code>)
+                                <ul style="margin-left: 20px; margin-top: 5px;">
+                                    <li>Short options: <code>-l</code>, <code>-a</code>, <code>-h</code></li>
+                                    <li>Long options: <code>--help</code>, <code>--version</code></li>
+                                    <li>Combined: <code>-lah</code> (same as <code>-l -a -h</code>)</li>
+                                </ul>
+                            </li>
+                            <li><strong>Arguments:</strong> What the command acts upon (files, directories, etc.)</li>
+                        </ul>
+
+                        <div class="example-code"># Command only
+pwd
+
+# Command with argument
+cd /home
+
+# Command with option and argument
+ls -l /etc
+
+# Command with multiple options and argument
+ls -lah /var/log
+
+# Command with long option
+ls --all --human-readable /home</div>
+                    </div>
+
+                    <!-- Concept 2: Navigation Commands -->
+                    <div class="concept-box">
+                        <h3>3.2 Essential Navigation Commands</h3>
+                        
+                        <div class="command-grid">
+                            <!-- pwd -->
+                            <div class="command-card">
+                                <h4>pwd</h4>
+                                <p><strong>Purpose:</strong> Print Working Directory - shows your current location</p>
+                                <div class="command-syntax">pwd</div>
+                                <div class="example-code"># Show current directory
+pwd
+# Output: /home/alice
+
+# After changing directories
+cd /var/log
+pwd
+# Output: /var/log</div>
+                                <p style="margin-top: 10px;"><strong>Use Cases:</strong></p>
+                                <ul style="margin-left: 20px;">
+                                    <li>Confirm your location before running commands</li>
+                                    <li>Verify you're in the correct directory</li>
+                                    <li>Debugging scripts that aren't working as expected</li>
+                                </ul>
+                            </div>
+
+                            <!-- ls -->
+                            <div class="command-card">
+                                <h4>ls</h4>
+                                <p><strong>Purpose:</strong> List directory contents</p>
+                                <div class="command-syntax">ls [options] [directory]</div>
+                                <p style="margin-top: 10px;"><strong>Common Options:</strong></p>
+                                <div>
+                                    <span class="option-badge">-l</span> Long format
+                                    <span class="option-badge">-a</span> Show hidden files
+                                    <span class="option-badge">-h</span> Human-readable sizes
+                                    <span class="option-badge">-t</span> Sort by time
+                                    <span class="option-badge">-r</span> Reverse order
+                                    <span class="option-badge">-R</span> Recursive
+                                </div>
+                                <div class="example-code"># Basic listing
+ls
+
+# Long format with human-readable sizes
+ls -lh
+
+# Show all files including hidden
+ls -la
+
+# Sort by modification time (newest first)
+ls -lt
+
+# Combine multiple options
+ls -lah</div>
+                            </div>
+
+                            <!-- cd -->
+                            <div class="command-card">
+                                <h4>cd</h4>
+                                <p><strong>Purpose:</strong> Change Directory - navigate to different directories</p>
+                                <div class="command-syntax">cd [directory]</div>
+                                <p style="margin-top: 10px;"><strong>Special Shortcuts:</strong></p>
+                                <ul style="margin-left: 20px;">
+                                    <li><code>cd</code> or <code>cd ~</code> - Go to home directory</li>
+                                    <li><code>cd ..</code> - Go up one directory level</li>
+                                    <li><code>cd -</code> - Go to previous directory</li>
+                                    <li><code>cd /</code> - Go to root directory</li>
+                                    <li><code>cd ../..</code> - Go up two levels</li>
+                                </ul>
+                                <div class="example-code"># Go to specific directory
+cd /var/log
+
+# Go home
+cd ~
+
+# Go up one level
+cd ..
+
+# Go to previous directory
+cd -</div>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <strong>Understanding ls -l Output:</strong>
+                            <div class="example-code" style="margin-top: 10px;">-rw-r--r-- 1 alice alice 1024 Feb 3 10:00 file.txt
+│││││││││  │ │     │     │    │         │
+│││││││││  │ │     │     │    │         └─ File name
+│││││││││  │ │     │     │    └─────────── Modification time
+│││││││││  │ │     │     └──────────────── Size in bytes
+│││││││││  │ │     └────────────────────── Group owner
+│││││││││  │ └──────────────────────────── User owner
+│││││││││  └─────────────────────────────── Number of links
+│││││││││
+││││││││└─ Other: read (r)
+│││││││└── Other: read (r)
+││││││└─── Other: none (-)
+│││││└──── Group: read (r)
+││││└───── Group: none (-)
+│││└────── Group: none (-)
+││└─────── User: write (w)
+│└──────── User: read (r)
+└───────── File type (- = file, d = directory)</div>
+                        </div>
+                    </div>
+
+                    <!-- Concept 3: File Operations -->
+                    <div class="concept-box">
+                        <h3>3.3 File and Directory Operations</h3>
+                        
+                        <div class="tab-container">
+                            <div class="tab-buttons">
+                                <button class="tab-btn active" onclick="switchTab('mkdir-tab')">mkdir</button>
+                                <button class="tab-btn" onclick="switchTab('touch-tab')">touch</button>
+                                <button class="tab-btn" onclick="switchTab('cp-tab')">cp</button>
+                                <button class="tab-btn" onclick="switchTab('mv-tab')">mv</button>
+                                <button class="tab-btn" onclick="switchTab('rm-tab')">rm</button>
+                            </div>
+
+                            <!-- mkdir Tab -->
+                            <div class="tab-content active" id="mkdir-tab">
+                                <div class="command-card">
+                                    <h4>mkdir - Make Directory</h4>
+                                    <p><strong>Purpose:</strong> Create new directories</p>
+                                    <div class="command-syntax">mkdir [options] directory_name</div>
+                                    
+                                    <p style="margin-top: 10px;"><strong>Common Options:</strong></p>
+                                    <div>
+                                        <span class="option-badge">-p</span> Create parent directories as needed
+                                        <span class="option-badge">-m</span> Set permissions
+                                        <span class="option-badge">-v</span> Verbose (show what's being created)
+                                    </div>
+
+                                    <div class="example-code"># Create single directory
+mkdir projects
+
+# Create multiple directories
+mkdir docs photos videos
+
+# Create nested directories (parents created automatically)
+mkdir -p projects/website/html
+mkdir -p projects/website/css
+mkdir -p projects/website/js
+
+# Create with specific permissions
+mkdir -m 755 public_html
+
+# Verbose mode
+mkdir -pv documents/2024/reports
+# Output:
+# mkdir: created directory 'documents'
+# mkdir: created directory 'documents/2024'
+# mkdir: created directory 'documents/2024/reports'</div>
+
+                                    <div class="practice-scenario">
+                                        <h4>Real-World Example:</h4>
+                                        <div class="example-code" style="margin-top: 10px;"># Set up project structure
+mkdir -p ~/myproject/{src,tests,docs,config}
+# Creates:
+# ~/myproject/
+# ├── src/
+# ├── tests/
+# ├── docs/
+# └── config/</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- touch Tab -->
+                            <div class="tab-content" id="touch-tab">
+                                <div class="command-card">
+                                    <h4>touch - Create Empty File</h4>
+                                    <p><strong>Purpose:</strong> Create empty files or update modification time</p>
+                                    <div class="command-syntax">touch filename</div>
+
+                                    <div class="example-code"># Create single file
+touch readme.txt
+
+# Create multiple files
+touch index.html style.css script.js
+
+# Create file with path
+touch ~/documents/notes.txt
+
+# Update modification time of existing file
+touch existing_file.txt</div>
+
+                                    <p style="margin-top: 15px;"><strong>Why Use Touch:</strong></p>
+                                    <ul style="margin-left: 20px;">
+                                        <li>Quickly create placeholder files</li>
+                                        <li>Update file timestamps</li>
+                                        <li>Test file creation permissions</li>
+                                        <li>Create files for scripts to process</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- cp Tab -->
+                            <div class="tab-content" id="cp-tab">
+                                <div class="command-card">
+                                    <h4>cp - Copy Files and Directories</h4>
+                                    <p><strong>Purpose:</strong> Copy files and directories</p>
+                                    <div class="command-syntax">cp [options] source destination</div>
+                                    
+                                    <p style="margin-top: 10px;"><strong>Common Options:</strong></p>
+                                    <div>
+                                        <span class="option-badge">-r</span> Recursive (copy directories)
+                                        <span class="option-badge">-i</span> Interactive (prompt before overwrite)
+                                        <span class="option-badge">-v</span> Verbose
+                                        <span class="option-badge">-p</span> Preserve attributes
+                                    </div>
+
+                                    <div class="example-code"># Copy file
+cp file1.txt file2.txt
+
+# Copy file to directory
+cp report.pdf ~/documents/
+
+# Copy multiple files to directory
+cp file1.txt file2.txt file3.txt ~/backup/
+
+# Copy directory (requires -r)
+cp -r projects/ projects_backup/
+
+# Interactive copy (prompts before overwriting)
+cp -i important.txt important_backup.txt
+
+# Verbose recursive copy
+cp -rv website/ website_backup/
+
+# Copy with wildcard
+cp *.txt ~/documents/</div>
+
+                                    <div class="mistake-box">
+                                        <code>cp directory1 directory2</code>
+                                        <p style="margin-top: 5px;">Forgot -r flag for directory copying</p>
+                                    </div>
+                                    <div class="correct-box">
+                                        <code>cp -r directory1 directory2</code>
+                                        <p style="margin-top: 5px;">Correctly copies directory and all contents</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- mv Tab -->
+                            <div class="tab-content" id="mv-tab">
+                                <div class="command-card">
+                                    <h4>mv - Move/Rename Files</h4>
+                                    <p><strong>Purpose:</strong> Move files to new location or rename them</p>
+                                    <div class="command-syntax">mv [options] source destination</div>
+                                    
+                                    <p style="margin-top: 10px;"><strong>Common Options:</strong></p>
+                                    <div>
+                                        <span class="option-badge">-i</span> Interactive (prompt before overwrite)
+                                        <span class="option-badge">-v</span> Verbose
+                                        <span class="option-badge">-n</span> No clobber (don't overwrite)
+                                    </div>
+
+                                    <div class="example-code"># Rename file
+mv oldname.txt newname.txt
+
+# Move file to directory
+mv report.pdf ~/documents/
+
+# Move multiple files
+mv file1.txt file2.txt file3.txt ~/archive/
+
+# Move and rename
+mv ~/downloads/document.pdf ~/documents/report_2024.pdf
+
+# Move directory
+mv old_project/ ~/archive/old_project/
+
+# Interactive move
+mv -i important.txt ~/backup/</div>
+
+                                    <div class="info-box">
+                                        <strong>Key Difference from cp:</strong> The <code>mv</code> command doesn't require <code>-r</code> for directories because it's moving/renaming, not copying. It works the same for files and directories.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- rm Tab -->
+                            <div class="tab-content" id="rm-tab">
+                                <div class="command-card">
+                                    <h4>rm - Remove Files</h4>
+                                    <p><strong>Purpose:</strong> Delete files and directories</p>
+                                    <div class="command-syntax">rm [options] file</div>
+                                    
+                                    <p style="margin-top: 10px;"><strong>Common Options:</strong></p>
+                                    <div>
+                                        <span class="option-badge">-r</span> Recursive (delete directories)
+                                        <span class="option-badge">-i</span> Interactive (prompt for each file)
+                                        <span class="option-badge">-f</span> Force (no prompts)
+                                        <span class="option-badge">-v</span> Verbose
+                                    </div>
+
+                                    <div class="warning-box">
+                                        <strong>⚠️ WARNING:</strong> <code>rm</code> is permanent! There's no recycle bin. Deleted files are gone forever. Always double-check before deleting, especially with wildcards or the <code>-r</code> flag.
+                                    </div>
+
+                                    <div class="example-code"># Remove single file
+rm unwanted.txt
+
+# Remove multiple files
+rm file1.txt file2.txt file3.txt
+
+# Remove with wildcard
+rm *.tmp
+
+# Interactive removal (safer)
+rm -i important.txt
+
+# Remove directory (requires -r)
+rm -r old_project/
+
+# Force removal (dangerous!)
+rm -rf directory/
+
+# Verbose removal
+rm -v *.log</div>
+
+                                    <div class="warning-box" style="margin-top: 15px;">
+                                        <strong>⚠️ DANGEROUS COMMANDS - NEVER RUN:</strong>
+                                        <div class="example-code" style="margin-top: 10px; background: #721c24; color: #f8d7da;">sudo rm -rf /          # Deletes everything
+sudo rm -rf /*         # Deletes everything
+rm -rf ~/*             # Deletes your entire home</div>
+                                    </div>
+
+                                    <div class="highlight-box">
+                                        <strong>Safety Tips:</strong>
+                                        <ul style="margin-left: 20px; margin-top: 10px;">
+                                            <li>Use <code>-i</code> for important files</li>
+                                            <li>List files before deleting: <code>ls *.txt</code> then <code>rm *.txt</code></li>
+                                            <li>Double-check wildcards</li>
+                                            <li>Consider using <code>trash-put</code> instead of <code>rm</code></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Concept 4: Viewing Files -->
+                    <div class="concept-box">
+                        <h3>3.4 Viewing File Contents</h3>
+                        
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Command</th>
+                                    <th>Purpose</th>
+                                    <th>When to Use</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>cat</code></td>
+                                    <td>Display entire file</td>
+                                    <td>Short files that fit on one screen</td>
+                                    <td><code>cat readme.txt</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>less</code></td>
+                                    <td>Page through file</td>
+                                    <td>Large files, need to scroll/search</td>
+                                    <td><code>less /var/log/syslog</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>head</code></td>
+                                    <td>Show first lines</td>
+                                    <td>Check file format, quick preview</td>
+                                    <td><code>head -n 20 file.txt</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>tail</code></td>
+                                    <td>Show last lines</td>
+                                    <td>Check recent log entries</td>
+                                    <td><code>tail -f /var/log/syslog</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>file</code></td>
+                                    <td>Determine file type</td>
+                                    <td>Identify unknown files</td>
+                                    <td><code>file mystery.bin</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>wc</code></td>
+                                    <td>Count lines/words</td>
+                                    <td>Count entries in files</td>
+                                    <td><code>wc -l /etc/passwd</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>less Navigation Keys:</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 15px 0;">
+                            <div style="background: #f7fafc; padding: 10px; border-radius: 5px;">
+                                <code>Space</code> or <code>f</code> - Forward one page
+                            </div>
+                            <div style="background: #f7fafc; padding: 10px; border-radius: 5px;">
+                                <code>b</code> - Backward one page
+                            </div>
+                            <div style="background: #f7fafc; padding: 10px; border-radius: 5px;">
+                                <code>/pattern</code> - Search forward
+                            </div>
+                            <div style="background: #f7fafc; padding: 10px; border-radius: 5px;">
+                                <code>n</code> - Next search result
+                            </div>
+                            <div style="background: #f7fafc; padding: 10px; border-radius: 5px;">
+                                <code>g</code> - Go to beginning
+                            </div>
+                            <div style="background: #f7fafc; padding: 10px; border-radius: 5px;">
+                                <code>G</code> - Go to end
+                            </div>
+                            <div style="background: #f7fafc; padding: 10px; border-radius: 5px;">
+                                <code>q</code> - Quit
+                            </div>
+                        </div>
+
+                        <div class="example-code"># Display entire file
+cat readme.txt
+
+# Page through large file
+less /var/log/syslog
+
+# First 10 lines (default)
+head logfile.txt
+
+# First 20 lines
+head -n 20 logfile.txt
+
+# Last 10 lines (default)
+tail logfile.txt
+
+# Follow log file (watch in real-time)
+tail -f /var/log/syslog
+
+# Count lines in file
+wc -l /etc/passwd
+
+# Determine file type
+file document.pdf</div>
+                    </div>
+
+                    <!-- Concept 5: Command Efficiency -->
+                    <div class="concept-box">
+                        <h3>3.5 Command-Line Efficiency Tips</h3>
+                        
+                        <h4>Tab Completion</h4>
+                        <p><strong>How It Works:</strong></p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>Press <code>Tab</code> once: Complete if unique</li>
+                            <li>Press <code>Tab</code> twice: Show all possibilities</li>
+                        </ul>
+
+                        <div class="example-code"># Type partial command and press Tab
+cat do[Tab]
+# Completes to: cat document.txt (if unique)
+
+# See all options
+ls /et[Tab][Tab]
+# Shows: etc/ ethtool
+
+# Complete directory names
+cd /var/lo[Tab]
+# Completes to: cd /var/log/</div>
+
+                        <h4>Command History</h4>
+                        <p><strong>Navigation:</strong></p>
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li><code>Up Arrow</code> - Previous command</li>
+                            <li><code>Down Arrow</code> - Next command</li>
+                            <li><code>Ctrl+R</code> - Search history</li>
+                            <li><code>!!</code> - Repeat last command</li>
+                            <li><code>!n</code> - Repeat command number n</li>
+                            <li><code>!string</code> - Repeat last command starting with string</li>
+                        </ul>
+
+                        <div class="example-code"># View history
+history
+
+# Repeat last command
+!!
+
+# Repeat with sudo
+sudo !!
+
+# Repeat specific command
+!100    # Runs command #100 from history
+
+# Repeat last command starting with 'cd'
+!cd
+
+# Clear history
+history -c</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Practice Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    🎮 Interactive Command Practice
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    
+                    <!-- Interactive Terminal Simulator -->
+                    <div class="activity-box">
+                        <h3>Activity 3.1: Command Practice Simulator</h3>
+                        <p><strong>Objective:</strong> Practice essential Linux commands in a safe, simulated environment</p>
+                        
+                        <div class="interactive-terminal">
+                            <div class="terminal-header">
+                                <div class="terminal-buttons">
+                                    <div class="terminal-button close"></div>
+                                    <div class="terminal-button minimize"></div>
+                                    <div class="terminal-button maximize"></div>
+                                </div>
+                                <div style="color: #a0aec0; font-size: 0.9em;">Terminal Simulator</div>
+                            </div>
+                            
+                            <div class="terminal-title">Current Directory: <span id="currentDir">/home/student</span></div>
+                            
+                            <div class="command-input-group">
+                                <span class="command-prompt-text">student@server:~$</span>
+                                <input type="text" class="command-input-field" id="terminalInput" placeholder="Type a command and press Enter...">
+                                <button class="execute-btn" onclick="executeCommand()">Execute</button>
+                            </div>
+                            
+                            <div class="command-output" id="terminalOutput">Welcome to the Command Practice Simulator!
+Try these commands: pwd, ls, cd, mkdir, touch, cat
+Type 'help' for available commands
+Type 'clear' to clear the screen
+</div>
+                        </div>
+
+                        <div class="info-box">
+                            <strong>Available Commands:</strong> pwd, ls, cd, mkdir, touch, cat, rm, cp, mv, help, clear
+                            <br><strong>Tip:</strong> This simulator mimics real Linux behavior. Practice here before trying commands on your actual server!
+                        </div>
+                    </div>
+
+                    <!-- Command Construction Exercise -->
+                    <div class="activity-box">
+                        <h3>Activity 3.2: Command Syntax Puzzle</h3>
+                        <p><strong>Objective:</strong> Understand command options and arguments</p>
+                        
+                        <div class="activity-question">
+                            <h4>Task 1: List all files in /home including hidden files, in long format, with human-readable sizes, sorted by modification time (newest first)</h4>
+                            <input type="text" id="cmd-construct-1" placeholder="Enter the complete command">
+                            <button class="check-answer-btn" onclick="checkCommandConstruct1()">Check Answer</button>
+                            <div class="feedback" id="feedback-construct-1"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Task 2: Copy the directory /etc/ssh to your home directory, preserving all attributes, with verbose output</h4>
+                            <input type="text" id="cmd-construct-2" placeholder="Enter the complete command">
+                            <button class="check-answer-btn" onclick="checkCommandConstruct2()">Check Answer</button>
+                            <div class="feedback" id="feedback-construct-2"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Task 3: Create nested directories ~/projects/web/frontend/components in one command</h4>
+                            <input type="text" id="cmd-construct-3" placeholder="Enter the complete command">
+                            <button class="check-answer-btn" onclick="checkCommandConstruct3()">Check Answer</button>
+                            <div class="feedback" id="feedback-construct-3"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Challenge: What's the difference between these commands?</h4>
+                            <div class="example-code">ls -l -a -h
+ls -lah
+ls -l -h -a</div>
+                            <textarea id="cmd-difference" placeholder="Explain the difference (or lack thereof)..."></textarea>
+                            <button class="check-answer-btn" onclick="checkCommandDifference()">Check Answer</button>
+                            <div class="feedback" id="feedback-difference"></div>
+                        </div>
+                    </div>
+
+                    <!-- Error Troubleshooting -->
+                    <div class="activity-box">
+                        <h3>Activity 3.3: Error Troubleshooting</h3>
+                        <p><strong>Objective:</strong> Learn to interpret and fix common command errors</p>
+                        
+                        <div class="activity-question">
+                            <h4>Error 1:</h4>
+                            <div class="example-code">$ cd /home/alice/My Documents
+bash: cd: /home/alice/My: No such file or directory</div>
+                            <p><strong>What's the problem?</strong></p>
+                            <input type="text" id="error-1-problem" placeholder="Identify the problem">
+                            <p style="margin-top: 10px;"><strong>Corrected command:</strong></p>
+                            <input type="text" id="error-1-fix" placeholder="Enter the corrected command">
+                            <button class="check-answer-btn" onclick="checkError1()">Check Answer</button>
+                            <div class="feedback" id="feedback-error-1"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Error 2:</h4>
+                            <div class="example-code">$ cp important_folder backup_folder
+cp: -r not specified; omitting directory 'important_folder'</div>
+                            <p><strong>What's the problem?</strong></p>
+                            <input type="text" id="error-2-problem" placeholder="Identify the problem">
+                            <p style="margin-top: 10px;"><strong>Corrected command:</strong></p>
+                            <input type="text" id="error-2-fix" placeholder="Enter the corrected command">
+                            <button class="check-answer-btn" onclick="checkError2()">Check Answer</button>
+                            <div class="feedback" id="feedback-error-2"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Error 3:</h4>
+                            <div class="example-code">$ cat /var/log/syslog
+cat: /var/log/syslog: Permission denied</div>
+                            <p><strong>What's the problem?</strong></p>
+                            <input type="text" id="error-3-problem" placeholder="Identify the problem">
+                            <p style="margin-top: 10px;"><strong>Corrected command:</strong></p>
+                            <input type="text" id="error-3-fix" placeholder="Enter the corrected command">
+                            <button class="check-answer-btn" onclick="checkError3()">Check Answer</button>
+                            <div class="feedback" id="feedback-error-3"></div>
+                        </div>
+
+                        <div class="activity-question">
+                            <h4>Error 4:</h4>
+                            <div class="example-code">$ mkdir /etc/myconfig
+mkdir: cannot create directory '/etc/myconfig': Permission denied</div>
+                            <p><strong>What's the problem and why is this dangerous?</strong></p>
+                            <textarea id="error-4-explain" placeholder="Explain the problem and provide the corrected command..."></textarea>
+                            <button class="check-answer-btn" onclick="checkError4()">Check Answer</button>
+                            <div class="feedback" id="feedback-error-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Knowledge Check Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    ✅ Knowledge Check
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    
+                    <div class="activity-question">
+                        <h4>Question 1: Which command shows your current directory location?</h4>
+                        <label>
+                            <input type="radio" name="q1" value="a">
+                            ls
+                        </label>
+                        <label>
+                            <input type="radio" name="q1" value="b">
+                            pwd
+                        </label>
+                        <label>
+                            <input type="radio" name="q1" value="c">
+                            cd
+                        </label>
+                        <label>
+                            <input type="radio" name="q1" value="d">
+                            dir
+                        </label>
+                        <button class="check-answer-btn" onclick="checkQ1()">Check Answer</button>
+                        <div class="feedback" id="feedback-q1"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 2: How do you copy a directory and all its contents?</h4>
+                        <label>
+                            <input type="radio" name="q2" value="a">
+                            cp directory destination
+                        </label>
+                        <label>
+                            <input type="radio" name="q2" value="b">
+                            cp -r directory destination
+                        </label>
+                        <label>
+                            <input type="radio" name="q2" value="c">
+                            copy directory destination
+                        </label>
+                        <label>
+                            <input type="radio" name="q2" value="d">
+                            mv directory destination
+                        </label>
+                        <button class="check-answer-btn" onclick="checkQ2()">Check Answer</button>
+                        <div class="feedback" id="feedback-q2"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 3: What does tail -f logfile.txt do?</h4>
+                        <label>
+                            <input type="radio" name="q3" value="a">
+                            Shows the last 10 lines and exits
+                        </label>
+                        <label>
+                            <input type="radio" name="q3" value="b">
+                            Shows the first 10 lines
+                        </label>
+                        <label>
+                            <input type="radio" name="q3" value="c">
+                            Continuously monitors and displays new lines
+                        </label>
+                        <label>
+                            <input type="radio" name="q3" value="d">
+                            Deletes the last 10 lines
+                        </label>
+                        <button class="check-answer-btn" onclick="checkQ3()">Check Answer</button>
+                        <div class="feedback" id="feedback-q3"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 4: True or False</h4>
+                        <p><strong>The command 'rm' can be undone using an "undelete" command.</strong></p>
+                        <label>
+                            <input type="radio" name="q4" value="true">
+                            True
+                        </label>
+                        <label>
+                            <input type="radio" name="q4" value="false">
+                            False
+                        </label>
+                        <button class="check-answer-btn" onclick="checkQ4()">Check Answer</button>
+                        <div class="feedback" id="feedback-q4"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 5: Short Answer</h4>
+                        <p><strong>Explain the difference between 'cat' and 'less' for viewing files.</strong></p>
+                        <textarea id="q5-answer" placeholder="Type your answer here (minimum 50 words)..."></textarea>
+                        <button class="check-answer-btn" onclick="checkQ5()">Submit Answer</button>
+                        <div class="feedback" id="feedback-q5"></div>
+                    </div>
+
+                    <div class="activity-question">
+                        <h4>Question 6: Command Construction</h4>
+                        <p><strong>Write a command to list all files in /var/log in long format, with human-readable sizes, sorted by size (largest first):</strong></p>
+                        <input type="text" id="q6-answer" placeholder="Enter the command">
+                        <button class="check-answer-btn" onclick="checkQ6()">Submit Answer</button>
+                        <div class="feedback" id="feedback-q6"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Command Reference Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    📖 Quick Command Reference
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    <div class="concept-box">
+                        <h3>Essential Commands Cheat Sheet</h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                            <!-- Navigation -->
+                            <div style="background: #f7fafc; padding: 20px; border-radius: 8px;">
+                                <h4 style="color: #667eea; margin-bottom: 15px;">📂 Navigation</h4>
+                                <div class="example-code">pwd              # Where am I?
+ls               # What's here?
+ls -la           # Show all details
+cd /path         # Go to path
+cd ..            # Go up one level
+cd ~             # Go home
+cd -             # Go back</div>
+                            </div>
+
+                            <!-- File Operations -->
+                            <div style="background: #f7fafc; padding: 20px; border-radius: 8px;">
+                                <h4 style="color: #667eea; margin-bottom: 15px;">📄 File Operations</h4>
+                                <div class="example-code">touch file       # Create file
+mkdir dir        # Create directory
+mkdir -p a/b/c   # Create nested
+cp src dest      # Copy file
+cp -r src dest   # Copy directory
+mv src dest      # Move/rename
+rm file          # Delete file
+rm -r dir        # Delete directory</div>
+                            </div>
+
+                            <!-- Viewing Files -->
+                            <div style="background: #f7fafc; padding: 20px; border-radius: 8px;">
+                                <h4 style="color: #667eea; margin-bottom: 15px;">👁️ Viewing Files</h4>
+                                <div class="example-code">cat file         # Show all
+less file        # Page through
+head file        # First 10 lines
+head -n 20 file  # First 20 lines
+tail file        # Last 10 lines
+tail -f file     # Follow (logs)
+wc -l file       # Count lines
+file filename    # File type</div>
+                            </div>
+
+                            <!-- File Information -->
+                            <div style="background: #f7fafc; padding: 20px; border-radius: 8px;">
+                                <h4 style="color: #667eea; margin-bottom: 15px;">ℹ️ File Information</h4>
+                                <div class="example-code">stat file        # Detailed info
+du -sh dir       # Directory size
+df -h            # Disk space
+ls -lh           # File sizes
+which command    # Find command path</div>
+                            </div>
+                        </div>
+
+                        <div class="highlight-box" style="margin-top: 20px;">
+                            <strong>💡 Pro Tips:</strong>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li>Use <strong>Tab</strong> to auto-complete - saves time and prevents typos</li>
+                                <li>Use <strong>Up Arrow</strong> to recall previous commands</li>
+                                <li>Use <strong>Ctrl+R</strong> to search command history</li>
+                                <li>Use <strong>-i</strong> flag for interactive mode when deleting</li>
+                                <li>Always use <strong>pwd</strong> before running destructive commands</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="section">
+                <h2 onclick="toggleSection(this)">
+                    📝 Module Summary
+                    <span class="toggle-icon">▼</span>
+                </h2>
+                <div class="section-content">
+                    <div class="concept-box">
+                        <h3>Key Takeaways</h3>
+                        <ul class="checklist" id="takeaways">
+                            <li>Command structure: command [options] [arguments]</li>
+                            <li>pwd shows current directory, cd changes directory, ls lists contents</li>
+                            <li>mkdir creates directories, -p flag creates parent directories</li>
+                            <li>touch creates empty files or updates timestamps</li>
+                            <li>cp copies files/directories (use -r for directories)</li>
+                            <li>mv moves or renames files and directories</li>
+                            <li>rm deletes files (PERMANENT - no undo!)</li>
+                            <li>cat displays entire file, less pages through large files</li>
+                            <li>head shows first lines, tail shows last lines (tail -f follows)</li>
+                            <li>Tab completion and command history improve efficiency</li>
+                            <li>Options can be combined: -lah is same as -l -a -h</li>
+                            <li>Always double-check before using rm, especially with -r or -f</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>Next Steps:</strong> In Module 4, you'll learn Package Management Fundamentals, including how to install, update, and remove software using APT (Ubuntu) and DNF (Rocky Linux). You'll understand package dependencies, repositories, and system update procedures.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="window.print()">🖨️ Print Module</button>
+                <button class="btn btn-secondary" onclick="resetProgress()">↻ Reset Progress</button>
+                <button class="btn btn-secondary" onclick="clearTerminal()">🗑️ Clear Terminal</button>
+                <button class="btn btn-primary" onclick="completeModule()">✓ Mark Module Complete</button>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+            <p>Module 3: Command-Line Navigation and File Operations | Mendocino College</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">© 2026 | Week 3 of 17</p>
+        </footer>
+    </div>
+
+    <script>
+        // Progress tracking
+        let completedObjectives = new Set();
+        let completedActivities = 0;
+        const totalObjectives = 5;
+        const totalActivities = 10;
+        
+        // Track which activities have been completed
+        let activityStatus = {
+            construct1: false,
+            construct2: false,
+            construct3: false,
+            difference: false,
+            error1: false,
+            error2: false,
+            error3: false,
+            error4: false,
+            q1: false,
+            q2: false,
+            q3: false,
+            q4: false
+        };
+
+        // Virtual file system for terminal simulator
+        let virtualFS = {
+            '/': ['home', 'etc', 'var', 'usr', 'tmp'],
+            '/home': ['student'],
+            '/home/student': ['documents', 'projects'],
+            '/home/student/documents': ['readme.txt', 'notes.txt'],
+            '/home/student/projects': [],
+            '/etc': ['passwd', 'hosts', 'ssh'],
+            '/var': ['log', 'www'],
+            '/var/log': ['syslog', 'auth.log'],
+            '/usr': ['bin', 'local'],
+            '/tmp': []
+        };
+
+        let currentPath = '/home/student';
+        let terminalHistory = [];
+
+        // Toggle sections
+        function toggleSection(header) {
+            header.classList.toggle('collapsed');
+            const content = header.nextElementSibling;
+            content.classList.toggle('collapsed');
+        }
+
+        // Switch tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const objectiveProgress = (completedObjectives.size / totalObjectives) * 50;
+            const activityProgress = (completedActivities / totalActivities) * 50;
+            const totalProgress = objectiveProgress + activityProgress;
+            
+            const progressBar = document.getElementById('moduleProgress');
+            progressBar.style.width = totalProgress + '%';
+            progressBar.textContent = Math.round(totalProgress) + '%';
+        }
+
+        // Handle objective clicks
+        document.querySelectorAll('.learning-objectives li').forEach(item => {
+            item.addEventListener('click', function() {
+                const objectiveId = this.getAttribute('data-objective');
+                
+                if (this.classList.contains('completed')) {
+                    this.classList.remove('completed');
+                    completedObjectives.delete(objectiveId);
+                } else {
+                    this.classList.add('completed');
+                    completedObjectives.add(objectiveId);
+                }
+                
+                updateProgress();
+            });
+        });
+
+        // Handle checklist items
+        document.querySelectorAll('.checklist li').forEach(item => {
+            item.addEventListener('click', function() {
+                this.classList.toggle('checked');
+            });
+        });
+
+        // Terminal simulator functions
+        document.getElementById('terminalInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executeCommand();
+            }
+        });
+
+        function executeCommand() {
+            const input = document.getElementById('terminalInput');
+            const output = document.getElementById('terminalOutput');
+            const command = input.value.trim();
+            
+            if (!command) return;
+            
+            terminalHistory.push(command);
+            
+            // Display command
+            output.innerHTML += `\n<span style="color: #48bb78;">student@server:${currentPath}$</span> ${command}\n`;
+            
+            // Parse and execute
+            const parts = command.split(' ');
+            const cmd = parts[0];
+            const args = parts.slice(1);
+            
+            let result = '';
+            
+            switch(cmd) {
+                case 'pwd':
+                    result = currentPath;
+                    break;
+                    
+                case 'ls':
+                    if (virtualFS[currentPath]) {
+                        result = virtualFS[currentPath].join('  ');
+                    } else {
+                        result = 'ls: cannot access: No such directory';
+                    }
+                    break;
+                    
+                case 'cd':
+                    if (args.length === 0 || args[0] === '~') {
+                        currentPath = '/home/student';
+                        document.getElementById('currentDir').textContent = currentPath;
+                        result = '';
+                    } else if (args[0] === '..') {
+                        const parts = currentPath.split('/').filter(p => p);
+                        parts.pop();
+                        currentPath = '/' + parts.join('/');
+                        if (currentPath === '/') currentPath = '/';
+                        document.getElementById('currentDir').textContent = currentPath;
+                        result = '';
+                    } else if (args[0] === '/') {
+                        currentPath = '/';
+                        document.getElementById('currentDir').textContent = currentPath;
+                        result = '';
+                    } else {
+                        const newPath = args[0].startsWith('/') ? args[0] : currentPath + '/' + args[0];
+                        if (virtualFS[newPath]) {
+                            currentPath = newPath;
+                            document.getElementById('currentDir').textContent = currentPath;
+                            result = '';
+                        } else {
+                            result = `cd: ${args[0]}: No such file or directory`;
+                        }
+                    }
+                    break;
+                    
+                case 'mkdir':
+                    if (args.length === 0) {
+                        result = 'mkdir: missing operand';
+                    } else {
+                        const newDir = currentPath + '/' + args[args.length - 1];
+                        if (!virtualFS[currentPath].includes(args[args.length - 1])) {
+                            virtualFS[currentPath].push(args[args.length - 1]);
+                            virtualFS[newDir] = [];
+                            result = args.includes('-v') ? `mkdir: created directory '${args[args.length - 1]}'` : '';
+                        } else {
+                            result = `mkdir: cannot create directory '${args[args.length - 1]}': File exists`;
+                        }
+                    }
+                    break;
+                    
+                case 'touch':
+                    if (args.length === 0) {
+                        result = 'touch: missing file operand';
+                    } else {
+                        if (!virtualFS[currentPath].includes(args[0])) {
+                            virtualFS[currentPath].push(args[0]);
+                        }
+                        result = '';
+                    }
+                    break;
+                    
+                case 'cat':
+                    if (args.length === 0) {
+                        result = 'cat: missing file operand';
+                    } else if (args[0] === 'readme.txt' && currentPath === '/home/student/documents') {
+                        result = 'This is a sample readme file.\nWelcome to CSC 152!\nPractice your Linux commands here.';
+                    } else {
+                        result = `cat: ${args[0]}: No such file or directory`;
+                    }
+                    break;
+                    
+                case 'rm':
+                    if (args.length === 0) {
+                        result = 'rm: missing operand';
+                    } else {
+                        const filename = args[args.length - 1];
+                        const index = virtualFS[currentPath].indexOf(filename);
+                        if (index > -1) {
+                            virtualFS[currentPath].splice(index, 1);
+                            result = args.includes('-v') ? `removed '${filename}'` : '';
+                        } else {
+                            result = `rm: cannot remove '${filename}': No such file or directory`;
+                        }
+                    }
+                    break;
+                    
+                case 'clear':
+                    output.innerHTML = 'Terminal cleared. Type commands to continue.\n';
+                    input.value = '';
+                    return;
+                    
+                case 'help':
+                    result = `Available commands:
+  pwd              - Print working directory
+  ls               - List directory contents
+  cd [dir]         - Change directory
+  mkdir [dir]      - Make directory
+  touch [file]     - Create empty file
+  cat [file]       - Display file contents
+  rm [file]        - Remove file
+  cp [src] [dest]  - Copy file
+  mv [src] [dest]  - Move/rename file
+  clear            - Clear screen
+  help             - Show this help`;
+                    break;
+                    
+                default:
+                    result = `${cmd}: command not found`;
+            }
+            
+            if (result) {
+                output.innerHTML += result + '\n';
+            }
+            
+            output.scrollTop = output.scrollHeight;
+            input.value = '';
+        }
+
+        function clearTerminal() {
+            document.getElementById('terminalOutput').innerHTML = 'Terminal cleared. Type commands to continue.\n';
+        }
+
+        // Activity checks
+        function checkCommandConstruct1() {
+            const answer = document.getElementById('cmd-construct-1').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback-construct-1');
+            
+            if (!answer) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please enter a command.';
+                return;
+            }
+            
+            const hasLs = answer.includes('ls');
+            const hasL = answer.includes('-l');
+            const hasA = answer.includes('-a');
+            const hasH = answer.includes('-h');
+            const hasT = answer.includes('-t');
+            const hasHome = answer.includes('/home');
+            
+            if (hasLs && hasL && hasA && hasH && hasT && hasHome) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> The command <code>ls -laht /home</code> or <code>ls -lath /home</code> combines all required options: <code>-l</code> (long format), <code>-a</code> (all files including hidden), <code>-h</code> (human-readable sizes), and <code>-t</code> (sort by time). Order of options doesn\'t matter!';
+                if (!activityStatus.construct1) {
+                    completedActivities++;
+                    activityStatus.construct1 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                let missing = [];
+                if (!hasL) missing.push('-l (long format)');
+                if (!hasA) missing.push('-a (all/hidden files)');
+                if (!hasH) missing.push('-h (human-readable)');
+                if (!hasT) missing.push('-t (sort by time)');
+                if (!hasHome) missing.push('/home (directory)');
+                feedback.innerHTML = `<strong>Not quite.</strong> You're missing: ${missing.join(', ')}. Try: <code>ls -laht /home</code>`;
+            }
+        }
+
+        function checkCommandConstruct2() {
+            const answer = document.getElementById('cmd-construct-2').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback-construct-2');
+            
+            if (!answer) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please enter a command.';
+                return;
+            }
+            
+            const hasCp = answer.includes('cp');
+            const hasR = answer.includes('-r');
+            const hasP = answer.includes('-p');
+            const hasV = answer.includes('-v');
+            const hasSrc = answer.includes('/etc/ssh');
+            const hasDest = answer.includes('~') || answer.includes('/home') || answer.includes('.');
+            
+            if (hasCp && hasR && hasP && hasV && hasSrc && hasDest) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Excellent!</strong> The command <code>cp -rpv /etc/ssh ~</code> or <code>sudo cp -rpv /etc/ssh ~</code> correctly copies the directory recursively (<code>-r</code>), preserves attributes (<code>-p</code>), and shows verbose output (<code>-v</code>). Note: You may need <code>sudo</code> to read /etc/ssh contents.';
+                if (!activityStatus.construct2) {
+                    completedActivities++;
+                    activityStatus.construct2 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                let missing = [];
+                if (!hasR) missing.push('-r (recursive)');
+                if (!hasP) missing.push('-p (preserve attributes)');
+                if (!hasV) missing.push('-v (verbose)');
+                feedback.innerHTML = `<strong>Not quite.</strong> Missing: ${missing.join(', ')}. Try: <code>cp -rpv /etc/ssh ~</code> or <code>sudo cp -rpv /etc/ssh ~</code>`;
+            }
+        }
+
+        function checkCommandConstruct3() {
+            const answer = document.getElementById('cmd-construct-3').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback-construct-3');
+            
+            if (!answer) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please enter a command.';
+                return;
+            }
+            
+            const hasMkdir = answer.includes('mkdir');
+            const hasP = answer.includes('-p');
+            const hasPath = answer.includes('projects') && answer.includes('web') && answer.includes('frontend') && answer.includes('components');
+            
+            if (hasMkdir && hasP && hasPath) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Perfect!</strong> The command <code>mkdir -p ~/projects/web/frontend/components</code> creates all parent directories automatically with the <code>-p</code> flag. Without <code>-p</code>, mkdir would fail because the parent directories don\'t exist yet.';
+                if (!activityStatus.construct3) {
+                    completedActivities++;
+                    activityStatus.construct3 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                let hints = [];
+                if (!hasP) hints.push('Need -p flag to create parent directories');
+                if (!hasPath) hints.push('Check the complete path');
+                feedback.innerHTML = `<strong>Not quite.</strong> ${hints.join('. ')}. Try: <code>mkdir -p ~/projects/web/frontend/components</code>`;
+            }
+        }
+
+        function checkCommandDifference() {
+            const answer = document.getElementById('cmd-difference').value.trim();
+            const feedback = document.getElementById('feedback-difference');
+            
+            if (answer.length < 30) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide a more detailed explanation (at least 30 characters).';
+                return;
+            }
+            
+            feedback.className = 'feedback info';
+            feedback.innerHTML = '<strong>Response saved!</strong> These three commands are <strong>functionally identical</strong>. In Linux, short options can be combined in any order. <code>ls -l -a -h</code>, <code>ls -lah</code>, and <code>ls -l -h -a</code> all produce the same result. Combining options (<code>-lah</code>) is more efficient and is the preferred style among experienced administrators.';
+            if (!activityStatus.difference) {
+                completedActivities++;
+                activityStatus.difference = true;
+                updateProgress();
+            }
+        }
+
+        function checkError1() {
+            const problem = document.getElementById('error-1-problem').value.trim().toLowerCase();
+            const fix = document.getElementById('error-1-fix').value.trim();
+            const feedback = document.getElementById('feedback-error-1');
+            
+            if (!problem || !fix) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide both the problem identification and corrected command.';
+                return;
+            }
+            
+            const identifiedSpace = problem.includes('space');
+            const hasQuotes = fix.includes('"') || fix.includes("'") || fix.includes('\\');
+            
+            if (identifiedSpace && hasQuotes) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> The problem is the <strong>space in the directory name</strong>. Bash interprets "My Documents" as two separate arguments. Solutions: <code>cd "/home/alice/My Documents"</code> (quotes) or <code>cd /home/alice/My\\ Documents</code> (escape the space). Best practice: avoid spaces in Linux filenames!';
+                if (!activityStatus.error1) {
+                    completedActivities++;
+                    activityStatus.error1 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Not quite.</strong> The problem is the space in "My Documents". Bash treats it as two separate words. Use quotes or escape the space: <code>cd "/home/alice/My Documents"</code> or <code>cd /home/alice/My\\ Documents</code>';
+            }
+        }
+
+        function checkError2() {
+            const problem = document.getElementById('error-2-problem').value.trim().toLowerCase();
+            const fix = document.getElementById('error-2-fix').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback-error-2');
+            
+            if (!problem || !fix) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide both the problem identification and corrected command.';
+                return;
+            }
+            
+            const identifiedRecursive = problem.includes('recursive') || problem.includes('-r') || problem.includes('directory');
+            const hasFix = fix.includes('cp') && fix.includes('-r');
+            
+            if (identifiedRecursive && hasFix) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> The problem is <strong>missing the -r flag</strong> for recursive copying. Directories require <code>-r</code> to copy all contents. Corrected command: <code>cp -r important_folder backup_folder</code>. The error message explicitly tells you what\'s wrong!';
+                if (!activityStatus.error2) {
+                    completedActivities++;
+                    activityStatus.error2 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Not quite.</strong> The <code>cp</code> command requires the <code>-r</code> (recursive) flag to copy directories. Without it, cp only copies files. Corrected: <code>cp -r important_folder backup_folder</code>';
+            }
+        }
+
+        function checkError3() {
+            const problem = document.getElementById('error-3-problem').value.trim().toLowerCase();
+            const fix = document.getElementById('error-3-fix').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback-error-3');
+            
+            if (!problem || !fix) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide both the problem identification and corrected command.';
+                return;
+            }
+            
+            const identifiedPermission = problem.includes('permission') || problem.includes('sudo') || problem.includes('root');
+            const hasSudo = fix.includes('sudo');
+            
+            if (identifiedPermission && hasSudo) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> The problem is <strong>insufficient permissions</strong>. System log files typically require root access. Corrected command: <code>sudo cat /var/log/syslog</code>. The <code>sudo</code> command temporarily elevates your privileges to perform administrative tasks.';
+                if (!activityStatus.error3) {
+                    completedActivities++;
+                    activityStatus.error3 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Not quite.</strong> The error "Permission denied" means you don\'t have rights to read this file. System logs require root privileges. Use: <code>sudo cat /var/log/syslog</code>';
+            }
+        }
+
+        function checkError4() {
+            const answer = document.getElementById('error-4-explain').value.trim();
+            const feedback = document.getElementById('feedback-error-4');
+            
+            if (answer.length < 50) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide a more detailed explanation (at least 50 characters).';
+                return;
+            }
+            
+            feedback.className = 'feedback info';
+            feedback.innerHTML = '<strong>Response submitted!</strong> The problem is <strong>insufficient permissions</strong> - regular users can\'t create directories in /etc. While <code>sudo mkdir /etc/myconfig</code> would work technically, this is <strong>dangerous and bad practice</strong>. The /etc directory is for system configuration files managed by packages and the system. Creating custom directories here can cause conflicts with system updates and violate the FHS. Instead, use <code>/usr/local/</code> for locally installed software or your home directory for personal configurations.';
+            if (!activityStatus.error4) {
+                completedActivities++;
+                activityStatus.error4 = true;
+                updateProgress();
+            }
+        }
+
+        // Knowledge check functions
+        function checkQ1() {
+            const selected = document.querySelector('input[name="q1"]:checked');
+            const feedback = document.getElementById('feedback-q1');
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === 'b') {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> <code>pwd</code> stands for "Print Working Directory" and shows your current location in the file system. This is essential for confirming where you are before running commands that create, modify, or delete files.';
+                if (!activityStatus.q1) {
+                    completedActivities++;
+                    activityStatus.q1 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Incorrect.</strong> <code>pwd</code> (Print Working Directory) shows your current location. <code>ls</code> lists contents, <code>cd</code> changes directory, and <code>dir</code> is a Windows command (not standard in Linux).';
+            }
+        }
+
+        function checkQ2() {
+            const selected = document.querySelector('input[name="q2"]:checked');
+            const feedback = document.getElementById('feedback-q2');
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === 'b') {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> <code>cp -r directory destination</code> is the correct syntax. The <code>-r</code> (recursive) flag is required to copy directories and all their contents. Without it, cp will refuse to copy directories.';
+                if (!activityStatus.q2) {
+                    completedActivities++;
+                    activityStatus.q2 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Incorrect.</strong> To copy a directory, you must use the <code>-r</code> (recursive) flag: <code>cp -r directory destination</code>. Without <code>-r</code>, cp only works with files, not directories.';
+            }
+        }
+
+        function checkQ3() {
+            const selected = document.querySelector('input[name="q3"]:checked');
+            const feedback = document.getElementById('feedback-q3');
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === 'c') {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> <code>tail -f</code> "follows" the file, continuously monitoring it and displaying new lines as they\'re added. This is extremely useful for watching log files in real-time. Press Ctrl+C to stop following.';
+                if (!activityStatus.q3) {
+                    completedActivities++;
+                    activityStatus.q3 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Incorrect.</strong> The <code>-f</code> flag means "follow" - it continuously monitors the file and displays new lines as they\'re added. This is perfect for watching log files in real-time. Without <code>-f</code>, tail shows the last 10 lines and exits.';
+            }
+        }
+
+        function checkQ4() {
+            const selected = document.querySelector('input[name="q4"]:checked');
+            const feedback = document.getElementById('feedback-q4');
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === 'false') {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Correct!</strong> <code>rm</code> is <strong>permanent</strong>. There is no recycle bin or undelete command in Linux. Once you delete a file with rm, it\'s gone forever (unless you have backups). This is why the <code>-i</code> flag (interactive mode) is so important for critical files - it prompts you before each deletion.';
+                if (!activityStatus.q4) {
+                    completedActivities++;
+                    activityStatus.q4 = true;
+                    updateProgress();
+                }
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = '<strong>Incorrect.</strong> The <code>rm</code> command is <strong>permanent</strong>. There is no "undelete" or recycle bin in Linux. Once deleted, files are gone forever (unless you have backups). Always double-check before deleting, especially with <code>rm -rf</code>!';
+            }
+        }
+
+        function checkQ5() {
+            const answer = document.getElementById('q5-answer').value.trim();
+            const feedback = document.getElementById('feedback-q5');
+            
+            if (answer.length < 50) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please provide a more detailed answer (at least 50 characters).';
+                return;
+            }
+            
+            feedback.className = 'feedback info';
+            feedback.innerHTML = '<strong>Response submitted!</strong> Key differences: <code>cat</code> displays the entire file at once and exits - good for short files. <code>less</code> displays one page at a time and allows scrolling forward/backward, searching, and navigation - essential for large files. <code>less</code> doesn\'t load the entire file into memory, making it efficient for very large files. Use <code>cat</code> for quick views of small files, <code>less</code> for anything longer than one screen.';
+        }
+
+        function checkQ6() {
+            const answer = document.getElementById('q6-answer').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback-q6');
+            
+            if (!answer) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Please enter a command.';
+                return;
+            }
+            
+            const hasLs = answer.includes('ls');
+            const hasL = answer.includes('-l');
+            const hasH = answer.includes('-h');
+            const hasS = answer.includes('-s');
+            const hasPath = answer.includes('/var/log');
+            
+            if (hasLs && hasL && hasH && hasS && hasPath) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = '<strong>Excellent!</strong> The command <code>ls -lhS /var/log</code> combines: <code>-l</code> (long format), <code>-h</code> (human-readable sizes), and <code>-S</code> (sort by size, largest first). Capital S is important - lowercase s shows something different!';
+            } else {
+                feedback.className = 'feedback incorrect';
+                let missing = [];
+                if (!hasL) missing.push('-l (long format)');
+                if (!hasH) missing.push('-h (human-readable)');
+                if (!hasS) missing.push('-S (sort by size - capital S!)');
+                feedback.innerHTML = `<strong>Not quite.</strong> Missing: ${missing.join(', ')}. Try: <code>ls -lhS /var/log</code> (note: capital S for sort by size)`;
+            }
+        }
+
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset all progress? This will clear your completed objectives and activities.')) {
+                completedObjectives.clear();
+                completedActivities = 0;
+                activityStatus = {
+                    construct1: false,
+                    construct2: false,
+                    construct3: false,
+                    difference: false,
+                    error1: false,
+                    error2: false,
+                    error3: false,
+                    error4: false,
+                    q1: false,
+                    q2: false,
+                    q3: false,
+                    q4: false
+                };
+                
+                document.querySelectorAll('.learning-objectives li').forEach(item => {
+                    item.classList.remove('completed');
+                });
+                
+                document.querySelectorAll('.checklist li').forEach(item => {
+                    item.classList.remove('checked');
+                });
+                
+                document.querySelectorAll('.feedback').forEach(item => {
+                    item.style.display = 'none';
+                });
+                
+                document.querySelectorAll('input[type="radio"]').forEach(item => {
+                    item.checked = false;
+                });
+                
+                document.querySelectorAll('input[type="text"]').forEach(item => {
+                    item.value = '';
+                });
+                
+                document.querySelectorAll('textarea').forEach(item => {
+                    item.value = '';
+                });
+                
+                updateProgress();
+            }
+        }
+
+        function completeModule() {
+            const objectivesComplete = completedObjectives.size === totalObjectives;
+            const activitiesComplete = completedActivities >= 8;
+            
+            if (objectivesComplete && activitiesComplete) {
+                alert('🎉 Congratulations! You have completed Module 3: Command-Line Navigation and File Operations.\n\nYou now understand:\n• Command structure and syntax\n• Essential navigation commands\n• File and directory operations\n• Viewing file contents\n• Command-line efficiency techniques\n\nYou\'re ready to proceed to Module 4: Package Management Fundamentals!');
+            } else {
+                const remainingObj = totalObjectives - completedObjectives.size;
+                const remainingAct = Math.max(0, 8 - completedActivities);
+                alert(`You're making progress! To complete this module:\n\n• ${remainingObj} learning objective(s) remaining\n• ${remainingAct} more activit(ies) to complete\n\nClick on objectives to mark them complete, and finish the interactive activities.`);
+            }
+        }
+
+        // Initialize progress bar
+        updateProgress();
+    </script>
+</body>
+</html>
