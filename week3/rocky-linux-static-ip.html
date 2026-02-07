@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Static IP on Rocky Linux Server</title>
+    
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background-color: #f9fafb;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Header Styles */
+        header {
+            margin-bottom: 30px;
+            border-bottom: 3px solid #1e88e5;
+            padding-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            color: #1e3a8a;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1e88e5;
+            padding-left: 12px;
+        }
+        
+        h3 {
+            font-size: 1.25rem;
+            color: #374151;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        /* Video and Transcript Container */
+        .media-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        @media (min-width: 1024px) {
+            .media-container {
+                flex-direction: row;
+            }
+        }
+        
+        .video-section {
+            width: 100%;
+            flex-shrink: 0;
+        }
+        
+        @media (min-width: 1024px) {
+            .video-section {
+                width: 66%;
+            }
+        }
+        
+        .video-container {
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%;
+            position: relative;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .transcript-section {
+            width: 100%;
+            flex-shrink: 0;
+        }
+        
+        @media (min-width: 1024px) {
+            .transcript-section {
+                width: 33%;
+            }
+        }
+        
+        .transcript-container {
+            height: 24rem;
+            overflow-y: auto;
+            background-color: #ffffff;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+        }
+        
+        .transcript-line {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            margin-bottom: 4px;
+        }
+        
+        .transcript-line:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .transcript-line:focus {
+            outline: 2px solid #1e88e5;
+            outline-offset: 2px;
+        }
+        
+        .active-transcript-line {
+            background-color: #f0f7ff;
+            font-weight: 600;
+            border-left: 4px solid #1e88e5;
+            padding-left: 12px;
+            transition: background-color 0.2s;
+        }
+        
+        /* Instructions Section */
+        .instructions {
+            background-color: #f0f9ff;
+            border-left: 4px solid #0284c7;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions p {
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        /* Commands Section */
+        .commands-section {
+            background-color: #fefce8;
+            border-left: 4px solid #ca8a04;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+        
+        .command-block {
+            background-color: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            margin-top: 10px;
+            position: relative;
+        }
+        
+        .command-block code {
+            display: block;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background-color 0.2s;
+        }
+        
+        .copy-button:hover {
+            background-color: #1565c0;
+        }
+        
+        .copy-button:focus {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+        
+        .copy-button.copied {
+            background-color: #059669;
+        }
+        
+        /* Steps List */
+        .steps-list {
+            counter-reset: step-counter;
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .steps-list li {
+            counter-increment: step-counter;
+            margin-bottom: 15px;
+            padding-left: 40px;
+            position: relative;
+        }
+        
+        .steps-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-color: #1e88e5;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+        
+        /* Note Box */
+        .note-box {
+            background-color: #fef3c7;
+            border: 1px solid #fbbf24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        
+        .note-box strong {
+            color: #92400e;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        /* Skip Link for Accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #1e88e5;
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            border-radius: 0 0 4px 0;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
+        
+        /* Focus Indicators */
+        a:focus, button:focus {
+            outline: 2px solid #1e88e5;
+            outline-offset: 2px;
+        }
+        
+        /* Responsive Text */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            h2 {
+                font-size: 1.25rem;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <div class="container">
+        <header>
+            <h1>Set Static IP on Rocky Linux Server</h1>
+            <p>Learn how to configure a static IP address on Rocky Linux using nmcli command-line tools.</p>
+        </header>
+        
+        <main id="main-content">
+            <!-- Video and Transcript Section -->
+            <section aria-labelledby="video-heading">
+                <h2 id="video-heading">Video Tutorial</h2>
+                
+                <div class="media-container">
+                    <!-- Video Player Section -->
+                    <div class="video-section">
+                        <div id="video-container" class="video-container">
+                            <iframe 
+                                id="youtube-player"
+                                src="https://www.youtube.com/embed/Bsvm-DnfKXw?enablejsapi=1"
+                                title="Rocky Linux Static IP Configuration Tutorial"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    
+                    <!-- Transcript Section -->
+                    <div class="transcript-section">
+                        <h3 id="transcript-heading">Interactive Transcript</h3>
+                        <div id="transcript-container" 
+                             class="transcript-container" 
+                             role="region" 
+                             aria-labelledby="transcript-heading"
+                             aria-live="polite">
+                            <p style="text-align: center; color: #6b7280;">Loading transcript...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Overview Section -->
+            <section aria-labelledby="overview-heading">
+                <h2 id="overview-heading">Overview</h2>
+                <div class="instructions">
+                    <p>This tutorial demonstrates how to set a static IP address on Rocky Linux using the NetworkManager command-line interface (nmcli). A static IP ensures your server always has the same IP address, which is essential for server configurations.</p>
+                    
+                    <div class="note-box">
+                        <strong>Important:</strong> Before proceeding, you will need:
+                        <ul>
+                            <li>Access to your Rocky Linux server console</li>
+                            <li>Sudo/root privileges</li>
+                            <li>A static IP address assigned by your instructor</li>
+                            <li>Your network interface name (usually ens18)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Step-by-Step Instructions -->
+            <section aria-labelledby="steps-heading">
+                <h2 id="steps-heading">Step-by-Step Instructions</h2>
+                
+                <ol class="steps-list">
+                    <li>
+                        <strong>Identify your network interface:</strong>
+                        <p>Run the following command to display your network interfaces. Look for the interface name (typically <code>ens18</code>):</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'ip addr show')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>ip addr show</code>
+                        </div>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Note:</strong> If your interface name is different from <code>ens18</code>, replace <code>ens18</code> with your actual interface name in all commands below.
+                        </p>
+                    </li>
+                    
+                    <li>
+                        <strong>Set the static IP address:</strong>
+                        <p>Replace <code>.xxx</code> with the static IP value provided by your instructor. The <code>/24</code> indicates the subnet mask.</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'sudo nmcli connection modify ens18 ipv4.addresses 10.255.254.xxx/24')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>sudo nmcli connection modify ens18 ipv4.addresses 10.255.254.xxx/24</code>
+                        </div>
+                    </li>
+                    
+                    <li>
+                        <strong>Set the gateway:</strong>
+                        <p>Configure the default gateway for your network:</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'sudo nmcli connection modify ens18 ipv4.gateway 10.255.254.1')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>sudo nmcli connection modify ens18 ipv4.gateway 10.255.254.1</code>
+                        </div>
+                    </li>
+                    
+                    <li>
+                        <strong>Set DNS servers:</strong>
+                        <p>Configure DNS servers (gateway and Google DNS):</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'sudo nmcli connection modify ens18 ipv4.dns "10.255.254.1 8.8.8.8"')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>sudo nmcli connection modify ens18 ipv4.dns "10.255.254.1 8.8.8.8"</code>
+                        </div>
+                    </li>
+                    
+                    <li>
+                        <strong>Set IP method to manual:</strong>
+                        <p>Change from DHCP (automatic) to manual (static) IP assignment:</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'sudo nmcli connection modify ens18 ipv4.method manual')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>sudo nmcli connection modify ens18 ipv4.method manual</code>
+                        </div>
+                    </li>
+                    
+                    <li>
+                        <strong>Apply the changes:</strong>
+                        <p>Bring the connection up to apply all changes:</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'sudo nmcli connection up ens18')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>sudo nmcli connection up ens18</code>
+                        </div>
+                    </li>
+                    
+                    <li>
+                        <strong>Verify the configuration:</strong>
+                        <p>Check that your static IP is properly configured:</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'ip addr show')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>ip addr show</code>
+                        </div>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Note:</strong> You should see your configured IP address listed for the interface. It should show "scope global" indicating it's permanently assigned.
+                        </p>
+                    </li>
+                    
+                    <li>
+                        <strong>Test persistence (optional):</strong>
+                        <p>Reboot the server to ensure the static IP persists:</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'sudo reboot')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>sudo reboot</code>
+                        </div>
+                        <p style="margin-top: 10px;">After reboot, log back in and verify your IP address is still the same using <code>ip addr show</code>.</p>
+                    </li>
+                </ol>
+            </section>
+            
+            <!-- Quick Reference -->
+            <section aria-labelledby="reference-heading">
+                <h2 id="reference-heading">Quick Command Reference</h2>
+                <div class="commands-section">
+                    <p><strong>All commands in sequence:</strong></p>
+                    <div class="command-block" style="margin-top: 15px;">
+                        <button class="copy-button" onclick="copyCommand(this, document.getElementById('all-commands').textContent)" aria-label="Copy all commands to clipboard">Copy All</button>
+                        <code id="all-commands">sudo nmcli connection modify ens18 ipv4.addresses 10.255.254.xxx/24
+sudo nmcli connection modify ens18 ipv4.gateway 10.255.254.1
+sudo nmcli connection modify ens18 ipv4.dns "10.255.254.1 8.8.8.8"
+sudo nmcli connection modify ens18 ipv4.method manual
+sudo nmcli connection up ens18</code>
+                    </div>
+                    <p style="margin-top: 15px;"><strong>Remember:</strong> Replace <code>.xxx</code> in the first command with your assigned static IP number, and replace <code>ens18</code> with your actual interface name if different.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script>
+        // CONFIGURATION
+        const VIDEO_ID = 'Bsvm-DnfKXw';
+        let player;
+        let timeUpdater;
+        let parsedTranscript = [];
+
+        // VTT CONTENT
+        const vttContent = `WEBVTT
+
+00:00.000 --> 00:10.080
+Aloha so I'm on my rocky Linux server and I want to set a static IP address
+
+00:10.080 --> 00:16.920
+okay so the first thing we need to do is go into console and then we need to log
+
+00:16.920 --> 00:28.640
+in your username your password okay and then you're gonna do an IP ADDR show
+
+00:28.640 --> 00:35.340
+okay and what you want to look at so here's my internet address it's 10.255.254.33
+
+00:35.340 --> 00:45.680
+and it I got it from came from a dynamic IP address okay so it came through DHCP
+
+00:45.680 --> 00:51.640
+and I don't want it to be 33 because actually that's one of your user IP
+
+00:51.640 --> 00:57.920
+addresses okay so the interface that this is on is ENS 18
+
+00:57.920 --> 00:58.620
+okay so I'm going to go ahead and set up my internet address and I'm going to
+
+00:58.640 --> 00:59.140
+go ahead and set up my internet address and I'm going to
+
+00:59.140 --> 01:04.180
+or you could use the EMP 0s 18 because it's the old name but I'm gonna use ENS
+
+01:04.180 --> 01:15.480
+18 okay and so there's a series of commands that we want to run and I will
+
+01:15.480 --> 01:28.400
+paste them in and they will be attached to this page if I can
+
+01:28.640 --> 01:29.140
+paste them in and they will be attached to this page if I can
+
+01:29.140 --> 01:47.140
+paste okay okay I'm typing them in NM CLI for command line connection modify okay
+
+01:47.140 --> 01:58.500
+ENS 18 because that's the one we want to modify IP v4 dot a dresses space 10.255.254.33
+
+01:58.640 --> 01:59.640
+ENS 18 because that's the one we want to modify IP v4 dot a dresses space 10.255.254.33
+
+01:59.640 --> 02:00.640
+ENS 18 because that's the one we want to modify IP v4 dot a dresses space 10.255.254.33
+
+02:00.640 --> 02:01.640
+ENS 18 because that's the one we want to modify IP v4 dot a dresses space 10.255.254.33
+
+02:01.640 --> 02:02.640
+ENS 18 because that's the one we want to modify IP v4 dot a dresses space 10.255.254.33
+
+02:02.640 --> 02:03.640
+ENS 18 because that's the one we want to modify IP v4 dot a dresses space 10.255.254.33
+
+02:03.640 --> 02:04.640
+ENS 18 because that's the one we want to modify IP v4 dot a dresses space 10.255.254.33
+
+02:04.640 --> 02:05.640
+ENS 18 because that's the one we want to modify IP v4 dot a dresses space 10.255.254.33
+
+02:05.640 --> 02:18.860
+24 because that's a network thing okay it didn't let me do it so let's try this
+
+02:18.860 --> 02:32.400
+let's go back here add sudo in front then I need to put my password in
+
+02:35.640 --> 02:45.320
+okay so it let me do that sudo okay so I'm gonna edit that command because I
+
+02:45.320 --> 03:00.400
+need to set the gateway next mp4 dash gateway 10.255.254.1 then I need to
+
+03:00.400 --> 03:05.240
+set the DNS server cuz you gotta do everything manually
+
+03:05.640 --> 03:18.920
+my DNS server oops DNS and I'm going to put call out 10.255.254.1 and
+
+03:18.920 --> 03:28.200
+space 8.8.8.8 okay so those are my two one is my gateway and one is a Google
+
+03:28.200 --> 03:35.220
+DNS server and then I need to so I'm using the up arrow keys to repeat the
+
+03:35.220 --> 03:35.640
+last command
+
+03:35.640 --> 03:45.940
+and then I'm just modifying the last part IP for method okay manual so that
+
+03:45.940 --> 04:01.580
+is no longer will no longer use I want to connection up
+
+04:03.540 --> 04:05.560
+Oh
+
+04:05.640 --> 04:19.800
+and I'm getting it up okay so now I do an APVR show now you can see my IP
+
+04:19.800 --> 04:29.100
+address is 2.202 okay scope global no prefix IX route ENS18 okay valid
+
+04:29.100 --> 04:33.440
+forever so it's no longer gonna go and get a
+
+04:33.440 --> 04:39.100
+static I mean a dynamic IP so it's always gonna have this IP address all
+
+04:39.100 --> 04:48.880
+right so if I reboot oh I didn't like that one
+
+04:48.880 --> 04:58.660
+sudo reboot when I get my IP address it should be 2.202 because I just set a
+
+04:58.660 --> 05:03.200
+static IP address right now I will obviously have these
+
+05:03.200 --> 05:03.440
+IP addresses in my IP address so I'm going to set a static IP address and
+
+05:03.440 --> 05:10.060
+commands listed so you don't have to try to get them out of the video but
+
+05:10.060 --> 05:15.500
+they'll be listed on the page where the video is where the video resides so you
+
+05:15.500 --> 05:32.060
+can easily get them right so let me just verify that that worked still 2.202 okay
+
+05:32.060 --> 05:33.200
+so I reboot it and it's still 2.202
+
+05:33.200 --> 05:40.820
+meaning it didn't like default to DHCP okay and then when you do it you won't
+
+05:40.820 --> 05:46.320
+use 2.202 because you'll use one of the 10 IP addresses that you have in your
+
+05:46.320 --> 05:57.220
+range of static IP addresses to use all right okay that's all there is to it and
+
+05:57.220 --> 06:01.820
+we'll catch you maybe on the next one bye`;
+
+        // CORE UTILITIES
+        function timeToSeconds(timeStr) {
+            if (!timeStr) return 0;
+            const parts = timeStr.trim().split(':');
+            
+            if (parts.length === 2) {
+                let minutes = parseInt(parts[0]) || 0;
+                let seconds = parseFloat(parts[1]) || 0;
+                return minutes * 60 + seconds;
+            } else if (parts.length === 3) {
+                let hours = parseInt(parts[0]) || 0;
+                let minutes = parseInt(parts[1]) || 0;
+                let seconds = parseFloat(parts[2]) || 0;
+                return hours * 3600 + minutes * 60 + seconds;
+            }
+            return 0;
+        }
+
+        function parseVtt(vttText) {
+            const cues = vttText.trim().split(/\n\n+/);
+            const parsedCues = [];
+            
+            cues.forEach(cueBlock => {
+                if (cueBlock.startsWith('WEBVTT') || cueBlock.trim() === '') return;
+                
+                const lines = cueBlock.trim().split('\n');
+                const timeLine = lines.find(line => line.includes('-->'));
+                if (!timeLine) return;
+
+                const [startTimeStr, endTimeStr] = timeLine.split(' --> ');
+                const textLines = lines.slice(lines.indexOf(timeLine) + 1);
+                
+                parsedCues.push({
+                    start: timeToSeconds(startTimeStr),
+                    end: timeToSeconds(endTimeStr),
+                    text: textLines.join(' ').trim()
+                });
+            });
+            return parsedCues;
+        }
+
+        // TRANSCRIPT RENDERING AND INTERACTIVITY
+        function populateTranscript() {
+            const container = document.getElementById('transcript-container');
+            container.innerHTML = '';
+
+            parsedTranscript.forEach(cue => {
+                const lineElement = document.createElement('div');
+                lineElement.className = 'transcript-line';
+                lineElement.dataset.start = cue.start;
+                lineElement.dataset.end = cue.end;
+                lineElement.textContent = cue.text;
+                lineElement.setAttribute('role', 'button');
+                lineElement.setAttribute('tabindex', '0');
+                lineElement.setAttribute('aria-label', 'Seek to ' + Math.floor(cue.start / 60) + ' minutes ' + Math.floor(cue.start % 60) + ' seconds');
+
+                const seekToTime = () => {
+                    if (player && player.seekTo) {
+                        player.seekTo(cue.start, true);
+                        player.playVideo();
+                    }
+                };
+                
+                lineElement.addEventListener('click', seekToTime);
+                lineElement.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { 
+                        e.preventDefault(); 
+                        seekToTime(); 
+                    }
+                });
+
+                container.appendChild(lineElement);
+            });
+        }
+
+        // SYNC LOGIC
+        function highlightCurrentLine() {
+            if (!player || !player.getCurrentTime) return;
+
+            const currentTime = player.getCurrentTime();
+            const lines = document.querySelectorAll('#transcript-container .transcript-line');
+
+            lines.forEach(line => {
+                const start = parseFloat(line.dataset.start);
+                const end = parseFloat(line.dataset.end);
+
+                if (currentTime >= start && currentTime < end) {
+                    if (!line.classList.contains('active-transcript-line')) {
+                        document.querySelector('.active-transcript-line')?.classList.remove('active-transcript-line');
+                        line.classList.add('active-transcript-line');
+                        line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                } else {
+                    line.classList.remove('active-transcript-line');
+                }
+            });
+        }
+
+        // HEIGHT SYNCHRONIZATION
+        function syncTranscriptHeight() {
+            const mediaQuery = window.matchMedia('(min-width: 1024px)');
+            const videoContainer = document.getElementById('video-container');
+            const transcriptContainer = document.getElementById('transcript-container');
+            
+            if (!videoContainer || !transcriptContainer) return;
+            
+            if (mediaQuery.matches) {
+                const videoHeight = videoContainer.offsetHeight;
+                transcriptContainer.style.maxHeight = videoHeight + 'px';
+            } else {
+                transcriptContainer.style.maxHeight = '24rem';
+            }
+        }
+
+        // YOUTUBE API HANDLERS
+        window.onYouTubeIframeAPIReady = function() {
+            player = new YT.Player('youtube-player', {
+                videoId: VIDEO_ID,
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        };
+
+        function onPlayerStateChange(event) {
+            clearInterval(timeUpdater);
+            if (event.data === YT.PlayerState.PLAYING) {
+                timeUpdater = setInterval(highlightCurrentLine, 300);
+            }
+        }
+
+        // COPY COMMAND FUNCTIONALITY
+        function copyCommand(button, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy command. Please copy manually.');
+            });
+        }
+
+        // INITIALIZATION
+        document.addEventListener('DOMContentLoaded', () => {
+            parsedTranscript = parseVtt(vttContent);
+            populateTranscript();
+            
+            setTimeout(syncTranscriptHeight, 100);
+
+            if (typeof(YT) == 'undefined' || typeof(YT.Player) == 'undefined') {
+                const tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                document.head.appendChild(tag);
+            } else {
+                onYouTubeIframeAPIReady();
+            }
+        });
+
+        // HANDLE WINDOW RESIZE
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(syncTranscriptHeight, 250);
+        });
+    </script>
+</body>
+</html>
