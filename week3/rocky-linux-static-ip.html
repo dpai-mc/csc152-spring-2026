@@ -62,26 +62,14 @@
         /* Video and Transcript Container */
         .media-container {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             gap: 20px;
             margin-bottom: 30px;
         }
         
-        @media (min-width: 1024px) {
-            .media-container {
-                flex-direction: row;
-            }
-        }
-        
         .video-section {
-            width: 100%;
+            width: 66%;
             flex-shrink: 0;
-        }
-        
-        @media (min-width: 1024px) {
-            .video-section {
-                width: 66%;
-            }
         }
         
         .video-container {
@@ -104,18 +92,12 @@
         }
         
         .transcript-section {
-            width: 100%;
+            width: 33%;
             flex-shrink: 0;
         }
         
-        @media (min-width: 1024px) {
-            .transcript-section {
-                width: 33%;
-            }
-        }
-        
         .transcript-container {
-            height: 24rem;
+            height: auto;
             overflow-y: auto;
             background-color: #ffffff;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -306,6 +288,39 @@
             .container {
                 padding: 20px;
             }
+            
+            /* On very small screens, allow some flexibility but keep side-by-side */
+            .media-container {
+                gap: 10px;
+            }
+            
+            .video-section {
+                width: 60%;
+            }
+            
+            .transcript-section {
+                width: 40%;
+            }
+            
+            .command-block {
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* For extremely small screens */
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.25rem;
+            }
+            
+            .copy-button {
+                font-size: 0.75rem;
+                padding: 4px 8px;
+            }
         }
     </style>
 </head>
@@ -445,13 +460,49 @@
                     </li>
                     
                     <li>
-                        <strong>Test persistence (optional):</strong>
-                        <p>Reboot the server to ensure the static IP persists:</p>
+                        <strong>Reboot the server:</strong>
+                        <p>Reboot to ensure the static IP configuration persists across restarts:</p>
                         <div class="command-block">
                             <button class="copy-button" onclick="copyCommand(this, 'sudo reboot')" aria-label="Copy command to clipboard">Copy</button>
                             <code>sudo reboot</code>
                         </div>
-                        <p style="margin-top: 10px;">After reboot, log back in and verify your IP address is still the same using <code>ip addr show</code>.</p>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Note:</strong> After the reboot completes, log back into your server and proceed to the next step.
+                        </p>
+                    </li>
+                    
+                    <li>
+                        <strong>Verify IP address after reboot:</strong>
+                        <p>Confirm your static IP address is still assigned after the reboot:</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'ip addr show')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>ip addr show</code>
+                        </div>
+                        <p style="margin-top: 10px;">Your static IP address should remain the same, confirming that it did not revert to DHCP.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Test internet connectivity:</strong>
+                        <p>Verify that your server can reach the internet by sending 4 ping packets to Google's DNS server:</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'ping -c 4 8.8.8.8')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>ping -c 4 8.8.8.8</code>
+                        </div>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Expected result:</strong> You should see 4 packets transmitted and 4 received (0% packet loss). This confirms your server has internet access.
+                        </p>
+                    </li>
+                    
+                    <li>
+                        <strong>Test DNS resolution:</strong>
+                        <p>Verify that DNS is working correctly by pinging a domain name:</p>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'ping -c 4 google.com')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>ping -c 4 google.com</code>
+                        </div>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Expected result:</strong> You should see the domain name resolved to an IP address and 4 successful ping responses. This confirms both internet connectivity and DNS resolution are working properly.
+                        </p>
                     </li>
                 </ol>
             </section>
@@ -460,15 +511,24 @@
             <section aria-labelledby="reference-heading">
                 <h2 id="reference-heading">Quick Command Reference</h2>
                 <div class="commands-section">
-                    <p><strong>All commands in sequence:</strong></p>
+                    <p><strong>Configuration commands (run in sequence):</strong></p>
                     <div class="command-block" style="margin-top: 15px;">
-                        <button class="copy-button" onclick="copyCommand(this, document.getElementById('all-commands').textContent)" aria-label="Copy all commands to clipboard">Copy All</button>
-                        <code id="all-commands">sudo nmcli connection modify ens18 ipv4.addresses 10.255.254.xxx/24
+                        <button class="copy-button" onclick="copyCommand(this, document.getElementById('config-commands').textContent)" aria-label="Copy configuration commands to clipboard">Copy All</button>
+                        <code id="config-commands">sudo nmcli connection modify ens18 ipv4.addresses 10.255.254.xxx/24
 sudo nmcli connection modify ens18 ipv4.gateway 10.255.254.1
 sudo nmcli connection modify ens18 ipv4.dns "10.255.254.1 8.8.8.8"
 sudo nmcli connection modify ens18 ipv4.method manual
 sudo nmcli connection up ens18</code>
                     </div>
+                    
+                    <p style="margin-top: 20px;"><strong>Verification commands (run after reboot):</strong></p>
+                    <div class="command-block" style="margin-top: 15px;">
+                        <button class="copy-button" onclick="copyCommand(this, document.getElementById('verify-commands').textContent)" aria-label="Copy verification commands to clipboard">Copy All</button>
+                        <code id="verify-commands">ip addr show
+ping -c 4 8.8.8.8
+ping -c 4 google.com</code>
+                    </div>
+                    
                     <p style="margin-top: 15px;"><strong>Remember:</strong> Replace <code>.xxx</code> in the first command with your assigned static IP number, and replace <code>ens18</code> with your actual interface name if different.</p>
                 </div>
             </section>
@@ -735,18 +795,14 @@ we'll catch you maybe on the next one bye`;
 
         // HEIGHT SYNCHRONIZATION
         function syncTranscriptHeight() {
-            const mediaQuery = window.matchMedia('(min-width: 1024px)');
             const videoContainer = document.getElementById('video-container');
             const transcriptContainer = document.getElementById('transcript-container');
             
             if (!videoContainer || !transcriptContainer) return;
             
-            if (mediaQuery.matches) {
-                const videoHeight = videoContainer.offsetHeight;
-                transcriptContainer.style.maxHeight = videoHeight + 'px';
-            } else {
-                transcriptContainer.style.maxHeight = '24rem';
-            }
+            // Always match the video container height since we're always side-by-side
+            const videoHeight = videoContainer.offsetHeight;
+            transcriptContainer.style.maxHeight = videoHeight + 'px';
         }
 
         // YOUTUBE API HANDLERS
