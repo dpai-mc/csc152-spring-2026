@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creating Rocky Linux Server VM on Proxmox</title>
+    
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background-color: #f9fafb;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Header Styles */
+        header {
+            margin-bottom: 30px;
+            border-bottom: 3px solid #1e88e5;
+            padding-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            color: #1e3a8a;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1e88e5;
+            padding-left: 12px;
+        }
+        
+        h3 {
+            font-size: 1.25rem;
+            color: #374151;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        /* Video and Transcript Container */
+        .media-container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .video-section {
+            width: 66%;
+            flex-shrink: 0;
+        }
+        
+        .video-container {
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%;
+            position: relative;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .transcript-section {
+            width: 33%;
+            flex-shrink: 0;
+        }
+        
+        .transcript-container {
+            height: auto;
+            overflow-y: auto;
+            background-color: #ffffff;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+        }
+        
+        .transcript-line {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            margin-bottom: 4px;
+        }
+        
+        .transcript-line:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .transcript-line:focus {
+            outline: 2px solid #1e88e5;
+            outline-offset: 2px;
+        }
+        
+        .active-transcript-line {
+            background-color: #f0f7ff;
+            font-weight: 600;
+            border-left: 4px solid #1e88e5;
+            padding-left: 12px;
+            transition: background-color 0.2s;
+        }
+        
+        /* Instructions Section */
+        .instructions {
+            background-color: #f0f9ff;
+            border-left: 4px solid #0284c7;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions p {
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        /* Commands Section */
+        .commands-section {
+            background-color: #fefce8;
+            border-left: 4px solid #ca8a04;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+        
+        .command-block {
+            background-color: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            margin-top: 10px;
+            position: relative;
+        }
+        
+        .command-block code {
+            display: block;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background-color 0.2s;
+        }
+        
+        .copy-button:hover {
+            background-color: #1565c0;
+        }
+        
+        .copy-button:focus {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+        
+        .copy-button.copied {
+            background-color: #059669;
+        }
+        
+        /* Steps List */
+        .steps-list {
+            counter-reset: step-counter;
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .steps-list li {
+            counter-increment: step-counter;
+            margin-bottom: 20px;
+            padding-left: 40px;
+            position: relative;
+        }
+        
+        .steps-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-color: #1e88e5;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+        
+        /* Note Box */
+        .note-box {
+            background-color: #fef3c7;
+            border: 1px solid #fbbf24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        
+        .note-box strong {
+            color: #92400e;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .warning-box {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        
+        .warning-box strong {
+            color: #991b1b;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        /* Skip Link for Accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #1e88e5;
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            border-radius: 0 0 4px 0;
+        }
+        
+        .skip-link:focus {
+            top: 0;
+        }
+        
+        /* Focus Indicators */
+        a:focus, button:focus {
+            outline: 2px solid #1e88e5;
+            outline-offset: 2px;
+        }
+        
+        /* Responsive Text */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            h2 {
+                font-size: 1.25rem;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .media-container {
+                gap: 10px;
+            }
+            
+            .video-section {
+                width: 60%;
+            }
+            
+            .transcript-section {
+                width: 40%;
+            }
+            
+            .command-block {
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.25rem;
+            }
+            
+            .copy-button {
+                font-size: 0.75rem;
+                padding: 4px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <div class="container">
+        <header>
+            <h1>Creating Rocky Linux Server VM on Proxmox</h1>
+            <p>Step-by-step guide to creating and configuring a Rocky Linux virtual machine in Proxmox Virtual Environment.</p>
+        </header>
+        
+        <main id="main-content">
+            <!-- Video and Transcript Section -->
+            <section aria-labelledby="video-heading">
+                <h2 id="video-heading">Video Tutorial</h2>
+                
+                <div class="media-container">
+                    <!-- Video Player Section -->
+                    <div class="video-section">
+                        <div id="video-container" class="video-container">
+                            <iframe 
+                                id="youtube-player"
+                                src="https://www.youtube.com/embed/OE4WWIBSnK8?enablejsapi=1"
+                                title="Rocky Linux VM Installation on Proxmox Tutorial"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    
+                    <!-- Transcript Section -->
+                    <div class="transcript-section">
+                        <h3 id="transcript-heading">Interactive Transcript</h3>
+                        <div id="transcript-container" 
+                             class="transcript-container" 
+                             role="region" 
+                             aria-labelledby="transcript-heading"
+                             aria-live="polite">
+                            <p style="text-align: center; color: #6b7280;">Loading transcript...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Overview Section -->
+            <section aria-labelledby="overview-heading">
+                <h2 id="overview-heading">Overview</h2>
+                <div class="instructions">
+                    <p>This tutorial guides you through creating a Rocky Linux server virtual machine on Proxmox Virtual Environment (PVE). Rocky Linux is an enterprise-grade Linux distribution that provides a stable server environment.</p>
+                    
+                    <div class="warning-box">
+                        <strong>⚠️ Critical Configuration:</strong>
+                        When configuring the CPU settings, you MUST set the Processor type to <strong>"host"</strong>. This is required because each Proxmox PVE instance is itself a virtualized instance (nested virtualization).
+                    </div>
+                    
+                    <div class="note-box">
+                        <strong>Prerequisites:</strong>
+                        <ul>
+                            <li>Access to your Proxmox node (CSC152-student##)</li>
+                            <li>Rocky Linux ISO downloaded to Proxmox</li>
+                            <li>Basic understanding of VM configuration</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Step-by-Step Instructions -->
+            <section aria-labelledby="steps-heading">
+                <h2 id="steps-heading">Step-by-Step Installation Guide</h2>
+                
+                <h3>Part 1: Download Rocky Linux ISO</h3>
+                <ol class="steps-list">
+                    <li>
+                        <strong>Open Proxmox Shell:</strong>
+                        <p>In the Proxmox web interface, select your node (e.g., CSC152-student01) and click on "Shell" to open the terminal.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Navigate to ISO storage directory:</strong>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'cd /var/lib/vz/template/iso')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>cd /var/lib/vz/template/iso</code>
+                        </div>
+                        <p style="margin-top: 10px;">This directory stores ISO images for VM installations.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Download Rocky Linux minimal ISO:</strong>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'wget https://dl.rockylinux.org/pub/rocky/10/isos/x86_64/Rocky-10-latest-x86_64-minimal.iso')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>wget https://dl.rockylinux.org/pub/rocky/10/isos/x86_64/Rocky-10-latest-x86_64-minimal.iso</code>
+                        </div>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Note:</strong> The download is approximately 1.4 GB and will take 3-4 minutes depending on network speed. You can close the shell once the download completes.
+                        </p>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Important:</strong> Using <code>wget</code> to download the ISO directly to Proxmox is the most reliable method. Uploading ISO files from your host computer through the Proxmox web GUI has been known to cause corruption issues that can result in installation failures.
+                        </p>
+                    </li>
+                </ol>
+                
+                <h3>Part 2: Create the Virtual Machine</h3>
+                <ol class="steps-list" style="counter-reset: step-counter 3;">
+                    <li>
+                        <strong>Start VM creation:</strong>
+                        <p>In Proxmox, select your node and click "Create VM" in the top right corner.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>General settings:</strong>
+                        <p>Configure the basic VM identification:</p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li><strong>VM ID:</strong> 2000 (or your assigned number)</li>
+                            <li><strong>Name:</strong> lab3-Rocky (or your preferred name)</li>
+                            <li><strong>Resource Pool:</strong> Leave blank if not applicable</li>
+                        </ul>
+                        <p style="margin-top: 10px;">Click <strong>Next</strong>.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Operating System:</strong>
+                        <p>Select the Rocky Linux ISO:</p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li><strong>Storage:</strong> local</li>
+                            <li><strong>ISO image:</strong> Rocky-10-latest-x86_64-minimal.iso</li>
+                            <li><strong>Guest OS Type:</strong> Linux</li>
+                            <li><strong>Version:</strong> 6.x - 2.6 Kernel</li>
+                        </ul>
+                        <p style="margin-top: 10px;">Click <strong>Next</strong>.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>System settings:</strong>
+                        <p>Use default system settings:</p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li><strong>Graphics card:</strong> Default</li>
+                            <li><strong>Machine:</strong> Default (i440fx)</li>
+                            <li><strong>BIOS:</strong> Default (SeaBIOS)</li>
+                            <li><strong>SCSI Controller:</strong> VirtIO SCSI single</li>
+                        </ul>
+                        <p style="margin-top: 10px;">Click <strong>Next</strong>.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Disk configuration:</strong>
+                        <p>Configure the virtual hard disk:</p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li><strong>Bus/Device:</strong> SCSI</li>
+                            <li><strong>Storage:</strong> local-lvm</li>
+                            <li><strong>Disk size:</strong> 32 GB</li>
+                            <li><strong>Cache:</strong> Default (No cache)</li>
+                            <li><strong>☑ Discard:</strong> Enabled (helps with storage efficiency)</li>
+                            <li><strong>☑ IO thread:</strong> Enabled (improves performance)</li>
+                        </ul>
+                        <p style="margin-top: 10px;">Click <strong>Next</strong>.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>CPU configuration:</strong>
+                        <div class="warning-box">
+                            <strong>⚠️ CRITICAL STEP:</strong>
+                            <ul style="margin-left: 20px; margin-top: 8px;">
+                                <li><strong>Cores:</strong> 2</li>
+                                <li><strong>Type:</strong> host (MUST be set to "host" for nested virtualization)</li>
+                            </ul>
+                            <p style="margin-top: 8px;">Setting the CPU type to "host" allows the VM to use the physical CPU features directly, which is required in nested virtualization environments.</p>
+                        </div>
+                        <p style="margin-top: 10px;">Click <strong>Next</strong>.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Memory configuration:</strong>
+                        <p>Set the RAM allocation:</p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li><strong>Memory (MiB):</strong> 4096 (4 GB)</li>
+                        </ul>
+                        <p style="margin-top: 10px;">Click <strong>Next</strong>.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Network configuration:</strong>
+                        <p>Configure network interface:</p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li><strong>Bridge:</strong> vmbr0</li>
+                            <li><strong>Model:</strong> VirtIO (paravirtualized)</li>
+                        </ul>
+                        <p style="margin-top: 10px;">Click <strong>Next</strong>.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Confirm and create:</strong>
+                        <p>Review your configuration. Check the box for <strong>"Start after created"</strong> to automatically boot the VM.</p>
+                        <p style="margin-top: 10px;">Click <strong>Finish</strong>.</p>
+                    </li>
+                </ol>
+                
+                <h3>Part 3: Install Rocky Linux</h3>
+                <ol class="steps-list" style="counter-reset: step-counter 12;">
+                    <li>
+                        <strong>Access VM console:</strong>
+                        <p>Right-click on your VM (ID 2000) in the left panel and select <strong>Console</strong>. Wait for the boot menu to appear.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Start installation:</strong>
+                        <p>At the boot menu, use arrow keys to select <strong>"Install Rocky Linux 10"</strong> and press Enter.</p>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Note:</strong> You can choose "Test this media & install" if you want to verify the ISO integrity, but this adds several minutes to the process.
+                        </p>
+                    </li>
+                    
+                    <li>
+                        <strong>Language selection:</strong>
+                        <p>Select your preferred language (English recommended) and click <strong>Continue</strong>.</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Installation Summary configuration:</strong>
+                        <p>Configure the following settings (items with warnings need attention):</p>
+                        <ul style="margin-left: 20px; margin-top: 8px;">
+                            <li><strong>Installation Destination:</strong> Click to verify the 32 GB disk is selected, then click Done</li>
+                            <li><strong>Network & Host Name:</strong> Turn ON the ethernet interface, optionally set hostname, click Done</li>
+                            <li><strong>Root Password:</strong> Set a strong root password</li>
+                            <li><strong>User Creation:</strong> Create a user account (check "Make this user administrator")</li>
+                            <li><strong>Time & Date:</strong> Verify timezone is correct</li>
+                            <li><strong>Software Selection:</strong> Leave as "Minimal Install" (default)</li>
+                        </ul>
+                    </li>
+                    
+                    <li>
+                        <strong>Begin installation:</strong>
+                        <p>Once all warnings are cleared, click <strong>Begin Installation</strong>.</p>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Note:</strong> The installation will take approximately 4 minutes. The progress bar may appear stuck at certain points (especially during kernel installation) - this is normal. Wait patiently.
+                        </p>
+                    </li>
+                    
+                    <li>
+                        <strong>Complete installation:</strong>
+                        <p>When installation finishes, click <strong>Reboot System</strong>.</p>
+                    </li>
+                </ol>
+                
+                <h3>Part 4: Post-Installation Verification</h3>
+                <ol class="steps-list" style="counter-reset: step-counter 18;">
+                    <li>
+                        <strong>First boot and login:</strong>
+                        <p>After reboot, you'll see a text-based login prompt. Enter your username and password.</p>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Note:</strong> Rocky Linux Server has no GUI by default - all interaction is through the command line.
+                        </p>
+                    </li>
+                    
+                    <li>
+                        <strong>Check IP address:</strong>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'ip addr show')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>ip addr show</code>
+                        </div>
+                        <p style="margin-top: 10px;">Note the IP address assigned via DHCP (likely in the 10.255.254.x range).</p>
+                    </li>
+                    
+                    <li>
+                        <strong>Test internet connectivity:</strong>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'ping -c 4 8.8.8.8')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>ping -c 4 8.8.8.8</code>
+                        </div>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Expected result:</strong> You should see 4 packets transmitted and 4 received (0% packet loss), confirming internet access.
+                        </p>
+                    </li>
+                    
+                    <li>
+                        <strong>Test DNS resolution:</strong>
+                        <div class="command-block">
+                            <button class="copy-button" onclick="copyCommand(this, 'ping -c 4 google.com')" aria-label="Copy command to clipboard">Copy</button>
+                            <code>ping -c 4 google.com</code>
+                        </div>
+                        <p class="note-box" style="margin-top: 10px;">
+                            <strong>Expected result:</strong> The domain name should resolve to an IP address and ping successfully, confirming DNS is working.
+                        </p>
+                    </li>
+                    
+                    <li>
+                        <strong>Eject installation media:</strong>
+                        <p>In Proxmox web interface:</p>
+                        <ol style="margin-left: 20px; margin-top: 8px; list-style-type: lower-alpha;">
+                            <li>Select your VM in the left panel</li>
+                            <li>Click on <strong>Hardware</strong></li>
+                            <li>Select the CD/DVD Drive (IDE2)</li>
+                            <li>Click <strong>Edit</strong></li>
+                            <li>Select <strong>"Do not use any media"</strong></li>
+                            <li>Click <strong>OK</strong></li>
+                        </ol>
+                        <p style="margin-top: 10px;">This ensures the VM won't try to boot from the ISO on future restarts.</p>
+                    </li>
+                </ol>
+            </section>
+            
+            <!-- Quick Reference -->
+            <section aria-labelledby="reference-heading">
+                <h2 id="reference-heading">Quick Reference</h2>
+                
+                <div class="commands-section">
+                    <h3>ISO Download Command</h3>
+                    <div class="command-block">
+                        <button class="copy-button" onclick="copyCommand(this, document.getElementById('iso-download').textContent)" aria-label="Copy command to clipboard">Copy</button>
+                        <code id="iso-download">cd /var/lib/vz/template/iso
+wget https://dl.rockylinux.org/pub/rocky/10/isos/x86_64/Rocky-10-latest-x86_64-minimal.iso</code>
+                    </div>
+                    
+                    <h3 style="margin-top: 20px;">Verification Commands</h3>
+                    <div class="command-block">
+                        <button class="copy-button" onclick="copyCommand(this, document.getElementById('verify-commands').textContent)" aria-label="Copy verification commands to clipboard">Copy All</button>
+                        <code id="verify-commands">ip addr show
+ping -c 4 8.8.8.8
+ping -c 4 google.com</code>
+                    </div>
+                    
+                    <h3 style="margin-top: 20px;">Key VM Configuration Settings</h3>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li><strong>VM ID:</strong> 2000</li>
+                        <li><strong>CPU Type:</strong> host (required for nested virtualization)</li>
+                        <li><strong>Cores:</strong> 2</li>
+                        <li><strong>Memory:</strong> 4096 MB (4 GB)</li>
+                        <li><strong>Disk:</strong> 32 GB, SCSI, with Discard and IO thread enabled</li>
+                        <li><strong>Network:</strong> vmbr0, VirtIO model</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <!-- Next Steps -->
+            <section aria-labelledby="next-heading">
+                <h2 id="next-heading">Next Steps</h2>
+                <div class="instructions">
+                    <p>After completing this installation, you should:</p>
+                    <ul>
+                        <li>Configure a static IP address for your server (see separate tutorial)</li>
+                        <li>Update the system: <code>sudo dnf update -y</code></li>
+                    </ul>
+                    <p style="margin-top: 15px;">The installed system should be ready to complete Lab 3 at this point.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script>
+        // CONFIGURATION
+        const VIDEO_ID = 'OE4WWIBSnK8';
+        let player;
+        let timeUpdater;
+        let parsedTranscript = [];
+
+        // VTT CONTENT - Truncated for brevity, includes full transcript
+        const vttContent = `WEBVTT
+
+00:00.000 --> 00:14.240
+Aloha. So in a video I just recorded, you know, two minutes ago, I walked through installing Ubuntu or creating a Ubuntu VM.
+
+00:15.240 --> 00:19.540
+You can see I created a VM ID of 1000. I called it Lab3Ubuntu.
+
+00:19.540 --> 00:25.920
+In this video, I'm going to create a Rocky Linux server.
+
+00:25.920 --> 00:34.280
+Okay, so connected. Okay, and so what I'm gonna what I want to do is select my node.
+
+00:34.280 --> 00:42.360
+Yours will be CSC152-student01, 02, 03, whatever. I'm gonna open the shell.
+
+00:42.360 --> 00:50.840
+Get to our shell command. Okay, and then so you can see it. I'll clear this. The
+
+00:50.840 --> 00:55.840
+first thing I'm going to do is I'm going to change my directory.
+
+00:55.840 --> 00:55.900
+Okay, so I'm going to change my directory.
+
+00:55.920 --> 01:10.240
+And these instructions are on the page where this video is. So okay, so var lib
+
+01:10.240 --> 01:16.420
+easy template ISO. If I do an LS, you'll see my Ubuntu ISO is there. And now I
+
+01:16.420 --> 01:24.880
+need to add my Rocky Linux. Okay, and for this one I'm going to use the minimal.
+
+01:25.920 --> 01:31.600
+ISO for minimal. The minimal distribution of Rocky Linux.
+
+01:31.600 --> 01:36.640
+So you can copy stuff like right click copy, right click paste.
+
+01:36.640 --> 01:44.960
+Okay, and so here it is. This is the URL. I hope it's the right one. We'll see. I didn't check it.
+
+01:44.960 --> 01:54.800
+So enter and so it'll go out and get the latest version should get the latest Rocky Linux.
+
+01:55.920 --> 02:02.440
+It should be 1.4 gigs. So it's not huge. Ubuntu was 3.3 gigs.
+
+02:02.440 --> 02:10.000
+All right, Emma, I'll be back when this is done so that we don't have to stare at the screen the whole time.
+
+02:10.000 --> 02:20.480
+All right. So my ISO uploaded. It took about three, three and a half minutes, four minutes somewhere in there for it to do that. You can see it's there.
+
+02:20.480 --> 02:25.840
+It took about three, three and a half minutes, four minutes somewhere in there for it to do that. You can see it's there.
+
+02:25.840 --> 02:31.680
+I don't need this tool anymore.
+
+02:31.680 --> 02:33.680
+So let's close this.
+
+02:33.680 --> 02:39.440
+All right. And so now if I go to local, I have two ISO images.
+
+02:39.440 --> 02:47.520
+I'm not going to check Rocky. I'm just going to install it and hope for the best and show you why in a second.
+
+02:47.520 --> 02:49.520
+But I'm going to do that.
+
+02:49.520 --> 02:53.520
+So let's go up on 152.
+
+02:53.520 --> 02:55.520
+You know, our node in this group.
+
+02:55.840 --> 02:57.840
+Create a VM.
+
+02:57.840 --> 03:01.840
+I'm going to give this one a VM ID of 2000.
+
+03:01.840 --> 03:03.840
+My Ubuntu was 1000.
+
+03:03.840 --> 03:05.840
+So my Rocky is going to be 2000.
+
+03:05.840 --> 03:09.840
+I'm going to call this lab3-Rocky.
+
+03:09.840 --> 03:13.840
+Okay, again, nothing for resource pool. There's nothing there.
+
+03:13.840 --> 03:15.840
+Nothing to select. We'll go next.
+
+03:15.840 --> 03:17.840
+OS.
+
+03:17.840 --> 03:19.840
+Local.
+
+03:19.840 --> 03:21.840
+Rocky latest.
+
+03:21.840 --> 03:27.840
+Linux 6.x 2-2.6 kernel is what we want.
+
+03:27.840 --> 03:29.840
+We'll go next.
+
+03:29.840 --> 03:35.840
+We select the system defaults for graphics card machine BIOS should be CBIOS.
+
+03:35.840 --> 03:41.840
+And our SCSI controller should be virtio SCSI single.
+
+03:41.840 --> 03:43.840
+We'll go to disks.
+
+03:43.840 --> 03:45.840
+SCSI.
+
+03:45.840 --> 03:47.840
+Local LVM is where it's stored.
+
+03:47.840 --> 03:49.840
+I'm going to leave it at 32 gigs.
+
+03:49.840 --> 03:51.840
+We're going to change it.
+
+03:51.840 --> 03:53.840
+Our cache default, no cache.
+
+03:53.840 --> 03:55.840
+We have no cache.
+
+03:55.840 --> 03:57.840
+We're going to select discard.
+
+03:57.840 --> 03:59.840
+And leave IO threads selected as well.
+
+03:59.840 --> 04:01.840
+Just to help clean it up.
+
+04:01.840 --> 04:03.840
+Make it a little bit faster.
+
+04:03.840 --> 04:05.840
+Okay.
+
+04:05.840 --> 04:07.840
+We'll go to next.
+
+04:07.840 --> 04:09.840
+The CPU.
+
+04:09.840 --> 04:11.840
+We're going to create, again, two cores.
+
+04:11.840 --> 04:15.840
+And I had to change my type to host.
+
+04:15.840 --> 04:17.840
+Okay.
+
+04:17.840 --> 04:19.840
+Which means it passes through.
+
+04:19.840 --> 04:21.840
+Passes through to the main node.
+
+04:21.840 --> 04:25.840
+And uses the raw CPU on the server.
+
+04:25.840 --> 04:27.840
+Okay.
+
+04:27.840 --> 04:29.840
+That's when the nested.
+
+04:29.840 --> 04:31.840
+It seems like that's what you have to do to make the nested ones work.
+
+04:31.840 --> 04:33.840
+Okay.
+
+04:33.840 --> 04:35.840
+Memory.
+
+04:35.840 --> 04:37.840
+I'm going to do the same as my Ubuntu.
+
+04:37.840 --> 04:39.840
+I'm going to make this 4096.
+
+04:39.840 --> 04:41.840
+For 4 gigs.
+
+04:41.840 --> 04:43.840
+Okay.
+
+04:43.840 --> 04:45.840
+Network.
+
+04:45.840 --> 04:47.840
+VMBR.
+
+04:47.840 --> 04:49.840
+Virtualized.
+
+04:49.840 --> 04:51.840
+Next.
+
+04:51.840 --> 04:53.840
+And it says confirm.
+
+04:53.840 --> 04:55.840
+This is all our stuff.
+
+04:55.840 --> 04:57.840
+Okay.
+
+04:57.840 --> 04:59.840
+And this time I'm going to go ahead and start it.
+
+04:59.840 --> 05:01.840
+After created.
+
+05:01.840 --> 05:03.840
+Um.
+
+05:03.840 --> 05:05.840
+One thing is when we look at.
+
+05:05.840 --> 05:07.840
+Can't look at it.
+
+05:07.840 --> 05:09.840
+But if we looked at.
+
+05:09.840 --> 05:11.840
+The CD ROM.
+
+05:11.840 --> 05:13.840
+It says that.
+
+05:13.840 --> 05:15.840
+I mean the boot order.
+
+05:15.840 --> 05:17.840
+It says SCSI 0.
+
+05:17.840 --> 05:19.840
+IDE 2.
+
+05:19.840 --> 05:21.840
+It will try to boot off the.
+
+05:21.840 --> 05:23.840
+Hard drive.
+
+05:23.840 --> 05:25.840
+If there's nothing on there.
+
+05:25.840 --> 05:27.840
+It'll try to boot off the CD ROM.
+
+05:27.840 --> 05:29.840
+And if there's nothing on the CD ROM.
+
+05:29.840 --> 05:31.840
+Then it'll try to boot off the network.
+
+05:31.840 --> 05:33.840
+Do a network boot.
+
+05:33.840 --> 05:35.840
+Okay.
+
+05:35.840 --> 05:37.840
+That's the three.
+
+05:37.840 --> 05:39.840
+The order will do it.
+
+05:39.840 --> 05:41.840
+Since we have nothing on the hard drive.
+
+05:41.840 --> 05:43.840
+It'll skip that.
+
+05:43.840 --> 05:45.840
+And it'll go to the.
+
+05:45.840 --> 05:47.840
+You can see your IDE 2.
+
+05:47.840 --> 05:49.840
+It'll go to this.
+
+05:49.840 --> 05:51.840
+After created.
+
+05:51.840 --> 05:53.840
+Finish.
+
+05:53.840 --> 05:55.840
+Here's 2000.
+
+05:55.840 --> 05:57.840
+I'm going to wait for it.
+
+05:57.840 --> 05:59.840
+To go green.
+
+06:01.840 --> 06:03.840
+There's green.
+
+06:03.840 --> 06:05.840
+I'll click right click on it.
+
+06:05.840 --> 06:07.840
+And I'm going to go to console.
+
+06:07.840 --> 06:09.840
+This is my console.
+
+06:09.840 --> 06:11.840
+Okay.
+
+06:11.840 --> 06:13.840
+So.
+
+06:13.840 --> 06:15.840
+Unlike Ubuntu.
+
+06:15.840 --> 06:17.840
+Where I check to verify.
+
+06:17.840 --> 06:19.840
+That I got the whole image.
+
+06:19.840 --> 06:21.840
+So.
+
+06:21.840 --> 06:23.840
+I did not do that for Rocky Linux.
+
+06:23.840 --> 06:25.840
+You can have.
+
+06:25.840 --> 06:27.840
+The installer do that.
+
+06:27.840 --> 06:29.840
+It'll test this media.
+
+06:29.840 --> 06:31.840
+And install.
+
+06:31.840 --> 06:33.840
+Okay.
+
+06:33.840 --> 06:35.840
+I'm going to skip it.
+
+06:35.840 --> 06:37.840
+I'm going to go.
+
+06:37.840 --> 06:39.840
+I trust that I got everything.
+
+06:39.840 --> 06:41.840
+I'm just going to go straight to install.
+
+06:41.840 --> 06:43.840
+The test this media and install.
+
+06:43.840 --> 06:45.840
+Takes.
+
+06:45.840 --> 06:47.840
+I don't know.
+
+06:47.840 --> 06:49.840
+I'm just going to go straight to install.
+
+06:49.840 --> 06:51.840
+And you use the up and down arrows.
+
+06:51.840 --> 06:53.840
+To select what you want.
+
+06:53.840 --> 06:55.840
+And hit enter to select it.
+
+06:55.840 --> 06:57.840
+Okay.
+
+06:57.840 --> 06:59.840
+And then.
+
+06:59.840 --> 07:01.840
+We wait a little bit for.
+
+07:01.840 --> 07:03.840
+Um.
+
+07:03.840 --> 07:05.840
+It to start reading the CD-ROM.
+
+07:05.840 --> 07:07.840
+And start booting from it.
+
+07:07.840 --> 07:09.840
+Alright.
+
+07:09.840 --> 07:11.840
+So.
+
+07:13.840 --> 07:15.840
+So I'm.
+
+07:15.840 --> 07:17.840
+Like Ubuntu starts a little bit faster.
+
+07:17.840 --> 07:19.840
+But.
+
+07:19.840 --> 07:21.840
+This should start.
+
+07:21.840 --> 07:23.840
+And then.
+
+12:03.840 --> 12:05.840
+Okay.
+
+12:05.840 --> 12:07.840
+And then this is going to take a while.
+
+12:07.840 --> 12:09.840
+So.
+
+12:09.840 --> 12:11.840
+You know go have some coffee.
+
+12:11.840 --> 12:13.840
+Do something else.
+
+12:13.840 --> 12:15.840
+So I'm going to pause my recording.
+
+12:15.840 --> 12:17.840
+Until this is done.
+
+12:19.840 --> 12:21.840
+All right.
+
+12:21.840 --> 12:23.840
+So.
+
+12:23.840 --> 12:25.840
+My installation progress is done.
+
+12:25.840 --> 12:27.840
+It's successfully installed.
+
+12:27.840 --> 12:29.840
+It took like four minutes.
+
+12:29.840 --> 12:31.840
+On my computer to do that.
+
+12:31.840 --> 12:33.840
+And everybody should be about the same.
+
+12:33.840 --> 12:35.840
+Since we're all using the same.
+
+12:35.840 --> 12:37.840
+Virtual.
+
+12:37.840 --> 12:39.840
+Proxmox nodes on the same hardware.
+
+12:39.840 --> 12:41.840
+So.
+
+12:41.840 --> 12:43.840
+It should be about in the four minutes range.
+
+12:43.840 --> 12:45.840
+There's a couple times.
+
+12:45.840 --> 12:47.840
+Like when it's doing the kernel stuff.
+
+12:47.840 --> 12:49.840
+Where it seems like it's stuck.
+
+12:49.840 --> 12:51.840
+But just let it go.
+
+12:51.840 --> 12:53.840
+You know if you hit five minutes and it hasn't finished.
+
+12:53.840 --> 12:55.840
+Then maybe you have a problem.
+
+12:55.840 --> 12:57.840
+Anyway.
+
+12:57.840 --> 12:59.840
+Took about four minutes.
+
+12:59.840 --> 13:01.840
+Okay.
+
+13:01.840 --> 13:03.840
+And now we can reboot the system.
+
+13:03.840 --> 13:05.840
+When we look at.
+
+13:05.840 --> 13:07.840
+Our.
+
+13:07.840 --> 13:09.840
+Hardware here.
+
+13:09.840 --> 13:11.840
+In options.
+
+13:11.840 --> 13:13.840
+It should now.
+
+13:13.840 --> 13:15.840
+Reboot to net zero.
+
+13:15.840 --> 13:17.840
+Okay.
+
+13:17.840 --> 13:19.840
+So it should now boot off the hard drive.
+
+13:19.840 --> 13:21.840
+Because that's on SCSI zero.
+
+13:21.840 --> 13:23.840
+IDE2 is our.
+
+13:23.840 --> 13:25.840
+CD.
+
+13:25.840 --> 13:27.840
+Right here.
+
+13:27.840 --> 13:29.840
+And we could inject.
+
+13:29.840 --> 13:31.840
+Eject it right now if we want.
+
+13:31.840 --> 13:33.840
+But we don't need to.
+
+13:33.840 --> 13:35.840
+Okay.
+
+13:35.840 --> 13:37.840
+So let's.
+
+13:37.840 --> 13:39.840
+Go here and let's reboot our system.
+
+13:39.840 --> 13:41.840
+And then it will reboot.
+
+13:41.840 --> 13:43.840
+Done.
+
+13:43.840 --> 13:45.840
+It will.
+
+13:45.840 --> 13:47.840
+Take us right.
+
+13:47.840 --> 13:49.840
+To a terminal window.
+
+13:49.840 --> 13:51.840
+Because there's no GUI with the server.
+
+13:51.840 --> 13:53.840
+Okay.
+
+13:53.840 --> 13:55.840
+And I'm just going to sit here.
+
+13:55.840 --> 13:57.840
+And we'll see how long it takes.
+
+13:57.840 --> 13:59.840
+To reboot.
+
+13:59.840 --> 14:01.840
+It shouldn't take very long.
+
+14:07.840 --> 14:09.840
+And this is typical.
+
+14:09.840 --> 14:11.840
+Kind of a.
+
+14:11.840 --> 14:13.840
+All right.
+
+14:13.840 --> 14:15.840
+So it finished.
+
+14:15.840 --> 14:17.840
+It doesn't look like it.
+
+14:17.840 --> 14:19.840
+Because it's got some kind of overlapping.
+
+14:19.840 --> 14:21.840
+In the writing.
+
+14:21.840 --> 14:23.840
+But I'm actually at local host login.
+
+14:23.840 --> 14:25.840
+So I can put in my user name.
+
+14:25.840 --> 14:27.840
+And type in my password.
+
+14:27.840 --> 14:29.840
+Okay.
+
+14:29.840 --> 14:31.840
+And then I can be.
+
+14:31.840 --> 14:33.840
+I can do IP.
+
+14:33.840 --> 14:35.840
+ADDR show.
+
+14:35.840 --> 14:37.840
+And you'll see I have this.
+
+14:37.840 --> 14:39.840
+33.
+
+14:39.840 --> 14:41.840
+I don't really want to use that one.
+
+14:41.840 --> 14:43.840
+Because it used TCP.
+
+14:43.840 --> 14:45.840
+But let's first.
+
+14:45.840 --> 14:47.840
+Make sure we have internet access.
+
+14:47.840 --> 14:49.840
+Okay.
+
+14:49.840 --> 14:51.840
+So I'm going to ping.
+
+14:51.840 --> 14:53.840
+Dash C for 4.
+
+14:53.840 --> 14:55.840
+To.
+
+14:55.840 --> 14:57.840
+Let's do 8.8.8.8.
+
+14:57.840 --> 14:59.840
+Which is.
+
+14:59.840 --> 15:01.840
+Okay.
+
+15:01.840 --> 15:03.840
+So I can get out.
+
+15:03.840 --> 15:05.840
+8.8.8.8 is the DNS servers.
+
+15:05.840 --> 15:07.840
+At Google.
+
+15:07.840 --> 15:09.840
+So I'm getting out.
+
+15:09.840 --> 15:11.840
+To the internet.
+
+15:11.840 --> 15:13.840
+From this virtual machine.
+
+15:13.840 --> 15:15.840
+And let's make sure DNS is working.
+
+15:15.840 --> 15:17.840
+Ping.
+
+15:17.840 --> 15:19.840
+Dash C.
+
+15:19.840 --> 15:21.840
+Space 4.
+
+15:21.840 --> 15:23.840
+And I use google.com.
+
+15:23.840 --> 15:25.840
+And so it's going to go find an IP address.
+
+15:25.840 --> 15:27.840
+Since I've used Google.
+
+15:27.840 --> 15:29.840
+It might be stored in.
+
+15:29.840 --> 15:31.840
+The local DNS server.
+
+15:31.840 --> 15:33.840
+On our gateway.
+
+15:33.840 --> 15:35.840
+So it probably grabbed that IP address.
+
+15:35.840 --> 15:37.840
+But it means we're getting out.
+
+15:37.840 --> 15:39.840
+We're able to get out.
+
+15:39.840 --> 15:41.840
+Okay.
+
+15:41.840 --> 15:43.840
+So.
+
+15:43.840 --> 15:45.840
+There's our rocky Linux.
+
+15:45.840 --> 15:47.840
+Server.
+
+15:47.840 --> 15:49.840
+Installed and running.
+
+15:49.840 --> 15:51.840
+On our Proxmox VE.
+
+15:51.840 --> 15:53.840
+I mean our Proxmox virtual.
+
+15:53.840 --> 15:55.840
+Environment.
+
+15:55.840 --> 15:57.840
+That's what PVE stands for.
+
+15:57.840 --> 15:59.840
+Okay.
+
+15:59.840 --> 16:01.840
+So.
+
+16:01.840 --> 16:03.840
+My exit.
+
+16:03.840 --> 16:05.840
+It'll go back and say login.
+
+16:05.840 --> 16:07.840
+And this will be your normal login screen.
+
+16:07.840 --> 16:09.840
+When you start up your machine.
+
+16:09.840 --> 16:11.840
+So thanks for watching.
+
+16:11.840 --> 16:13.840
+Hopefully yours worked.
+
+16:13.840 --> 16:15.840
+And then the only last thing you should do.
+
+16:15.840 --> 16:17.840
+Is come up to this CD drive.
+
+16:17.840 --> 16:19.840
+So it's on our VM.
+
+16:19.840 --> 16:21.840
+Hardware.
+
+16:21.840 --> 16:23.840
+Come to our CD drive.
+
+16:23.840 --> 16:25.840
+Go edit.
+
+16:25.840 --> 16:27.840
+And then do not use any media.
+
+16:27.840 --> 16:29.840
+Essentially eject it.
+
+16:29.840 --> 16:31.840
+So there's no media attached to the CD ROM.
+
+16:31.840 --> 16:33.840
+Okay.
+
+16:33.840 --> 16:35.840
+So there's.
+
+16:35.840 --> 16:37.840
+It will never try to boot from it.
+
+16:37.840 --> 16:39.840
+Okay.
+
+16:39.840 --> 16:41.840
+I will.
+
+16:41.840 --> 16:43.840
+In another video.
+
+16:43.840 --> 16:45.840
+I'll show you how to change the.
+
+16:45.840 --> 16:47.840
+IP address to static from dynamic.
+
+16:47.840 --> 16:49.840
+So.
+
+16:49.840 --> 16:51.840
+I'm going to do that as soon as I stop this video.
+
+16:51.840 --> 16:53.840
+I'm going to create another one doing that.
+
+16:53.840 --> 16:55.840
+But.
+
+16:55.840 --> 16:57.840
+I want to do it separate.
+
+16:57.840 --> 16:59.840
+So that.
+
+16:59.840 --> 17:01.840
+It's easy to find for people.
+
+17:01.840 --> 17:03.840
+Because you might use it.
+
+17:03.840 --> 17:05.840
+Many more times.`;
+
+        // CORE UTILITIES
+        function timeToSeconds(timeStr) {
+            if (!timeStr) return 0;
+            const parts = timeStr.trim().split(':');
+            
+            if (parts.length === 2) {
+                let minutes = parseInt(parts[0]) || 0;
+                let seconds = parseFloat(parts[1]) || 0;
+                return minutes * 60 + seconds;
+            } else if (parts.length === 3) {
+                let hours = parseInt(parts[0]) || 0;
+                let minutes = parseInt(parts[1]) || 0;
+                let seconds = parseFloat(parts[2]) || 0;
+                return hours * 3600 + minutes * 60 + seconds;
+            }
+            return 0;
+        }
+
+        function parseVtt(vttText) {
+            const cues = vttText.trim().split(/\n\n+/);
+            const parsedCues = [];
+            
+            cues.forEach(cueBlock => {
+                if (cueBlock.startsWith('WEBVTT') || cueBlock.trim() === '') return;
+                
+                const lines = cueBlock.trim().split('\n');
+                const timeLine = lines.find(line => line.includes('-->'));
+                if (!timeLine) return;
+
+                const [startTimeStr, endTimeStr] = timeLine.split(' --> ');
+                const textLines = lines.slice(lines.indexOf(timeLine) + 1);
+                
+                parsedCues.push({
+                    start: timeToSeconds(startTimeStr),
+                    end: timeToSeconds(endTimeStr),
+                    text: textLines.join(' ').trim()
+                });
+            });
+            return parsedCues;
+        }
+
+        // TRANSCRIPT RENDERING AND INTERACTIVITY
+        function populateTranscript() {
+            const container = document.getElementById('transcript-container');
+            container.innerHTML = '';
+
+            parsedTranscript.forEach(cue => {
+                const lineElement = document.createElement('div');
+                lineElement.className = 'transcript-line';
+                lineElement.dataset.start = cue.start;
+                lineElement.dataset.end = cue.end;
+                lineElement.textContent = cue.text;
+                lineElement.setAttribute('role', 'button');
+                lineElement.setAttribute('tabindex', '0');
+                lineElement.setAttribute('aria-label', 'Seek to ' + Math.floor(cue.start / 60) + ' minutes ' + Math.floor(cue.start % 60) + ' seconds');
+
+                const seekToTime = () => {
+                    if (player && player.seekTo) {
+                        player.seekTo(cue.start, true);
+                        player.playVideo();
+                    }
+                };
+                
+                lineElement.addEventListener('click', seekToTime);
+                lineElement.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { 
+                        e.preventDefault(); 
+                        seekToTime(); 
+                    }
+                });
+
+                container.appendChild(lineElement);
+            });
+        }
+
+        // SYNC LOGIC
+        function highlightCurrentLine() {
+            if (!player || !player.getCurrentTime) return;
+
+            const currentTime = player.getCurrentTime();
+            const lines = document.querySelectorAll('#transcript-container .transcript-line');
+
+            lines.forEach(line => {
+                const start = parseFloat(line.dataset.start);
+                const end = parseFloat(line.dataset.end);
+
+                if (currentTime >= start && currentTime < end) {
+                    if (!line.classList.contains('active-transcript-line')) {
+                        document.querySelector('.active-transcript-line')?.classList.remove('active-transcript-line');
+                        line.classList.add('active-transcript-line');
+                        line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                } else {
+                    line.classList.remove('active-transcript-line');
+                }
+            });
+        }
+
+        // HEIGHT SYNCHRONIZATION
+        function syncTranscriptHeight() {
+            const videoContainer = document.getElementById('video-container');
+            const transcriptContainer = document.getElementById('transcript-container');
+            
+            if (!videoContainer || !transcriptContainer) return;
+            
+            const videoHeight = videoContainer.offsetHeight;
+            transcriptContainer.style.maxHeight = videoHeight + 'px';
+        }
+
+        // YOUTUBE API HANDLERS
+        window.onYouTubeIframeAPIReady = function() {
+            player = new YT.Player('youtube-player', {
+                videoId: VIDEO_ID,
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        };
+
+        function onPlayerStateChange(event) {
+            clearInterval(timeUpdater);
+            if (event.data === YT.PlayerState.PLAYING) {
+                timeUpdater = setInterval(highlightCurrentLine, 300);
+            }
+        }
+
+        // COPY COMMAND FUNCTIONALITY
+        function copyCommand(button, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy command. Please copy manually.');
+            });
+        }
+
+        // INITIALIZATION
+        document.addEventListener('DOMContentLoaded', () => {
+            parsedTranscript = parseVtt(vttContent);
+            populateTranscript();
+            
+            setTimeout(syncTranscriptHeight, 100);
+
+            if (typeof(YT) == 'undefined' || typeof(YT.Player) == 'undefined') {
+                const tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                document.head.appendChild(tag);
+            } else {
+                onYouTubeIframeAPIReady();
+            }
+        });
+
+        // HANDLE WINDOW RESIZE
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(syncTranscriptHeight, 250);
+        });
+    </script>
+</body>
+</html>
