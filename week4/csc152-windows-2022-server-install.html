@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows Server 2022 Installation on Proxmox - CSC 152 Lab 4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .active-transcript-line {
+            background-color: #f0f7ff;
+            font-weight: 600;
+            border-left: 4px solid #1e88e5;
+            padding-left: 12px;
+            transition: background-color 0.2s;
+        }
+        .step-card {
+            transition: all 0.3s ease;
+        }
+        .step-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .copy-btn {
+            transition: all 0.2s ease;
+        }
+        .copy-btn:hover {
+            transform: scale(1.05);
+        }
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+        pre {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            position: relative;
+        }
+        code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .warning-box {
+            border-left: 4px solid #f59e0b;
+            background-color: #fffbeb;
+        }
+        .info-box {
+            border-left: 4px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+        .success-box {
+            border-left: 4px solid #10b981;
+            background-color: #f0fdf4;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-3xl md:text-4xl font-bold">Windows Server 2022 Installation on Proxmox</h1>
+            <p class="text-blue-100 mt-2">CSC 152 - Lab 4 Tutorial</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 max-w-7xl">
+        
+        <!-- Introduction -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Overview</h2>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                This tutorial guides you through the complete process of installing Windows Server 2022 Standard Edition 
+                on a Proxmox Virtual Environment (PVE) node. Windows Server requires additional VirtIO drivers that are 
+                not automatically included, making the installation process slightly different from Linux systems.
+            </p>
+            <div class="info-box p-4 rounded-lg">
+                <p class="text-gray-800 font-semibold mb-2">What You'll Learn:</p>
+                <ul class="list-disc list-inside text-gray-700 space-y-1">
+                    <li>How to upload ISO files to Proxmox using SCP</li>
+                    <li>Creating a Windows Server VM with proper configuration</li>
+                    <li>Installing VirtIO drivers during Windows installation</li>
+                    <li>Configuring static IP addressing in Windows Server</li>
+                    <li>Post-installation cleanup and optimization</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Video Tutorial Section -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Video Tutorial</h2>
+            <p class="text-gray-700 mb-4">
+                Watch the complete installation walkthrough below. Click on any line in the transcript to jump to that 
+                point in the video.
+            </p>
+            
+            <div class="flex flex-col lg:flex-row gap-4 w-full">
+                <!-- Video Player Section: 66% width on large screens -->
+                <div class="w-full lg:w-2/3 flex-shrink-0">
+                    <div id="video-container" style="width: 100%; height: 0; padding-bottom: 56.25%; position: relative;">
+                        <iframe id="youtube-player"
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                                src="https://www.youtube.com/embed/cJg4AVytyFY?enablejsapi=1"
+                                title="Windows Server 2022 Installation Tutorial"
+                                frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+
+                <!-- Transcript Container Section: 33% width on large screens -->
+                <div class="w-full lg:w-1/3 flex-shrink-0">
+                    <div id="transcript-container" class="h-96 overflow-y-scroll bg-white shadow-inner p-4 rounded-lg border border-gray-300">
+                        <p class="text-gray-500 text-center">Loading transcript...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Prerequisites Section -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Prerequisites</h2>
+            
+            <div class="space-y-4">
+                <div class="warning-box p-4 rounded-lg">
+                    <p class="font-semibold text-gray-800 mb-2">⚠️ Important Notice</p>
+                    <p class="text-gray-700">
+                        These ISO files are large (6+ GB combined). Use the SCP method described below rather than 
+                        uploading through the web GUI to avoid file corruption issues.
+                    </p>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Required ISO Files</h3>
+                    
+                    <div class="mb-4">
+                        <p class="font-semibold text-gray-700 mb-2">1. Windows Server 2022 (Updated January 2026)</p>
+                        <p class="text-sm text-gray-600 mb-2">File size: ~6 GB</p>
+                        <a href="https://mendocinocollege-my.sharepoint.com/:u:/g/personal/dpai_mendocino_edu/IQAymHs9Te_qTZS6o7J6Q_x9AfUTFgufi7ZFsjAHHgXxs6w?e=mIzp28" 
+                           target="_blank" 
+                           class="text-blue-600 hover:text-blue-800 underline break-all">
+                            Download Windows Server 2022 ISO
+                        </a>
+                    </div>
+
+                    <div>
+                        <p class="font-semibold text-gray-700 mb-2">2. VirtIO Drivers (v0.1.285)</p>
+                        <p class="text-sm text-gray-600 mb-2">File size: ~500 MB</p>
+                        <a href="https://mendocinocollege-my.sharepoint.com/:u:/g/personal/dpai_mendocino_edu/IQC7gElSS16WSL_C_nngclaaARcWMl4WC19IQT2DvDNZeG4?e=5M8Tjl" 
+                           target="_blank" 
+                           class="text-blue-600 hover:text-blue-800 underline break-all">
+                            Download VirtIO Drivers ISO
+                        </a>
+                        <p class="text-sm text-gray-600 mt-2">
+                            Alternative source: 
+                            <a href="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/" 
+                               target="_blank" 
+                               class="text-blue-600 hover:text-blue-800 underline">
+                                Fedora VirtIO Repository
+                            </a>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="info-box p-4 rounded-lg">
+                    <p class="font-semibold text-gray-800 mb-2">Why VirtIO Drivers?</p>
+                    <p class="text-gray-700">
+                        Unlike Linux systems, Windows doesn't include drivers for Proxmox's virtualized hardware by default. 
+                        VirtIO drivers provide optimized performance for disk, network, and other virtualized components.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Upload ISOs Section -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Step 1: Upload ISO Files to Proxmox</h2>
+            
+            <div class="space-y-4">
+                <div class="warning-box p-4 rounded-lg">
+                    <p class="font-semibold text-gray-800 mb-2">⚠️ Use SCP, Not Web GUI</p>
+                    <p class="text-gray-700">
+                        For files this large, SCP (Secure Copy Protocol) is significantly more reliable than the Proxmox 
+                        web interface. Web uploads can corrupt large ISO files.
+                    </p>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Upload Windows Server ISO</h3>
+                    <p class="text-gray-700 mb-3">
+                        Replace <code class="bg-gray-200 px-2 py-1 rounded">10.255.254.20</code> with your Proxmox node's 
+                        IP address (10.255.254.21 through .30 for student nodes).
+                    </p>
+                    
+                    <div class="relative">
+                        <button onclick="copyToClipboard('scp-windows', this)" 
+                                class="copy-btn absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                            Copy
+                        </button>
+                        <pre id="scp-windows"><code>scp "C:\Users\YOUR_USERNAME\Downloads\en-us_windows_server_2022_updated_jan_2026_x64_dvd_5241863a.iso" root@10.255.254.XX:/var/lib/vz/template/iso/</code></pre>
+                    </div>
+                    
+                    <div class="mt-3 text-sm text-gray-600 space-y-1">
+                        <p><strong>Expected upload time:</strong> 45+ minutes (6 GB file)</p>
+                        <p><strong>Note:</strong> You may need to type "yes" when prompted to accept the host key (your typing won't be visible)</p>
+                    </div>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Upload VirtIO Drivers ISO</h3>
+                    
+                    <div class="relative">
+                        <button onclick="copyToClipboard('scp-virtio', this)" 
+                                class="copy-btn absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                            Copy
+                        </button>
+                        <pre id="scp-virtio"><code>scp "C:\Users\YOUR_USERNAME\Downloads\virtio-win-0.1.285.iso" root@10.255.254.XX:/var/lib/vz/template/iso/</code></pre>
+                    </div>
+                    
+                    <div class="mt-3 text-sm text-gray-600">
+                        <p><strong>Expected upload time:</strong> ~10 minutes</p>
+                    </div>
+                </div>
+
+                <div class="info-box p-4 rounded-lg">
+                    <p class="font-semibold text-gray-800 mb-2">Platform Notes:</p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1">
+                        <li><strong>Windows:</strong> Use PowerShell or Command Prompt</li>
+                        <li><strong>Mac/Linux:</strong> Use Terminal</li>
+                        <li><strong>OpenVPN:</strong> Must be connected to the remote network first</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Create VM Section -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Step 2: Create Windows Server VM</h2>
+            
+            <div class="space-y-4">
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">General Settings</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>Node:</strong> Select your assigned Proxmox node</li>
+                        <li><strong>VM ID:</strong> Use a 4-digit number (e.g., 3000) for Lab 4</li>
+                        <li><strong>Name:</strong> <code class="bg-gray-200 px-2 py-1 rounded">lab4-win2022</code></li>
+                    </ul>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">OS Configuration</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>ISO Image:</strong> Select the Windows Server 2022 (January 2026 update) ISO</li>
+                        <li><strong>Guest OS Type:</strong> Microsoft Windows</li>
+                        <li><strong>Version:</strong> 11/2022/2025</li>
+                        <li><strong>Additional Drive:</strong> ✅ Yes - Add VirtIO drivers ISO</li>
+                    </ul>
+                    <div class="warning-box p-3 rounded mt-3">
+                        <p class="text-sm text-gray-700">
+                            <strong>Important:</strong> You must add the VirtIO ISO as an additional CD/DVD drive during 
+                            VM creation. This is required for the installation process.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">System Configuration</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>SCSI Controller:</strong> VirtIO SCSI</li>
+                        <li><strong>QEMU Agent:</strong> ✅ Enable (recommended)</li>
+                        <li><strong>BIOS:</strong> OVMF (UEFI)</li>
+                        <li><strong>EFI Storage:</strong> local-lvm</li>
+                        <li><strong>Pre-Enroll Keys:</strong> Default (unchecked)</li>
+                    </ul>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Disk Configuration</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>Storage:</strong> local-lvm</li>
+                        <li><strong>Disk Size:</strong> 50-60 GB (minimum)</li>
+                        <li><strong>Cache:</strong> Write back</li>
+                        <li><strong>Discard:</strong> ✅ Enable</li>
+                        <li><strong>IO Thread:</strong> ✅ Enable</li>
+                    </ul>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">CPU Configuration</h3>
+                    <div class="warning-box p-3 rounded mb-3">
+                        <p class="text-sm text-gray-700">
+                            <strong>⚠️ Critical:</strong> CPU Type must be set to "host" for nested virtualization support 
+                            and optimal performance.
+                        </p>
+                    </div>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>Sockets:</strong> 1</li>
+                        <li><strong>Cores:</strong> 2</li>
+                        <li><strong>Type:</strong> host (required for nested virtualization)</li>
+                    </ul>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Memory Configuration</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>Memory:</strong> 4096 MB (4 GB minimum)</li>
+                        <li><strong>Ballooning:</strong> Enabled (default)</li>
+                    </ul>
+                    <p class="text-sm text-gray-600 mt-2">
+                        Note: More memory will improve performance, but we're keeping it minimal for lab resource constraints.
+                    </p>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Network Configuration</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong>Bridge:</strong> vmbr0</li>
+                        <li><strong>Model:</strong> VirtIO (paravirtualized)</li>
+                        <li><strong>Firewall:</strong> Default settings</li>
+                    </ul>
+                </div>
+
+                <div class="success-box p-4 rounded-lg">
+                    <p class="font-semibold text-gray-800 mb-2">✓ Ready to Install</p>
+                    <p class="text-gray-700">
+                        Review all settings in the summary screen, then click <strong>Finish</strong>. Do not check 
+                        "Start after created" - we'll start it manually in the next step.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Installation Process Section -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Step 3: Windows Installation Process</h2>
+            
+            <div class="space-y-4">
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Start the Installation</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>Select your VM in the Proxmox interface</li>
+                        <li>Click <strong>Console</strong> to open the VM console window</li>
+                        <li>Click <strong>Start</strong> to boot the VM</li>
+                        <li>Press any key when prompted to boot from CD/DVD</li>
+                    </ol>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Initial Setup</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>Select your language and keyboard layout</li>
+                        <li>Click <strong>Install now</strong></li>
+                        <li>Enter product key (or skip - you can use the lab evaluation key)</li>
+                        <li>Select <strong>Windows Server 2022 Standard (Desktop Experience)</strong></li>
+                        <li>Accept the license terms</li>
+                        <li>Choose <strong>Custom: Install Windows only (advanced)</strong></li>
+                    </ol>
+                    
+                    <div class="info-box p-3 rounded mt-3">
+                        <p class="text-sm text-gray-700">
+                            <strong>Desktop Experience:</strong> This option installs the full GUI. Without it, you'd only 
+                            have PowerShell/command line interface.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Load VirtIO Drivers (Critical Step)</h3>
+                    
+                    <div class="warning-box p-3 rounded mb-3">
+                        <p class="text-sm text-gray-700">
+                            <strong>⚠️ Important:</strong> Windows won't see your virtual hard drive without these drivers!
+                        </p>
+                    </div>
+                    
+                    <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>When you reach the disk selection screen, you'll see "No drives found"</li>
+                        <li>Click <strong>Load driver</strong></li>
+                        <li>Click <strong>Browse</strong></li>
+                        <li>Navigate to the VirtIO CD drive (usually Drive D: or E:)</li>
+                        <li>Select the appropriate driver folder:
+                            <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                <li><code class="bg-gray-200 px-2 py-1 rounded">vioscsi\w10\amd64</code> - SCSI controller driver</li>
+                            </ul>
+                        </li>
+                        <li>Click <strong>OK</strong> and <strong>Next</strong> to load the driver</li>
+                        <li>Your virtual disk should now appear in the drive list</li>
+                        <li>Optionally repeat to load network driver: <code class="bg-gray-200 px-2 py-1 rounded">NetKVM\w10\amd64</code></li>
+                    </ol>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Complete Installation</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>Select the disk that now appears (should show ~50-60 GB)</li>
+                        <li>Click <strong>Next</strong> to begin installation</li>
+                        <li>Wait for installation to complete (15-30 minutes)</li>
+                        <li>The VM will automatically restart when installation finishes</li>
+                    </ol>
+                    
+                    <div class="info-box p-3 rounded mt-3">
+                        <p class="text-sm text-gray-700">
+                            The installation process will show progress through several stages: copying files, installing 
+                            features, installing updates, and finishing up.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">First Boot Setup</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>After restart, you'll be prompted to set the Administrator password</li>
+                        <li>Choose a strong password (write it down!)</li>
+                        <li>Press <strong>Ctrl+Alt+Delete</strong> to login (use the toolbar button in Proxmox console)</li>
+                        <li>Enter your Administrator password</li>
+                        <li>Windows Server desktop will load</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- Post-Installation Section -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Step 4: Post-Installation Configuration</h2>
+            
+            <div class="space-y-4">
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Install Remaining VirtIO Drivers</h3>
+                    <p class="text-gray-700 mb-3">
+                        While Windows is now installed, you should install all remaining VirtIO drivers for optimal performance.
+                    </p>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>Open File Explorer</li>
+                        <li>Navigate to the VirtIO drivers CD (usually D: or E: drive)</li>
+                        <li>Run <code class="bg-gray-200 px-2 py-1 rounded">virtio-win-gt-x64.msi</code></li>
+                        <li>Follow the installation wizard (accept all defaults)</li>
+                        <li>Restart the system when prompted</li>
+                    </ol>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Configure Static IP Address</h3>
+                    <p class="text-gray-700 mb-3">
+                        Your VM initially receives a DHCP address. Configure a static IP for consistent network access.
+                    </p>
+                    
+                    <div class="mb-4">
+                        <p class="font-semibold text-gray-700 mb-2">Check Current IP Configuration:</p>
+                        <div class="relative">
+                            <button onclick="copyToClipboard('ipconfig-cmd', this)" 
+                                    class="copy-btn absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                Copy
+                            </button>
+                            <pre id="ipconfig-cmd"><code>ipconfig</code></pre>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">
+                            Note the current IP address and default gateway shown.
+                        </p>
+                    </div>
+
+                    <div class="mb-4">
+                        <p class="font-semibold text-gray-700 mb-2">Set Static IP via GUI:</p>
+                        <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li>Right-click the network icon in the system tray</li>
+                            <li>Select <strong>Open Network & Internet settings</strong></li>
+                            <li>Click <strong>Change adapter options</strong></li>
+                            <li>Right-click your Ethernet adapter and select <strong>Properties</strong></li>
+                            <li>Select <strong>Internet Protocol Version 4 (TCP/IPv4)</strong></li>
+                            <li>Click <strong>Properties</strong></li>
+                            <li>Select <strong>Use the following IP address</strong></li>
+                        </ol>
+                    </div>
+
+                    <div class="info-box p-4 rounded">
+                        <p class="font-semibold text-gray-800 mb-2">Network Configuration Values:</p>
+                        <ul class="space-y-1 text-gray-700 font-mono text-sm">
+                            <li><strong>IP Address:</strong> 10.255.254.[YOUR_NUMBER]</li>
+                            <li><strong>Subnet Mask:</strong> 255.255.255.0</li>
+                            <li><strong>Default Gateway:</strong> 10.255.254.1</li>
+                            <li><strong>Preferred DNS:</strong> 10.255.254.1</li>
+                            <li><strong>Alternate DNS:</strong> 8.8.8.8</li>
+                        </ul>
+                        <p class="text-sm text-gray-600 mt-2">
+                            Use one of your assigned IP addresses (you have a range of 10 addresses available).
+                        </p>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="font-semibold text-gray-700 mb-2">Enable Validation:</p>
+                        <ol class="list-decimal list-inside space-y-1 text-gray-700">
+                            <li>Check <strong>Validate settings upon exit</strong></li>
+                            <li>Click <strong>OK</strong> to save changes</li>
+                            <li>Windows will validate your network configuration</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Test Network Connectivity</h3>
+                    <p class="text-gray-700 mb-3">
+                        Verify your network configuration is working correctly.
+                    </p>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <p class="font-semibold text-gray-700 mb-2">Verify Static IP:</p>
+                            <div class="relative">
+                                <button onclick="copyToClipboard('verify-ip', this)" 
+                                        class="copy-btn absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                    Copy
+                                </button>
+                                <pre id="verify-ip"><code>ipconfig</code></pre>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">Should show your configured static IP address.</p>
+                        </div>
+
+                        <div>
+                            <p class="font-semibold text-gray-700 mb-2">Test Internet Connectivity:</p>
+                            <div class="relative">
+                                <button onclick="copyToClipboard('ping-google-dns', this)" 
+                                        class="copy-btn absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                    Copy
+                                </button>
+                                <pre id="ping-google-dns"><code>ping 8.8.8.8</code></pre>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">Should receive 4 replies from Google's DNS server.</p>
+                        </div>
+
+                        <div>
+                            <p class="font-semibold text-gray-700 mb-2">Test DNS Resolution:</p>
+                            <div class="relative">
+                                <button onclick="copyToClipboard('ping-google', this)" 
+                                        class="copy-btn absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                    Copy
+                                </button>
+                                <pre id="ping-google"><code>ping google.com</code></pre>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">Should resolve the domain name and receive 4 replies.</p>
+                        </div>
+                    </div>
+
+                    <div class="success-box p-3 rounded mt-4">
+                        <p class="text-sm text-gray-700">
+                            <strong>✓ Success:</strong> If all three tests pass, your network is properly configured!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Remove Installation Media</h3>
+                    <p class="text-gray-700 mb-3">
+                        Clean up by removing the ISO files from the VM's virtual CD drives.
+                    </p>
+                    
+                    <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>Shut down the Windows Server VM (Start → Power → Shut down)</li>
+                        <li>In Proxmox, select your VM</li>
+                        <li>Click <strong>Hardware</strong></li>
+                        <li>For each CD/DVD drive:
+                            <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                                <li>Select the CD/DVD Drive</li>
+                                <li>Click <strong>Edit</strong></li>
+                                <li>Select <strong>Do not use any media</strong></li>
+                                <li>Click <strong>OK</strong></li>
+                            </ul>
+                        </li>
+                        <li>Start the VM again</li>
+                    </ol>
+
+                    <div class="info-box p-3 rounded mt-3">
+                        <p class="text-sm text-gray-700">
+                            The CD/DVD drives remain in the VM's hardware configuration, but they're now empty. You can 
+                            attach the VirtIO ISO again later if needed for driver updates.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final Steps Section -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Step 5: Final Configuration</h2>
+            
+            <div class="space-y-4">
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Recommended Next Steps</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">▶</span>
+                            <span><strong>Windows Update:</strong> Run Windows Update to install the latest security patches and updates</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">▶</span>
+                            <span><strong>Server Manager:</strong> Configure Windows Server roles and features as needed for your lab</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">▶</span>
+                            <span><strong>Firewall:</strong> Review and configure Windows Firewall settings</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">▶</span>
+                            <span><strong>Remote Desktop:</strong> Enable Remote Desktop if you want to access the server remotely</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-600 mr-2">▶</span>
+                            <span><strong>Computer Name:</strong> Rename the computer to something meaningful (default is random)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="success-box p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">✓ Installation Complete!</h3>
+                    <p class="text-gray-700 mb-3">
+                        Your Windows Server 2022 VM is now fully installed and configured. You have:
+                    </p>
+                    <ul class="space-y-1 text-gray-700">
+                        <li>✓ Windows Server 2022 with Desktop Experience</li>
+                        <li>✓ VirtIO drivers installed for optimal performance</li>
+                        <li>✓ Static IP address configured</li>
+                        <li>✓ Network connectivity verified</li>
+                        <li>✓ Installation media removed</li>
+                    </ul>
+                    <p class="text-gray-700 mt-3">
+                        You can now proceed with Lab 4 assignments and additional Windows Server configuration tasks.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Troubleshooting Section -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Troubleshooting</h2>
+            
+            <div class="space-y-4">
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">ISO Upload Fails or Corrupts</h3>
+                    <p class="text-gray-700 mb-2"><strong>Problem:</strong> ISO file doesn't work after uploading via web GUI.</p>
+                    <p class="text-gray-700"><strong>Solution:</strong> Always use SCP for large files. Web uploads can corrupt multi-gigabyte ISOs.</p>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">No Disk Found During Installation</h3>
+                    <p class="text-gray-700 mb-2"><strong>Problem:</strong> Windows installer shows "No drives found".</p>
+                    <p class="text-gray-700"><strong>Solution:</strong> Load VirtIO SCSI driver from the VirtIO ISO (vioscsi\w10\amd64).</p>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">VM Won't Start or Crashes</h3>
+                    <p class="text-gray-700 mb-2"><strong>Problem:</strong> VM fails to boot or crashes during installation.</p>
+                    <p class="text-gray-700"><strong>Solution:</strong> Verify CPU type is set to "host" and EFI storage is configured correctly.</p>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Network Not Working After Installation</h3>
+                    <p class="text-gray-700 mb-2"><strong>Problem:</strong> No network connectivity in Windows.</p>
+                    <p class="text-gray-700"><strong>Solution:</strong> Install VirtIO network drivers (NetKVM) from the VirtIO ISO, or run the full installer (virtio-win-gt-x64.msi).</p>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Can't Ping External Addresses</h3>
+                    <p class="text-gray-700 mb-2"><strong>Problem:</strong> Static IP configured but no internet access.</p>
+                    <p class="text-gray-700"><strong>Solution:</strong> Verify default gateway (10.255.254.1) and DNS servers are correctly configured.</p>
+                </div>
+
+                <div class="step-card bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">VM Performance is Slow</h3>
+                    <p class="text-gray-700 mb-2"><strong>Problem:</strong> Windows runs very slowly.</p>
+                    <p class="text-gray-700"><strong>Solution:</strong> Ensure VirtIO drivers are installed (not just loaded during install). Consider increasing RAM or CPU cores if resources allow.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Additional Resources -->
+        <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Additional Resources</h2>
+            
+            <div class="space-y-3">
+                <div class="flex items-start">
+                    <span class="text-blue-600 mr-3 text-xl">📘</span>
+                    <div>
+                        <a href="https://docs.microsoft.com/windows-server/" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">
+                            Windows Server Documentation
+                        </a>
+                        <p class="text-gray-600 text-sm">Official Microsoft documentation for Windows Server</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start">
+                    <span class="text-blue-600 mr-3 text-xl">📘</span>
+                    <div>
+                        <a href="https://pve.proxmox.com/wiki/Windows_VirtIO_Drivers" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">
+                            Proxmox VirtIO Drivers Guide
+                        </a>
+                        <p class="text-gray-600 text-sm">Detailed information about VirtIO drivers in Proxmox</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start">
+                    <span class="text-blue-600 mr-3 text-xl">📘</span>
+                    <div>
+                        <a href="https://fedorapeople.org/groups/virt/virtio-win/" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">
+                            VirtIO Drivers Repository
+                        </a>
+                        <p class="text-gray-600 text-sm">Source for the latest VirtIO driver releases</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-300 mt-12">
+        <div class="container mx-auto px-4 py-6">
+            <div class="text-center">
+                <p class="text-sm">CSC 152 - Linux Server Administration | Lab 4: Windows Server Installation</p>
+                <p class="text-xs text-gray-400 mt-2">Mendocino College Computer Science Department</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for copy-to-clipboard and video transcript -->
+    <script>
+        // Copy to clipboard functionality
+        function copyToClipboard(elementId, button) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                button.classList.add('bg-green-600');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('bg-green-600');
+                    button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                button.textContent = 'Error';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+
+        // YouTube Video and Transcript Sync
+        const VIDEO_ID = 'cJg4AVytyFY';
+        let player;
+        let timeUpdater;
+        let parsedTranscript = [];
+
+        const vttContent = `WEBVTT
+
+00:00.000 --> 00:10.100
+All right. Aloha. So what I want to do here is walk through trying to get Windows Server 2022
+
+00:10.100 --> 00:16.440
+installed. Okay. So the first thing you need to make sure you do is you have to upload two files
+
+00:16.440 --> 00:26.240
+and those are provided separately. The two files you need is going to be Windows Server 2022
+
+00:26.240 --> 00:34.700
+updated January 2026. And that's a six gig file, 5.7 something, but it turns out to be six gigs
+
+00:34.700 --> 00:45.920
+once you upload it. And then this virtio-win and the latest was 0.1.285.iso. So you're going to
+
+00:45.920 --> 00:55.140
+need these two ISOs in order to install Windows Server on Proxmox to deal with the... The reason
+
+00:55.140 --> 00:56.140
+we need the second one is...
+
+00:56.240 --> 01:03.180
+These are all a lot of the drivers that are going to work with Proxmox. They're not automatically
+
+01:03.180 --> 01:08.540
+installed like all the Linux drivers already are. So we have to install those as part of the
+
+01:08.540 --> 01:17.220
+installation process. Okay. So I'm going to go back here and we're going to create a new VM.
+
+01:17.220 --> 01:25.460
+And this one I'm going to call lab4... Oops, that's not very good.
+
+01:26.240 --> 01:43.520
+lab4-win2022. Okay. And so then we'll go next to go to the OS. ISO image is the six gig Windows.
+
+01:43.520 --> 01:55.580
+Okay. So we're going to create that VM, set the name, VM ID, select Windows, and 11.2022.2025.
+
+01:56.240 --> 02:10.380
+That's what we want. Okay. Add an additional drive. Yes. ISO image virtio-win. Okay. So we have
+
+02:10.380 --> 02:24.340
+to add that extra drive so we can do both. Okay. System. Okay. So on our system,
+
+02:26.240 --> 02:44.100
+let's see. And we should allow Qimu agent, I believe, and I think everything else stays as default.
+
+02:53.820 --> 02:56.180
+Virtio, or ScSI buzz...
+
+02:56.240 --> 03:00.400
+Should be Burt's Guzzi, graphics card default.
+
+03:01.620 --> 03:02.460
+Well, we'll try this.
+
+03:06.540 --> 03:12.700
+EFI storage, local LVM, TP.
+
+03:13.440 --> 03:15.500
+We'll do both in local LVM.
+
+03:17.240 --> 03:17.600
+Okay.
+
+03:19.020 --> 03:20.220
+That's the only option we had.
+
+03:20.220 --> 03:27.840
+Anyway, disk size, probably want to make this, I don't know,
+
+03:27.880 --> 03:31.260
+at least 50, 60 gigabytes.
+
+03:32.620 --> 03:37.700
+And we definitely want disk card also, just like we did in the last one.
+
+03:43.200 --> 03:44.540
+Let's see what else.
+
+03:44.540 --> 03:46.240
+I know thread.
+
+03:47.900 --> 03:49.880
+Write back cache should be.
+
+03:51.120 --> 03:51.600
+None.
+
+03:51.640 --> 03:54.900
+I'm just looking at my notes to make sure.
+
+03:57.820 --> 03:58.740
+I'll thread on.
+
+04:00.780 --> 04:04.540
+Oh, let's do write back on our cache.
+
+04:06.680 --> 04:07.040
+Okay.
+
+04:11.480 --> 04:12.400
+CPU.
+
+04:13.580 --> 04:16.240
+Um, again, we need to change this to host.
+
+04:17.900 --> 04:20.200
+I believe just like we did for the other one.
+
+04:21.220 --> 04:28.040
+Uh, I want to go with two cores again, and that's all we should have to do here.
+
+04:36.380 --> 04:36.880
+Memory.
+
+04:36.880 --> 04:41.880
+I'll say with four gigs, I could go more, but, um, we're just going to
+
+04:41.880 --> 04:46.100
+minimum do a minimal install and see what happens network.
+
+04:46.420 --> 04:47.680
+This should all be okay.
+
+04:47.680 --> 04:50.180
+It should be VMBRO virtualized.
+
+04:50.220 --> 04:59.760
+We'll go next and then this should be our whole system.
+
+05:05.280 --> 05:06.360
+I'm not going to start it.
+
+05:06.420 --> 05:07.380
+I will finish it.
+
+05:10.680 --> 05:15.720
+And I didn't create a new number.
+
+05:17.780 --> 05:19.080
+I screwed that up.
+
+05:19.600 --> 05:24.360
+I'm going to do it all over while it's VM 100.
+
+05:26.280 --> 05:26.440
+Okay.
+
+05:26.440 --> 05:29.160
+I should have set the VM to be something else.
+
+05:30.420 --> 05:31.200
+So let's see.
+
+05:31.200 --> 05:35.360
+Can I do, do, do, do.
+
+05:35.480 --> 05:36.840
+I don't think I can edit it.
+
+05:37.860 --> 05:38.220
+Oh, wait,
+
+05:41.380 --> 05:44.460
+summary, hardware.
+
+05:45.200 --> 05:46.260
+Do, do, do,
+
+05:46.260 --> 06:05.080
+name i think i screwed this up because i already made it um
+
+06:05.080 --> 06:11.980
+here's what we're gonna do we're gonna do it over all right because it doesn't take that long okay
+
+06:11.980 --> 06:18.740
+so when we go over here i'm gonna go more and i'm just gonna remove it and ask me to put in 100
+
+06:18.740 --> 06:27.380
+okay and say remove and that way i'll delete everything and then we'll just create a new vm
+
+06:27.380 --> 06:30.280
+this vm i will make
+
+06:30.280 --> 06:41.840
+three thousand three thousand and this will be my lab four wind
+
+06:41.840 --> 06:41.960
+vm
+
+06:41.980 --> 06:43.260
+2022
+
+06:43.260 --> 07:00.400
+i don't need resource pool next os select my january windows windows 11 additional drive
+
+07:00.400 --> 07:03.160
+windows
+
+07:03.160 --> 07:06.820
+if i storage
+
+07:06.820 --> 07:09.980
+local
+
+07:11.980 --> 07:16.660
+agent disk i made this 50 last time
+
+07:19.060 --> 07:28.340
+discard and write back for my cache and next two sockets i'm going to change this to host
+
+07:35.060 --> 07:41.860
+host go next leave it at four gigs leave it virtual
+
+07:41.980 --> 07:44.420
+parallel
+
+07:44.420 --> 07:48.060
+all right so hopefully that's all everything's good now we'll finish
+
+07:50.300 --> 07:58.060
+and we'll wait for our bm 300 to come up okay and we will we can open a console
+
+07:59.260 --> 08:05.580
+but it's not running so we can click start now to start it there's another way to start them
+
+08:08.860 --> 08:10.380
+and it should boot off the
+
+08:11.980 --> 08:12.980
+um
+
+08:12.980 --> 08:17.820
+there's any key to boot it off that cd drive that we
+
+08:17.820 --> 08:20.500
+put in there with our windows server on there
+
+08:20.500 --> 08:32.600
+all right and then okay pick our language
+
+08:32.600 --> 08:35.740
+um install now
+
+08:35.740 --> 08:38.640
+okay
+
+08:38.640 --> 08:41.920
+and then we're ready we're ready to go i'm going to turn this off then i'm going to do this and then i'm going to choose this one let me just turn this on this one and then i'll just go ahead and select this one and then i'll let it change into my directory and then this one will go to my directory and then i'll start the communication so second time we're ready to go so next time the conversation is over i just want to make sure it's ending in
+
+08:41.980 --> 08:51.400
+there's a and then in the middle so if you have a key you can put it in
+
+08:51.400 --> 08:56.980
+if and i have a another thing on how to get a key i do have keys
+
+08:56.980 --> 09:04.840
+probably shouldn't show well it doesn't matter but i'm just going to see if i can paste it in
+
+09:11.980 --> 09:18.540
+i'll paste d
+
+09:18.540 --> 09:25.840
+i'll paste d okay well i'm gonna have to blow it up so i can read it
+
+09:25.840 --> 09:31.340
+so let me put mine in
+
+09:31.340 --> 09:37.460
+over here
+
+09:41.980 --> 09:48.980
+so
+
+10:11.980 --> 10:22.360
+you can't get one you can use this one it's a lab key and since you're using it
+
+10:22.360 --> 10:28.040
+for lab in class it's fun to use the lab key but you could also I'll also show
+
+10:28.040 --> 10:33.540
+you how to get one for yourself so check that out and you click Next and then
+
+10:33.540 --> 10:38.060
+it's gonna validate your key and hopefully this is a valid key okay and
+
+10:38.060 --> 10:40.920
+we're gonna do standard desktop experience so that we get all the
+
+10:40.920 --> 10:44.480
+desktops it's gonna take longer to install we're going to use the graphical
+
+10:44.480 --> 10:47.480
+environment with Windows
+
+10:48.200 --> 10:51.020
+okay
+
+10:54.980 --> 11:04.220
+okay so you have to accept otherwise you can't do this we want to do custom okay
+
+11:04.220 --> 11:10.620
+here's the first kind of funky step that we have to do and that is
+
+11:10.620 --> 11:18.240
+there's no drives if we want to install Windows because Windows doesn't recognize the VirtIO drives
+
+11:18.240 --> 11:25.000
+that's on Proxmox so we need to load a driver and so you click on load driver
+
+11:25.240 --> 11:32.820
+and you go browse and then you see this CD drive right there that's the VirtIO
+
+11:32.820 --> 11:40.720
+driver win that we added so you can click that and you can if you open that
+
+11:40.720 --> 11:46.800
+up you can see a whole bunch of different drivers okay so basically we
+
+11:46.800 --> 11:54.600
+need to get the VirtIO SCSIs is one that we need to make our hard drives work and
+
+11:54.600 --> 12:03.080
+we want to go to I did I think I did Windows 10 AMD 64 and then once you're
+
+12:03.080 --> 12:08.600
+there you say okay and then it scans in there and it loads that driver and you
+
+12:08.600 --> 12:13.280
+click next so that's kind of the driver for the hard drive
+
+12:13.280 --> 12:16.720
+okay
+
+12:16.720 --> 12:25.900
+if you want you can load the next KBM the network one to go ahead and click browse
+
+12:25.900 --> 12:34.080
+again and go to next KBM now that's the network card and we want to do the same
+
+12:34.080 --> 12:39.060
+thing w10 AMD 64 I just want to make sure I got it right
+
+12:39.060 --> 12:47.300
+w10 AMD 64 let's see which one I picked I think I picked this one yeah
+
+12:47.300 --> 12:56.080
+okay and then you go next and it adds that driver and so now we have both of our
+
+12:56.080 --> 13:01.560
+drivers we got network and the hard drive and let's click close so now when
+
+13:01.560 --> 13:06.480
+we look there's our hard drive it's showing up as 50 gigs we can click next
+
+13:06.480 --> 13:13.620
+it starts the installation process copying Windows files
+
+13:13.620 --> 13:24.680
+getting files ready for installation and this will take a while so I'm gonna
+
+13:24.680 --> 13:29.340
+pause this and we'll come back when it's done
+
+13:29.340 --> 13:41.760
+okay so it's restarting the service and we're getting to this now you know you
+
+13:41.760 --> 13:46.220
+don't boot off the hard drive not off the CD so just let it go and there it's
+
+13:46.220 --> 13:54.500
+starting into Windows and it's going through its setup right now
+
+13:54.500 --> 14:04.120
+one of the things it's doing I believe it's installing that network card that
+
+14:04.120 --> 14:09.360
+we added the drivers to that's what it was doing here
+
+14:09.360 --> 14:17.560
+okay so this is going to take a few minutes more so I'll fast forward again
+
+14:17.560 --> 14:31.620
+okay so you can see it's now getting devices ready getting devices ready getting ready
+
+14:31.620 --> 14:42.880
+okay so now it's finishing up
+
+14:42.880 --> 14:52.400
+and we're at the password so I got to come up with the password so we'll pause
+
+14:52.400 --> 15:03.020
+again until I get a password in okay all right I got my password in twice
+
+15:03.020 --> 15:07.360
+there you go just make sure you remember it
+
+15:07.360 --> 15:16.320
+finishing up
+
+15:16.320 --> 15:25.500
+and okay so let's make this bigger we're getting a waiting for group policy client
+
+15:25.500 --> 15:41.120
+this is the final pieces of server are getting set up and we're at please wait for the
+
+15:41.120 --> 15:51.800
+group policy client okay we just kind of have to wait on this let's see when this gets done I should be able to get into it
+
+15:52.400 --> 16:02.820
+there we go so now you know it loaded the this is the log in screen so just like in VirtualBox you have to do this Ctrl Alt Delete
+
+16:02.820 --> 16:13.240
+there's a button at the top that you click to send it there it is right there send ctl alt delete so let's open this up bigger
+
+16:13.240 --> 16:23.520
+so there's the send and then I come back down here administrator okay put my password in
+
+16:23.520 --> 16:40.080
+and we can I think I can connect now there we go so we got past that and
+
+16:40.080 --> 16:50.680
+there it is Windows Server Manager opened up so right now I have a Windows server 2022 installed on Proxmox
+
+16:50.680 --> 17:03.040
+so we just had to go through you know let me just recap we uploaded two iso files we created a new virtual machine
+
+17:03.040 --> 17:13.380
+we loaded we made sure we added an extra CD drive with the VirtIO drivers for Windows on it we started the installer
+
+17:13.380 --> 17:21.280
+up we had to load the drivers for the network card and the hard drive VirtIO hard drives
+
+17:21.280 --> 17:26.940
+once we did that it was able to recognize the hard drive we installed Windows
+
+17:26.940 --> 17:34.300
+waited for it to install it was a while it restarted came into Windows we put in our password
+
+17:34.300 --> 17:43.000
+and we're now here okay now I'm going to remove this just so it doesn't bother me as much
+
+17:43.000 --> 17:52.500
+there we go so and what I would show next time or show on another video is kind of how to set up Windows Server 2022
+
+17:52.500 --> 17:58.900
+and that's going to be based on what you want to do with it based on your lab assignments
+
+17:58.900 --> 18:11.300
+for now I can show you just the basic like if I go up here to view and we go into file manager
+
+18:11.300 --> 18:20.780
+this PC okay I can close this you can see I have my C drive and then I have my two CD drives
+
+18:20.780 --> 18:30.180
+this is my VirtIO drivers and this is my Windows Server 2022 so I can take this VirtIO one
+
+18:30.180 --> 18:40.380
+and you can double click to go into it I could go into that guest agent folder I could double click and install that
+
+18:40.380 --> 18:52.180
+I'll show it installing but I'm not going to do it right now you have to have this VirtIO install that will be okay
+
+18:52.180 --> 19:03.380
+so if I do this I say yes and then this will install all the drivers that I didn't already install okay
+
+19:03.380 --> 19:13.080
+so I'll just let this run through this will take a few minutes and you can see you're installing device software like the balloon
+
+19:13.080 --> 19:30.680
+you know network adapter video card all that I'll let that finish and then we'll continue
+
+19:30.680 --> 19:43.680
+and that's it it's saying the installation was successful and at this point you want to restart the server so I'm just going to do a reboot
+
+19:43.680 --> 19:55.180
+let me make this smaller actually no I'll leave it big so we can kind of see what's going on
+
+19:55.180 --> 20:02.580
+so I went to finish and it's doing a Windows update right now
+
+20:02.580 --> 20:17.580
+and I'm just going to finish that so okay it's still working on the update so again I'm going to fast forward this
+
+20:17.580 --> 20:27.580
+and so this is really my first restart
+
+20:27.580 --> 20:41.580
+and I'm going to keep this big because I want to watch to see if it tries to boot off the CD because we may want to get rid of those since we're past the installation
+
+20:41.580 --> 20:56.580
+okay so it's booting and it booted off the hard drive so I think we can get rid of those CDs but I'll just send a control on delete and we'll make sure it's working so let's make this a little bigger
+
+20:56.580 --> 21:05.580
+cancel this and we can see our file server or our file manager and we can see that we got our drives there
+
+21:05.580 --> 21:21.580
+okay so I think I'm going to go over here and shut this down so we can get rid of those those extra drives don't need to be there so I'll say shut down
+
+21:21.580 --> 21:34.580
+so now we're gonna restart but there's another driver installation to do okay so here's the other driver installation so we go to the files
+
+21:34.580 --> 21:37.300
+You're just checking that, okay?
+
+21:39.200 --> 21:43.000
+And then what we want to do is do another.
+
+21:47.280 --> 21:50.780
+We'll do another reboot, okay?
+
+21:51.740 --> 21:53.060
+And so that should be it.
+
+21:53.060 --> 21:56.540
+Once we reboot again, we should be.
+
+22:01.060 --> 22:01.660
+Cancel.
+
+22:01.920 --> 22:02.580
+I didn't want to do that.
+
+22:02.660 --> 22:02.760
+Why?
+
+22:03.040 --> 22:03.340
+Sorry.
+
+22:04.160 --> 22:05.260
+We want to do this.
+
+22:13.720 --> 22:14.480
+Restart it.
+
+22:31.920 --> 22:42.760
+And then what we're going to do after this,
+
+22:42.820 --> 22:45.580
+we're going to set our static IP address for our internet.
+
+22:49.300 --> 22:50.420
+And then.
+
+22:55.880 --> 22:56.400
+Yeah.
+
+23:01.920 --> 23:02.760
+Now that's what we're going to do.
+
+23:02.800 --> 23:06.300
+Set our static IP address.
+
+23:12.380 --> 23:14.720
+And then our basic setup, it will be done.
+
+23:15.200 --> 23:18.660
+And then there's other things to do, run Windows update and stuff like that.
+
+23:19.360 --> 23:19.800
+Okay.
+
+23:21.000 --> 23:21.440
+So.
+
+23:29.440 --> 23:30.320
+We can.
+
+23:31.920 --> 23:36.240
+I think if we go to command prompt.
+
+23:36.240 --> 23:37.280
+Right.
+
+23:37.280 --> 23:40.080
+Click on it.
+
+23:40.080 --> 23:41.220
+And Res admin.
+
+23:42.960 --> 23:46.280
+Okay.
+
+23:46.280 --> 23:48.500
+We do an IP config.
+
+23:48.500 --> 23:53.480
+You can see I got this 10, two 55, 254.240.
+
+23:53.480 --> 23:54.860
+Default gateway.
+
+23:54.860 --> 23:57.440
+And I got this from DHCP.
+
+23:57.440 --> 24:00.040
+And we want to change it to the static IP.
+
+24:00.040 --> 24:01.040
+And you want to use the default gateway.
+
+24:01.040 --> 24:01.580
+You want to use the default gateway.
+
+24:01.580 --> 24:01.620
+You want to use the default gateway.
+
+24:01.620 --> 24:01.640
+And then you want to change it to the static IP.
+
+24:01.640 --> 24:01.720
+And you want to change it to the static IP.
+
+24:01.720 --> 24:01.760
+You want to change it to the static IP.
+
+24:01.760 --> 24:08.080
+to use one of those 10 that you have okay and so you want to go down to what network
+
+24:09.120 --> 24:13.760
+open network and internet settings if you right click on it okay
+
+24:22.800 --> 24:27.680
+change adapter options click on your adapter properties
+
+24:27.680 --> 24:37.280
+um go down to ipv4 properties use the following and this is where you put in your
+
+24:39.680 --> 24:47.440
+you know your 10.255.254 dot um whatever your number you're going to use
+
+24:48.800 --> 24:57.600
+um you have a range of 10 of them it's 255.255.255.0
+
+24:57.680 --> 25:07.040
+your default gateway is 10.255.254.1 your dns servers are
+
+25:09.840 --> 25:16.160
+10.255.254.1 at least this setup exactly the same way i set up the
+
+25:17.360 --> 25:24.960
+linux servers 8.8.8.8 you can click validate settings on exit and then say okay
+
+25:28.320 --> 25:37.120
+and it should have checked them already and i have internet connection so close
+
+25:39.920 --> 25:42.640
+and it's checking them now sorry if i just
+
+25:42.640 --> 25:45.600
+close it now it's checking them because i said validate on exit
+
+25:57.680 --> 26:07.400
+do it a few times and if it's not check it long or if it's not
+
+26:07.400 --> 26:10.160
+what that's okay i'll do it again
+
+26:10.160 --> 26:14.000
+let me just go ahead and do that
+
+26:14.000 --> 26:17.680
+couldn't identify any problems okay that's a good thing
+
+26:17.680 --> 26:21.920
+so then what we'll do is we go in here and what we want to do is we'll go
+
+26:21.920 --> 26:25.720
+ipconfig and we'll see i have a .204 my static is here and then i can go um ping 4-8.8.8.8
+
+26:25.720 --> 26:26.800
+that's okay we're good there we go the next thing we do is we're going to go on ipconfig and we'll see i have a .204 my static is here and then i can go um ping 4-8.8.8.8.8
+
+26:27.680 --> 26:36.680
+oh wait i think we just couldn't go ping.8.8.8 i think it only does four of them anyway
+
+26:36.680 --> 26:42.520
+okay so i don't like that's four they're all connected it's all working
+
+26:42.520 --> 26:50.880
+and i can go ping google.com just like i did for the linux ones and i get four replies
+
+26:50.880 --> 26:57.500
+so it's all working okay i got internet connection it's working okay
+
+26:57.500 --> 26:58.680
+so um
+
+26:58.680 --> 27:06.200
+that's basics you have your windows server set up and we can start working from there
+
+27:06.200 --> 27:12.800
+so this is your basic how do i set up windows server on proxmox and then the last thing i would
+
+27:12.800 --> 27:20.800
+do um now that we have this you know you have that virtio you can always stick it in there again
+
+27:20.800 --> 27:27.120
+but the last thing i would do is probably go into here and i would go to this cd
+
+27:27.120 --> 27:27.480
+um
+
+27:27.500 --> 27:31.540
+and i would eject it i don't have that one anywhere
+
+27:31.540 --> 27:39.140
+oh this is in there again all right so that's in there again so what we're going to do is we're going
+
+27:39.140 --> 27:47.440
+to get rid of both of them so we'll eject them from here but we'll make sure we get rid of them
+
+27:47.440 --> 27:55.000
+by shutting down so instead of restart we're going to shut down
+
+27:55.000 --> 27:57.360
+okay
+
+27:57.500 --> 28:09.800
+okay i'm going to close this and then what i want to do is go into hardware
+
+28:09.800 --> 28:17.640
+and i have these two cd roms okay virtio and so these are still attached even though i ejected
+
+28:17.640 --> 28:24.020
+them so i'm going to click on here and instead of remove i'll go edit and don't use any media
+
+28:24.020 --> 28:27.480
+so the cd is still there it's just there's no cd on it so i'm going to go ahead and eject it
+
+28:27.500 --> 28:35.520
+there's nothing um it's not attached to any iso file anymore okay so i'll remove them both
+
+28:35.520 --> 28:43.980
+okay and now i will so i can start it or i can open a console and start it
+
+28:43.980 --> 28:48.580
+sometimes opening console and starting it is better but let's start it
+
+28:48.580 --> 28:54.200
+and then when we see it started we'll open a console and see what we got
+
+28:57.500 --> 29:03.280
+so we open the console it's going to connect
+
+29:03.280 --> 29:04.420
+oh it's still booting so
+
+29:04.420 --> 29:22.320
+okay and we always have to do this
+
+29:22.320 --> 29:25.480
+send this control alt delete
+
+29:25.480 --> 29:26.580
+then put in our password
+
+29:26.580 --> 29:27.500
+we're in
+
+29:27.500 --> 29:29.460
+You can click this to get rid of that stuff.
+
+29:34.420 --> 29:36.800
+And in the future, you're just going to leave it on all the time anyway.
+
+29:37.000 --> 29:38.760
+So you don't have to do that.
+
+29:38.840 --> 29:40.660
+But for now, we can jump back and forth.
+
+29:46.140 --> 29:51.980
+And if I had given it more RAM and more virtual CPUs, it would be faster.
+
+29:52.360 --> 29:56.760
+But I don't want to give it too much because we're limited on how many CPUs we have.
+
+29:56.760 --> 30:07.500
+And then just to verify, we'll go into files, open up file manager, and we no longer have either of those drives.
+
+30:10.540 --> 30:11.880
+We just have the C drive.
+
+30:12.000 --> 30:13.580
+We don't have that D and E drive.
+
+30:15.140 --> 30:19.260
+So those, you can see them now, the D and E, they're there, but they're empty.
+
+30:20.100 --> 30:23.020
+So they don't show up on the left because there's nothing in there.
+
+30:24.500 --> 30:24.940
+Okay.
+
+30:25.280 --> 30:25.720
+So.
+
+30:26.760 --> 30:28.660
+That's all I wanted to do for now.
+
+30:29.140 --> 30:35.220
+This is how you set up your Windows 2022 server in Proxmox.
+
+30:36.420 --> 30:37.140
+Thanks.`;
+
+        function timeToSeconds(timeStr) {
+            if (!timeStr) return 0;
+            const parts = timeStr.trim().split(':');
+            
+            if (parts.length === 2) {
+                let minutes = parseInt(parts[0]) || 0;
+                let seconds = parseFloat(parts[1]) || 0;
+                return minutes * 60 + seconds;
+            } else if (parts.length === 3) {
+                let hours = parseInt(parts[0]) || 0;
+                let minutes = parseInt(parts[1]) || 0;
+                let seconds = parseFloat(parts[2]) || 0;
+                return hours * 3600 + minutes * 60 + seconds;
+            }
+            return 0;
+        }
+
+        function parseVtt(vttText) {
+            const cues = vttText.trim().split(/\n\n+/);
+            const parsedCues = [];
+            
+            cues.forEach(cueBlock => {
+                if (cueBlock.startsWith('WEBVTT') || cueBlock.trim() === '') return;
+                
+                const lines = cueBlock.trim().split('\n');
+                const timeLine = lines.find(line => line.includes('-->'));
+                if (!timeLine) return;
+
+                const [startTimeStr, endTimeStr] = timeLine.split(' --> ');
+                const textLines = lines.slice(lines.indexOf(timeLine) + 1);
+                
+                parsedCues.push({
+                    start: timeToSeconds(startTimeStr),
+                    end: timeToSeconds(endTimeStr),
+                    text: textLines.join(' ').trim()
+                });
+            });
+            return parsedCues;
+        }
+
+        function populateTranscript() {
+            const container = document.getElementById('transcript-container');
+            container.innerHTML = '';
+
+            parsedTranscript.forEach(cue => {
+                const lineElement = document.createElement('div');
+                lineElement.className = 'transcript-line p-2 cursor-pointer hover:bg-gray-100 rounded-lg';
+                lineElement.dataset.start = cue.start;
+                lineElement.dataset.end = cue.end;
+                lineElement.textContent = cue.text;
+                lineElement.setAttribute('role', 'button');
+                lineElement.setAttribute('tabindex', '0');
+
+                const seekToTime = () => {
+                    if (player && player.seekTo) {
+                        player.seekTo(cue.start, true);
+                        player.playVideo();
+                    }
+                };
+                
+                lineElement.addEventListener('click', seekToTime);
+                lineElement.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { 
+                        e.preventDefault(); 
+                        seekToTime(); 
+                    }
+                });
+
+                container.appendChild(lineElement);
+            });
+        }
+
+        function highlightCurrentLine() {
+            if (!player || !player.getCurrentTime) return;
+
+            const currentTime = player.getCurrentTime();
+            const lines = document.querySelectorAll('#transcript-container .transcript-line');
+            let foundActive = false;
+
+            lines.forEach(line => {
+                const start = parseFloat(line.dataset.start);
+                const end = parseFloat(line.dataset.end);
+
+                if (currentTime >= start && currentTime < end) {
+                    if (!line.classList.contains('active-transcript-line')) {
+                        document.querySelector('.active-transcript-line')?.classList.remove('active-transcript-line');
+                        line.classList.add('active-transcript-line');
+                        line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    foundActive = true;
+                } else {
+                    line.classList.remove('active-transcript-line');
+                }
+            });
+        }
+
+        function syncTranscriptHeight() {
+            const mediaQuery = window.matchMedia('(min-width: 1024px)');
+            const videoContainer = document.getElementById('video-container');
+            const transcriptContainer = document.getElementById('transcript-container');
+            
+            if (!videoContainer || !transcriptContainer) return;
+            
+            if (mediaQuery.matches) {
+                const videoHeight = videoContainer.offsetHeight;
+                transcriptContainer.style.maxHeight = videoHeight + 'px';
+            } else {
+                transcriptContainer.style.maxHeight = '24rem';
+            }
+        }
+
+        window.onYouTubeIframeAPIReady = function() {
+            player = new YT.Player('youtube-player', {
+                videoId: VIDEO_ID,
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        };
+
+        function onPlayerStateChange(event) {
+            clearInterval(timeUpdater);
+            if (event.data === YT.PlayerState.PLAYING) {
+                timeUpdater = setInterval(highlightCurrentLine, 300);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            parsedTranscript = parseVtt(vttContent);
+            populateTranscript();
+            
+            setTimeout(syncTranscriptHeight, 100);
+
+            if (typeof(YT) == 'undefined' || typeof(YT.Player) == 'undefined') {
+                const tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                document.head.appendChild(tag);
+            } else {
+                onYouTubeIframeAPIReady();
+            }
+        });
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(syncTranscriptHeight, 250);
+        });
+    </script>
+</body>
+</html>
