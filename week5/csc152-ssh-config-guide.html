@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSC 152 Week 5 - SSH Configuration Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #1a1a1a;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1rem;
+            opacity: 0.95;
+        }
+        
+        .course-info {
+            background-color: #e3f2fd;
+            padding: 15px 30px;
+            border-bottom: 2px solid #1976d2;
+            font-size: 0.9rem;
+        }
+        
+        main {
+            padding: 30px;
+        }
+        
+        .intro-section {
+            background-color: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .intro-section h2 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+        
+        .step-container {
+            margin-bottom: 30px;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .step-header:hover,
+        .step-header:focus {
+            border-color: #1976d2;
+            background-color: #e3f2fd;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #1565c0, #1976d2);
+            color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        
+        .step-title {
+            flex-grow: 1;
+        }
+        
+        .step-title h3 {
+            color: #1565c0;
+            margin-bottom: 4px;
+        }
+        
+        .step-title p {
+            font-size: 0.9rem;
+            color: #666666;
+        }
+        
+        .step-toggle {
+            font-size: 1.5rem;
+            color: #1976d2;
+            transition: transform 0.3s ease;
+        }
+        
+        .step-header.active .step-toggle {
+            transform: rotate(180deg);
+        }
+        
+        .step-content {
+            display: none;
+            padding: 20px;
+            background-color: #fafafa;
+            border-radius: 0 0 8px 8px;
+            border: 2px solid #e0e0e0;
+            border-top: none;
+            margin-top: -10px;
+        }
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        .code-block {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            overflow-x: auto;
+            position: relative;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .code-block .comment {
+            color: #6a9955;
+        }
+        
+        .code-block .command {
+            color: #dcdcaa;
+        }
+        
+        .code-block .option {
+            color: #9cdcfe;
+        }
+        
+        .code-block .path {
+            color: #ce9178;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #333333;
+            color: #ffffff;
+            border: 1px solid #555555;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background-color 0.3s ease;
+        }
+        
+        .copy-btn:hover,
+        .copy-btn:focus {
+            background-color: #555555;
+        }
+        
+        .warning-box {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .warning-box strong {
+            color: #e65100;
+        }
+        
+        .security-box {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .security-box strong {
+            color: #c62828;
+        }
+        
+        .tip-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .tip-box strong {
+            color: #1565c0;
+        }
+        
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .config-table th,
+        .config-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .config-table th {
+            background-color: #1976d2;
+            color: #ffffff;
+        }
+        
+        .config-table tr:nth-child(even) {
+            background-color: #f5f5f5;
+        }
+        
+        .config-table code {
+            background-color: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.85rem;
+        }
+        
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .checklist li {
+            padding: 10px 15px;
+            margin: 8px 0;
+            background-color: #ffffff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .checklist li:hover {
+            border-color: #1976d2;
+        }
+        
+        .checklist li.checked {
+            background-color: #e8f5e9;
+            border-color: #4caf50;
+        }
+        
+        .checklist li .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #1976d2;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .checklist li.checked .checkbox {
+            background-color: #4caf50;
+            border-color: #4caf50;
+            color: #ffffff;
+        }
+        
+        .progress-summary {
+            background-color: #e3f2fd;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .progress-summary strong {
+            color: #1565c0;
+        }
+        
+        footer {
+            background-color: #f5f5f5;
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 2px solid #e0e0e0;
+            font-size: 0.85rem;
+            color: #666666;
+        }
+        
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .step-header {
+                flex-wrap: wrap;
+            }
+            
+            .step-number {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 SSH Configuration Guide</h1>
+            <p>Secure Shell Setup for Remote Server Administration</p>
+        </header>
+        
+        <div class="course-info">
+            <strong>CSC 152</strong> - Network OS and Administration | <strong>Week 5</strong> - Command Line Administration & Scripting
+        </div>
+        
+        <main>
+            <div class="intro-section">
+                <h2>🌐 What is SSH?</h2>
+                <p><strong>SSH (Secure Shell)</strong> is a cryptographic network protocol that provides secure remote command-line access to servers. It encrypts all traffic between the client and server, protecting against eavesdropping and man-in-the-middle attacks.</p>
+                <p style="margin-top: 10px;"><strong>Default Port:</strong> 22 | <strong>Protocol:</strong> TCP | <strong>Encryption:</strong> AES, ChaCha20</p>
+            </div>
+            
+            <div id="stepsContainer">
+                <!-- Steps populated by JavaScript -->
+            </div>
+            
+            <div class="progress-summary">
+                <strong id="progressText">0 of 6 steps reviewed</strong>
+            </div>
+        </main>
+        
+        <footer>
+            <p>CSC 152 - Network Operating Systems and Administration | Mendocino College | Spring 2026</p>
+            <p>CSLO 1: Manage and maintain servers, including OS configuration, access control and virtualization</p>
+        </footer>
+    </div>
+    
+    <script>
+        const steps = [
+            {
+                title: "Install OpenSSH Server",
+                subtitle: "Enable SSH service on your Linux server",
+                content: `
+                    <p>First, ensure the OpenSSH server package is installed on your Linux server.</p>
+                    
+                    <h4>Ubuntu/Debian:</h4>
+                    <div class="code-block" data-code="sudo apt update && sudo apt install openssh-server -y"><span class="command">sudo apt update</span> && <span class="command">sudo apt install</span> <span class="option">openssh-server</span> -y</div>
+                    
+                    <h4>Rocky Linux/RHEL/CentOS:</h4>
+                    <div class="code-block" data-code="sudo dnf install openssh-server -y"><span class="command">sudo dnf install</span> <span class="option">openssh-server</span> -y</div>
+                    
+                    <h4>Start and Enable the Service:</h4>
+                    <div class="code-block" data-code="sudo systemctl start sshd
+sudo systemctl enable sshd
+sudo systemctl status sshd"><span class="command">sudo systemctl start</span> sshd
+<span class="command">sudo systemctl enable</span> sshd
+<span class="command">sudo systemctl status</span> sshd</div>
+                    
+                    <div class="tip-box">
+                        <strong>💡 Tip:</strong> The <code>enable</code> command ensures SSH starts automatically on boot.
+                    </div>
+                `
+            },
+            {
+                title: "Generate SSH Key Pair",
+                subtitle: "Create secure authentication keys on the client",
+                content: `
+                    <p>SSH keys provide more secure authentication than passwords. Generate a key pair on your <strong>client machine</strong> (the computer you'll connect FROM).</p>
+                    
+                    <h4>Generate Ed25519 Key (Recommended):</h4>
+                    <div class="code-block" data-code="ssh-keygen -t ed25519 -C 'your_email@example.com'"><span class="command">ssh-keygen</span> <span class="option">-t ed25519</span> <span class="option">-C</span> <span class="path">'your_email@example.com'</span></div>
+                    
+                    <h4>Alternative: RSA Key (4096 bits):</h4>
+                    <div class="code-block" data-code="ssh-keygen -t rsa -b 4096 -C 'your_email@example.com'"><span class="command">ssh-keygen</span> <span class="option">-t rsa -b 4096</span> <span class="option">-C</span> <span class="path">'your_email@example.com'</span></div>
+                    
+                    <p>When prompted:</p>
+                    <ul style="margin: 10px 0 10px 20px;">
+                        <li><strong>File location:</strong> Press Enter for default (~/.ssh/id_ed25519)</li>
+                        <li><strong>Passphrase:</strong> Enter a strong passphrase (recommended) or leave empty</li>
+                    </ul>
+                    
+                    <div class="warning-box">
+                        <strong>⚠️ Important:</strong> Never share your private key (id_ed25519). Only the public key (id_ed25519.pub) should be copied to servers.
+                    </div>
+                `
+            },
+            {
+                title: "Copy Public Key to Server",
+                subtitle: "Install your public key for passwordless login",
+                content: `
+                    <p>Copy your public key to the server's authorized_keys file to enable key-based authentication.</p>
+                    
+                    <h4>Method 1: Using ssh-copy-id (Easiest):</h4>
+                    <div class="code-block" data-code="ssh-copy-id username@server_ip"><span class="command">ssh-copy-id</span> <span class="option">username</span>@<span class="path">server_ip</span></div>
+                    
+                    <h4>Method 2: Manual Copy:</h4>
+                    <div class="code-block" data-code="cat ~/.ssh/id_ed25519.pub | ssh username@server_ip 'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys'"><span class="command">cat</span> <span class="path">~/.ssh/id_ed25519.pub</span> | <span class="command">ssh</span> username@server_ip <span class="path">'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys'</span></div>
+                    
+                    <h4>Set Correct Permissions on Server:</h4>
+                    <div class="code-block" data-code="chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys"><span class="command">chmod</span> <span class="option">700</span> <span class="path">~/.ssh</span>
+<span class="command">chmod</span> <span class="option">600</span> <span class="path">~/.ssh/authorized_keys</span></div>
+                    
+                    <div class="tip-box">
+                        <strong>💡 Tip:</strong> After copying, test the connection: <code>ssh username@server_ip</code>. You should connect without entering a password (unless you set a key passphrase).
+                    </div>
+                `
+            },
+            {
+                title: "Configure SSH Server Security",
+                subtitle: "Harden the sshd_config file",
+                content: `
+                    <p>Edit the SSH server configuration to improve security. The config file is located at <code>/etc/ssh/sshd_config</code>.</p>
+                    
+                    <div class="code-block" data-code="sudo nano /etc/ssh/sshd_config"><span class="command">sudo nano</span> <span class="path">/etc/ssh/sshd_config</span></div>
+                    
+                    <h4>Recommended Security Settings:</h4>
+                    <table class="config-table">
+                        <tr>
+                            <th>Setting</th>
+                            <th>Value</th>
+                            <th>Purpose</th>
+                        </tr>
+                        <tr>
+                            <td><code>PermitRootLogin</code></td>
+                            <td><code>no</code></td>
+                            <td>Disable direct root login</td>
+                        </tr>
+                        <tr>
+                            <td><code>PasswordAuthentication</code></td>
+                            <td><code>no</code></td>
+                            <td>Require key-based auth only</td>
+                        </tr>
+                        <tr>
+                            <td><code>PubkeyAuthentication</code></td>
+                            <td><code>yes</code></td>
+                            <td>Enable public key authentication</td>
+                        </tr>
+                        <tr>
+                            <td><code>MaxAuthTries</code></td>
+                            <td><code>3</code></td>
+                            <td>Limit login attempts</td>
+                        </tr>
+                        <tr>
+                            <td><code>Port</code></td>
+                            <td><code>22</code> (or custom)</td>
+                            <td>SSH listening port</td>
+                        </tr>
+                    </table>
+                    
+                    <div class="security-box">
+                        <strong>🔒 Security Warning:</strong> Only disable PasswordAuthentication AFTER confirming your SSH key works! Otherwise, you may lock yourself out.
+                    </div>
+                    
+                    <h4>Restart SSH After Changes:</h4>
+                    <div class="code-block" data-code="sudo systemctl restart sshd"><span class="command">sudo systemctl restart</span> sshd</div>
+                `
+            },
+            {
+                title: "Configure SSH Client",
+                subtitle: "Simplify connections with ~/.ssh/config",
+                content: `
+                    <p>Create a client-side config file to simplify SSH connections and define per-host settings.</p>
+                    
+                    <h4>Create/Edit Client Config:</h4>
+                    <div class="code-block" data-code="nano ~/.ssh/config"><span class="command">nano</span> <span class="path">~/.ssh/config</span></div>
+                    
+                    <h4>Example Configuration:</h4>
+                    <div class="code-block" data-code="# Web Server
+Host webserver
+    HostName 192.168.1.100
+    User admin
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519
+
+# Database Server
+Host dbserver
+    HostName 192.168.1.101
+    User dbadmin
+    Port 2222
+    IdentityFile ~/.ssh/id_ed25519
+
+# Default settings for all hosts
+Host *
+    ServerAliveInterval 60
+    ServerAliveCountMax 3"><span class="comment"># Web Server</span>
+<span class="option">Host</span> webserver
+    <span class="option">HostName</span> <span class="path">192.168.1.100</span>
+    <span class="option">User</span> admin
+    <span class="option">Port</span> 22
+    <span class="option">IdentityFile</span> <span class="path">~/.ssh/id_ed25519</span>
+
+<span class="comment"># Database Server</span>
+<span class="option">Host</span> dbserver
+    <span class="option">HostName</span> <span class="path">192.168.1.101</span>
+    <span class="option">User</span> dbadmin
+    <span class="option">Port</span> 2222
+    <span class="option">IdentityFile</span> <span class="path">~/.ssh/id_ed25519</span>
+
+<span class="comment"># Default settings for all hosts</span>
+<span class="option">Host</span> *
+    <span class="option">ServerAliveInterval</span> 60
+    <span class="option">ServerAliveCountMax</span> 3</div>
+                    
+                    <h4>Now Connect Simply:</h4>
+                    <div class="code-block" data-code="ssh webserver"><span class="command">ssh</span> webserver</div>
+                    
+                    <div class="tip-box">
+                        <strong>💡 Tip:</strong> Instead of typing <code>ssh admin@192.168.1.100</code>, you can just type <code>ssh webserver</code>!
+                    </div>
+                `
+            },
+            {
+                title: "SSH Security Checklist",
+                subtitle: "Verify your SSH configuration is secure",
+                content: `
+                    <p>Use this checklist to ensure your SSH setup follows security best practices:</p>
+                    
+                    <ul class="checklist" id="securityChecklist">
+                        <li data-item="1">
+                            <span class="checkbox"></span>
+                            <span>SSH key pair generated (Ed25519 or RSA 4096-bit)</span>
+                        </li>
+                        <li data-item="2">
+                            <span class="checkbox"></span>
+                            <span>Public key copied to server's authorized_keys</span>
+                        </li>
+                        <li data-item="3">
+                            <span class="checkbox"></span>
+                            <span>Key-based authentication tested and working</span>
+                        </li>
+                        <li data-item="4">
+                            <span class="checkbox"></span>
+                            <span>PasswordAuthentication set to "no"</span>
+                        </li>
+                        <li data-item="5">
+                            <span class="checkbox"></span>
+                            <span>PermitRootLogin set to "no"</span>
+                        </li>
+                        <li data-item="6">
+                            <span class="checkbox"></span>
+                            <span>Firewall configured to allow SSH (port 22 or custom)</span>
+                        </li>
+                        <li data-item="7">
+                            <span class="checkbox"></span>
+                            <span>Private key protected with passphrase</span>
+                        </li>
+                        <li data-item="8">
+                            <span class="checkbox"></span>
+                            <span>SSH service enabled to start on boot</span>
+                        </li>
+                    </ul>
+                    
+                    <div class="security-box" style="margin-top: 20px;">
+                        <strong>🔒 Remember:</strong> SSH security is only as strong as your key management. Never share private keys, use strong passphrases, and regularly audit authorized_keys files.
+                    </div>
+                `
+            }
+        ];
+        
+        let reviewedSteps = new Set();
+        
+        function renderSteps() {
+            const container = document.getElementById('stepsContainer');
+            
+            container.innerHTML = steps.map((step, idx) => `
+                <div class="step-container">
+                    <div class="step-header" data-step="${idx}" tabindex="0" role="button" aria-expanded="false" aria-controls="step-content-${idx}">
+                        <div class="step-number">${idx + 1}</div>
+                        <div class="step-title">
+                            <h3>${step.title}</h3>
+                            <p>${step.subtitle}</p>
+                        </div>
+                        <div class="step-toggle">▼</div>
+                    </div>
+                    <div class="step-content" id="step-content-${idx}">
+                        ${step.content}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add event listeners
+            document.querySelectorAll('.step-header').forEach(header => {
+                header.addEventListener('click', toggleStep);
+                header.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleStep.call(header);
+                    }
+                });
+            });
+            
+            // Add checklist functionality
+            document.querySelectorAll('.checklist li').forEach(item => {
+                item.addEventListener('click', function() {
+                    this.classList.toggle('checked');
+                    const checkbox = this.querySelector('.checkbox');
+                    checkbox.textContent = this.classList.contains('checked') ? '✓' : '';
+                });
+            });
+        }
+        
+        function toggleStep() {
+            const stepIdx = parseInt(this.dataset.step);
+            const content = document.getElementById(`step-content-${stepIdx}`);
+            const isActive = this.classList.contains('active');
+            
+            // Close all steps
+            document.querySelectorAll('.step-header').forEach(h => {
+                h.classList.remove('active');
+                h.setAttribute('aria-expanded', 'false');
+            });
+            document.querySelectorAll('.step-content').forEach(c => c.classList.remove('active'));
+            
+            // Open clicked step if it wasn't active
+            if (!isActive) {
+                this.classList.add('active');
+                this.setAttribute('aria-expanded', 'true');
+                content.classList.add('active');
+                reviewedSteps.add(stepIdx);
+                updateProgress();
+            }
+        }
+        
+        function updateProgress() {
+            const progressText = document.getElementById('progressText');
+            progressText.textContent = `${reviewedSteps.size} of ${steps.length} steps reviewed`;
+        }
+        
+        renderSteps();
+    </script>
+</body>
+</html>

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSC 152 Week 5 - PowerShell Cmdlet Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: #f0f4f8;
+            color: #1a1a1a;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #012456 0%, #1e3a5f 100%);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1rem;
+            opacity: 0.95;
+        }
+        
+        .course-info {
+            background-color: #e3f2fd;
+            padding: 15px 30px;
+            border-bottom: 2px solid #1e3a5f;
+            font-size: 0.9rem;
+        }
+        
+        main {
+            padding: 30px;
+        }
+        
+        .verb-noun-explainer {
+            background-color: #fff3e0;
+            border: 2px solid #ff9800;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .verb-noun-explainer h2 {
+            color: #e65100;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        
+        .verb-noun-explainer p {
+            margin-bottom: 10px;
+        }
+        
+        .verb-noun-example {
+            font-family: 'Courier New', Consolas, monospace;
+            background-color: #012456;
+            color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        
+        .verb-noun-example .verb {
+            color: #ffeb3b;
+        }
+        
+        .verb-noun-example .noun {
+            color: #4fc3f7;
+        }
+        
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background-color: #e3f2fd;
+            color: #012456;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn:hover,
+        .tab-btn:focus {
+            background-color: #bbdefb;
+            outline: none;
+        }
+        
+        .tab-btn.active {
+            background-color: #012456;
+            color: #ffffff;
+        }
+        
+        .tab-btn:focus {
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.3);
+        }
+        
+        .cmdlet-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .cmdlet-card {
+            background-color: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-left: 4px solid #012456;
+            border-radius: 0 8px 8px 0;
+            padding: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .cmdlet-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cmdlet-name {
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #012456;
+            margin-bottom: 8px;
+        }
+        
+        .cmdlet-verb {
+            color: #ff9800;
+        }
+        
+        .cmdlet-noun {
+            color: #1e88e5;
+        }
+        
+        .cmdlet-description {
+            color: #333333;
+            margin-bottom: 12px;
+        }
+        
+        .cmdlet-syntax {
+            background-color: #012456;
+            color: #ffffff;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .cmdlet-example {
+            background-color: #1e3a5f;
+            color: #4fc3f7;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #555555;
+            margin-bottom: 6px;
+            margin-top: 10px;
+        }
+        
+        .common-verbs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .verb-badge {
+            padding: 6px 12px;
+            background-color: #fff3e0;
+            color: #e65100;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: 'Courier New', Consolas, monospace;
+        }
+        
+        .stats-bar {
+            background-color: #e3f2fd;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .stats-bar span {
+            font-weight: 600;
+            color: #012456;
+        }
+        
+        footer {
+            background-color: #f5f5f5;
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 2px solid #e0e0e0;
+            font-size: 0.85rem;
+            color: #666666;
+        }
+        
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .tabs {
+                justify-content: center;
+            }
+            
+            .tab-btn {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ PowerShell Cmdlet Explorer</h1>
+            <p>Essential Windows Server Administration Commands</p>
+        </header>
+        
+        <div class="course-info">
+            <strong>CSC 152</strong> - Network OS and Administration | <strong>Week 5</strong> - Command Line Administration & Scripting
+        </div>
+        
+        <main>
+            <div class="verb-noun-explainer">
+                <h2>📚 Understanding PowerShell Verb-Noun Syntax</h2>
+                <p>PowerShell cmdlets follow a consistent <strong>Verb-Noun</strong> naming convention that makes commands predictable and discoverable:</p>
+                <div class="verb-noun-example">
+                    <span class="verb">Get</span>-<span class="noun">Process</span>
+                </div>
+                <p style="margin-top: 15px;"><strong>Common Verbs:</strong></p>
+                <div class="common-verbs">
+                    <span class="verb-badge">Get</span>
+                    <span class="verb-badge">Set</span>
+                    <span class="verb-badge">New</span>
+                    <span class="verb-badge">Remove</span>
+                    <span class="verb-badge">Start</span>
+                    <span class="verb-badge">Stop</span>
+                    <span class="verb-badge">Restart</span>
+                    <span class="verb-badge">Test</span>
+                </div>
+            </div>
+            
+            <div class="tabs" role="tablist" aria-label="Cmdlet categories">
+                <button class="tab-btn active" role="tab" data-category="system" aria-selected="true">System</button>
+                <button class="tab-btn" role="tab" data-category="services" aria-selected="false">Services</button>
+                <button class="tab-btn" role="tab" data-category="files" aria-selected="false">Files</button>
+                <button class="tab-btn" role="tab" data-category="network" aria-selected="false">Network</button>
+                <button class="tab-btn" role="tab" data-category="users" aria-selected="false">Users</button>
+            </div>
+            
+            <div class="stats-bar">
+                <span id="categoryTitle">System Management Cmdlets</span>
+            </div>
+            
+            <div class="cmdlet-grid" id="cmdletGrid" role="tabpanel" aria-live="polite">
+                <!-- Cmdlets populated by JavaScript -->
+            </div>
+        </main>
+        
+        <footer>
+            <p>CSC 152 - Network Operating Systems and Administration | Mendocino College | Spring 2026</p>
+            <p>CSLO 1: Manage and maintain servers, including OS configuration, access control and virtualization</p>
+        </footer>
+    </div>
+    
+    <script>
+        const cmdlets = {
+            system: [
+                {
+                    name: "Get-Process",
+                    verb: "Get",
+                    noun: "Process",
+                    description: "Retrieves information about running processes on the local or remote computer.",
+                    syntax: "Get-Process [[-Name] <String[]>] [-ComputerName <String[]>]",
+                    example: "Get-Process -Name 'nginx'\nGet-Process | Sort-Object CPU -Descending | Select-Object -First 10"
+                },
+                {
+                    name: "Get-Service",
+                    verb: "Get",
+                    noun: "Service",
+                    description: "Gets the services on the computer, including running and stopped services.",
+                    syntax: "Get-Service [[-Name] <String[]>] [-ComputerName <String[]>]",
+                    example: "Get-Service -Name 'W32Time'\nGet-Service | Where-Object {$_.Status -eq 'Running'}"
+                },
+                {
+                    name: "Get-EventLog",
+                    verb: "Get",
+                    noun: "EventLog",
+                    description: "Gets events from event logs on local and remote computers.",
+                    syntax: "Get-EventLog [-LogName] <String> [-Newest <Int32>]",
+                    example: "Get-EventLog -LogName System -Newest 50\nGet-EventLog -LogName Application -EntryType Error"
+                },
+                {
+                    name: "Get-ComputerInfo",
+                    verb: "Get",
+                    noun: "ComputerInfo",
+                    description: "Retrieves comprehensive system and operating system properties.",
+                    syntax: "Get-ComputerInfo [[-Property] <String[]>]",
+                    example: "Get-ComputerInfo\nGet-ComputerInfo -Property 'OsName','OsVersion','CsProcessors'"
+                }
+            ],
+            services: [
+                {
+                    name: "Start-Service",
+                    verb: "Start",
+                    noun: "Service",
+                    description: "Starts one or more stopped services on the system.",
+                    syntax: "Start-Service [-Name] <String[]> [-PassThru]",
+                    example: "Start-Service -Name 'Spooler'\nStart-Service -Name 'W32Time' -PassThru"
+                },
+                {
+                    name: "Stop-Service",
+                    verb: "Stop",
+                    noun: "Service",
+                    description: "Stops one or more running services.",
+                    syntax: "Stop-Service [-Name] <String[]> [-Force]",
+                    example: "Stop-Service -Name 'Spooler'\nStop-Service -Name 'W32Time' -Force"
+                },
+                {
+                    name: "Restart-Service",
+                    verb: "Restart",
+                    noun: "Service",
+                    description: "Stops and then starts one or more services.",
+                    syntax: "Restart-Service [-Name] <String[]> [-Force]",
+                    example: "Restart-Service -Name 'Spooler'\nGet-Service -Name 'W3SVC' | Restart-Service"
+                },
+                {
+                    name: "Set-Service",
+                    verb: "Set",
+                    noun: "Service",
+                    description: "Changes the properties of a service, such as startup type.",
+                    syntax: "Set-Service [-Name] <String> [-StartupType <ServiceStartupType>]",
+                    example: "Set-Service -Name 'Spooler' -StartupType Automatic\nSet-Service -Name 'RemoteRegistry' -StartupType Disabled"
+                }
+            ],
+            files: [
+                {
+                    name: "Get-ChildItem",
+                    verb: "Get",
+                    noun: "ChildItem",
+                    description: "Gets the items and child items in one or more specified locations (similar to ls/dir).",
+                    syntax: "Get-ChildItem [[-Path] <String[]>] [-Recurse] [-Filter <String>]",
+                    example: "Get-ChildItem -Path C:\\Windows\\Logs\nGet-ChildItem -Path C:\\ -Recurse -Filter '*.log'"
+                },
+                {
+                    name: "Copy-Item",
+                    verb: "Copy",
+                    noun: "Item",
+                    description: "Copies an item from one location to another.",
+                    syntax: "Copy-Item [-Path] <String[]> [-Destination] <String> [-Recurse]",
+                    example: "Copy-Item -Path 'C:\\Config' -Destination 'D:\\Backup' -Recurse"
+                },
+                {
+                    name: "Remove-Item",
+                    verb: "Remove",
+                    noun: "Item",
+                    description: "Deletes files, folders, registry keys, and other items.",
+                    syntax: "Remove-Item [-Path] <String[]> [-Recurse] [-Force]",
+                    example: "Remove-Item -Path 'C:\\Temp\\*' -Recurse\nRemove-Item -Path 'C:\\OldLogs' -Recurse -Force"
+                },
+                {
+                    name: "Get-Content",
+                    verb: "Get",
+                    noun: "Content",
+                    description: "Gets the content of a file. Similar to cat in Linux.",
+                    syntax: "Get-Content [-Path] <String[]> [-Tail <Int32>]",
+                    example: "Get-Content -Path 'C:\\Logs\\app.log'\nGet-Content -Path 'C:\\Logs\\app.log' -Tail 50"
+                }
+            ],
+            network: [
+                {
+                    name: "Test-Connection",
+                    verb: "Test",
+                    noun: "Connection",
+                    description: "Sends ICMP echo requests (ping) to one or more computers.",
+                    syntax: "Test-Connection [-ComputerName] <String[]> [-Count <Int32>]",
+                    example: "Test-Connection -ComputerName 'server01'\nTest-Connection -ComputerName '8.8.8.8' -Count 4"
+                },
+                {
+                    name: "Get-NetIPAddress",
+                    verb: "Get",
+                    noun: "NetIPAddress",
+                    description: "Gets the IP address configuration from the computer.",
+                    syntax: "Get-NetIPAddress [-InterfaceAlias <String>] [-AddressFamily <AddressFamily>]",
+                    example: "Get-NetIPAddress\nGet-NetIPAddress -AddressFamily IPv4"
+                },
+                {
+                    name: "Test-NetConnection",
+                    verb: "Test",
+                    noun: "NetConnection",
+                    description: "Tests network connectivity to a specific port or computer.",
+                    syntax: "Test-NetConnection [-ComputerName] <String> [-Port <Int32>]",
+                    example: "Test-NetConnection -ComputerName 'server01' -Port 443\nTest-NetConnection -ComputerName 'google.com' -Port 80"
+                },
+                {
+                    name: "Get-NetTCPConnection",
+                    verb: "Get",
+                    noun: "NetTCPConnection",
+                    description: "Gets current TCP connections, similar to netstat.",
+                    syntax: "Get-NetTCPConnection [-State <State>] [-LocalPort <UInt16[]>]",
+                    example: "Get-NetTCPConnection -State Listen\nGet-NetTCPConnection -LocalPort 80,443"
+                }
+            ],
+            users: [
+                {
+                    name: "Get-LocalUser",
+                    verb: "Get",
+                    noun: "LocalUser",
+                    description: "Gets local user accounts from the local computer.",
+                    syntax: "Get-LocalUser [[-Name] <String[]>]",
+                    example: "Get-LocalUser\nGet-LocalUser -Name 'Administrator'"
+                },
+                {
+                    name: "New-LocalUser",
+                    verb: "New",
+                    noun: "LocalUser",
+                    description: "Creates a new local user account.",
+                    syntax: "New-LocalUser [-Name] <String> [-Password <SecureString>]",
+                    example: "$Password = Read-Host -AsSecureString\nNew-LocalUser -Name 'svcaccount' -Password $Password"
+                },
+                {
+                    name: "Set-LocalUser",
+                    verb: "Set",
+                    noun: "LocalUser",
+                    description: "Modifies a local user account.",
+                    syntax: "Set-LocalUser [-Name] <String> [-Description <String>]",
+                    example: "Set-LocalUser -Name 'jsmith' -Description 'IT Department'\nSet-LocalUser -Name 'admin' -PasswordNeverExpires $true"
+                },
+                {
+                    name: "Remove-LocalUser",
+                    verb: "Remove",
+                    noun: "LocalUser",
+                    description: "Deletes a local user account.",
+                    syntax: "Remove-LocalUser [-Name] <String[]>",
+                    example: "Remove-LocalUser -Name 'tempuser'\nRemove-LocalUser -Name 'oldaccount' -Confirm:$false"
+                }
+            ]
+        };
+        
+        const categoryTitles = {
+            system: "System Management Cmdlets",
+            services: "Service Control Cmdlets",
+            files: "File System Cmdlets",
+            network: "Network Cmdlets",
+            users: "User Management Cmdlets"
+        };
+        
+        let currentCategory = 'system';
+        
+        function renderCmdlets() {
+            const grid = document.getElementById('cmdletGrid');
+            const title = document.getElementById('categoryTitle');
+            const data = cmdlets[currentCategory];
+            
+            title.textContent = categoryTitles[currentCategory];
+            
+            grid.innerHTML = data.map(cmd => `
+                <article class="cmdlet-card">
+                    <div class="cmdlet-name">
+                        <span class="cmdlet-verb">${cmd.verb}</span>-<span class="cmdlet-noun">${cmd.noun}</span>
+                    </div>
+                    <p class="cmdlet-description">${cmd.description}</p>
+                    <div class="label">Syntax:</div>
+                    <div class="cmdlet-syntax">${cmd.syntax}</div>
+                    <div class="label">Examples:</div>
+                    <div class="cmdlet-example">${cmd.example}</div>
+                </article>
+            `).join('');
+        }
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-selected', 'false');
+                });
+                this.classList.add('active');
+                this.setAttribute('aria-selected', 'true');
+                currentCategory = this.dataset.category;
+                renderCmdlets();
+            });
+        });
+        
+        renderCmdlets();
+    </script>
+</body>
+</html>

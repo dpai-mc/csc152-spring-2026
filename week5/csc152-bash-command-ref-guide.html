@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSC 152 Week 5 - Bash Command Reference Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #1a1a1a;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c23 100%);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1rem;
+            opacity: 0.95;
+        }
+        
+        .course-info {
+            background-color: #e8f5e9;
+            padding: 15px 30px;
+            border-bottom: 2px solid #4a7c23;
+            font-size: 0.9rem;
+        }
+        
+        main {
+            padding: 30px;
+        }
+        
+        .search-container {
+            margin-bottom: 25px;
+        }
+        
+        .search-container label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d5016;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: 2px solid #c8e6c9;
+            border-radius: 8px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #4a7c23;
+            box-shadow: 0 0 0 3px rgba(74, 124, 35, 0.2);
+        }
+        
+        .category-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #4a7c23;
+            background-color: #ffffff;
+            color: #4a7c23;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn:hover,
+        .filter-btn:focus {
+            background-color: #e8f5e9;
+            outline: none;
+        }
+        
+        .filter-btn.active {
+            background-color: #4a7c23;
+            color: #ffffff;
+        }
+        
+        .filter-btn:focus {
+            box-shadow: 0 0 0 3px rgba(74, 124, 35, 0.3);
+        }
+        
+        .commands-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .command-card {
+            background-color: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .command-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .command-name {
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2d5016;
+            background-color: #e8f5e9;
+            padding: 4px 12px;
+            border-radius: 4px;
+        }
+        
+        .command-category {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            background-color: #4a7c23;
+            color: #ffffff;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .command-description {
+            margin-bottom: 12px;
+            color: #333333;
+        }
+        
+        .command-syntax {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .command-example {
+            background-color: #263238;
+            color: #aed581;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .example-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #555555;
+            margin-bottom: 6px;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666666;
+            font-style: italic;
+        }
+        
+        .stats-bar {
+            background-color: #e8f5e9;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .stats-bar span {
+            font-weight: 600;
+            color: #2d5016;
+        }
+        
+        footer {
+            background-color: #f5f5f5;
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 2px solid #e0e0e0;
+            font-size: 0.85rem;
+            color: #666666;
+        }
+        
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .category-filter {
+                justify-content: center;
+            }
+            
+            .command-header {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐧 Bash Command Reference Guide</h1>
+            <p>Essential Linux Commands for Server Administration</p>
+        </header>
+        
+        <div class="course-info">
+            <strong>CSC 152</strong> - Network OS and Administration | <strong>Week 5</strong> - Command Line Administration & Scripting
+        </div>
+        
+        <main>
+            <div class="search-container">
+                <label for="searchInput">Search Commands:</label>
+                <input type="text" id="searchInput" class="search-input" placeholder="Type to search commands, descriptions, or examples..." aria-describedby="searchHelp">
+                <span id="searchHelp" style="font-size: 0.85rem; color: #666; margin-top: 5px; display: block;">Search by command name, description, or usage</span>
+            </div>
+            
+            <div class="category-filter" role="group" aria-label="Filter commands by category">
+                <button class="filter-btn active" data-category="all">All Commands</button>
+                <button class="filter-btn" data-category="navigation">Navigation</button>
+                <button class="filter-btn" data-category="files">File Operations</button>
+                <button class="filter-btn" data-category="system">System Info</button>
+                <button class="filter-btn" data-category="process">Processes</button>
+                <button class="filter-btn" data-category="network">Network</button>
+                <button class="filter-btn" data-category="permissions">Permissions</button>
+            </div>
+            
+            <div class="stats-bar">
+                <span id="resultCount">Showing 20 commands</span>
+                <span id="categoryLabel">Category: All</span>
+            </div>
+            
+            <div class="commands-list" id="commandsList" role="list" aria-live="polite">
+                <!-- Commands will be populated by JavaScript -->
+            </div>
+        </main>
+        
+        <footer>
+            <p>CSC 152 - Network Operating Systems and Administration | Mendocino College | Spring 2026</p>
+            <p>CSLO 1: Manage and maintain servers, including OS configuration, access control and virtualization</p>
+        </footer>
+    </div>
+    
+    <script>
+        const commands = [
+            {
+                name: "ls",
+                category: "navigation",
+                description: "List directory contents. One of the most frequently used commands for exploring the file system.",
+                syntax: "ls [OPTIONS] [FILE/DIRECTORY]",
+                example: "ls -la /var/log\n# Lists all files including hidden, with detailed info"
+            },
+            {
+                name: "cd",
+                category: "navigation",
+                description: "Change the current working directory. Navigate through the Linux file system hierarchy.",
+                syntax: "cd [DIRECTORY]",
+                example: "cd /etc/nginx\ncd ~  # Go to home directory\ncd .. # Go up one level"
+            },
+            {
+                name: "pwd",
+                category: "navigation",
+                description: "Print the current working directory path. Essential for knowing your location in the file system.",
+                syntax: "pwd",
+                example: "pwd\n# Output: /home/administrator/scripts"
+            },
+            {
+                name: "mkdir",
+                category: "files",
+                description: "Create new directories. Use -p flag to create parent directories as needed.",
+                syntax: "mkdir [OPTIONS] DIRECTORY",
+                example: "mkdir -p /var/www/mysite/logs\n# Creates entire directory path"
+            },
+            {
+                name: "cp",
+                category: "files",
+                description: "Copy files and directories. Use -r for recursive copying of directories.",
+                syntax: "cp [OPTIONS] SOURCE DESTINATION",
+                example: "cp -r /etc/nginx /backup/nginx-config\n# Recursively copy directory"
+            },
+            {
+                name: "mv",
+                category: "files",
+                description: "Move or rename files and directories. Also used for renaming.",
+                syntax: "mv [OPTIONS] SOURCE DESTINATION",
+                example: "mv oldname.conf newname.conf\nmv /tmp/file.txt /home/user/"
+            },
+            {
+                name: "rm",
+                category: "files",
+                description: "Remove files or directories. Use with caution, especially with -rf flags.",
+                syntax: "rm [OPTIONS] FILE",
+                example: "rm -rf /tmp/old-logs/\n# WARNING: Removes recursively without confirmation"
+            },
+            {
+                name: "cat",
+                category: "files",
+                description: "Concatenate and display file contents. Quick way to view file contents.",
+                syntax: "cat [OPTIONS] FILE",
+                example: "cat /etc/hostname\ncat file1.txt file2.txt > combined.txt"
+            },
+            {
+                name: "grep",
+                category: "files",
+                description: "Search for patterns in files. Extremely powerful for log analysis and text searching.",
+                syntax: "grep [OPTIONS] PATTERN FILE",
+                example: "grep -i 'error' /var/log/syslog\ngrep -r 'TODO' /home/dev/project/"
+            },
+            {
+                name: "find",
+                category: "files",
+                description: "Search for files in directory hierarchy. Flexible and powerful file locator.",
+                syntax: "find [PATH] [OPTIONS] [EXPRESSION]",
+                example: "find /var -name '*.log' -mtime +7\n# Find log files older than 7 days"
+            },
+            {
+                name: "chmod",
+                category: "permissions",
+                description: "Change file permissions. Control read, write, execute access for user, group, others.",
+                syntax: "chmod [OPTIONS] MODE FILE",
+                example: "chmod 755 script.sh\nchmod u+x,g+r file.txt"
+            },
+            {
+                name: "chown",
+                category: "permissions",
+                description: "Change file owner and group. Essential for managing file ownership.",
+                syntax: "chown [OPTIONS] OWNER[:GROUP] FILE",
+                example: "chown www-data:www-data /var/www/html\nchown -R admin:admin /home/admin/"
+            },
+            {
+                name: "ps",
+                category: "process",
+                description: "Display information about running processes. View active processes on the system.",
+                syntax: "ps [OPTIONS]",
+                example: "ps aux | grep nginx\nps -ef --forest  # Show process tree"
+            },
+            {
+                name: "top",
+                category: "process",
+                description: "Display real-time system resource usage. Interactive process viewer and system monitor.",
+                syntax: "top [OPTIONS]",
+                example: "top -u www-data  # Show processes for specific user\ntop -p 1234  # Monitor specific PID"
+            },
+            {
+                name: "kill",
+                category: "process",
+                description: "Send signals to processes. Terminate or control running processes.",
+                syntax: "kill [OPTIONS] PID",
+                example: "kill -9 1234  # Force kill process\nkill -HUP $(pidof nginx)  # Reload nginx"
+            },
+            {
+                name: "systemctl",
+                category: "system",
+                description: "Control systemd services. Start, stop, enable, disable system services.",
+                syntax: "systemctl [COMMAND] [SERVICE]",
+                example: "systemctl status nginx\nsystemctl restart sshd\nsystemctl enable apache2"
+            },
+            {
+                name: "df",
+                category: "system",
+                description: "Display disk space usage. Check available storage on mounted filesystems.",
+                syntax: "df [OPTIONS]",
+                example: "df -h  # Human-readable sizes\ndf -h /var  # Check specific mount point"
+            },
+            {
+                name: "free",
+                category: "system",
+                description: "Display memory usage. View RAM and swap utilization.",
+                syntax: "free [OPTIONS]",
+                example: "free -h  # Human-readable output\nfree -m  # Display in megabytes"
+            },
+            {
+                name: "ip",
+                category: "network",
+                description: "Show and manipulate network interfaces. Modern replacement for ifconfig.",
+                syntax: "ip [OPTIONS] OBJECT [COMMAND]",
+                example: "ip addr show\nip route show\nip link set eth0 up"
+            },
+            {
+                name: "ss",
+                category: "network",
+                description: "Display socket statistics. View network connections and listening ports.",
+                syntax: "ss [OPTIONS]",
+                example: "ss -tuln  # Show TCP/UDP listening ports\nss -tp  # Show TCP connections with process info"
+            }
+        ];
+        
+        let currentCategory = 'all';
+        let searchTerm = '';
+        
+        function renderCommands() {
+            const container = document.getElementById('commandsList');
+            const resultCount = document.getElementById('resultCount');
+            const categoryLabel = document.getElementById('categoryLabel');
+            
+            let filtered = commands.filter(cmd => {
+                const matchesCategory = currentCategory === 'all' || cmd.category === currentCategory;
+                const matchesSearch = searchTerm === '' || 
+                    cmd.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    cmd.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    cmd.example.toLowerCase().includes(searchTerm.toLowerCase());
+                return matchesCategory && matchesSearch;
+            });
+            
+            resultCount.textContent = `Showing ${filtered.length} command${filtered.length !== 1 ? 's' : ''}`;
+            categoryLabel.textContent = `Category: ${currentCategory === 'all' ? 'All' : currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1)}`;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="no-results">No commands found matching your criteria. Try a different search or category.</div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(cmd => `
+                <article class="command-card" role="listitem">
+                    <div class="command-header">
+                        <span class="command-name">${cmd.name}</span>
+                        <span class="command-category">${cmd.category}</span>
+                    </div>
+                    <p class="command-description">${cmd.description}</p>
+                    <div class="example-label">Syntax:</div>
+                    <div class="command-syntax">${cmd.syntax}</div>
+                    <div class="example-label">Example:</div>
+                    <div class="command-example">${cmd.example}</div>
+                </article>
+            `).join('');
+        }
+        
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentCategory = this.dataset.category;
+                renderCommands();
+            });
+        });
+        
+        document.getElementById('searchInput').addEventListener('input', function() {
+            searchTerm = this.value;
+            renderCommands();
+        });
+        
+        renderCommands();
+    </script>
+</body>
+</html>

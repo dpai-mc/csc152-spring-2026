@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSC 152 Week 5 - Interactive Scripting Tutorial</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #1a1a1a;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #6a1b9a 0%, #8e24aa 100%);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1rem;
+            opacity: 0.95;
+        }
+        
+        .course-info {
+            background-color: #f3e5f5;
+            padding: 15px 30px;
+            border-bottom: 2px solid #8e24aa;
+            font-size: 0.9rem;
+        }
+        
+        main {
+            padding: 30px;
+        }
+        
+        .progress-container {
+            margin-bottom: 25px;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #6a1b9a;
+        }
+        
+        .progress-bar {
+            height: 12px;
+            background-color: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6a1b9a, #8e24aa);
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+        
+        .lesson-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+        
+        .lesson-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #8e24aa;
+            background-color: #ffffff;
+            color: #8e24aa;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        
+        .lesson-btn:hover,
+        .lesson-btn:focus {
+            background-color: #f3e5f5;
+            outline: none;
+        }
+        
+        .lesson-btn.active {
+            background-color: #8e24aa;
+            color: #ffffff;
+        }
+        
+        .lesson-btn.completed {
+            background-color: #4caf50;
+            border-color: #4caf50;
+            color: #ffffff;
+        }
+        
+        .lesson-btn:focus {
+            box-shadow: 0 0 0 3px rgba(142, 36, 170, 0.3);
+        }
+        
+        .lesson-content {
+            background-color: #fafafa;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .lesson-title {
+            color: #6a1b9a;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .lesson-title .icon {
+            font-size: 1.6rem;
+        }
+        
+        .concept-box {
+            background-color: #ffffff;
+            border: 2px solid #e1bee7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .concept-box h3 {
+            color: #6a1b9a;
+            margin-bottom: 10px;
+        }
+        
+        .code-block {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .code-block .comment {
+            color: #6a9955;
+        }
+        
+        .code-block .keyword {
+            color: #569cd6;
+        }
+        
+        .code-block .string {
+            color: #ce9178;
+        }
+        
+        .code-block .variable {
+            color: #9cdcfe;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .comparison-table th {
+            background-color: #6a1b9a;
+            color: #ffffff;
+        }
+        
+        .comparison-table tr:nth-child(even) {
+            background-color: #f5f5f5;
+        }
+        
+        .comparison-table code {
+            background-color: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.85rem;
+        }
+        
+        .quiz-section {
+            background-color: #fff8e1;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .quiz-section h3 {
+            color: #f57f17;
+            margin-bottom: 15px;
+        }
+        
+        .quiz-question {
+            margin-bottom: 15px;
+        }
+        
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .quiz-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background-color: #ffffff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .quiz-option:hover {
+            border-color: #8e24aa;
+            background-color: #f3e5f5;
+        }
+        
+        .quiz-option input {
+            width: 18px;
+            height: 18px;
+            accent-color: #8e24aa;
+        }
+        
+        .quiz-option.correct {
+            border-color: #4caf50;
+            background-color: #e8f5e9;
+        }
+        
+        .quiz-option.incorrect {
+            border-color: #f44336;
+            background-color: #ffebee;
+        }
+        
+        .btn-primary {
+            padding: 12px 30px;
+            background-color: #8e24aa;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+        
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background-color: #6a1b9a;
+            outline: none;
+        }
+        
+        .btn-primary:focus {
+            box-shadow: 0 0 0 3px rgba(142, 36, 170, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            background-color: #bdbdbd;
+            cursor: not-allowed;
+        }
+        
+        .feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .feedback.success {
+            background-color: #e8f5e9;
+            border: 2px solid #4caf50;
+            color: #2e7d32;
+            display: block;
+        }
+        
+        .feedback.error {
+            background-color: #ffebee;
+            border: 2px solid #f44336;
+            color: #c62828;
+            display: block;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-secondary {
+            padding: 10px 25px;
+            background-color: #ffffff;
+            color: #8e24aa;
+            border: 2px solid #8e24aa;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover,
+        .btn-secondary:focus {
+            background-color: #f3e5f5;
+            outline: none;
+        }
+        
+        .btn-secondary:disabled {
+            border-color: #bdbdbd;
+            color: #bdbdbd;
+            cursor: not-allowed;
+        }
+        
+        footer {
+            background-color: #f5f5f5;
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 2px solid #e0e0e0;
+            font-size: 0.85rem;
+            color: #666666;
+        }
+        
+        .tip-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .tip-box strong {
+            color: #1565c0;
+        }
+        
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .lesson-nav {
+                justify-content: center;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .comparison-table {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 Interactive Scripting Tutorial</h1>
+            <p>Learn Bash and PowerShell Scripting Fundamentals</p>
+        </header>
+        
+        <div class="course-info">
+            <strong>CSC 152</strong> - Network OS and Administration | <strong>Week 5</strong> - Command Line Administration & Scripting
+        </div>
+        
+        <main>
+            <div class="progress-container">
+                <div class="progress-label">
+                    <span>Tutorial Progress</span>
+                    <span id="progressText">0% Complete</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="lesson-nav" role="navigation" aria-label="Lesson navigation">
+                <button class="lesson-btn active" data-lesson="1" aria-label="Lesson 1">1</button>
+                <button class="lesson-btn" data-lesson="2" aria-label="Lesson 2">2</button>
+                <button class="lesson-btn" data-lesson="3" aria-label="Lesson 3">3</button>
+                <button class="lesson-btn" data-lesson="4" aria-label="Lesson 4">4</button>
+                <button class="lesson-btn" data-lesson="5" aria-label="Lesson 5">5</button>
+            </div>
+            
+            <div id="lessonContainer">
+                <!-- Lesson content populated by JavaScript -->
+            </div>
+            
+            <div class="nav-buttons">
+                <button class="btn-secondary" id="prevBtn" disabled>← Previous Lesson</button>
+                <button class="btn-secondary" id="nextBtn">Next Lesson →</button>
+            </div>
+        </main>
+        
+        <footer>
+            <p>CSC 152 - Network Operating Systems and Administration | Mendocino College | Spring 2026</p>
+            <p>CSLO 1: Manage and maintain servers, including OS configuration, access control and virtualization</p>
+        </footer>
+    </div>
+    
+    <script>
+        const lessons = [
+            {
+                title: "Variables in Scripts",
+                icon: "📦",
+                content: `
+                    <div class="concept-box">
+                        <h3>What are Variables?</h3>
+                        <p>Variables are containers that store data values. They allow scripts to be dynamic and reusable by storing information that can change.</p>
+                    </div>
+                    
+                    <h3>Bash Variables</h3>
+                    <p>In Bash, variables are assigned without spaces around the equals sign:</p>
+                    <div class="code-block"><span class="comment">#!/bin/bash</span>
+<span class="comment"># Variable assignment (no spaces!)</span>
+<span class="variable">SERVER_NAME</span>="webserver01"
+<span class="variable">PORT</span>=8080
+<span class="variable">LOG_PATH</span>="/var/log/myapp"
+
+<span class="comment"># Using variables with $ prefix</span>
+<span class="keyword">echo</span> <span class="string">"Server: $SERVER_NAME"</span>
+<span class="keyword">echo</span> <span class="string">"Port: $PORT"</span></div>
+                    
+                    <h3>PowerShell Variables</h3>
+                    <p>In PowerShell, variables always start with $ and can include spaces around the equals sign:</p>
+                    <div class="code-block"><span class="comment"># PowerShell variable assignment</span>
+<span class="variable">$ServerName</span> = <span class="string">"webserver01"</span>
+<span class="variable">$Port</span> = 8080
+<span class="variable">$LogPath</span> = <span class="string">"C:\\Logs\\myapp"</span>
+
+<span class="comment"># Using variables</span>
+<span class="keyword">Write-Host</span> <span class="string">"Server: $ServerName"</span>
+<span class="keyword">Write-Host</span> <span class="string">"Port: $Port"</span></div>
+                    
+                    <div class="tip-box">
+                        <strong>💡 Pro Tip:</strong> Use descriptive variable names! <code>$srv</code> is harder to understand than <code>$ServerName</code>.
+                    </div>
+                `,
+                quiz: {
+                    question: "In Bash, which is the CORRECT way to assign a variable?",
+                    options: [
+                        { text: "NAME = \"server\"", correct: false },
+                        { text: "NAME=\"server\"", correct: true },
+                        { text: "$NAME = \"server\"", correct: false },
+                        { text: "set NAME \"server\"", correct: false }
+                    ],
+                    explanation: "Bash variables must be assigned without spaces around the equals sign. The $ is only used when referencing (reading) the variable, not when assigning."
+                }
+            },
+            {
+                title: "Conditional Statements (If/Else)",
+                icon: "🔀",
+                content: `
+                    <div class="concept-box">
+                        <h3>Making Decisions in Scripts</h3>
+                        <p>Conditional statements allow scripts to make decisions and execute different code based on whether conditions are true or false.</p>
+                    </div>
+                    
+                    <h3>Bash If/Else Syntax</h3>
+                    <div class="code-block"><span class="comment">#!/bin/bash</span>
+<span class="variable">DISK_USAGE</span>=85
+
+<span class="keyword">if</span> [ <span class="variable">$DISK_USAGE</span> -gt 80 ]; <span class="keyword">then</span>
+    <span class="keyword">echo</span> <span class="string">"WARNING: Disk usage is high!"</span>
+<span class="keyword">elif</span> [ <span class="variable">$DISK_USAGE</span> -gt 60 ]; <span class="keyword">then</span>
+    <span class="keyword">echo</span> <span class="string">"Disk usage is moderate."</span>
+<span class="keyword">else</span>
+    <span class="keyword">echo</span> <span class="string">"Disk usage is normal."</span>
+<span class="keyword">fi</span></div>
+                    
+                    <h3>PowerShell If/Else Syntax</h3>
+                    <div class="code-block"><span class="comment"># PowerShell conditional</span>
+<span class="variable">$DiskUsage</span> = 85
+
+<span class="keyword">if</span> (<span class="variable">$DiskUsage</span> -gt 80) {
+    <span class="keyword">Write-Host</span> <span class="string">"WARNING: Disk usage is high!"</span>
+}
+<span class="keyword">elseif</span> (<span class="variable">$DiskUsage</span> -gt 60) {
+    <span class="keyword">Write-Host</span> <span class="string">"Disk usage is moderate."</span>
+}
+<span class="keyword">else</span> {
+    <span class="keyword">Write-Host</span> <span class="string">"Disk usage is normal."</span>
+}</div>
+                    
+                    <h3>Comparison Operators</h3>
+                    <table class="comparison-table">
+                        <tr>
+                            <th>Operation</th>
+                            <th>Bash</th>
+                            <th>PowerShell</th>
+                        </tr>
+                        <tr>
+                            <td>Equal</td>
+                            <td><code>-eq</code></td>
+                            <td><code>-eq</code></td>
+                        </tr>
+                        <tr>
+                            <td>Not Equal</td>
+                            <td><code>-ne</code></td>
+                            <td><code>-ne</code></td>
+                        </tr>
+                        <tr>
+                            <td>Greater Than</td>
+                            <td><code>-gt</code></td>
+                            <td><code>-gt</code></td>
+                        </tr>
+                        <tr>
+                            <td>Less Than</td>
+                            <td><code>-lt</code></td>
+                            <td><code>-lt</code></td>
+                        </tr>
+                        <tr>
+                            <td>String Equal</td>
+                            <td><code>=</code> or <code>==</code></td>
+                            <td><code>-eq</code></td>
+                        </tr>
+                    </table>
+                `,
+                quiz: {
+                    question: "What keyword ends an if statement in Bash?",
+                    options: [
+                        { text: "endif", correct: false },
+                        { text: "fi", correct: true },
+                        { text: "}", correct: false },
+                        { text: "done", correct: false }
+                    ],
+                    explanation: "Bash uses 'fi' (if spelled backwards) to end if statements. PowerShell uses curly braces { }."
+                }
+            },
+            {
+                title: "Loops (For and While)",
+                icon: "🔄",
+                content: `
+                    <div class="concept-box">
+                        <h3>Repeating Actions</h3>
+                        <p>Loops allow you to execute a block of code multiple times. This is essential for processing multiple files, users, or servers.</p>
+                    </div>
+                    
+                    <h3>Bash For Loop</h3>
+                    <div class="code-block"><span class="comment">#!/bin/bash</span>
+<span class="comment"># Loop through a list of servers</span>
+<span class="keyword">for</span> <span class="variable">SERVER</span> <span class="keyword">in</span> web01 web02 web03 db01; <span class="keyword">do</span>
+    <span class="keyword">echo</span> <span class="string">"Checking $SERVER..."</span>
+    ping -c 1 <span class="variable">$SERVER</span>
+<span class="keyword">done</span>
+
+<span class="comment"># Loop through files</span>
+<span class="keyword">for</span> <span class="variable">FILE</span> <span class="keyword">in</span> /var/log/*.log; <span class="keyword">do</span>
+    <span class="keyword">echo</span> <span class="string">"Processing: $FILE"</span>
+<span class="keyword">done</span></div>
+                    
+                    <h3>PowerShell ForEach Loop</h3>
+                    <div class="code-block"><span class="comment"># Loop through servers</span>
+<span class="variable">$Servers</span> = @(<span class="string">"web01"</span>, <span class="string">"web02"</span>, <span class="string">"web03"</span>, <span class="string">"db01"</span>)
+
+<span class="keyword">foreach</span> (<span class="variable">$Server</span> <span class="keyword">in</span> <span class="variable">$Servers</span>) {
+    <span class="keyword">Write-Host</span> <span class="string">"Checking $Server..."</span>
+    <span class="keyword">Test-Connection</span> -ComputerName <span class="variable">$Server</span> -Count 1
+}
+
+<span class="comment"># Loop through files</span>
+<span class="keyword">Get-ChildItem</span> -Path <span class="string">"C:\\Logs\\*.log"</span> | <span class="keyword">ForEach-Object</span> {
+    <span class="keyword">Write-Host</span> <span class="string">"Processing: $($_.Name)"</span>
+}</div>
+                    
+                    <h3>While Loops</h3>
+                    <div class="code-block"><span class="comment"># Bash while loop</span>
+<span class="variable">COUNT</span>=1
+<span class="keyword">while</span> [ <span class="variable">$COUNT</span> -le 5 ]; <span class="keyword">do</span>
+    <span class="keyword">echo</span> <span class="string">"Attempt $COUNT"</span>
+    ((<span class="variable">COUNT</span>++))
+<span class="keyword">done</span>
+
+<span class="comment"># PowerShell while loop</span>
+<span class="variable">$Count</span> = 1
+<span class="keyword">while</span> (<span class="variable">$Count</span> -le 5) {
+    <span class="keyword">Write-Host</span> <span class="string">"Attempt $Count"</span>
+    <span class="variable">$Count</span>++
+}</div>
+                `,
+                quiz: {
+                    question: "What keyword ends a for loop in Bash?",
+                    options: [
+                        { text: "end", correct: false },
+                        { text: "next", correct: false },
+                        { text: "done", correct: true },
+                        { text: "}", correct: false }
+                    ],
+                    explanation: "Bash for loops end with 'done'. PowerShell uses closing curly braces { }."
+                }
+            },
+            {
+                title: "Script Parameters and Input",
+                icon: "⌨️",
+                content: `
+                    <div class="concept-box">
+                        <h3>Making Scripts Flexible</h3>
+                        <p>Parameters allow users to pass information to scripts when they run them, making scripts reusable for different situations.</p>
+                    </div>
+                    
+                    <h3>Bash Script Parameters</h3>
+                    <div class="code-block"><span class="comment">#!/bin/bash</span>
+<span class="comment"># Script: backup.sh</span>
+<span class="comment"># Usage: ./backup.sh /source/path /dest/path</span>
+
+<span class="comment"># $0 = script name, $1 = first arg, $2 = second arg</span>
+<span class="variable">SOURCE</span>=<span class="variable">$1</span>
+<span class="variable">DESTINATION</span>=<span class="variable">$2</span>
+
+<span class="comment"># Check if parameters provided</span>
+<span class="keyword">if</span> [ -z <span class="string">"$SOURCE"</span> ] || [ -z <span class="string">"$DESTINATION"</span> ]; <span class="keyword">then</span>
+    <span class="keyword">echo</span> <span class="string">"Usage: $0 &lt;source&gt; &lt;destination&gt;"</span>
+    <span class="keyword">exit</span> 1
+<span class="keyword">fi</span>
+
+<span class="keyword">echo</span> <span class="string">"Backing up $SOURCE to $DESTINATION"</span>
+cp -r <span class="variable">$SOURCE</span> <span class="variable">$DESTINATION</span></div>
+                    
+                    <h3>PowerShell Parameters</h3>
+                    <div class="code-block"><span class="comment"># Script: Backup.ps1</span>
+<span class="comment"># Usage: .\\Backup.ps1 -Source "C:\\Data" -Destination "D:\\Backup"</span>
+
+<span class="keyword">param</span>(
+    [<span class="keyword">Parameter</span>(Mandatory=<span class="variable">$true</span>)]
+    [<span class="keyword">string</span>]<span class="variable">$Source</span>,
+    
+    [<span class="keyword">Parameter</span>(Mandatory=<span class="variable">$true</span>)]
+    [<span class="keyword">string</span>]<span class="variable">$Destination</span>
+)
+
+<span class="keyword">Write-Host</span> <span class="string">"Backing up $Source to $Destination"</span>
+<span class="keyword">Copy-Item</span> -Path <span class="variable">$Source</span> -Destination <span class="variable">$Destination</span> -Recurse</div>
+                    
+                    <h3>Bash Special Variables</h3>
+                    <table class="comparison-table">
+                        <tr>
+                            <th>Variable</th>
+                            <th>Meaning</th>
+                        </tr>
+                        <tr>
+                            <td><code>$0</code></td>
+                            <td>Script name</td>
+                        </tr>
+                        <tr>
+                            <td><code>$1, $2, $3...</code></td>
+                            <td>Positional parameters</td>
+                        </tr>
+                        <tr>
+                            <td><code>$#</code></td>
+                            <td>Number of arguments</td>
+                        </tr>
+                        <tr>
+                            <td><code>$@</code></td>
+                            <td>All arguments as separate strings</td>
+                        </tr>
+                        <tr>
+                            <td><code>$?</code></td>
+                            <td>Exit status of last command</td>
+                        </tr>
+                    </table>
+                `,
+                quiz: {
+                    question: "In a Bash script, what does $1 represent?",
+                    options: [
+                        { text: "The script name", correct: false },
+                        { text: "The first command-line argument", correct: true },
+                        { text: "The number 1", correct: false },
+                        { text: "The exit status", correct: false }
+                    ],
+                    explanation: "$1 represents the first argument passed to the script. $0 is the script name, and $# is the total number of arguments."
+                }
+            },
+            {
+                title: "Practical Script Examples",
+                icon: "🛠️",
+                content: `
+                    <div class="concept-box">
+                        <h3>Real-World Administrative Scripts</h3>
+                        <p>Let's combine what we've learned into practical scripts that system administrators use daily.</p>
+                    </div>
+                    
+                    <h3>Bash: System Health Check Script</h3>
+                    <div class="code-block"><span class="comment">#!/bin/bash</span>
+<span class="comment"># health_check.sh - System health monitoring script</span>
+
+<span class="keyword">echo</span> <span class="string">"===== System Health Check ====="</span>
+<span class="keyword">echo</span> <span class="string">"Date: $(date)"</span>
+<span class="keyword">echo</span>
+
+<span class="comment"># Check disk usage</span>
+<span class="keyword">echo</span> <span class="string">"--- Disk Usage ---"</span>
+<span class="variable">DISK_USAGE</span>=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
+
+<span class="keyword">if</span> [ <span class="variable">$DISK_USAGE</span> -gt 80 ]; <span class="keyword">then</span>
+    <span class="keyword">echo</span> <span class="string">"WARNING: Disk usage is ${DISK_USAGE}%"</span>
+<span class="keyword">else</span>
+    <span class="keyword">echo</span> <span class="string">"OK: Disk usage is ${DISK_USAGE}%"</span>
+<span class="keyword">fi</span>
+
+<span class="comment"># Check memory</span>
+<span class="keyword">echo</span>
+<span class="keyword">echo</span> <span class="string">"--- Memory Usage ---"</span>
+free -h | head -2
+
+<span class="comment"># Check running services</span>
+<span class="keyword">echo</span>
+<span class="keyword">echo</span> <span class="string">"--- Critical Services ---"</span>
+<span class="keyword">for</span> <span class="variable">SERVICE</span> <span class="keyword">in</span> sshd nginx mysql; <span class="keyword">do</span>
+    <span class="keyword">if</span> systemctl is-active --quiet <span class="variable">$SERVICE</span> 2>/dev/null; <span class="keyword">then</span>
+        <span class="keyword">echo</span> <span class="string">"$SERVICE: RUNNING"</span>
+    <span class="keyword">else</span>
+        <span class="keyword">echo</span> <span class="string">"$SERVICE: NOT RUNNING"</span>
+    <span class="keyword">fi</span>
+<span class="keyword">done</span></div>
+                    
+                    <h3>PowerShell: Service Monitor Script</h3>
+                    <div class="code-block"><span class="comment"># ServiceMonitor.ps1 - Monitor critical Windows services</span>
+
+<span class="keyword">param</span>(
+    [<span class="keyword">string</span>[]]<span class="variable">$Services</span> = @(<span class="string">"W32Time"</span>, <span class="string">"Spooler"</span>, <span class="string">"WinRM"</span>)
+)
+
+<span class="keyword">Write-Host</span> <span class="string">"===== Service Status Report ====="</span>
+<span class="keyword">Write-Host</span> <span class="string">"Date: $(Get-Date)"</span>
+<span class="keyword">Write-Host</span>
+
+<span class="keyword">foreach</span> (<span class="variable">$ServiceName</span> <span class="keyword">in</span> <span class="variable">$Services</span>) {
+    <span class="variable">$Service</span> = <span class="keyword">Get-Service</span> -Name <span class="variable">$ServiceName</span> -ErrorAction SilentlyContinue
+    
+    <span class="keyword">if</span> (<span class="variable">$Service</span>) {
+        <span class="keyword">if</span> (<span class="variable">$Service</span>.Status -eq <span class="string">'Running'</span>) {
+            <span class="keyword">Write-Host</span> <span class="string">"[OK] $ServiceName is running"</span> -ForegroundColor Green
+        }
+        <span class="keyword">else</span> {
+            <span class="keyword">Write-Host</span> <span class="string">"[WARN] $ServiceName is $($Service.Status)"</span> -ForegroundColor Yellow
+        }
+    }
+    <span class="keyword">else</span> {
+        <span class="keyword">Write-Host</span> <span class="string">"[ERROR] $ServiceName not found"</span> -ForegroundColor Red
+    }
+}</div>
+                    
+                    <div class="tip-box">
+                        <strong>💡 Best Practice:</strong> Always include comments, error handling, and usage instructions in your scripts. Future you (and your colleagues) will thank you!
+                    </div>
+                `,
+                quiz: {
+                    question: "What is the purpose of the shebang (#!/bin/bash) at the start of a Bash script?",
+                    options: [
+                        { text: "It's just a comment", correct: false },
+                        { text: "It specifies which interpreter should run the script", correct: true },
+                        { text: "It defines a variable", correct: false },
+                        { text: "It prints a message", correct: false }
+                    ],
+                    explanation: "The shebang (#!) tells the system which interpreter to use to execute the script. #!/bin/bash means 'run this script with the Bash shell.'"
+                }
+            }
+        ];
+        
+        let currentLesson = 0;
+        let completedLessons = new Set();
+        let quizAnswered = new Array(lessons.length).fill(false);
+        
+        function updateProgress() {
+            const progress = (completedLessons.size / lessons.length) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `${Math.round(progress)}% Complete`;
+        }
+        
+        function renderLesson() {
+            const lesson = lessons[currentLesson];
+            const container = document.getElementById('lessonContainer');
+            
+            container.innerHTML = `
+                <div class="lesson-content">
+                    <h2 class="lesson-title">
+                        <span class="icon">${lesson.icon}</span>
+                        Lesson ${currentLesson + 1}: ${lesson.title}
+                    </h2>
+                    ${lesson.content}
+                </div>
+                
+                <div class="quiz-section">
+                    <h3>🎯 Knowledge Check</h3>
+                    <div class="quiz-question">
+                        <p><strong>${lesson.quiz.question}</strong></p>
+                    </div>
+                    <div class="quiz-options" id="quizOptions">
+                        ${lesson.quiz.options.map((opt, idx) => `
+                            <label class="quiz-option" data-correct="${opt.correct}" data-index="${idx}">
+                                <input type="radio" name="quiz" value="${idx}" ${quizAnswered[currentLesson] ? 'disabled' : ''}>
+                                <span>${opt.text}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                    <button class="btn-primary" id="checkAnswer" ${quizAnswered[currentLesson] ? 'disabled' : ''}>Check Answer</button>
+                    <div class="feedback" id="feedback"></div>
+                </div>
+            `;
+            
+            // Update nav buttons
+            document.getElementById('prevBtn').disabled = currentLesson === 0;
+            document.getElementById('nextBtn').disabled = currentLesson === lessons.length - 1;
+            
+            // Update lesson nav buttons
+            document.querySelectorAll('.lesson-btn').forEach((btn, idx) => {
+                btn.classList.remove('active');
+                if (idx === currentLesson) btn.classList.add('active');
+                if (completedLessons.has(idx)) btn.classList.add('completed');
+            });
+            
+            // If already answered, show results
+            if (quizAnswered[currentLesson]) {
+                showQuizResults();
+            }
+            
+            // Add event listener for quiz
+            document.getElementById('checkAnswer').addEventListener('click', checkQuizAnswer);
+        }
+        
+        function showQuizResults() {
+            const lesson = lessons[currentLesson];
+            document.querySelectorAll('.quiz-option').forEach(opt => {
+                if (opt.dataset.correct === 'true') {
+                    opt.classList.add('correct');
+                }
+            });
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback success';
+            feedback.innerHTML = `<strong>Explanation:</strong> ${lesson.quiz.explanation}`;
+        }
+        
+        function checkQuizAnswer() {
+            const selected = document.querySelector('input[name="quiz"]:checked');
+            if (!selected) {
+                alert('Please select an answer.');
+                return;
+            }
+            
+            const selectedOption = selected.closest('.quiz-option');
+            const isCorrect = selectedOption.dataset.correct === 'true';
+            const feedback = document.getElementById('feedback');
+            const lesson = lessons[currentLesson];
+            
+            document.querySelectorAll('.quiz-option').forEach(opt => {
+                if (opt.dataset.correct === 'true') {
+                    opt.classList.add('correct');
+                } else if (opt === selectedOption && !isCorrect) {
+                    opt.classList.add('incorrect');
+                }
+            });
+            
+            if (isCorrect) {
+                feedback.className = 'feedback success';
+                feedback.innerHTML = `<strong>✓ Correct!</strong> ${lesson.quiz.explanation}`;
+                completedLessons.add(currentLesson);
+                document.querySelectorAll('.lesson-btn')[currentLesson].classList.add('completed');
+                updateProgress();
+            } else {
+                feedback.className = 'feedback error';
+                feedback.innerHTML = `<strong>✗ Not quite.</strong> ${lesson.quiz.explanation}`;
+            }
+            
+            quizAnswered[currentLesson] = true;
+            document.getElementById('checkAnswer').disabled = true;
+            document.querySelectorAll('input[name="quiz"]').forEach(input => input.disabled = true);
+        }
+        
+        document.querySelectorAll('.lesson-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                currentLesson = parseInt(this.dataset.lesson) - 1;
+                renderLesson();
+            });
+        });
+        
+        document.getElementById('prevBtn').addEventListener('click', function() {
+            if (currentLesson > 0) {
+                currentLesson--;
+                renderLesson();
+            }
+        });
+        
+        document.getElementById('nextBtn').addEventListener('click', function() {
+            if (currentLesson < lessons.length - 1) {
+                currentLesson++;
+                renderLesson();
+            }
+        });
+        
+        renderLesson();
+    </script>
+</body>
+</html>
