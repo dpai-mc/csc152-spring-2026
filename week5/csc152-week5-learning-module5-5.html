@@ -1,0 +1,2626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Module 5.5 - SSH Configuration and Remote Access">
+    <title>Module 5.5: SSH Configuration and Remote Access | CSC 152</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #e67e22;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #16a085;
+            --ssh-orange: #d35400;
+            --light-bg: #ecf0f1;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --border-color: #bdc3c7;
+            --code-bg: #2d2d2d;
+            --code-text: #f8f8f2;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--light-bg);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--ssh-orange), var(--secondary-color));
+            color: var(--white);
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .module-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .content-wrapper {
+            display: flex;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #f8f9fa;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(230, 126, 34, 0.1);
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-item.active {
+            background-color: rgba(230, 126, 34, 0.15);
+            border-left-color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .nav-item.completed::after {
+            content: " ✓";
+            color: var(--success-color);
+            float: right;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--secondary-color);
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: var(--primary-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .definition-box {
+            background-color: #fef5e7;
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .definition-box h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .example-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid var(--info-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .example-box h4 {
+            color: var(--info-color);
+            margin-top: 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .tip-box {
+            background-color: #d4edda;
+            border-left: 4px solid var(--success-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .tip-box h4 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        .security-box {
+            background-color: #f8d7da;
+            border-left: 4px solid var(--accent-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .security-box h4 {
+            color: var(--accent-color);
+            margin-top: 0;
+        }
+
+        .code-block {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: "bash";
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.7em;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        .inline-code {
+            background-color: #f4f4f4;
+            color: #c7254e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .command-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .command-table th {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 12px;
+            text-align: left;
+        }
+
+        .command-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .command-table tr:hover {
+            background-color: var(--light-bg);
+        }
+
+        .interactive-exercise {
+            background-color: var(--white);
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .interactive-exercise h3 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .exercise-question {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .exercise-options {
+            margin: 15px 0;
+        }
+
+        .exercise-option {
+            display: block;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .exercise-option:hover {
+            border-color: var(--secondary-color);
+            background-color: #fef5e7;
+        }
+
+        .exercise-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .check-answer-btn {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .check-answer-btn:hover {
+            background-color: var(--ssh-orange);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background-color: #d4edda;
+            border: 1px solid var(--success-color);
+            color: #155724;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            border: 1px solid var(--accent-color);
+            color: #721c24;
+            display: block;
+        }
+
+        .progress-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .progress-bar-wrapper {
+            background-color: var(--light-bg);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--ssh-orange), var(--secondary-color));
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .script-output {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .comparison-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .comparison-card h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .key-takeaways {
+            background: linear-gradient(135deg, var(--ssh-orange) 0%, var(--secondary-color) 100%);
+            color: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .key-takeaways h3 {
+            color: var(--white);
+            margin-top: 0;
+        }
+
+        .try-it-yourself {
+            background-color: #fff9e6;
+            border: 2px dashed var(--warning-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .try-it-yourself h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.prev {
+            background-color: var(--text-light);
+            color: var(--white);
+        }
+
+        .nav-btn.next {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .diagram-box {
+            background-color: #f8f9fa;
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .step-indicator {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: var(--white);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        footer {
+            background-color: var(--primary-color);
+            color: var(--white);
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media print {
+            .sidebar, .navigation-buttons, .interactive-exercise {
+                display: none;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .section {
+                display: block !important;
+                page-break-after: always;
+            }
+        }
+
+        @media (max-width: 968px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .comparison-table {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        kbd {
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Module 5.5: SSH Configuration and Remote Access</h1>
+            <div class="module-info">
+                <div class="info-badge">📚 CSC 152 - Week 5</div>
+                <div class="info-badge">⏱️ 90 minutes</div>
+                <div class="info-badge">🎯 CSLO 1</div>
+                <div class="info-badge">🔐 Security Focus</div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <h3>Module Contents</h3>
+                <div class="nav-item active" onclick="showSection('intro')">Introduction to SSH</div>
+                <div class="nav-item" onclick="showSection('server-config')">SSH Server Configuration</div>
+                <div class="nav-item" onclick="showSection('client-usage')">SSH Client Usage</div>
+                <div class="nav-item" onclick="showSection('key-auth')">Key-Based Authentication</div>
+                <div class="nav-item" onclick="showSection('file-transfer')">Secure File Transfer</div>
+                <div class="nav-item" onclick="showSection('security')">Security Best Practices</div>
+                <div class="nav-item" onclick="showSection('troubleshooting')">Troubleshooting</div>
+                <div class="nav-item" onclick="showSection('summary')">Summary</div>
+
+                <div class="progress-container" style="margin-top: 30px;">
+                    <h3>Your Progress</h3>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="moduleProgress">0%</div>
+                    </div>
+                    <p style="text-align: center; color: var(--text-light); font-size: 0.9em;">
+                        <span id="sectionsCompleted">0</span> of 8 sections completed
+                    </p>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <!-- Introduction Section -->
+                <section id="intro" class="section active">
+                    <h2>Introduction to SSH</h2>
+                    
+                    <p>Welcome to Module 5.5! This module covers Secure Shell (SSH), the industry-standard protocol for secure remote access to Linux and Unix systems. SSH is essential for managing servers in data centers, cloud environments, and any scenario where physical access isn't practical.</p>
+
+                    <h3>What is SSH?</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Secure Shell (SSH)</h4>
+                        <p><strong>SSH (Secure Shell)</strong> is a cryptographic network protocol that provides secure remote access to systems over unsecured networks. SSH encrypts all communications, including authentication credentials, commands, and data transfers.</p>
+                        
+                        <p><strong>Key features:</strong></p>
+                        <ul>
+                            <li><strong>Encryption:</strong> All data is encrypted end-to-end</li>
+                            <li><strong>Authentication:</strong> Password or key-based authentication</li>
+                            <li><strong>Integrity:</strong> Detects tampering or modification</li>
+                            <li><strong>Port forwarding:</strong> Tunnel other protocols through SSH</li>
+                            <li><strong>File transfer:</strong> Secure file copy (SCP/SFTP)</li>
+                            <li><strong>X11 forwarding:</strong> Run GUI applications remotely</li>
+                        </ul>
+                    </div>
+
+                    <h3>Why SSH is Essential</h3>
+
+                    <div class="comparison-table">
+                        <div class="comparison-card">
+                            <h4>❌ Telnet (Insecure)</h4>
+                            <ul>
+                                <li>Transmits data in plain text</li>
+                                <li>Passwords visible on network</li>
+                                <li>Commands can be intercepted</li>
+                                <li>No encryption</li>
+                                <li>Vulnerable to eavesdropping</li>
+                                <li><strong>Never use in production!</strong></li>
+                            </ul>
+                        </div>
+
+                        <div class="comparison-card">
+                            <h4>✅ SSH (Secure)</h4>
+                            <ul>
+                                <li>All data encrypted</li>
+                                <li>Passwords protected</li>
+                                <li>Commands encrypted</li>
+                                <li>Strong encryption algorithms</li>
+                                <li>Protected against eavesdropping</li>
+                                <li><strong>Industry standard</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3>SSH Architecture</h3>
+
+                    <div class="diagram-box">
+                        <h4>SSH Client-Server Model</h4>
+                        <div style="margin: 20px 0; font-family: monospace;">
+                            <div style="margin-bottom: 20px;">
+                                <strong>SSH Client</strong> (your computer)
+                                <br>↓ Encrypted Connection (Port 22)
+                                <br>↓ Authentication
+                                <br>↓ Encrypted Commands
+                                <br>↓ Encrypted Responses
+                                <br><strong>SSH Server</strong> (remote system)
+                            </div>
+                        </div>
+                        <p><strong>Components:</strong></p>
+                        <ul style="text-align: left;">
+                            <li><strong>SSH Client:</strong> Software you use to connect (ssh command, PuTTY, etc.)</li>
+                            <li><strong>SSH Server:</strong> Daemon running on remote system (sshd)</li>
+                            <li><strong>Port 22:</strong> Default SSH port (can be changed for security)</li>
+                            <li><strong>Encryption:</strong> Protects all communication</li>
+                        </ul>
+                    </div>
+
+                    <h3>SSH Protocol Versions</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>SSH-1</strong></td>
+                                <td>Deprecated</td>
+                                <td>Security vulnerabilities, should not be used</td>
+                            </tr>
+                            <tr>
+                                <td><strong>SSH-2</strong></td>
+                                <td>Current Standard</td>
+                                <td>Secure, widely supported, use this version</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Always Use SSH-2</h4>
+                        <p>SSH-1 has known security vulnerabilities and should never be used. Modern SSH implementations default to SSH-2, but always verify your configuration.</p>
+                    </div>
+
+                    <h3>Common SSH Use Cases</h3>
+
+                    <div class="example-box">
+                        <h4>💡 When You Need SSH</h4>
+                        
+                        <p><strong>Remote Server Administration:</strong></p>
+                        <ul>
+                            <li>Manage servers in data centers without physical access</li>
+                            <li>Administer cloud instances (AWS, Azure, Google Cloud)</li>
+                            <li>Configure and maintain Linux servers</li>
+                            <li>Run commands on multiple servers simultaneously</li>
+                        </ul>
+
+                        <p><strong>Secure File Transfers:</strong></p>
+                        <ul>
+                            <li>Upload configuration files to servers</li>
+                            <li>Download log files for analysis</li>
+                            <li>Transfer backups securely</li>
+                            <li>Synchronize files between systems</li>
+                        </ul>
+
+                        <p><strong>Tunneling and Port Forwarding:</strong></p>
+                        <ul>
+                            <li>Access services through SSH tunnel</li>
+                            <li>Secure database connections</li>
+                            <li>Browse securely through SSH proxy</li>
+                            <li>Access internal network resources remotely</li>
+                        </ul>
+
+                        <p><strong>Automation and Scripting:</strong></p>
+                        <ul>
+                            <li>Execute commands on remote systems from scripts</li>
+                            <li>Automate deployments</li>
+                            <li>Batch operations across multiple servers</li>
+                            <li>Configuration management (Ansible, etc.)</li>
+                        </ul>
+                    </div>
+
+                    <h3>Module Learning Objectives</h3>
+                    <p>By the end of this module, you will be able to:</p>
+                    <ul>
+                        <li>Configure OpenSSH server on Linux systems</li>
+                        <li>Connect to remote Linux systems using SSH clients</li>
+                        <li>Generate and use SSH key pairs for authentication</li>
+                        <li>Configure SSH for key-based authentication</li>
+                        <li>Apply SSH security best practices</li>
+                        <li>Use SCP and SFTP for secure file transfer</li>
+                        <li>Troubleshoot common SSH connection issues</li>
+                    </div>
+
+                    <h3>Prerequisites</h3>
+                    <p>Before beginning this module, you should have:</p>
+                    <ul>
+                        <li>Linux VM from Week 3 (Ubuntu Server or similar)</li>
+                        <li>Basic Linux command-line skills (Modules 5.1, 5.2)</li>
+                        <li>Understanding of basic networking concepts</li>
+                        <li>Sudo/root access to your Linux VM</li>
+                    </ul>
+
+                    <div class="tip-box">
+                        <h4>💡 Learning Approach</h4>
+                        <p>SSH is best learned by doing. For this module:</p>
+                        <ol>
+                            <li>Use your Linux VM from Week 3 as the SSH server</li>
+                            <li>Connect from your host computer or another VM as the client</li>
+                            <li>Practice each configuration step</li>
+                            <li>Test authentication methods</li>
+                            <li>Experiment with security settings (in your VM safely)</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Server Configuration Section -->
+                <section id="server-config" class="section">
+                    <h2>SSH Server Configuration</h2>
+                    
+                    <p>Configuring the SSH server (sshd) is the first step in enabling secure remote access. The SSH daemon listens for incoming connections and handles authentication and encryption.</p>
+
+                    <h3>Installing OpenSSH Server</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 OpenSSH</h4>
+                        <p><strong>OpenSSH</strong> is the most widely used SSH implementation. It's open-source, secure, and included in most Linux distributions.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Installation Steps</h4>
+                        <div class="code-block"># Check if SSH server is installed
+dpkg -l | grep openssh-server  # Debian/Ubuntu
+rpm -qa | grep openssh-server  # RHEL/CentOS
+
+# Install OpenSSH Server on Ubuntu/Debian
+sudo apt update
+sudo apt install openssh-server
+
+# Install on RHEL/CentOS
+sudo yum install openssh-server
+
+# Verify installation
+ssh -V
+# Output: OpenSSH_8.2p1 Ubuntu-4ubuntu0.5, OpenSSL 1.1.1f  31 Mar 2020</div>
+                    </div>
+
+                    <h3>SSH Service Management</h3>
+
+                    <div class="example-box">
+                        <h4>Managing the SSH Service</h4>
+                        <div class="code-block"># Check SSH service status
+sudo systemctl status sshd     # RHEL/CentOS
+sudo systemctl status ssh      # Ubuntu/Debian
+
+# Start SSH service
+sudo systemctl start ssh
+
+# Stop SSH service
+sudo systemctl stop ssh
+
+# Restart SSH service (after configuration changes)
+sudo systemctl restart ssh
+
+# Reload SSH configuration (without disconnecting users)
+sudo systemctl reload ssh
+
+# Enable SSH to start at boot
+sudo systemctl enable ssh
+
+# Disable SSH from starting at boot
+sudo systemctl disable ssh
+
+# Check if SSH is enabled
+sudo systemctl is-enabled ssh
+
+# View SSH service logs
+sudo journalctl -u ssh
+sudo journalctl -u ssh -f  # Follow logs in real-time</div>
+                    </div>
+
+                    <h3>SSH Server Configuration File</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 sshd_config File</h4>
+                        <p>The main SSH server configuration file is <strong>/etc/ssh/sshd_config</strong>. This file controls all aspects of SSH server behavior, including authentication methods, access control, and security settings.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Viewing and Editing Configuration</h4>
+                        <div class="code-block"># View current configuration
+sudo cat /etc/ssh/sshd_config
+
+# Edit configuration (use your preferred editor)
+sudo nano /etc/ssh/sshd_config
+sudo vim /etc/ssh/sshd_config
+
+# View only non-commented lines
+sudo grep -v "^#" /etc/ssh/sshd_config | grep -v "^$"
+
+# Backup configuration before editing (IMPORTANT!)
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d)
+
+# Test configuration for syntax errors
+sudo sshd -t
+
+# If test passes, restart SSH
+sudo systemctl restart ssh</div>
+                    </div>
+
+                    <h3>Important Configuration Options</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Purpose</th>
+                                <th>Recommended Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Port</code></td>
+                                <td>SSH listening port</td>
+                                <td>22 (default) or custom port</td>
+                            </tr>
+                            <tr>
+                                <td><code>PermitRootLogin</code></td>
+                                <td>Allow root login</td>
+                                <td>no (security best practice)</td>
+                            </tr>
+                            <tr>
+                                <td><code>PasswordAuthentication</code></td>
+                                <td>Allow password login</td>
+                                <td>yes initially, no after keys setup</td>
+                            </tr>
+                            <tr>
+                                <td><code>PubkeyAuthentication</code></td>
+                                <td>Allow key-based login</td>
+                                <td>yes (more secure)</td>
+                            </tr>
+                            <tr>
+                                <td><code>PermitEmptyPasswords</code></td>
+                                <td>Allow accounts without passwords</td>
+                                <td>no (security requirement)</td>
+                            </tr>
+                            <tr>
+                                <td><code>MaxAuthTries</code></td>
+                                <td>Max authentication attempts</td>
+                                <td>3 (prevent brute force)</td>
+                            </tr>
+                            <tr>
+                                <td><code>ClientAliveInterval</code></td>
+                                <td>Keepalive interval (seconds)</td>
+                                <td>300 (5 minutes)</td>
+                            </tr>
+                            <tr>
+                                <td><code>AllowUsers</code></td>
+                                <td>Whitelist of allowed users</td>
+                                <td>Specific usernames</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Basic SSH Server Configuration</h4>
+                        <div class="code-block"># Edit /etc/ssh/sshd_config
+
+# Port configuration
+Port 22
+
+# Authentication settings
+PermitRootLogin no
+PasswordAuthentication yes
+PubkeyAuthentication yes
+PermitEmptyPasswords no
+
+# Security settings
+MaxAuthTries 3
+MaxSessions 10
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Keepalive settings
+ClientAliveInterval 300
+ClientAliveCountMax 2
+
+# Allow specific users (optional)
+AllowUsers alice bob charlie
+
+# Or deny specific users
+DenyUsers guest test
+
+# Allow specific groups
+AllowGroups sshusers admins</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Secure Configuration Example</h4>
+                        <div class="code-block"># Recommended secure configuration
+
+# Use non-standard port (security through obscurity)
+Port 2222
+
+# Disable root login
+PermitRootLogin no
+
+# Disable password authentication (after setting up keys)
+PasswordAuthentication no
+PubkeyAuthentication yes
+
+# Disable empty passwords
+PermitEmptyPasswords no
+
+# Limit authentication attempts
+MaxAuthTries 3
+
+# Enable strict mode
+StrictModes yes
+
+# Disable X11 forwarding if not needed
+X11Forwarding no
+
+# Disable TCP forwarding if not needed
+AllowTcpForwarding no
+
+# Use only SSH protocol 2
+Protocol 2
+
+# Specify allowed users
+AllowUsers alice bob
+
+# Set login grace time
+LoginGraceTime 60
+
+# After making changes:
+# 1. Test configuration
+sudo sshd -t
+
+# 2. Restart SSH service
+sudo systemctl restart ssh</div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Critical Warning: Don't Lock Yourself Out!</h4>
+                        <p>When modifying SSH configuration:</p>
+                        <ol>
+                            <li><strong>Keep current session open:</strong> Don't close your SSH session while testing</li>
+                            <li><strong>Test new configuration:</strong> Open a new SSH session to test before closing old one</li>
+                            <li><strong>Have backup access:</strong> Ensure console access (VM console, physical access)</li>
+                            <li><strong>Test before disabling passwords:</strong> Verify key authentication works first</li>
+                            <li><strong>Document changes:</strong> Keep notes on what you changed</li>
+                        </ol>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice SSH server configuration:</p>
+                        <ol>
+                            <li>Install OpenSSH server on your Linux VM</li>
+                            <li>Verify the SSH service is running</li>
+                            <li>Backup the sshd_config file</li>
+                            <li>View the current configuration</li>
+                            <li>Change the Port setting (test in VM only!)</li>
+                            <li>Test the configuration with <code>sudo sshd -t</code></li>
+                            <li>Restart the SSH service</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: SSH Configuration</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> What is the default port for SSH?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="a">
+                                <span>Port 21</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="b">
+                                <span>Port 22</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="c">
+                                <span>Port 23</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="d">
+                                <span>Port 80</span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q1', 'b', 'feedback1')">Check Answer</button>
+                        <div id="feedback1" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Client Usage Section -->
+                <section id="client-usage" class="section">
+                    <h2>SSH Client Usage</h2>
+                    
+                    <p>The SSH client allows you to connect to remote systems. Understanding client commands and options is essential for efficient remote administration.</p>
+
+                    <h3>Basic SSH Connection</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 SSH Client Syntax</h4>
+                        <div class="code-block"># Basic syntax
+ssh username@hostname
+
+# With specific port
+ssh -p port username@hostname
+
+# Examples
+ssh alice@192.168.1.100
+ssh bob@server.example.com
+ssh -p 2222 admin@10.0.0.5</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Connecting to Remote Systems</h4>
+                        <div class="code-block"># Basic connection
+ssh alice@192.168.1.100
+
+# First connection prompts to verify host key:
+# The authenticity of host '192.168.1.100' can't be established.
+# ECDSA key fingerprint is SHA256:xxxxx...
+# Are you sure you want to continue connecting (yes/no)? yes
+
+# Enter password when prompted
+alice@192.168.1.100's password: 
+
+# You're now connected!
+alice@remote-server:~$ 
+
+# To disconnect
+exit
+# or press Ctrl+D
+
+# Connect with specific port
+ssh -p 2222 alice@192.168.1.100
+
+# Connect with verbose output (for troubleshooting)
+ssh -v alice@192.168.1.100
+ssh -vv alice@192.168.1.100   # More verbose
+ssh -vvv alice@192.168.1.100  # Maximum verbosity</div>
+                    </div>
+
+                    <h3>Executing Remote Commands</h3>
+
+                    <div class="example-box">
+                        <h4>Running Commands Without Interactive Session</h4>
+                        <div class="code-block"># Execute single command
+ssh alice@192.168.1.100 'ls -la'
+
+# Execute multiple commands
+ssh alice@192.168.1.100 'uptime; df -h; free -h'
+
+# Run command and capture output
+output=$(ssh alice@192.168.1.100 'hostname')
+echo "Remote hostname: $output"
+
+# Run script on remote system
+ssh alice@192.168.1.100 'bash -s' < local_script.sh
+
+# Execute command with sudo (if configured)
+ssh alice@192.168.1.100 'sudo systemctl restart nginx'
+
+# Run command in background
+ssh alice@192.168.1.100 'nohup ./long_running_task.sh &'
+
+# Pipe local data to remote command
+cat local_file.txt | ssh alice@192.168.1.100 'cat > remote_file.txt'</div>
+                    </div>
+
+                    <h3>SSH Client Configuration</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 SSH Client Config File</h4>
+                        <p>The <strong>~/.ssh/config</strong> file stores SSH client configuration, including host aliases, default options, and connection settings. This makes connecting to frequently accessed servers much easier.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Creating SSH Client Config</h4>
+                        <div class="code-block"># Create config file
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+nano ~/.ssh/config
+
+# Example configuration
+# ~/.ssh/config
+
+# Web server
+Host webserver
+    HostName 192.168.1.100
+    User alice
+    Port 22
+    IdentityFile ~/.ssh/id_rsa_webserver
+
+# Database server
+Host dbserver
+    HostName db.example.com
+    User dbadmin
+    Port 2222
+    IdentityFile ~/.ssh/id_rsa_db
+
+# Development server
+Host dev
+    HostName dev.example.com
+    User developer
+    Port 22
+    ForwardAgent yes
+    ServerAliveInterval 60
+
+# Wildcard configuration for all *.example.com hosts
+Host *.example.com
+    User admin
+    Port 2222
+    StrictHostKeyChecking ask
+    ServerAliveInterval 300
+
+# Default settings for all hosts
+Host *
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+    Compression yes
+
+# After creating config, set permissions
+chmod 600 ~/.ssh/config
+
+# Now you can connect using aliases
+ssh webserver      # Connects to 192.168.1.100 as alice
+ssh dbserver       # Connects to db.example.com as dbadmin
+ssh dev            # Connects to dev.example.com as developer</div>
+                    </div>
+
+                    <h3>SSH Connection Options</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Purpose</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-p port</code></td>
+                                <td>Specify port number</td>
+                                <td><code>ssh -p 2222 user@host</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-i keyfile</code></td>
+                                <td>Specify identity file (private key)</td>
+                                <td><code>ssh -i ~/.ssh/mykey user@host</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-l username</code></td>
+                                <td>Specify username</td>
+                                <td><code>ssh -l alice host</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-v</code></td>
+                                <td>Verbose output</td>
+                                <td><code>ssh -v user@host</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-X</code></td>
+                                <td>Enable X11 forwarding</td>
+                                <td><code>ssh -X user@host</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-L</code></td>
+                                <td>Local port forwarding</td>
+                                <td><code>ssh -L 8080:localhost:80 user@host</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-R</code></td>
+                                <td>Remote port forwarding</td>
+                                <td><code>ssh -R 8080:localhost:80 user@host</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-N</code></td>
+                                <td>No command execution (tunneling)</td>
+                                <td><code>ssh -N -L 3306:localhost:3306 user@host</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>X11 Forwarding</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is X11 Forwarding?</h4>
+                        <p><strong>X11 forwarding</strong> allows you to run graphical applications on a remote system and display them on your local computer. The GUI is transmitted securely through the SSH tunnel.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Using X11 Forwarding</h4>
+                        <div class="code-block"># Enable X11 forwarding on server
+# Edit /etc/ssh/sshd_config
+sudo nano /etc/ssh/sshd_config
+
+# Add or uncomment:
+X11Forwarding yes
+X11DisplayOffset 10
+
+# Restart SSH
+sudo systemctl restart ssh
+
+# Connect with X11 forwarding
+ssh -X alice@192.168.1.100
+
+# Or for trusted X11 forwarding (faster but less secure)
+ssh -Y alice@192.168.1.100
+
+# Run GUI application
+firefox &
+gedit &
+nautilus &
+
+# The application window appears on your local display!</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice SSH client usage:</p>
+                        <ol>
+                            <li>Connect to your Linux VM using SSH from your host computer</li>
+                            <li>Execute a remote command without interactive session</li>
+                            <li>Create an SSH client config file with an alias</li>
+                            <li>Test connecting using the alias</li>
+                            <li>Try X11 forwarding (if you have X server on client)</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: SSH Client</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> Which command connects to server.example.com on port 2222 as user 'admin'?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="a">
+                                <span><code>ssh admin@server.example.com:2222</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="b">
+                                <span><code>ssh -p 2222 admin@server.example.com</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="c">
+                                <span><code>ssh server.example.com -port 2222 -user admin</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="d">
+                                <span><code>ssh admin server.example.com 2222</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q2', 'b', 'feedback2')">Check Answer</button>
+                        <div id="feedback2" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Key Authentication Section -->
+                <section id="key-auth" class="section">
+                    <h2>SSH Key-Based Authentication</h2>
+                    
+                    <p>Key-based authentication is more secure than password authentication and enables passwordless login. It uses public-key cryptography to authenticate users.</p>
+
+                    <h3>Understanding SSH Keys</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Public Key Cryptography</h4>
+                        <p>SSH key authentication uses a <strong>key pair</strong>:</p>
+                        <ul>
+                            <li><strong>Private key:</strong> Kept secret on your computer (like a password)</li>
+                            <li><strong>Public key:</strong> Copied to servers you want to access (safe to share)</li>
+                        </ul>
+                        
+                        <p><strong>How it works:</strong></p>
+                        <ol>
+                            <li>You generate a key pair on your client computer</li>
+                            <li>You copy the public key to the remote server</li>
+                            <li>When connecting, the server challenges your client</li>
+                            <li>Your client responds using the private key</li>
+                            <li>If the keys match, you're authenticated</li>
+                        </ol>
+                    </div>
+
+                    <div class="diagram-box">
+                        <h4>SSH Key Authentication Flow</h4>
+                        <div style="margin: 20px 0; font-family: monospace; text-align: left;">
+                            <p><span class="step-indicator">1</span> Generate key pair on client</p>
+                            <p style="margin-left: 40px;">→ Private key: <code>~/.ssh/id_rsa</code> (keep secret!)</p>
+                            <p style="margin-left: 40px;">→ Public key: <code>~/.ssh/id_rsa.pub</code> (safe to share)</p>
+                            <br>
+                            <p><span class="step-indicator">2</span> Copy public key to server</p>
+                            <p style="margin-left: 40px;">→ Appended to <code>~/.ssh/authorized_keys</code></p>
+                            <br>
+                            <p><span class="step-indicator">3</span> Connect to server</p>
+                            <p style="margin-left: 40px;">→ Server challenges client with encrypted message</p>
+                            <br>
+                            <p><span class="step-indicator">4</span> Client proves identity</p>
+                            <p style="margin-left: 40px;">→ Uses private key to decrypt challenge</p>
+                            <br>
+                            <p><span class="step-indicator">5</span> Authentication successful</p>
+                            <p style="margin-left: 40px;">→ Secure session established</p>
+                        </div>
+                    </div>
+
+                    <h3>Generating SSH Key Pairs</h3>
+
+                    <div class="example-box">
+                        <h4>Creating SSH Keys with ssh-keygen</h4>
+                        <div class="code-block"># Generate default RSA key (2048-bit)
+ssh-keygen
+
+# You'll be prompted:
+# Generating public/private rsa key pair.
+# Enter file in which to save the key (/home/alice/.ssh/id_rsa): 
+# (Press Enter for default)
+
+# Enter passphrase (empty for no passphrase): 
+# (Recommended: use a strong passphrase)
+
+# Enter same passphrase again: 
+
+# Your identification has been saved in /home/alice/.ssh/id_rsa
+# Your public key has been saved in /home/alice/.ssh/id_rsa.pub
+
+# Generate RSA key with specific size
+ssh-keygen -t rsa -b 4096
+
+# Generate Ed25519 key (recommended - more secure and faster)
+ssh-keygen -t ed25519
+
+# Generate with custom filename
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_webserver
+
+# Generate with comment
+ssh-keygen -t ed25519 -C "alice@laptop - Web Server Key"
+
+# Generate without passphrase (for automation - use carefully!)
+ssh-keygen -t ed25519 -N "" -f ~/.ssh/automation_key</div>
+                    </div>
+
+                    <h3>SSH Key Types</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Key Type</th>
+                                <th>Security</th>
+                                <th>Speed</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>RSA (2048-bit)</strong></td>
+                                <td>Good</td>
+                                <td>Moderate</td>
+                                <td>Minimum acceptable</td>
+                            </tr>
+                            <tr>
+                                <td><strong>RSA (4096-bit)</strong></td>
+                                <td>Very Good</td>
+                                <td>Slower</td>
+                                <td>Good for high security</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ECDSA</strong></td>
+                                <td>Good</td>
+                                <td>Fast</td>
+                                <td>Acceptable</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ed25519</strong></td>
+                                <td>Excellent</td>
+                                <td>Very Fast</td>
+                                <td><strong>Best choice</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="tip-box">
+                        <h4>💡 Key Type Recommendation</h4>
+                        <p><strong>Use Ed25519 for new keys:</strong></p>
+                        <div class="code-block">ssh-keygen -t ed25519 -C "your_email@example.com"</div>
+                        <p><strong>Why Ed25519?</strong></p>
+                        <ul>
+                            <li>More secure than RSA at equivalent key sizes</li>
+                            <li>Faster to generate and use</li>
+                            <li>Smaller key size (better performance)</li>
+                            <li>Resistant to timing attacks</li>
+                            <li>Supported by modern SSH implementations</li>
+                        </ul>
+                    </div>
+
+                    <h3>Copying Public Keys to Server</h3>
+
+                    <div class="example-box">
+                        <h4>Method 1: Using ssh-copy-id (Easiest)</h4>
+                        <div class="code-block"># Copy default key to server
+ssh-copy-id alice@192.168.1.100
+
+# Copy specific key
+ssh-copy-id -i ~/.ssh/id_ed25519.pub alice@192.168.1.100
+
+# Copy to non-standard port
+ssh-copy-id -i ~/.ssh/id_rsa.pub -p 2222 alice@192.168.1.100
+
+# What ssh-copy-id does:
+# 1. Connects to server (requires password)
+# 2. Creates ~/.ssh directory if needed
+# 3. Appends public key to ~/.ssh/authorized_keys
+# 4. Sets proper permissions
+
+# After this, you can login without password!
+ssh alice@192.168.1.100</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Method 2: Manual Key Installation</h4>
+                        <div class="code-block"># Display your public key
+cat ~/.ssh/id_ed25519.pub
+
+# Copy the output (entire line)
+
+# Connect to server with password
+ssh alice@192.168.1.100
+
+# On the server, create .ssh directory if needed
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+# Add public key to authorized_keys
+echo "paste-your-public-key-here" >> ~/.ssh/authorized_keys
+
+# Or use editor
+nano ~/.ssh/authorized_keys
+# Paste the public key on a new line
+
+# Set proper permissions
+chmod 600 ~/.ssh/authorized_keys
+
+# Exit and test
+exit
+ssh alice@192.168.1.100  # Should not ask for password</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Method 3: Using Command Pipeline</h4>
+                        <div class="code-block"># Copy key using cat and ssh
+cat ~/.ssh/id_ed25519.pub | ssh alice@192.168.1.100 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+
+# Set permissions remotely
+ssh alice@192.168.1.100 "chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+
+# One-liner to do everything
+cat ~/.ssh/id_ed25519.pub | ssh alice@192.168.1.100 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"</div>
+                    </div>
+
+                    <h3>SSH Key File Permissions</h3>
+
+                    <div class="security-box">
+                        <h4>🔐 Critical: Correct File Permissions</h4>
+                        <p>SSH is very strict about file permissions for security. Incorrect permissions will cause authentication to fail.</p>
+                        
+                        <table class="command-table">
+                            <thead>
+                                <tr>
+                                    <th>File/Directory</th>
+                                    <th>Required Permission</th>
+                                    <th>Command</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>~/.ssh/</code></td>
+                                    <td>700 (rwx------)</td>
+                                    <td><code>chmod 700 ~/.ssh</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>~/.ssh/id_rsa</code></td>
+                                    <td>600 (rw-------)</td>
+                                    <td><code>chmod 600 ~/.ssh/id_rsa</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>~/.ssh/id_rsa.pub</code></td>
+                                    <td>644 (rw-r--r--)</td>
+                                    <td><code>chmod 644 ~/.ssh/id_rsa.pub</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>~/.ssh/authorized_keys</code></td>
+                                    <td>600 (rw-------)</td>
+                                    <td><code>chmod 600 ~/.ssh/authorized_keys</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>~/.ssh/config</code></td>
+                                    <td>600 (rw-------)</td>
+                                    <td><code>chmod 600 ~/.ssh/config</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="code-block"># Fix all SSH permissions at once
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/*
+chmod 644 ~/.ssh/*.pub</div>
+                    </div>
+
+                    <h3>SSH Agent for Key Management</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 SSH Agent</h4>
+                        <p>The <strong>SSH agent</strong> holds your private keys in memory, so you only need to enter your passphrase once per session. This is convenient when using keys with passphrases.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Using SSH Agent</h4>
+                        <div class="code-block"># Start SSH agent
+eval $(ssh-agent)
+# Output: Agent pid 12345
+
+# Add your private key to agent
+ssh-add ~/.ssh/id_ed25519
+# Enter passphrase: (enter your passphrase)
+# Identity added: /home/alice/.ssh/id_ed25519
+
+# Add key with different path
+ssh-add ~/.ssh/id_rsa_webserver
+
+# List keys in agent
+ssh-add -l
+
+# Remove all keys from agent
+ssh-add -D
+
+# Remove specific key
+ssh-add -d ~/.ssh/id_ed25519
+
+# Add key with timeout (seconds)
+ssh-add -t 3600 ~/.ssh/id_ed25519  # Expires after 1 hour
+
+# Now you can SSH without entering passphrase
+ssh alice@192.168.1.100  # No passphrase prompt!
+
+# SSH agent in startup script
+# Add to ~/.bashrc or ~/.bash_profile
+if [ -z "$SSH_AUTH_SOCK" ]; then
+    eval $(ssh-agent)
+    ssh-add ~/.ssh/id_ed25519
+fi</div>
+                    </div>
+
+                    <h3>Passphrase Protection</h3>
+
+                    <div class="security-box">
+                        <h4>🔐 Should You Use a Passphrase?</h4>
+                        
+                        <p><strong>With Passphrase (Recommended for personal keys):</strong></p>
+                        <ul>
+                            <li>✅ Private key is encrypted</li>
+                            <li>✅ Useless if stolen</li>
+                            <li>✅ Two-factor security (key + passphrase)</li>
+                            <li>❌ Must enter passphrase (use ssh-agent to mitigate)</li>
+                        </ul>
+
+                        <p><strong>Without Passphrase (Only for automation):</strong></p>
+                        <ul>
+                            <li>✅ Passwordless automation</li>
+                            <li>✅ Scripts can run unattended</li>
+                            <li>❌ Private key is unencrypted</li>
+                            <li>❌ If stolen, immediate access</li>
+                            <li>❌ Must protect key file carefully</li>
+                        </ul>
+
+                        <p><strong>Best Practice:</strong></p>
+                        <ul>
+                            <li>Use passphrases for personal/admin keys</li>
+                            <li>Use SSH agent for convenience</li>
+                            <li>No passphrase only for dedicated automation keys</li>
+                            <li>Restrict automation keys to specific commands (command= option)</li>
+                        </ul>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice SSH key authentication:</p>
+                        <ol>
+                            <li>Generate an Ed25519 key pair with passphrase</li>
+                            <li>Copy the public key to your Linux VM</li>
+                            <li>Test passwordless login</li>
+                            <li>Verify file permissions on both client and server</li>
+                            <li>Use ssh-agent to avoid repeated passphrase entry</li>
+                            <li>Generate a second key for a different purpose</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: SSH Keys</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> Which file contains your private SSH key (default RSA)?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="a">
+                                <span><code>~/.ssh/id_rsa.pub</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="b">
+                                <span><code>~/.ssh/id_rsa</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="c">
+                                <span><code>~/.ssh/authorized_keys</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="d">
+                                <span><code>~/.ssh/known_hosts</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q3', 'b', 'feedback3')">Check Answer</button>
+                        <div id="feedback3" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- File Transfer Section -->
+                <section id="file-transfer" class="section">
+                    <h2>Secure File Transfer</h2>
+                    
+                    <p>SSH provides two main protocols for secure file transfer: SCP (Secure Copy) and SFTP (SSH File Transfer Protocol). Both use SSH encryption to protect data in transit.</p>
+
+                    <h3>SCP (Secure Copy)</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is SCP?</h4>
+                        <p><strong>SCP (Secure Copy)</strong> is a command-line tool for securely copying files between local and remote systems using SSH. It's similar to the <code>cp</code> command but works over the network.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>SCP Basic Usage</h4>
+                        <div class="code-block"># Copy local file to remote server
+scp local_file.txt alice@192.168.1.100:/home/alice/
+
+# Copy remote file to local system
+scp alice@192.168.1.100:/home/alice/remote_file.txt .
+
+# Copy with specific port
+scp -P 2222 file.txt alice@192.168.1.100:/home/alice/
+
+# Copy directory recursively
+scp -r local_directory alice@192.168.1.100:/home/alice/
+
+# Copy multiple files
+scp file1.txt file2.txt file3.txt alice@192.168.1.100:/home/alice/
+
+# Copy with progress display
+scp -v file.txt alice@192.168.1.100:/home/alice/
+
+# Preserve file attributes (timestamps, permissions)
+scp -p file.txt alice@192.168.1.100:/home/alice/
+
+# Limit bandwidth (in Kbit/s)
+scp -l 1000 large_file.iso alice@192.168.1.100:/home/alice/
+
+# Use compression
+scp -C large_file.txt alice@192.168.1.100:/home/alice/</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Advanced SCP Examples</h4>
+                        <div class="code-block"># Copy between two remote servers (through your computer)
+scp alice@server1:/path/file.txt bob@server2:/path/
+
+# Copy using specific SSH key
+scp -i ~/.ssh/custom_key file.txt alice@192.168.1.100:/home/alice/
+
+# Copy with custom SSH options
+scp -o "StrictHostKeyChecking=no" file.txt alice@192.168.1.100:/home/alice/
+
+# Backup remote directory to local
+scp -r alice@192.168.1.100:/etc/nginx ~/backups/nginx_backup
+
+# Copy log files from remote server
+scp alice@192.168.1.100:/var/log/apache2/*.log ~/logs/
+
+# Copy with timestamp in destination
+scp file.txt alice@192.168.1.100:/backup/file_$(date +%Y%m%d).txt</div>
+                    </div>
+
+                    <h3>SFTP (SSH File Transfer Protocol)</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is SFTP?</h4>
+                        <p><strong>SFTP</strong> is an interactive file transfer protocol that runs over SSH. Unlike SCP, SFTP provides a full set of file management commands and is better for browsing and managing remote files.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>SFTP Interactive Session</h4>
+                        <div class="code-block"># Connect to SFTP server
+sftp alice@192.168.1.100
+
+# You'll see an SFTP prompt:
+sftp> 
+
+# Common SFTP commands:
+
+# Navigation
+pwd                 # Print working directory (remote)
+lpwd                # Print working directory (local)
+ls                  # List remote files
+lls                 # List local files
+cd /path            # Change remote directory
+lcd /path           # Change local directory
+
+# File operations
+get remote_file.txt              # Download file
+get -r remote_directory          # Download directory
+put local_file.txt               # Upload file
+put -r local_directory           # Upload directory
+
+# Multiple file operations
+mget *.txt                       # Download multiple files
+mput *.log                       # Upload multiple files
+
+# File management
+mkdir new_directory              # Create remote directory
+rmdir empty_directory            # Remove remote directory
+rm file.txt                      # Delete remote file
+rename old.txt new.txt           # Rename remote file
+
+# Information
+ls -la                           # Detailed listing
+df -h                            # Disk space
+
+# Exit
+exit
+bye
+quit</div>
+
+                        <p><strong>Example SFTP session:</strong></p>
+                        <div class="script-output">$ sftp alice@192.168.1.100
+Connected to 192.168.1.100.
+sftp> pwd
+Remote working directory: /home/alice
+sftp> ls
+file1.txt    file2.txt    documents
+sftp> get file1.txt
+Fetching /home/alice/file1.txt to file1.txt
+/home/alice/file1.txt    100%  1234    1.2KB/s   00:01
+sftp> put local_file.txt
+Uploading local_file.txt to /home/alice/local_file.txt
+local_file.txt           100%  5678    5.5KB/s   00:01
+sftp> exit</div>
+                    </div>
+
+                    <h3>Batch SFTP Operations</h3>
+
+                    <div class="example-box">
+                        <h4>Automated SFTP with Batch Files</h4>
+                        <div class="code-block"># Create batch file with SFTP commands
+cat > sftp_commands.txt << EOF
+cd /backup
+lcd ~/local_backup
+mget *.tar.gz
+bye
+EOF
+
+# Execute batch file
+sftp -b sftp_commands.txt alice@192.168.1.100
+
+# Or use here-document
+sftp alice@192.168.1.100 << EOF
+cd /var/log
+get syslog
+get auth.log
+bye
+EOF
+
+# SFTP in scripts
+#!/bin/bash
+# Automated backup download
+
+sftp alice@192.168.1.100 << EOF
+cd /backup
+lcd ~/backups
+mget backup_*.tar.gz
+bye
+EOF
+
+if [ $? -eq 0 ]; then
+    echo "Backup download successful"
+else
+    echo "Backup download failed"
+fi</div>
+                    </div>
+
+                    <h3>SCP vs SFTP Comparison</h3>
+
+                    <div class="comparison-table">
+                        <div class="comparison-card">
+                            <h4>SCP (Secure Copy)</h4>
+                            <ul>
+                                <li><strong>Use for:</strong> Quick file copies</li>
+                                <li><strong>Interface:</strong> Command-line only</li>
+                                <li><strong>Speed:</strong> Generally faster</li>
+                                <li><strong>Features:</strong> Limited to copy operations</li>
+                                <li><strong>Syntax:</strong> Similar to cp command</li>
+                                <li><strong>Best for:</strong> Scripts and one-off transfers</li>
+                            </ul>
+                        </div>
+
+                        <div class="comparison-card">
+                            <h4>SFTP (SSH FTP)</h4>
+                            <ul>
+                                <li><strong>Use for:</strong> Interactive file management</li>
+                                <li><strong>Interface:</strong> Interactive shell</li>
+                                <li><strong>Speed:</strong> Slightly slower</li>
+                                <li><strong>Features:</strong> Full file management</li>
+                                <li><strong>Syntax:</strong> Similar to FTP commands</li>
+                                <li><strong>Best for:</strong> Browsing and managing files</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice secure file transfer:</p>
+                        <ol>
+                            <li>Use SCP to copy a file to your Linux VM</li>
+                            <li>Use SCP to download a file from your VM</li>
+                            <li>Copy an entire directory recursively with SCP</li>
+                            <li>Connect to your VM using SFTP</li>
+                            <li>Practice SFTP navigation and file operations</li>
+                            <li>Create an SFTP batch file for automated transfers</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Security Section -->
+                <section id="security" class="section">
+                    <h2>SSH Security Best Practices</h2>
+                    
+                    <p>SSH is secure by default, but proper configuration is essential for production environments. These best practices protect against common attacks and unauthorized access.</p>
+
+                    <h3>Essential Security Configurations</h3>
+
+                    <div class="security-box">
+                        <h4>🔐 Critical Security Settings</h4>
+                        
+                        <p><strong>1. Disable Root Login</strong></p>
+                        <div class="code-block"># In /etc/ssh/sshd_config
+PermitRootLogin no
+
+# Why: Attackers always try root first
+# Solution: Use sudo with regular user accounts</div>
+
+                        <p><strong>2. Use Key-Based Authentication</strong></p>
+                        <div class="code-block"># After setting up keys for all users:
+PasswordAuthentication no
+PubkeyAuthentication yes
+
+# Why: Keys are much stronger than passwords
+# Protects against brute-force attacks</div>
+
+                        <p><strong>3. Change Default Port</strong></p>
+                        <div class="code-block"># In /etc/ssh/sshd_config
+Port 2222
+
+# Why: Reduces automated attacks on port 22
+# Note: Security through obscurity, not a replacement for strong auth</div>
+
+                        <p><strong>4. Limit User Access</strong></p>
+                        <div class="code-block"># Allow only specific users
+AllowUsers alice bob charlie
+
+# Or allow specific groups
+AllowGroups sshusers admins
+
+# Or deny specific users
+DenyUsers guest test nobody</div>
+
+                        <p><strong>5. Disable Empty Passwords</strong></p>
+                        <div class="code-block">PermitEmptyPasswords no
+
+# Why: Accounts without passwords are security holes</div>
+
+                        <p><strong>6. Limit Authentication Attempts</strong></p>
+                        <div class="code-block">MaxAuthTries 3
+
+# Why: Slows down brute-force attacks</div>
+                    </div>
+
+                    <h3>Using fail2ban for Brute-Force Protection</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is fail2ban?</h4>
+                        <p><strong>fail2ban</strong> monitors log files and automatically bans IP addresses that show malicious behavior (repeated failed login attempts). It's essential for internet-facing SSH servers.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Installing and Configuring fail2ban</h4>
+                        <div class="code-block"># Install fail2ban
+sudo apt update
+sudo apt install fail2ban
+
+# Start and enable fail2ban
+sudo systemctl start fail2ban
+sudo systemctl enable fail2ban
+
+# Check status
+sudo systemctl status fail2ban
+
+# View fail2ban status
+sudo fail2ban-client status
+
+# View SSH jail status
+sudo fail2ban-client status sshd
+
+# Configure fail2ban for SSH
+sudo nano /etc/fail2ban/jail.local
+
+# Add or modify:
+[sshd]
+enabled = true
+port = 22
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600
+findtime = 600
+
+# Restart fail2ban
+sudo systemctl restart fail2ban
+
+# View banned IPs
+sudo fail2ban-client status sshd
+
+# Unban an IP
+sudo fail2ban-client set sshd unbanip 192.168.1.50</div>
+                    </div>
+
+                    <h3>SSH Access Control with AllowUsers</h3>
+
+                    <div class="example-box">
+                        <h4>Implementing User Restrictions</h4>
+                        <div class="code-block"># Edit /etc/ssh/sshd_config
+
+# Method 1: Allow specific users
+AllowUsers alice bob charlie
+
+# Method 2: Allow users from specific hosts
+AllowUsers alice@192.168.1.* bob@10.0.0.*
+
+# Method 3: Allow groups
+AllowGroups sshusers administrators
+
+# Create SSH users group
+sudo groupadd sshusers
+
+# Add users to group
+sudo usermod -aG sshusers alice
+sudo usermod -aG sshusers bob
+
+# Verify group membership
+groups alice
+
+# Test configuration
+sudo sshd -t
+
+# Restart SSH
+sudo systemctl restart ssh</div>
+                    </div>
+
+                    <h3>Monitoring SSH Access</h3>
+
+                    <div class="example-box">
+                        <h4>Checking SSH Logs</h4>
+                        <div class="code-block"># View SSH authentication log
+sudo tail -f /var/log/auth.log
+
+# Find successful logins
+sudo grep "Accepted" /var/log/auth.log
+
+# Find failed login attempts
+sudo grep "Failed" /var/log/auth.log
+
+# Find failed password attempts
+sudo grep "Failed password" /var/log/auth.log
+
+# Count failed attempts by IP
+sudo grep "Failed password" /var/log/auth.log | awk '{print $(NF-3)}' | sort | uniq -c | sort -rn
+
+# Find successful logins today
+sudo grep "Accepted" /var/log/auth.log | grep "$(date +%b\ %d)"
+
+# View current SSH sessions
+who
+w
+
+# Show last logins
+last
+lastlog
+
+# Show failed login attempts
+sudo lastb</div>
+                    </div>
+
+                    <h3>Two-Factor Authentication (2FA)</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 SSH Two-Factor Authentication</h4>
+                        <p><strong>Two-factor authentication (2FA)</strong> requires two forms of authentication: something you have (SSH key) and something you know (password or OTP). This provides maximum security.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Setting Up Google Authenticator for SSH</h4>
+                        <div class="code-block"># Install Google Authenticator PAM module
+sudo apt install libpam-google-authenticator
+
+# Run setup for your user (not as root)
+google-authenticator
+
+# Answer the prompts:
+# - Do you want tokens to be time-based? (y)
+# - Scan QR code with Google Authenticator app
+# - Save emergency scratch codes
+# - Update .google_authenticator file? (y)
+# - Disallow multiple uses? (y)
+# - Increase window size? (n)
+# - Enable rate limiting? (y)
+
+# Configure PAM
+sudo nano /etc/pam.d/sshd
+
+# Add at the top:
+auth required pam_google_authenticator.so
+
+# Configure SSH
+sudo nano /etc/ssh/sshd_config
+
+# Set these options:
+ChallengeResponseAuthentication yes
+UsePAM yes
+
+# Restart SSH
+sudo systemctl restart ssh
+
+# Now login requires:
+# 1. SSH key
+# 2. Verification code from Google Authenticator app</div>
+                    </div>
+
+                    <div class="security-box">
+                        <h4>🔐 Security Best Practices Summary</h4>
+                        <ol>
+                            <li><strong>Disable root login:</strong> <code>PermitRootLogin no</code></li>
+                            <li><strong>Use key authentication:</strong> <code>PasswordAuthentication no</code></li>
+                            <li><strong>Change default port:</strong> <code>Port 2222</code></li>
+                            <li><strong>Limit users:</strong> <code>AllowUsers alice bob</code></li>
+                            <li><strong>Use fail2ban:</strong> Automatic IP banning</li>
+                            <li><strong>Monitor logs:</strong> Regular log review</li>
+                            <li><strong>Keep updated:</strong> Apply security patches</li>
+                            <li><strong>Use firewall:</strong> Restrict SSH access by IP</li>
+                            <li><strong>Consider 2FA:</strong> For critical systems</li>
+                            <li><strong>Strong keys:</strong> Use Ed25519 or RSA 4096-bit</li>
+                        </ol>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Implement SSH security:</p>
+                        <ol>
+                            <li>Configure your SSH server to disable root login</li>
+                            <li>Set up AllowUsers with your username</li>
+                            <li>Change SSH to a non-standard port (test in VM!)</li>
+                            <li>Install and configure fail2ban</li>
+                            <li>Monitor auth.log for SSH activity</li>
+                            <li>Create a script that alerts on failed login attempts</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Troubleshooting Section -->
+                <section id="troubleshooting" class="section">
+                    <h2>Troubleshooting SSH</h2>
+                    
+                    <p>Even with proper configuration, SSH issues can occur. Understanding how to diagnose and fix common problems is essential for system administrators.</p>
+
+                    <h3>Common SSH Problems</h3>
+
+                    <div class="warning-box">
+                        <h4>Problem 1: Connection Refused</h4>
+                        <div class="code-block">$ ssh alice@192.168.1.100
+ssh: connect to host 192.168.1.100 port 22: Connection refused</div>
+                        
+                        <p><strong>Possible causes:</strong></p>
+                        <ul>
+                            <li>SSH service not running</li>
+                            <li>Firewall blocking port 22</li>
+                            <li>Wrong IP address or hostname</li>
+                            <li>SSH configured on different port</li>
+                        </ul>
+
+                        <p><strong>Solutions:</strong></p>
+                        <div class="code-block"># Check if SSH is running on server
+sudo systemctl status ssh
+
+# Start SSH if stopped
+sudo systemctl start ssh
+
+# Check if SSH is listening
+sudo ss -tlnp | grep :22
+sudo netstat -tlnp | grep :22
+
+# Check firewall (Ubuntu)
+sudo ufw status
+sudo ufw allow 22/tcp
+
+# Check firewall (RHEL/CentOS)
+sudo firewall-cmd --list-all
+sudo firewall-cmd --add-service=ssh --permanent
+sudo firewall-cmd --reload
+
+# Test connectivity
+ping 192.168.1.100
+telnet 192.168.1.100 22</div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>Problem 2: Permission Denied (publickey)</h4>
+                        <div class="code-block">$ ssh alice@192.168.1.100
+alice@192.168.1.100: Permission denied (publickey).</div>
+                        
+                        <p><strong>Possible causes:</strong></p>
+                        <ul>
+                            <li>Public key not installed on server</li>
+                            <li>Wrong private key being used</li>
+                            <li>Incorrect file permissions</li>
+                            <li>Password authentication disabled</li>
+                        </ul>
+
+                        <p><strong>Solutions:</strong></p>
+                        <div class="code-block"># Verify public key is on server
+ssh alice@192.168.1.100 "cat ~/.ssh/authorized_keys"
+
+# Check file permissions on server
+ssh alice@192.168.1.100 "ls -la ~/.ssh/"
+# Should be:
+# drwx------  .ssh/
+# -rw-------  authorized_keys
+
+# Fix permissions on server
+ssh alice@192.168.1.100 "chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+
+# Try with specific key
+ssh -i ~/.ssh/id_ed25519 alice@192.168.1.100
+
+# Use verbose mode to see what's happening
+ssh -vvv alice@192.168.1.100
+
+# Temporarily enable password auth (for troubleshooting)
+# On server: sudo nano /etc/ssh/sshd_config
+# PasswordAuthentication yes
+# sudo systemctl restart ssh</div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>Problem 3: Host Key Verification Failed</h4>
+                        <div class="code-block">$ ssh alice@192.168.1.100
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!</div>
+                        
+                        <p><strong>Possible causes:</strong></p>
+                        <ul>
+                            <li>Server was reinstalled (legitimate)</li>
+                            <li>SSH keys were regenerated on server</li>
+                            <li>Man-in-the-middle attack (security concern!)</li>
+                            <li>IP address reassigned to different server</li>
+                        </ul>
+
+                        <p><strong>Solutions:</strong></p>
+                        <div class="code-block"># If you know the server was reinstalled (safe):
+
+# Remove old host key
+ssh-keygen -R 192.168.1.100
+
+# Or edit known_hosts file
+nano ~/.ssh/known_hosts
+# Delete the line for 192.168.1.100
+
+# Connect again (will prompt to verify new key)
+ssh alice@192.168.1.100
+
+# If you're unsure, investigate before connecting!
+# Could be a security issue</div>
+                    </div>
+
+                    <h3>Debugging SSH Connections</h3>
+
+                    <div class="example-box">
+                        <h4>Verbose SSH Output</h4>
+                        <div class="code-block"># Level 1 verbose
+ssh -v alice@192.168.1.100
+
+# Level 2 verbose (more detail)
+ssh -vv alice@192.168.1.100
+
+# Level 3 verbose (maximum detail)
+ssh -vvv alice@192.168.1.100
+
+# Verbose output shows:
+# - Connection establishment
+# - Key exchange
+# - Authentication attempts
+# - Which keys are being tried
+# - Configuration being used
+# - Error messages with context</div>
+                    </div>
+
+                    <h3>Testing SSH Configuration</h3>
+
+                    <div class="example-box">
+                        <h4>Configuration Testing Commands</h4>
+                        <div class="code-block"># Test sshd configuration syntax
+sudo sshd -t
+
+# Test with verbose output
+sudo sshd -t -v
+
+# Test specific configuration file
+sudo sshd -t -f /etc/ssh/sshd_config.new
+
+# View effective configuration
+sudo sshd -T
+
+# View effective configuration for specific user
+sudo sshd -T -C user=alice
+
+# Check which configuration file is being used
+sudo sshd -T | grep "^configfile"
+
+# Verify SSH is listening
+sudo ss -tlnp | grep sshd
+sudo netstat -tlnp | grep sshd</div>
+                    </div>
+
+                    <h3>Common Troubleshooting Checklist</h3>
+
+                    <div class="tip-box">
+                        <h4>💡 SSH Troubleshooting Checklist</h4>
+                        
+                        <p><strong>Server-side checks:</strong></p>
+                        <ol>
+                            <li>✓ Is SSH service running? <code>systemctl status ssh</code></li>
+                            <li>✓ Is SSH listening on correct port? <code>ss -tlnp | grep sshd</code></li>
+                            <li>✓ Is firewall allowing SSH? <code>ufw status</code></li>
+                            <li>✓ Are file permissions correct? <code>ls -la ~/.ssh/</code></li>
+                            <li>✓ Is configuration valid? <code>sshd -t</code></li>
+                            <li>✓ Are there errors in logs? <code>tail /var/log/auth.log</code></li>
+                        </ol>
+
+                        <p><strong>Client-side checks:</strong></p>
+                        <ol>
+                            <li>✓ Can you ping the server? <code>ping server</code></li>
+                            <li>✓ Is SSH port reachable? <code>telnet server 22</code></li>
+                            <li>✓ Are you using correct username?</li>
+                            <li>✓ Are you using correct key? <code>ssh -i keyfile</code></li>
+                            <li>✓ Are client permissions correct? <code>ls -la ~/.ssh/</code></li>
+                            <li>✓ What does verbose mode show? <code>ssh -vvv</code></li>
+                        </ol>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice troubleshooting:</p>
+                        <ol>
+                            <li>Intentionally create a permission problem and fix it</li>
+                            <li>Use verbose mode to see the connection process</li>
+                            <li>Test configuration changes with <code>sshd -t</code></li>
+                            <li>Monitor auth.log during connection attempts</li>
+                            <li>Practice removing and re-adding host keys</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Summary Section -->
+                <section id="summary" class="section">
+                    <h2>Module Summary</h2>
+                    
+                    <p>Congratulations on completing Module 5.5! You've learned to configure and use SSH for secure remote access to Linux systems.</p>
+
+                    <div class="key-takeaways">
+                        <h3>🎯 Key Concepts Mastered</h3>
+                        
+                        <h4>SSH Fundamentals</h4>
+                        <ul>
+                            <li>SSH provides encrypted remote access</li>
+                            <li>Always use SSH-2 protocol</li>
+                            <li>Default port is 22 (can be changed)</li>
+                            <li>SSH is essential for server administration</li>
+                        </ul>
+
+                        <h4>SSH Server Configuration</h4>
+                        <ul>
+                            <li>Install OpenSSH server</li>
+                            <li>Configure /etc/ssh/sshd_config</li>
+                            <li>Manage SSH service with systemctl</li>
+                            <li>Test configuration before restarting</li>
+                        </ul>
+
+                        <h4>SSH Client Usage</h4>
+                        <ul>
+                            <li>Connect with ssh username@hostname</li>
+                            <li>Execute remote commands</li>
+                            <li>Configure client with ~/.ssh/config</li>
+                            <li>Use various SSH options and flags</li>
+                        </ul>
+
+                        <h4>Key-Based Authentication</h4>
+                        <ul>
+                            <li>Generate key pairs with ssh-keygen</li>
+                            <li>Copy public keys with ssh-copy-id</li>
+                            <li>Understand public vs private keys</li>
+                            <li>Use SSH agent for convenience</li>
+                            <li>Maintain correct file permissions</li>
+                        </ul>
+
+                        <h4>Secure File Transfer</h4>
+                        <ul>
+                            <li>Use SCP for quick file copies</li>
+                            <li>Use SFTP for interactive file management</li>
+                            <li>Both use SSH encryption</li>
+                            <li>Support batch operations</li>
+                        </ul>
+
+                        <h4>Security Best Practices</h4>
+                        <ul>
+                            <li>Disable root login</li>
+                            <li>Use key authentication only</li>
+                            <li>Change default port</li>
+                            <li>Limit user access</li>
+                            <li>Use fail2ban</li>
+                            <li>Monitor logs regularly</li>
+                        </ul>
+                    </div>
+
+                    <h3>SSH Command Reference</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Command</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Install SSH server</td>
+                                <td><code>sudo apt install openssh-server</code></td>
+                            </tr>
+                            <tr>
+                                <td>Start SSH service</td>
+                                <td><code>sudo systemctl start ssh</code></td>
+                            </tr>
+                            <tr>
+                                <td>Edit SSH config</td>
+                                <td><code>sudo nano /etc/ssh/sshd_config</code></td>
+                            </tr>
+                            <tr>
+                                <td>Test configuration</td>
+                                <td><code>sudo sshd -t</code></td>
+                            </tr>
+                            <tr>
+                                <td>Restart SSH</td>
+                                <td><code>sudo systemctl restart ssh</code></td>
+                            </tr>
+                            <tr>
+                                <td>Connect to server</td>
+                                <td><code>ssh user@hostname</code></td>
+                            </tr>
+                            <tr>
+                                <td>Generate keys</td>
+                                <td><code>ssh-keygen -t ed25519</code></td>
+                            </tr>
+                            <tr>
+                                <td>Copy public key</td>
+                                <td><code>ssh-copy-id user@hostname</code></td>
+                            </tr>
+                            <tr>
+                                <td>Copy file (SCP)</td>
+                                <td><code>scp file.txt user@host:/path/</code></td>
+                            </tr>
+                            <tr>
+                                <td>Interactive SFTP</td>
+                                <td><code>sftp user@hostname</code></td>
+                            </tr>
+                            <tr>
+                                <td>View SSH logs</td>
+                                <td><code>sudo tail /var/log/auth.log</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Next Steps</h3>
+
+                    <div class="tip-box">
+                        <h4>💡 Continuing Your Learning</h4>
+                        
+                        <p><strong>Module 5.6: PowerShell Remoting</strong></p>
+                        <p>Next, you'll learn Windows equivalent of SSH—PowerShell Remoting for secure remote Windows Server administration.</p>
+
+                        <p><strong>Practice Recommendations:</strong></p>
+                        <ul>
+                            <li>Use SSH for all remote Linux administration</li>
+                            <li>Set up key-based authentication for all your servers</li>
+                            <li>Create SSH config entries for frequently accessed servers</li>
+                            <li>Practice SCP and SFTP for file transfers</li>
+                            <li>Implement security best practices on your VMs</li>
+                            <li>Monitor SSH logs regularly</li>
+                        </ul>
+
+                        <p><strong>Real-World Application:</strong></p>
+                        <ul>
+                            <li>Manage cloud servers (AWS, Azure, Google Cloud)</li>
+                            <li>Administer data center servers remotely</li>
+                            <li>Automate deployments with SSH in scripts</li>
+                            <li>Use SSH tunneling for secure database access</li>
+                            <li>Implement jump hosts for network segmentation</li>
+                        </ul>
+                    </div>
+
+                    <div class="key-takeaways">
+                        <h3>🎓 Module 5.5 Complete!</h3>
+                        <p>You've successfully completed SSH Configuration and Remote Access! You should now be able to:</p>
+                        <ul>
+                            <li>✅ Install and configure OpenSSH server</li>
+                            <li>✅ Connect to remote systems securely</li>
+                            <li>✅ Generate and use SSH key pairs</li>
+                            <li>✅ Configure key-based authentication</li>
+                            <li>✅ Transfer files securely with SCP and SFTP</li>
+                            <li>✅ Apply SSH security best practices</li>
+                            <li>✅ Troubleshoot common SSH issues</li>
+                        </ul>
+                        
+                        <p style="margin-top: 20px;"><strong>CSLO 1 Connection:</strong> This module supports your ability to manage and maintain servers with secure remote access control.</p>
+                    </div>
+
+                    <div class="navigation-buttons">
+                        <button class="nav-btn prev" onclick="showSection('troubleshooting')">← Previous: Troubleshooting</button>
+                        <button class="nav-btn next" onclick="window.print()">🖨️ Print Module</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer>
+            <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+            <p>Module 5.5: SSH Configuration and Remote Access (Linux)</p>
+            <p style="margin-top: 10px;">Mendocino College | Computer Science Department</p>
+            <p style="margin-top: 5px; font-size: 0.9em;">© 2026 | Version 1.0 | For Educational Use</p>
+        </footer>
+    </div>
+
+    <script>
+        const sections = ['intro', 'server-config', 'client-usage', 'key-auth', 'file-transfer', 'security', 'troubleshooting', 'summary'];
+        let currentSectionIndex = 0;
+        let completedSections = new Set();
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (currentSectionIndex >= 0) {
+                completedSections.add(sections[currentSectionIndex]);
+                updateProgress();
+            }
+            
+            currentSectionIndex = sections.indexOf(sectionId);
+            window.scrollTo(0, 0);
+        }
+
+        function updateProgress() {
+            const total = sections.length;
+            const completed = completedSections.size;
+            const percentage = Math.round((completed / total) * 100);
+            
+            document.getElementById('moduleProgress').style.width = percentage + '%';
+            document.getElementById('moduleProgress').textContent = percentage + '%';
+            document.getElementById('sectionsCompleted').textContent = completed;
+            
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                if (completedSections.has(sections[index])) {
+                    item.classList.add('completed');
+                }
+            });
+        }
+
+        function checkAnswer(questionName, correctAnswer, feedbackId) {
+            const selected = document.querySelector(`input[name="${questionName}"]:checked`);
+            const feedback = document.getElementById(feedbackId);
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '⚠️ Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === correctAnswer) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✅ Correct! ' + getExplanation(questionName);
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '❌ Incorrect. ' + getExplanation(questionName);
+            }
+        }
+
+        function getExplanation(questionName) {
+            const explanations = {
+                'q1': 'Port 22 is the default SSH port. Port 21 is FTP, port 23 is Telnet, and port 80 is HTTP.',
+                'q2': 'The correct syntax is: ssh -p PORT username@hostname. The -p flag specifies the port number.',
+                'q3': '~/.ssh/id_rsa is your private key (keep secret!). The .pub file is your public key (safe to share). authorized_keys contains public keys allowed to connect. known_hosts contains server fingerprints.'
+            };
+            return explanations[questionName] || '';
+        }
+
+        document.addEventListener('DOMContentLoaded', updateProgress);
+    </script>
+</body>
+</html>

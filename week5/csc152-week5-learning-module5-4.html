@@ -1,0 +1,3750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Module 5.4 - PowerShell Scripting">
+    <title>Module 5.4: PowerShell Scripting | CSC 152</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #0078d4;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #16a085;
+            --ps-blue: #012456;
+            --light-bg: #ecf0f1;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --border-color: #bdc3c7;
+            --code-bg: #012456;
+            --code-text: #f8f8f2;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--light-bg);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--ps-blue), var(--secondary-color));
+            color: var(--white);
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .module-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .content-wrapper {
+            display: flex;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #f8f9fa;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(0, 120, 212, 0.1);
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-item.active {
+            background-color: rgba(0, 120, 212, 0.15);
+            border-left-color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .nav-item.completed::after {
+            content: " ✓";
+            color: var(--success-color);
+            float: right;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--secondary-color);
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: var(--primary-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .definition-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid var(--info-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .definition-box h4 {
+            color: var(--info-color);
+            margin-top: 0;
+        }
+
+        .example-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .example-box h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .tip-box {
+            background-color: #d4edda;
+            border-left: 4px solid var(--success-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .tip-box h4 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        .code-block {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: "PowerShell";
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.7em;
+            color: #5c9fd8;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .inline-code {
+            background-color: #e8f4f8;
+            color: #0078d4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .command-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .command-table th {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 12px;
+            text-align: left;
+        }
+
+        .command-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .command-table tr:hover {
+            background-color: var(--light-bg);
+        }
+
+        .interactive-exercise {
+            background-color: var(--white);
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .interactive-exercise h3 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .exercise-question {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .exercise-options {
+            margin: 15px 0;
+        }
+
+        .exercise-option {
+            display: block;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .exercise-option:hover {
+            border-color: var(--secondary-color);
+            background-color: #f0f7ff;
+        }
+
+        .exercise-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .exercise-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1em;
+            margin: 10px 0;
+        }
+
+        .exercise-input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+
+        .check-answer-btn {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .check-answer-btn:hover {
+            background-color: #005a9e;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background-color: #d4edda;
+            border: 1px solid var(--success-color);
+            color: #155724;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            border: 1px solid var(--accent-color);
+            color: #721c24;
+            display: block;
+        }
+
+        .progress-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .progress-bar-wrapper {
+            background-color: var(--light-bg);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--secondary-color), #5c9fd8);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .script-output {
+            background-color: #012456;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .comparison-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .comparison-card h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .key-takeaways {
+            background: linear-gradient(135deg, var(--ps-blue) 0%, var(--secondary-color) 100%);
+            color: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .key-takeaways h3 {
+            color: var(--white);
+            margin-top: 0;
+        }
+
+        .try-it-yourself {
+            background-color: #fff9e6;
+            border: 2px dashed var(--warning-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .try-it-yourself h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.prev {
+            background-color: var(--text-light);
+            color: var(--white);
+        }
+
+        .nav-btn.next {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        footer {
+            background-color: var(--primary-color);
+            color: var(--white);
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media print {
+            .sidebar, .navigation-buttons, .interactive-exercise {
+                display: none;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .section {
+                display: block !important;
+                page-break-after: always;
+            }
+        }
+
+        @media (max-width: 968px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .comparison-table {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Module 5.4: PowerShell Scripting</h1>
+            <div class="module-info">
+                <div class="info-badge">📚 CSC 152 - Week 5</div>
+                <div class="info-badge">⏱️ 120 minutes</div>
+                <div class="info-badge">🎯 CSLO 1</div>
+                <div class="info-badge">💻 Advanced Scripting</div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <h3>Module Contents</h3>
+                <div class="nav-item active" onclick="showSection('intro')">Introduction</div>
+                <div class="nav-item" onclick="showSection('script-basics')">Script Basics</div>
+                <div class="nav-item" onclick="showSection('variables')">Variables & Data Types</div>
+                <div class="nav-item" onclick="showSection('conditionals')">Conditional Logic</div>
+                <div class="nav-item" onclick="showSection('loops')">Loops & Iteration</div>
+                <div class="nav-item" onclick="showSection('arrays')">Arrays & Collections</div>
+                <div class="nav-item" onclick="showSection('functions')">Functions</div>
+                <div class="nav-item" onclick="showSection('error-handling')">Error Handling</div>
+                <div class="nav-item" onclick="showSection('practice')">Practice Scripts</div>
+                <div class="nav-item" onclick="showSection('summary')">Summary</div>
+
+                <div class="progress-container" style="margin-top: 30px;">
+                    <h3>Your Progress</h3>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="moduleProgress">0%</div>
+                    </div>
+                    <p style="text-align: center; color: var(--text-light); font-size: 0.9em;">
+                        <span id="sectionsCompleted">0</span> of 10 sections completed
+                    </p>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <!-- Introduction Section -->
+                <section id="intro" class="section active">
+                    <h2>Introduction to PowerShell Scripting</h2>
+                    
+                    <p>Welcome to Module 5.4! Building on the PowerShell cmdlet knowledge from Module 5.3 and your Bash scripting experience from Module 5.2, this module teaches you to create automated administrative solutions using PowerShell's powerful object-oriented scripting capabilities.</p>
+
+                    <div class="definition-box">
+                        <h4>📖 What is PowerShell Scripting?</h4>
+                        <p><strong>PowerShell scripting</strong> is the practice of writing .ps1 files that contain sequences of PowerShell commands, variables, functions, and control structures to automate administrative tasks. Unlike interactive cmdlet use, scripts provide repeatability, consistency, and the ability to handle complex logic.</p>
+                    </div>
+
+                    <h3>Why PowerShell Scripting?</h3>
+
+                    <div class="comparison-table">
+                        <div class="comparison-card">
+                            <h4>Interactive Cmdlets</h4>
+                            <ul>
+                                <li>Type commands one at a time</li>
+                                <li>Good for ad-hoc tasks</li>
+                                <li>Requires manual intervention</li>
+                                <li>Hard to repeat exactly</li>
+                                <li>No error handling</li>
+                                <li>Limited complexity</li>
+                            </ul>
+                        </div>
+
+                        <div class="comparison-card">
+                            <h4>PowerShell Scripts</h4>
+                            <ul>
+                                <li>Execute hundreds of commands automatically</li>
+                                <li>Perfect for scheduled tasks</li>
+                                <li>Fully automated workflows</li>
+                                <li>Consistent, repeatable execution</li>
+                                <li>Comprehensive error handling</li>
+                                <li>Handle complex business logic</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3>Real-World PowerShell Scripting Scenarios</h3>
+
+                    <div class="example-box">
+                        <h4>💡 System Administration Use Cases</h4>
+                        
+                        <p><strong>1. Automated User Provisioning</strong></p>
+                        <ul>
+                            <li>Read user data from CSV or database</li>
+                            <li>Create Active Directory accounts</li>
+                            <li>Set up home directories and permissions</li>
+                            <li>Configure email accounts</li>
+                            <li>Add to appropriate security groups</li>
+                            <li>Generate and email temporary passwords</li>
+                        </ul>
+
+                        <p><strong>2. System Health Monitoring</strong></p>
+                        <ul>
+                            <li>Check disk space across multiple servers</li>
+                            <li>Monitor service status</li>
+                            <li>Analyze event logs for errors</li>
+                            <li>Generate HTML reports</li>
+                            <li>Send email alerts when thresholds exceeded</li>
+                        </ul>
+
+                        <p><strong>3. Backup Automation</strong></p>
+                        <ul>
+                            <li>Backup files and databases</li>
+                            <li>Rotate old backups</li>
+                            <li>Verify backup integrity</li>
+                            <li>Upload to cloud storage</li>
+                            <li>Log all operations</li>
+                            <li>Send success/failure notifications</li>
+                        </ul>
+
+                        <p><strong>4. Security Compliance</strong></p>
+                        <ul>
+                            <li>Audit user permissions</li>
+                            <li>Check for weak passwords</li>
+                            <li>Verify security group memberships</li>
+                            <li>Generate compliance reports</li>
+                            <li>Remediate non-compliant settings</li>
+                        </ul>
+                    </div>
+
+                    <h3>Module Learning Objectives</h3>
+                    <p>By the end of this module, you will be able to:</p>
+                    <ul>
+                        <li>Create and execute PowerShell scripts (.ps1 files)</li>
+                        <li>Implement variables and data types in PowerShell</li>
+                        <li>Use conditional logic and loops in PowerShell scripts</li>
+                        <li>Work with PowerShell arrays and hash tables</li>
+                        <li>Handle errors and exceptions in scripts</li>
+                        <li>Apply PowerShell scripting best practices</li>
+                    </ul>
+
+                    <h3>Connection to Previous Learning</h3>
+
+                    <div class="tip-box">
+                        <h4>💡 Building on Your Knowledge</h4>
+                        <p>This module builds directly on:</p>
+                        <ul>
+                            <li><strong>Module 4.6:</strong> PowerShell introduction and basic cmdlets</li>
+                            <li><strong>Module 5.2:</strong> Bash scripting concepts (many transfer to PowerShell)</li>
+                            <li><strong>Module 5.3:</strong> PowerShell cmdlets, objects, and pipeline</li>
+                        </ul>
+                        
+                        <p>If you understood Bash scripting, you'll find PowerShell scripting familiar but more powerful due to its object-oriented nature.</p>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Before You Begin</h4>
+                        <p><strong>Execution Policy Check:</strong></p>
+                        <div class="code-block"># Check current policy
+Get-ExecutionPolicy
+
+# For learning environment, set to RemoteSigned
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Verify
+Get-ExecutionPolicy</div>
+                        
+                        <p><strong>Script Development Tools:</strong></p>
+                        <ul>
+                            <li><strong>PowerShell ISE:</strong> Built-in scripting environment (Windows Server)</li>
+                            <li><strong>Visual Studio Code:</strong> Modern editor with PowerShell extension</li>
+                            <li><strong>Windows PowerShell:</strong> Command-line testing</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Script Basics Section -->
+                <section id="script-basics" class="section">
+                    <h2>PowerShell Script Basics</h2>
+                    
+                    <p>Let's create your first PowerShell script and understand the fundamental components that make scripts work.</p>
+
+                    <h3>Creating Your First PowerShell Script</h3>
+
+                    <div class="example-box">
+                        <h4>Step-by-Step: Hello World Script</h4>
+                        
+                        <p><strong>Step 1: Create the Script File</strong></p>
+                        <div class="code-block"># Open PowerShell ISE (recommended for beginners)
+# Or create file in any text editor
+
+# Create new file: hello.ps1</div>
+
+                        <p><strong>Step 2: Add Script Content</strong></p>
+                        <div class="code-block"># hello.ps1
+# My first PowerShell script
+# Author: Your Name
+# Date: February 20, 2026
+
+Write-Host "Hello, World!" -ForegroundColor Green
+Write-Host "Welcome to PowerShell scripting!" -ForegroundColor Cyan
+Write-Host "Today is $(Get-Date)" -ForegroundColor Yellow</div>
+
+                        <p><strong>Step 3: Save the Script</strong></p>
+                        <ul>
+                            <li>Save as <code>hello.ps1</code> in your working directory</li>
+                            <li>Note: PowerShell scripts use .ps1 extension</li>
+                        </ul>
+
+                        <p><strong>Step 4: Execute the Script</strong></p>
+                        <div class="code-block"># Method 1: Run from current directory
+.\hello.ps1
+
+# Method 2: Full path
+C:\Scripts\hello.ps1
+
+# Method 3: Dot sourcing (runs in current scope)
+. .\hello.ps1</div>
+
+                        <p><strong>Expected Output:</strong></p>
+                        <div class="script-output">Hello, World!
+Welcome to PowerShell scripting!
+Today is 02/20/2026 10:30:45</div>
+                    </div>
+
+                    <div class="definition-box">
+                        <h4>📖 Script File Basics</h4>
+                        <ul>
+                            <li><strong>.ps1 extension:</strong> PowerShell script files</li>
+                            <li><strong>Comments:</strong> Use # for single-line, &lt;# #&gt; for multi-line</li>
+                            <li><strong>Execution:</strong> Must use .\ prefix when running from current directory</li>
+                            <li><strong>Encoding:</strong> Save as UTF-8 or UTF-8 with BOM</li>
+                        </ul>
+                    </div>
+
+                    <h3>Script Structure and Organization</h3>
+
+                    <div class="example-box">
+                        <h4>Well-Structured Script Template</h4>
+                        <div class="code-block"><#
+.SYNOPSIS
+    Brief description of script purpose
+
+.DESCRIPTION
+    Detailed description of what the script does
+
+.PARAMETER ComputerName
+    Description of the ComputerName parameter
+
+.EXAMPLE
+    .\MyScript.ps1 -ComputerName "Server01"
+    Example of how to run the script
+
+.NOTES
+    Author: Your Name
+    Date: 2026-02-20
+    Version: 1.0
+#>
+
+# ============================================
+# Parameters
+# ============================================
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$ComputerName = $env:COMPUTERNAME
+)
+
+# ============================================
+# Configuration Variables
+# ============================================
+$LogFile = "C:\Logs\script.log"
+$ErrorActionPreference = "Stop"
+
+# ============================================
+# Functions
+# ============================================
+function Write-Log {
+    param([string]$Message)
+    
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    "$timestamp - $Message" | Out-File -FilePath $LogFile -Append
+    Write-Host $Message
+}
+
+# ============================================
+# Main Script Logic
+# ============================================
+try {
+    Write-Log "Script started"
+    
+    # Your main script code here
+    
+    Write-Log "Script completed successfully"
+    exit 0
+}
+catch {
+    Write-Log "ERROR: $($_.Exception.Message)"
+    exit 1
+}</div>
+                    </div>
+
+                    <h3>Comment-Based Help</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Comment-Based Help</h4>
+                        <p><strong>Comment-based help</strong> is a special comment block at the beginning of a script that provides documentation accessible via Get-Help.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Comment-Based Help Example</h4>
+                        <div class="code-block"><#
+.SYNOPSIS
+    Backs up specified directory to destination
+
+.DESCRIPTION
+    This script creates a compressed backup of a source directory
+    to a destination location with timestamp. It includes verification
+    and logging capabilities.
+
+.PARAMETER SourcePath
+    The directory to backup (required)
+
+.PARAMETER DestinationPath
+    The backup destination directory (required)
+
+.PARAMETER Compress
+    Switch to enable compression (optional)
+
+.EXAMPLE
+    .\Backup-Directory.ps1 -SourcePath "C:\Data" -DestinationPath "D:\Backups"
+    
+    Creates backup of C:\Data to D:\Backups
+
+.EXAMPLE
+    .\Backup-Directory.ps1 -SourcePath "C:\Data" -DestinationPath "D:\Backups" -Compress
+    
+    Creates compressed backup
+
+.NOTES
+    Author: John Doe
+    Date: 2026-02-20
+    Version: 1.0
+    Requires: PowerShell 5.1 or higher
+    
+.LINK
+    https://docs.microsoft.com/powershell
+#>
+
+# Script code follows...</div>
+
+                        <p><strong>Using the help:</strong></p>
+                        <div class="code-block"># Get help for your script
+Get-Help .\Backup-Directory.ps1
+
+# Get examples
+Get-Help .\Backup-Directory.ps1 -Examples
+
+# Get detailed help
+Get-Help .\Backup-Directory.ps1 -Detailed</div>
+                    </div>
+
+                    <h3>Script Parameters</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Script Parameters</h4>
+                        <p>Parameters allow scripts to accept input, making them flexible and reusable. PowerShell provides rich parameter capabilities including validation, mandatory parameters, and default values.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Basic Parameter Examples</h4>
+                        <div class="code-block"># Simple parameter
+param(
+    $ComputerName
+)
+
+Write-Host "Computer: $ComputerName"
+
+# Multiple parameters
+param(
+    $FirstName,
+    $LastName,
+    $Age
+)
+
+Write-Host "$FirstName $LastName is $Age years old"
+
+# Typed parameters
+param(
+    [string]$ComputerName,
+    [int]$Port,
+    [bool]$UseSSL
+)
+
+# Parameters with default values
+param(
+    [string]$ComputerName = $env:COMPUTERNAME,
+    [int]$Port = 80,
+    [string]$Protocol = "HTTP"
+)
+
+# Mandatory parameters
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$UserName,
+    
+    [Parameter(Mandatory=$false)]
+    [string]$Department = "IT"
+)
+
+# Running scripts with parameters:
+.\script.ps1 -ComputerName "Server01"
+.\script.ps1 -UserName "jdoe" -Department "Sales"</div>
+                    </div>
+
+                    <h3>Parameter Validation</h3>
+
+                    <div class="example-box">
+                        <h4>Parameter Validation Attributes</h4>
+                        <div class="code-block">param(
+    # Not null or empty
+    [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$UserName,
+    
+    # Must be in specified set
+    [ValidateSet("Development", "Testing", "Production")]
+    [string]$Environment,
+    
+    # Must match pattern (regex)
+    [ValidatePattern("^[A-Z]{2}\d{4}$")]
+    [string]$EmployeeID,
+    
+    # Must be within range
+    [ValidateRange(1, 100)]
+    [int]$Percentage,
+    
+    # Must be valid file path
+    [ValidateScript({Test-Path $_})]
+    [string]$FilePath,
+    
+    # String length validation
+    [ValidateLength(3, 20)]
+    [string]$Name,
+    
+    # Number validation
+    [ValidateRange(1024, 65535)]
+    [int]$Port = 8080
+)
+
+# Usage examples:
+.\script.ps1 -UserName "jdoe" -Environment "Production"
+.\script.ps1 -EmployeeID "AB1234" -Percentage 75
+.\script.ps1 -FilePath "C:\Data\file.txt" -Port 8080</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Create your first script:</p>
+                        <ol>
+                            <li>Create a script called <code>Get-SystemInfo.ps1</code></li>
+                            <li>Add comment-based help with synopsis and description</li>
+                            <li>Add a parameter for ComputerName with default value</li>
+                            <li>Display system information (hostname, OS, memory, disk)</li>
+                            <li>Test the script with and without parameters</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Script Basics</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> What is the correct file extension for PowerShell scripts?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="a">
+                                <span>.sh</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="b">
+                                <span>.ps1</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="c">
+                                <span>.bat</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="d">
+                                <span>.cmd</span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q1', 'b', 'feedback1')">Check Answer</button>
+                        <div id="feedback1" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Variables Section -->
+                <section id="variables" class="section">
+                    <h2>Variables and Data Types</h2>
+                    
+                    <p>Variables in PowerShell are more sophisticated than in Bash, with strong typing support, automatic type conversion, and rich data type capabilities.</p>
+
+                    <h3>Variable Basics</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 PowerShell Variables</h4>
+                        <p>Variables in PowerShell always begin with a <code>$</code> sign. Unlike Bash, PowerShell variables are objects with types, and the assignment operator is <code>=</code> with spaces allowed.</p>
+                        
+                        <p><strong>Syntax:</strong></p>
+                        <div class="code-block">$variableName = value
+
+# Examples:
+$name = "John"
+$age = 25
+$isAdmin = $true</div>
+                    </div>
+
+                    <div class="comparison-table">
+                        <div class="comparison-card">
+                            <h4>🐧 Bash Variables</h4>
+                            <div class="code-block" data-lang="bash"># No spaces around =
+name="John"
+
+# No $ in assignment
+age=25
+
+# Access with $
+echo $name
+
+# Everything is text
+count="10"</div>
+                        </div>
+
+                        <div class="comparison-card">
+                            <h4>⚡ PowerShell Variables</h4>
+                            <div class="code-block"># Spaces allowed
+$name = "John"
+
+# $ in both assignment and use
+$age = 25
+
+# Access with $
+Write-Host $name
+
+# Strongly typed
+[int]$count = 10</div>
+                        </div>
+                    </div>
+
+                    <h3>PowerShell Data Types</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>[string]</code></td>
+                                <td>Text data</td>
+                                <td><code>$name = "John"</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>[int]</code></td>
+                                <td>32-bit integer</td>
+                                <td><code>$count = 42</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>[long]</code></td>
+                                <td>64-bit integer</td>
+                                <td><code>$bigNumber = 9999999999</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>[double]</code></td>
+                                <td>Floating-point number</td>
+                                <td><code>$price = 19.99</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>[bool]</code></td>
+                                <td>Boolean (true/false)</td>
+                                <td><code>$isActive = $true</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>[datetime]</code></td>
+                                <td>Date and time</td>
+                                <td><code>$date = Get-Date</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>[array]</code></td>
+                                <td>Collection of items</td>
+                                <td><code>$items = @(1,2,3)</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>[hashtable]</code></td>
+                                <td>Key-value pairs</td>
+                                <td><code>$hash = @{key="value"}</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Variable Declaration Examples</h4>
+                        <div class="code-block"># Implicit typing (PowerShell infers type)
+$name = "Alice"              # String
+$age = 30                    # Int32
+$price = 19.99               # Double
+$isActive = $true            # Boolean
+
+# Explicit typing (recommended for clarity)
+[string]$name = "Alice"
+[int]$age = 30
+[double]$price = 19.99
+[bool]$isActive = $true
+
+# Check variable type
+$name.GetType()
+# Output: IsPublic IsSerial Name    BaseType
+#         True     True     String  System.Object
+
+# Type conversion
+[int]$number = "123"         # String to int
+[string]$text = 123          # Int to string
+[datetime]$date = "2026-02-20"  # String to DateTime
+
+# Multiple assignment
+$first, $last = "John", "Doe"
+$x = $y = $z = 0
+
+# Null values
+$emptyVar = $null
+if ($emptyVar -eq $null) {
+    Write-Host "Variable is null"
+}</div>
+                    </div>
+
+                    <h3>String Manipulation</h3>
+
+                    <div class="example-box">
+                        <h4>Working with Strings</h4>
+                        <div class="code-block"># String concatenation
+$firstName = "John"
+$lastName = "Doe"
+$fullName = $firstName + " " + $lastName
+Write-Host $fullName  # Output: John Doe
+
+# String interpolation (double quotes)
+$greeting = "Hello, $firstName!"
+Write-Host $greeting  # Output: Hello, John!
+
+# Expression in strings
+$message = "You have $($items.Count) items"
+$path = "C:\Users\$env:USERNAME\Documents"
+
+# Literal strings (single quotes - no interpolation)
+$literal = 'The variable $name will not expand'
+Write-Host $literal  # Output: The variable $name will not expand
+
+# Here-strings (multi-line)
+$multiLine = @"
+This is line 1
+This is line 2 with $firstName
+This is line 3
+"@
+
+# Literal here-string
+$literalMulti = @'
+This won't expand: $firstName
+'@
+
+# String methods
+$text = "Hello, PowerShell!"
+$text.ToUpper()              # HELLO, POWERSHELL!
+$text.ToLower()              # hello, powershell!
+$text.Length                 # 18
+$text.Substring(0, 5)        # Hello
+$text.Replace("Hello", "Hi") # Hi, PowerShell!
+$text.Contains("Power")      # True
+$text.StartsWith("Hello")    # True
+$text.EndsWith("!")          # True
+$text.Split(",")             # Split into array
+$text.Trim()                 # Remove whitespace
+
+# String formatting
+$name = "Alice"
+$age = 30
+$formatted = "Name: {0}, Age: {1}" -f $name, $age
+$formatted2 = "Name: $name, Age: $age"</div>
+                    </div>
+
+                    <h3>Automatic Variables</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Automatic Variables</h4>
+                        <p><strong>Automatic variables</strong> are created and maintained by PowerShell. They provide information about the PowerShell environment and state.</p>
+                    </div>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Example Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>$PSVersionTable</code></td>
+                                <td>PowerShell version info</td>
+                                <td>Version 5.1.19041.1</td>
+                            </tr>
+                            <tr>
+                                <td><code>$PSScriptRoot</code></td>
+                                <td>Directory containing script</td>
+                                <td>C:\Scripts</td>
+                            </tr>
+                            <tr>
+                                <td><code>$PSCommandPath</code></td>
+                                <td>Full path to script</td>
+                                <td>C:\Scripts\script.ps1</td>
+                            </tr>
+                            <tr>
+                                <td><code>$_</code> or <code>$PSItem</code></td>
+                                <td>Current pipeline object</td>
+                                <td>Current object in pipeline</td>
+                            </tr>
+                            <tr>
+                                <td><code>$args</code></td>
+                                <td>Array of unnamed parameters</td>
+                                <td>@("arg1", "arg2")</td>
+                            </tr>
+                            <tr>
+                                <td><code>$?</code></td>
+                                <td>Success status of last command</td>
+                                <td>$true or $false</td>
+                            </tr>
+                            <tr>
+                                <td><code>$LASTEXITCODE</code></td>
+                                <td>Exit code of last program</td>
+                                <td>0 (success) or error code</td>
+                            </tr>
+                            <tr>
+                                <td><code>$Error</code></td>
+                                <td>Array of error objects</td>
+                                <td>Most recent errors</td>
+                            </tr>
+                            <tr>
+                                <td><code>$HOME</code></td>
+                                <td>User's home directory</td>
+                                <td>C:\Users\username</td>
+                            </tr>
+                            <tr>
+                                <td><code>$env:COMPUTERNAME</code></td>
+                                <td>Computer name</td>
+                                <td>SERVER01</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Using Automatic Variables</h4>
+                        <div class="code-block"># Display PowerShell version
+Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)"
+
+# Get script location
+Write-Host "Script directory: $PSScriptRoot"
+Write-Host "Script path: $PSCommandPath"
+
+# Use in paths
+$logPath = Join-Path $PSScriptRoot "logs"
+$configFile = Join-Path $PSScriptRoot "config.json"
+
+# Check last command success
+Get-Service NonExistentService -ErrorAction SilentlyContinue
+if ($?) {
+    Write-Host "Command succeeded"
+} else {
+    Write-Host "Command failed"
+}
+
+# Access environment variables
+Write-Host "Computer: $env:COMPUTERNAME"
+Write-Host "User: $env:USERNAME"
+Write-Host "OS: $env:OS"
+Write-Host "Path: $env:PATH"
+
+# View all environment variables
+Get-ChildItem Env:</div>
+                    </div>
+
+                    <h3>Variable Scope</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 PowerShell Variable Scope</h4>
+                        <p>PowerShell has four scope levels:</p>
+                        <ul>
+                            <li><strong>Global:</strong> Available everywhere</li>
+                            <li><strong>Script:</strong> Available throughout the script</li>
+                            <li><strong>Local:</strong> Current scope only (default)</li>
+                            <li><strong>Private:</strong> Current scope, not visible to child scopes</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Variable Scope Examples</h4>
+                        <div class="code-block"># Local variable (default)
+$localVar = "I'm local"
+
+# Script scope
+$script:scriptVar = "Available throughout script"
+
+# Global scope
+$global:globalVar = "Available everywhere"
+
+# Private scope
+$private:privateVar = "Only in this scope"
+
+# Function demonstrating scope
+function Test-Scope {
+    # Can access script and global variables
+    Write-Host "Script var: $script:scriptVar"
+    Write-Host "Global var: $global:globalVar"
+    
+    # Local to function
+    $localVar = "Function local"
+    Write-Host "Local var: $localVar"
+}
+
+Test-Scope
+Write-Host "After function: $localVar"  # Original value
+
+# Explicit scope access
+$name = "John"
+function Change-Name {
+    $name = "Alice"              # Creates local variable
+    Write-Host "Inside: $name"   # Alice
+}
+Change-Name
+Write-Host "Outside: $name"      # John (unchanged)
+
+# Modify parent scope
+function Change-NameGlobal {
+    $script:name = "Alice"       # Modifies script-level variable
+}
+Change-NameGlobal
+Write-Host "Outside: $name"      # Alice (changed)</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice with variables:</p>
+                        <ol>
+                            <li>Create variables of different types (string, int, bool, datetime)</li>
+                            <li>Practice string interpolation and concatenation</li>
+                            <li>Use automatic variables like $PSScriptRoot and $env:USERNAME</li>
+                            <li>Create a script that accepts parameters with validation</li>
+                            <li>Experiment with variable scope in functions</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Conditionals Section -->
+                <section id="conditionals" class="section">
+                    <h2>Conditional Logic</h2>
+                    
+                    <p>PowerShell provides robust conditional statements for decision-making in scripts. The syntax is similar to C# and other C-style languages.</p>
+
+                    <h3>The if Statement</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 if/elseif/else Structure</h4>
+                        <p>PowerShell's if statement uses C-style syntax with curly braces:</p>
+                        
+                        <div class="code-block"># Basic syntax
+if (condition) {
+    # commands if true
+}
+
+# With else
+if (condition) {
+    # commands if true
+} else {
+    # commands if false
+}
+
+# With elseif
+if (condition1) {
+    # commands if condition1 true
+} elseif (condition2) {
+    # commands if condition2 true
+} else {
+    # commands if all false
+}</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Basic if Statement Examples</h4>
+                        <div class="code-block"># Simple condition
+$age = 25
+
+if ($age -ge 18) {
+    Write-Host "You are an adult"
+}
+
+# if/else
+if ($age -ge 18) {
+    Write-Host "You are an adult"
+} else {
+    Write-Host "You are a minor"
+}
+
+# if/elseif/else
+$score = 85
+
+if ($score -ge 90) {
+    Write-Host "Grade: A"
+} elseif ($score -ge 80) {
+    Write-Host "Grade: B"
+} elseif ($score -ge 70) {
+    Write-Host "Grade: C"
+} elseif ($score -ge 60) {
+    Write-Host "Grade: D"
+} else {
+    Write-Host "Grade: F"
+}
+
+# Checking service status
+$service = Get-Service -Name "wuauserv"
+
+if ($service.Status -eq "Running") {
+    Write-Host "Windows Update service is running" -ForegroundColor Green
+} else {
+    Write-Host "Windows Update service is stopped" -ForegroundColor Red
+    Start-Service -Name "wuauserv"
+}</div>
+                    </div>
+
+                    <h3>Comparison Operators</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-eq</code></td>
+                                <td>Equal to</td>
+                                <td><code>$a -eq $b</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-ne</code></td>
+                                <td>Not equal to</td>
+                                <td><code>$a -ne $b</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-gt</code></td>
+                                <td>Greater than</td>
+                                <td><code>$a -gt $b</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-ge</code></td>
+                                <td>Greater than or equal</td>
+                                <td><code>$a -ge $b</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-lt</code></td>
+                                <td>Less than</td>
+                                <td><code>$a -lt $b</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-le</code></td>
+                                <td>Less than or equal</td>
+                                <td><code>$a -le $b</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-like</code></td>
+                                <td>Wildcard match</td>
+                                <td><code>$name -like "J*"</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-notlike</code></td>
+                                <td>Wildcard not match</td>
+                                <td><code>$name -notlike "A*"</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-match</code></td>
+                                <td>Regex match</td>
+                                <td><code>$text -match "^\d{3}"</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-contains</code></td>
+                                <td>Array contains value</td>
+                                <td><code>$array -contains "item"</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Comparison Operator Examples</h4>
+                        <div class="code-block"># Numeric comparisons
+$x = 10
+$y = 20
+
+if ($x -lt $y) {
+    Write-Host "$x is less than $y"
+}
+
+if ($x -eq 10) {
+    Write-Host "x equals 10"
+}
+
+# String comparisons (case-insensitive by default)
+$name = "Alice"
+
+if ($name -eq "alice") {
+    Write-Host "Names match (case-insensitive)"
+}
+
+# Case-sensitive comparison
+if ($name -ceq "Alice") {
+    Write-Host "Names match (case-sensitive)"
+}
+
+# Wildcard matching
+$filename = "report.txt"
+
+if ($filename -like "*.txt") {
+    Write-Host "This is a text file"
+}
+
+# Regex matching
+$email = "user@example.com"
+
+if ($email -match "^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$") {
+    Write-Host "Valid email format"
+}
+
+# Array contains
+$servers = @("Server01", "Server02", "Server03")
+
+if ($servers -contains "Server01") {
+    Write-Host "Server01 is in the list"
+}
+
+# Not operator
+if ($servers -notcontains "Server99") {
+    Write-Host "Server99 is not in the list"
+}</div>
+                    </div>
+
+                    <h3>Logical Operators</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-and</code></td>
+                                <td>Logical AND</td>
+                                <td><code>($a -gt 5) -and ($b -lt 10)</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-or</code></td>
+                                <td>Logical OR</td>
+                                <td><code>($a -eq 1) -or ($b -eq 2)</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-not</code> or <code>!</code></td>
+                                <td>Logical NOT</td>
+                                <td><code>-not ($a -eq 5)</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-xor</code></td>
+                                <td>Exclusive OR</td>
+                                <td><code>($a) -xor ($b)</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Logical Operator Examples</h4>
+                        <div class="code-block"># AND operator
+$age = 25
+$hasLicense = $true
+
+if (($age -ge 18) -and ($hasLicense -eq $true)) {
+    Write-Host "You can drive"
+}
+
+# OR operator
+$isAdmin = $false
+$isSuperUser = $true
+
+if (($isAdmin -eq $true) -or ($isSuperUser -eq $true)) {
+    Write-Host "You have elevated privileges"
+}
+
+# NOT operator
+$serviceRunning = $false
+
+if (-not $serviceRunning) {
+    Write-Host "Service is not running"
+    # Start service
+}
+
+# Complex conditions
+$diskUsage = 85
+$memoryUsage = 70
+$cpuUsage = 60
+
+if (($diskUsage -gt 80) -or ($memoryUsage -gt 80) -or ($cpuUsage -gt 80)) {
+    Write-Host "System resources are high" -ForegroundColor Yellow
+    
+    if (($diskUsage -gt 90) -and ($memoryUsage -gt 90)) {
+        Write-Host "CRITICAL: Multiple resources critically high!" -ForegroundColor Red
+    }
+}</div>
+                    </div>
+
+                    <h3>The switch Statement</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 switch Statement</h4>
+                        <p>The <code>switch</code> statement is used when you need to compare a value against multiple conditions. It's cleaner than multiple if/elseif statements.</p>
+                        
+                        <div class="code-block"># Basic syntax
+switch (expression) {
+    value1 { commands }
+    value2 { commands }
+    default { commands }
+}</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>switch Statement Examples</h4>
+                        <div class="code-block"># Basic switch
+$action = "Start"
+
+switch ($action) {
+    "Start" {
+        Write-Host "Starting service..."
+        # Start-Service -Name "MyService"
+    }
+    "Stop" {
+        Write-Host "Stopping service..."
+        # Stop-Service -Name "MyService"
+    }
+    "Restart" {
+        Write-Host "Restarting service..."
+        # Restart-Service -Name "MyService"
+    }
+    default {
+        Write-Host "Unknown action: $action"
+    }
+}
+
+# Switch with wildcards
+$filename = "report.txt"
+
+switch -Wildcard ($filename) {
+    "*.txt" {
+        Write-Host "Text file"
+    }
+    "*.log" {
+        Write-Host "Log file"
+    }
+    "*.csv" {
+        Write-Host "CSV file"
+    }
+    default {
+        Write-Host "Unknown file type"
+    }
+}
+
+# Switch with regex
+$input = "Error: Connection failed"
+
+switch -Regex ($input) {
+    "^Error:" {
+        Write-Host "This is an error message" -ForegroundColor Red
+    }
+    "^Warning:" {
+        Write-Host "This is a warning" -ForegroundColor Yellow
+    }
+    "^Info:" {
+        Write-Host "This is informational" -ForegroundColor Green
+    }
+}
+
+# Switch with multiple matches
+$number = 2
+
+switch ($number) {
+    {$_ -lt 5} {
+        Write-Host "Less than 5"
+    }
+    {$_ -gt 0} {
+        Write-Host "Greater than 0"
+    }
+    {$_ % 2 -eq 0} {
+        Write-Host "Even number"
+    }
+}
+# All three conditions match and execute!
+
+# Switch with break (stop after first match)
+switch ($number) {
+    {$_ -lt 5} {
+        Write-Host "Less than 5"
+        break
+    }
+    {$_ -gt 0} {
+        Write-Host "Greater than 0"
+        break
+    }
+}
+# Only first match executes</div>
+                    </div>
+
+                    <h3>Testing Conditions</h3>
+
+                    <div class="example-box">
+                        <h4>Common Conditional Patterns</h4>
+                        <div class="code-block"># Check if file exists
+if (Test-Path "C:\file.txt") {
+    Write-Host "File exists"
+}
+
+# Check if variable is null or empty
+if ([string]::IsNullOrEmpty($variable)) {
+    Write-Host "Variable is null or empty"
+}
+
+# Check if service is running
+$service = Get-Service -Name "wuauserv"
+if ($service.Status -eq "Running") {
+    Write-Host "Service is running"
+}
+
+# Check if user has admin privileges
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if ($isAdmin) {
+    Write-Host "Running as administrator"
+} else {
+    Write-Host "Not running as administrator"
+    exit
+}
+
+# Check multiple conditions
+$path = "C:\Data"
+
+if ((Test-Path $path) -and (Get-ChildItem $path).Count -gt 0) {
+    Write-Host "Directory exists and contains files"
+}</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice conditional logic:</p>
+                        <ol>
+                            <li>Create a script that checks if a service is running and starts it if stopped</li>
+                            <li>Write a script that validates user input (age between 1-120)</li>
+                            <li>Create a switch statement that processes different file extensions</li>
+                            <li>Write a script that checks disk space and displays appropriate warnings</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Conditionals</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> Which operator tests if a value is greater than or equal to another?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="a">
+                                <span><code>-gt</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="b">
+                                <span><code>-ge</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="c">
+                                <span><code>-eq</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="d">
+                                <span><code>-le</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q2', 'b', 'feedback2')">Check Answer</button>
+                        <div id="feedback2" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Loops Section -->
+                <section id="loops" class="section">
+                    <h2>Loops and Iteration</h2>
+                    
+                    <p>PowerShell provides multiple loop constructs for iterating over collections, repeating operations, and processing data. The syntax is similar to C# and other modern programming languages.</p>
+
+                    <h3>The foreach Loop</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 foreach Loop</h4>
+                        <p>The <code>foreach</code> loop iterates over a collection of items. It's the most common loop in PowerShell scripting.</p>
+                        
+                        <div class="code-block"># Syntax
+foreach ($item in $collection) {
+    # commands
+}</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>foreach Loop Examples</h4>
+                        <div class="code-block"># Loop through array
+$fruits = @("Apple", "Banana", "Orange", "Grape")
+
+foreach ($fruit in $fruits) {
+    Write-Host "I like $fruit"
+}
+
+# Loop through numbers
+foreach ($number in 1..10) {
+    Write-Host "Number: $number"
+}
+
+# Loop through files
+$files = Get-ChildItem -Path "C:\Logs" -Filter "*.log"
+
+foreach ($file in $files) {
+    Write-Host "Processing: $($file.Name)"
+    Write-Host "  Size: $($file.Length) bytes"
+    Write-Host "  Modified: $($file.LastWriteTime)"
+}
+
+# Loop through services
+$services = Get-Service
+
+foreach ($service in $services) {
+    if ($service.Status -eq "Stopped" -and $service.StartType -eq "Automatic") {
+        Write-Host "WARNING: $($service.Name) is stopped but set to Automatic" -ForegroundColor Yellow
+    }
+}
+
+# Loop through hash table
+$servers = @{
+    "Web" = "192.168.1.10"
+    "Database" = "192.168.1.20"
+    "File" = "192.168.1.30"
+}
+
+foreach ($server in $servers.GetEnumerator()) {
+    Write-Host "$($server.Key) Server: $($server.Value)"
+    Test-Connection -ComputerName $server.Value -Count 1 -Quiet
+}</div>
+                    </div>
+
+                    <h3>ForEach-Object Cmdlet</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 ForEach-Object vs foreach</h4>
+                        <p><code>ForEach-Object</code> is a cmdlet (not a language statement) that processes objects in the pipeline. It's different from the <code>foreach</code> loop:</p>
+                        <ul>
+                            <li><strong>foreach loop:</strong> Language construct, processes collections in memory</li>
+                            <li><strong>ForEach-Object:</strong> Pipeline cmdlet, processes objects one at a time</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>ForEach-Object Examples</h4>
+                        <div class="code-block"># Basic ForEach-Object
+Get-Process | ForEach-Object {
+    Write-Host $_.ProcessName
+}
+
+# Using alias (%)
+Get-Process | % {
+    Write-Host $_.ProcessName
+}
+
+# Process each service
+Get-Service | ForEach-Object {
+    if ($_.Status -eq "Running") {
+        Write-Host "$($_.Name) is running" -ForegroundColor Green
+    }
+}
+
+# Perform action on each file
+Get-ChildItem -Path "C:\Logs" -Filter "*.log" | ForEach-Object {
+    # Compress each log file
+    Compress-Archive -Path $_.FullName -DestinationPath "$($_.FullName).zip"
+}
+
+# Calculate total
+$total = 0
+1..100 | ForEach-Object {
+    $total += $_
+}
+Write-Host "Sum of 1-100: $total"
+
+# Using Begin, Process, End blocks
+Get-Process | ForEach-Object -Begin {
+    Write-Host "Starting process analysis..."
+    $count = 0
+} -Process {
+    $count++
+    Write-Host "Process $count: $($_.ProcessName)"
+} -End {
+    Write-Host "Total processes: $count"
+}</div>
+                    </div>
+
+                    <h3>The for Loop</h3>
+
+                    <div class="example-box">
+                        <h4>for Loop Examples</h4>
+                        <div class="code-block"># C-style for loop
+for ($i = 0; $i -lt 10; $i++) {
+    Write-Host "Iteration: $i"
+}
+
+# Countdown
+for ($i = 10; $i -ge 0; $i--) {
+    Write-Host "T-minus $i"
+    Start-Sleep -Seconds 1
+}
+
+# Loop with step
+for ($i = 0; $i -le 100; $i += 10) {
+    Write-Host "Count: $i"
+}
+
+# Loop through array by index
+$items = @("Item1", "Item2", "Item3")
+for ($i = 0; $i -lt $items.Count; $i++) {
+    Write-Host "Index $i : $($items[$i])"
+}
+
+# Nested for loops
+for ($i = 1; $i -le 5; $i++) {
+    for ($j = 1; $j -le 5; $j++) {
+        Write-Host "$i x $j = $($i * $j)"
+    }
+}</div>
+                    </div>
+
+                    <h3>The while Loop</h3>
+
+                    <div class="example-box">
+                        <h4>while Loop Examples</h4>
+                        <div class="code-block"># Basic while loop
+$count = 1
+
+while ($count -le 5) {
+    Write-Host "Count: $count"
+    $count++
+}
+
+# Wait for service to start
+$service = Get-Service -Name "wuauserv"
+
+while ($service.Status -ne "Running") {
+    Write-Host "Waiting for service to start..."
+    Start-Sleep -Seconds 2
+    $service.Refresh()
+}
+
+Write-Host "Service is now running"
+
+# Retry logic
+$maxAttempts = 3
+$attempt = 1
+$success = $false
+
+while (($attempt -le $maxAttempts) -and (-not $success)) {
+    Write-Host "Attempt $attempt of $maxAttempts"
+    
+    try {
+        # Try operation
+        Test-Connection -ComputerName "server.example.com" -Count 1 -ErrorAction Stop
+        $success = $true
+        Write-Host "Connection successful!"
+    }
+    catch {
+        Write-Host "Connection failed, retrying..."
+        $attempt++
+        Start-Sleep -Seconds 2
+    }
+}
+
+if (-not $success) {
+    Write-Host "Failed after $maxAttempts attempts"
+}
+
+# Infinite loop with break
+while ($true) {
+    $input = Read-Host "Enter command (or 'quit' to exit)"
+    
+    if ($input -eq "quit") {
+        break
+    }
+    
+    Write-Host "You entered: $input"
+}</div>
+                    </div>
+
+                    <h3>The do-while and do-until Loops</h3>
+
+                    <div class="example-box">
+                        <h4>do-while and do-until Examples</h4>
+                        <div class="code-block"># do-while (executes at least once)
+$count = 1
+
+do {
+    Write-Host "Count: $count"
+    $count++
+} while ($count -le 5)
+
+# do-until (opposite of do-while)
+$count = 1
+
+do {
+    Write-Host "Count: $count"
+    $count++
+} until ($count -gt 5)
+
+# Menu system with do-while
+do {
+    Write-Host "`n===== System Menu ====="
+    Write-Host "1. Show Services"
+    Write-Host "2. Show Processes"
+    Write-Host "3. Show Disk Space"
+    Write-Host "4. Exit"
+    Write-Host "======================="
+    
+    $choice = Read-Host "Enter choice (1-4)"
+    
+    switch ($choice) {
+        "1" {
+            Get-Service | Select-Object -First 10
+        }
+        "2" {
+            Get-Process | Select-Object -First 10
+        }
+        "3" {
+            Get-PSDrive -PSProvider FileSystem
+        }
+        "4" {
+            Write-Host "Goodbye!"
+        }
+        default {
+            Write-Host "Invalid choice" -ForegroundColor Red
+        }
+    }
+} while ($choice -ne "4")</div>
+                    </div>
+
+                    <h3>Loop Control: break and continue</h3>
+
+                    <div class="example-box">
+                        <h4>break and continue Examples</h4>
+                        <div class="code-block"># break - exit loop
+foreach ($number in 1..10) {
+    if ($number -eq 5) {
+        Write-Host "Reached 5, breaking out"
+        break
+    }
+    Write-Host $number
+}
+
+# continue - skip to next iteration
+foreach ($number in 1..10) {
+    if ($number % 2 -eq 0) {
+        continue  # Skip even numbers
+    }
+    Write-Host "Odd number: $number"
+}
+
+# Real-world example: Process files
+$files = Get-ChildItem -Path "C:\Data" -Filter "*.txt"
+
+foreach ($file in $files) {
+    # Skip empty files
+    if ($file.Length -eq 0) {
+        Write-Host "Skipping empty file: $($file.Name)"
+        continue
+    }
+    
+    # Skip files larger than 10MB
+    if ($file.Length -gt 10MB) {
+        Write-Host "Skipping large file: $($file.Name)"
+        continue
+    }
+    
+    # Process the file
+    Write-Host "Processing: $($file.Name)"
+    # Do something with the file
+}
+
+# Search with break
+$found = $false
+$searchPath = @("C:\Windows\System32", "C:\Program Files", "C:\Windows")
+
+foreach ($path in $searchPath) {
+    $file = Join-Path $path "notepad.exe"
+    
+    if (Test-Path $file) {
+        Write-Host "Found: $file"
+        $found = $true
+        break
+    }
+}
+
+if (-not $found) {
+    Write-Host "File not found in any location"
+}</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice loops:</p>
+                        <ol>
+                            <li>Write a foreach loop that processes all .txt files in a directory</li>
+                            <li>Create a while loop that monitors a service status</li>
+                            <li>Use a for loop to create 10 test directories</li>
+                            <li>Implement a menu system using do-while and switch</li>
+                            <li>Write a script that retries a connection up to 5 times</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Loops</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> What will this code output?</p>
+                            <div class="code-block">foreach ($i in 1..5) {
+    if ($i -eq 3) {
+        continue
+    }
+    Write-Host $i
+}</div>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="a">
+                                <span>1 2 3 4 5</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="b">
+                                <span>1 2 4 5</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="c">
+                                <span>1 2</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="d">
+                                <span>3</span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q3', 'b', 'feedback3')">Check Answer</button>
+                        <div id="feedback3" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Arrays Section -->
+                <section id="arrays" class="section">
+                    <h2>Arrays and Collections</h2>
+                    
+                    <p>PowerShell provides powerful collection types for storing and manipulating multiple values. Understanding arrays and hash tables is essential for processing data in scripts.</p>
+
+                    <h3>Arrays</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 PowerShell Arrays</h4>
+                        <p>An <strong>array</strong> is an ordered collection of items. PowerShell arrays are zero-indexed and can contain mixed types.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Creating and Using Arrays</h4>
+                        <div class="code-block"># Create array with @() syntax
+$fruits = @("Apple", "Banana", "Orange")
+
+# Create array with comma-separated values
+$numbers = 1, 2, 3, 4, 5
+
+# Create empty array
+$emptyArray = @()
+
+# Create array with range
+$range = 1..10
+
+# Mixed-type array
+$mixed = @("text", 123, $true, (Get-Date))
+
+# Access elements (zero-indexed)
+$fruits[0]           # Apple
+$fruits[1]           # Banana
+$fruits[-1]          # Orange (last element)
+$fruits[-2]          # Banana (second to last)
+
+# Array slicing
+$numbers[0..2]       # First three elements
+$numbers[2..4]       # Elements 2, 3, 4
+$numbers[-3..-1]     # Last three elements
+
+# Array length
+$fruits.Count        # 3
+$fruits.Length       # 3
+
+# Check if array contains value
+$fruits -contains "Apple"    # True
+$fruits -notcontains "Pear"  # True</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Modifying Arrays</h4>
+                        <div class="code-block"># Add elements (creates new array)
+$fruits = @("Apple", "Banana")
+$fruits += "Orange"
+$fruits += "Grape"
+
+# Note: += creates a new array each time (inefficient for large arrays)
+
+# Remove elements (creates new array)
+$fruits = $fruits | Where-Object {$_ -ne "Banana"}
+
+# Modify element
+$fruits[0] = "Red Apple"
+
+# Clear array
+$fruits = @()
+
+# Using ArrayList for dynamic arrays (more efficient)
+$arrayList = [System.Collections.ArrayList]@()
+$arrayList.Add("Item1") | Out-Null
+$arrayList.Add("Item2") | Out-Null
+$arrayList.Remove("Item1")
+$arrayList.Count
+
+# Generic List (best for large collections)
+$list = [System.Collections.Generic.List[string]]::new()
+$list.Add("Item1")
+$list.Add("Item2")
+$list.Remove("Item1")
+$list.Count</div>
+                    </div>
+
+                    <h3>Hash Tables</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Hash Tables (Dictionaries)</h4>
+                        <p>A <strong>hash table</strong> stores key-value pairs, allowing you to look up values by their keys. They're perfect for configuration data, lookup tables, and structured data.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Creating and Using Hash Tables</h4>
+                        <div class="code-block"># Create hash table
+$person = @{
+    FirstName = "John"
+    LastName = "Doe"
+    Age = 30
+    Department = "IT"
+}
+
+# Access values
+$person["FirstName"]     # John
+$person.FirstName        # John (dot notation)
+$person["Age"]           # 30
+
+# Add new key-value pair
+$person["Email"] = "john.doe@example.com"
+$person.Phone = "555-1234"
+
+# Modify value
+$person["Age"] = 31
+$person.Age = 31
+
+# Remove key
+$person.Remove("Phone")
+
+# Check if key exists
+$person.ContainsKey("Email")      # True
+$person.ContainsKey("Salary")     # False
+
+# Get all keys
+$person.Keys
+
+# Get all values
+$person.Values
+
+# Count items
+$person.Count
+
+# Loop through hash table
+foreach ($key in $person.Keys) {
+    Write-Host "$key : $($person[$key])"
+}
+
+# Alternative loop method
+foreach ($item in $person.GetEnumerator()) {
+    Write-Host "$($item.Key) : $($item.Value)"
+}</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Real-World Hash Table Examples</h4>
+                        <div class="code-block"># Configuration data
+$config = @{
+    ServerName = "WebServer01"
+    Port = 8080
+    Protocol = "HTTPS"
+    MaxConnections = 1000
+    LogPath = "C:\Logs"
+}
+
+# Access configuration
+$serverUrl = "$($config.Protocol)://$($config.ServerName):$($config.Port)"
+Write-Host "Server URL: $serverUrl"
+
+# Server inventory
+$servers = @{
+    "Web01" = @{
+        IP = "192.168.1.10"
+        Role = "Web Server"
+        OS = "Windows Server 2022"
+    }
+    "DB01" = @{
+        IP = "192.168.1.20"
+        Role = "Database Server"
+        OS = "Windows Server 2022"
+    }
+}
+
+# Access nested hash table
+Write-Host $servers["Web01"]["IP"]
+Write-Host $servers.Web01.Role
+
+# User lookup table
+$users = @{
+    "jdoe" = @{FullName="John Doe"; Department="IT"; Email="jdoe@example.com"}
+    "asmith" = @{FullName="Alice Smith"; Department="HR"; Email="asmith@example.com"}
+}
+
+# Function using hash table
+function Get-UserInfo {
+    param([string]$Username)
+    
+    if ($users.ContainsKey($Username)) {
+        $user = $users[$Username]
+        Write-Host "Name: $($user.FullName)"
+        Write-Host "Department: $($user.Department)"
+        Write-Host "Email: $($user.Email)"
+    } else {
+        Write-Host "User not found: $Username" -ForegroundColor Red
+    }
+}
+
+Get-UserInfo "jdoe"</div>
+                    </div>
+
+                    <h3>Working with Collections</h3>
+
+                    <div class="example-box">
+                        <h4>Common Collection Operations</h4>
+                        <div class="code-block"># Join array elements
+$items = @("Apple", "Banana", "Orange")
+$joined = $items -join ", "
+Write-Host $joined  # Apple, Banana, Orange
+
+# Split string into array
+$text = "Apple,Banana,Orange"
+$array = $text -split ","
+
+# Filter array
+$numbers = 1..20
+$evenNumbers = $numbers | Where-Object {$_ % 2 -eq 0}
+
+# Transform array
+$names = @("john", "alice", "bob")
+$upperNames = $names | ForEach-Object {$_.ToUpper()}
+
+# Sort array
+$unsorted = @(5, 2, 8, 1, 9)
+$sorted = $unsorted | Sort-Object
+
+# Unique values
+$duplicates = @(1, 2, 2, 3, 3, 3, 4)
+$unique = $duplicates | Select-Object -Unique
+
+# Sum array
+$numbers = 1..10
+$sum = ($numbers | Measure-Object -Sum).Sum
+
+# Find in array
+$servers = @("Server01", "Server02", "Server03")
+$index = $servers.IndexOf("Server02")  # Returns 1
+$found = $servers -contains "Server01"  # True</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice with arrays and hash tables:</p>
+                        <ol>
+                            <li>Create an array of server names and loop through them</li>
+                            <li>Build a hash table with configuration settings</li>
+                            <li>Create a nested hash table for server inventory</li>
+                            <li>Write a script that processes an array of filenames</li>
+                            <li>Use hash tables to create a simple user database</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Functions Section -->
+                <section id="functions" class="section">
+                    <h2>Functions and Advanced Functions</h2>
+                    
+                    <p>Functions in PowerShell allow you to create reusable code blocks. PowerShell supports both simple functions and advanced functions that behave like cmdlets.</p>
+
+                    <h3>Basic Functions</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 PowerShell Functions</h4>
+                        <p>A <strong>function</strong> is a named block of code that can be called multiple times. Functions help organize code and promote reusability.</p>
+                        
+                        <div class="code-block"># Basic syntax
+function FunctionName {
+    # commands
+}
+
+# Function with parameters
+function FunctionName {
+    param($Parameter1, $Parameter2)
+    # commands
+}</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Basic Function Examples</h4>
+                        <div class="code-block"># Simple function
+function Say-Hello {
+    Write-Host "Hello, World!"
+}
+
+# Call the function
+Say-Hello
+
+# Function with parameters
+function Greet-User {
+    param(
+        [string]$Name,
+        [string]$Greeting = "Hello"
+    )
+    
+    Write-Host "$Greeting, $Name!"
+}
+
+# Call with parameters
+Greet-User -Name "Alice"
+Greet-User -Name "Bob" -Greeting "Hi"
+
+# Function with return value
+function Get-Square {
+    param([int]$Number)
+    
+    return $Number * $Number
+}
+
+$result = Get-Square -Number 5
+Write-Host "5 squared is $result"
+
+# Function returning object
+function Get-SystemStatus {
+    $status = @{
+        ComputerName = $env:COMPUTERNAME
+        DateTime = Get-Date
+        Services = (Get-Service | Where-Object Status -eq "Running").Count
+        Processes = (Get-Process).Count
+    }
+    
+    return $status
+}
+
+$status = Get-SystemStatus
+Write-Host "Computer: $($status.ComputerName)"
+Write-Host "Running Services: $($status.Services)"</div>
+                    </div>
+
+                    <h3>Advanced Functions</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Advanced Functions</h4>
+                        <p><strong>Advanced functions</strong> use the <code>[CmdletBinding()]</code> attribute to add cmdlet-like behavior, including support for common parameters, pipeline input, and more sophisticated parameter handling.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Advanced Function Structure</h4>
+                        <div class="code-block">function Verb-Noun {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true,
+                   ValueFromPipeline=$true)]
+        [string]$InputObject
+    )
+    
+    begin {
+        # Executes once before processing
+        Write-Verbose "Starting function"
+    }
+    
+    process {
+        # Executes for each pipeline object
+        Write-Host "Processing: $InputObject"
+    }
+    
+    end {
+        # Executes once after processing
+        Write-Verbose "Function complete"
+    }
+}</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Advanced Function Examples</h4>
+                        <div class="code-block"># Advanced function with parameter validation
+function Get-ServiceInfo {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true,
+                   ValueFromPipeline=$true,
+                   ValueFromPipelineByPropertyName=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Name,
+        
+        [Parameter(Mandatory=$false)]
+        [string]$ComputerName = $env:COMPUTERNAME
+    )
+    
+    begin {
+        Write-Verbose "Querying services on $ComputerName"
+    }
+    
+    process {
+        foreach ($serviceName in $Name) {
+            try {
+                $service = Get-Service -Name $serviceName -ComputerName $ComputerName -ErrorAction Stop
+                
+                [PSCustomObject]@{
+                    ServiceName = $service.Name
+                    DisplayName = $service.DisplayName
+                    Status = $service.Status
+                    StartType = $service.StartType
+                    ComputerName = $ComputerName
+                }
+            }
+            catch {
+                Write-Warning "Service not found: $serviceName"
+            }
+        }
+    }
+    
+    end {
+        Write-Verbose "Query complete"
+    }
+}
+
+# Usage
+Get-ServiceInfo -Name "wuauserv" -Verbose
+Get-ServiceInfo -Name "wuauserv", "Spooler", "BITS"
+"wuauserv", "Spooler" | Get-ServiceInfo</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Function with Pipeline Support</h4>
+                        <div class="code-block"># Function that accepts pipeline input
+function Test-ServerConnection {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true,
+                   ValueFromPipeline=$true)]
+        [string]$ComputerName
+    )
+    
+    process {
+        Write-Host "Testing connection to $ComputerName..." -NoNewline
+        
+        if (Test-Connection -ComputerName $ComputerName -Count 1 -Quiet) {
+            Write-Host " SUCCESS" -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host " FAILED" -ForegroundColor Red
+            return $false
+        }
+    }
+}
+
+# Usage
+Test-ServerConnection -ComputerName "Server01"
+
+# Pipeline usage
+$servers = @("Server01", "Server02", "Server03")
+$servers | Test-ServerConnection
+
+# From file
+Get-Content servers.txt | Test-ServerConnection</div>
+                    </div>
+
+                    <h3>Common Parameters</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Common Parameters</h4>
+                        <p>Advanced functions automatically support <strong>common parameters</strong> when using <code>[CmdletBinding()]</code>:</p>
+                        <ul>
+                            <li><code>-Verbose</code>: Show detailed information</li>
+                            <li><code>-Debug</code>: Show debug information</li>
+                            <li><code>-ErrorAction</code>: Control error behavior</li>
+                            <li><code>-WarningAction</code>: Control warning behavior</li>
+                            <li><code>-WhatIf</code>: Preview without executing</li>
+                            <li><code>-Confirm</code>: Prompt for confirmation</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Using Common Parameters</h4>
+                        <div class="code-block">function Remove-OldFiles {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Path,
+        
+        [Parameter(Mandatory=$true)]
+        [int]$DaysOld
+    )
+    
+    Write-Verbose "Searching for files older than $DaysOld days in $Path"
+    
+    $oldFiles = Get-ChildItem -Path $Path -File | 
+        Where-Object {$_.LastWriteTime -lt (Get-Date).AddDays(-$DaysOld)}
+    
+    Write-Verbose "Found $($oldFiles.Count) files to remove"
+    
+    foreach ($file in $oldFiles) {
+        if ($PSCmdlet.ShouldProcess($file.FullName, "Delete")) {
+            Remove-Item -Path $file.FullName -Force
+            Write-Verbose "Deleted: $($file.Name)"
+        }
+    }
+}
+
+# Usage with common parameters
+Remove-OldFiles -Path "C:\Logs" -DaysOld 30 -Verbose
+Remove-OldFiles -Path "C:\Logs" -DaysOld 30 -WhatIf
+Remove-OldFiles -Path "C:\Logs" -DaysOld 30 -Confirm</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice with functions:</p>
+                        <ol>
+                            <li>Create a function that checks if a service is running</li>
+                            <li>Write an advanced function that accepts pipeline input</li>
+                            <li>Create a function that returns a custom object</li>
+                            <li>Implement a function with parameter validation</li>
+                            <li>Build a function library for common administrative tasks</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Error Handling Section -->
+                <section id="error-handling" class="section">
+                    <h2>Error Handling</h2>
+                    
+                    <p>Robust error handling is essential for production scripts. PowerShell provides comprehensive error handling capabilities through try/catch/finally blocks and error action preferences.</p>
+
+                    <h3>Understanding PowerShell Errors</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Error Types</h4>
+                        <p>PowerShell has two types of errors:</p>
+                        <ul>
+                            <li><strong>Terminating errors:</strong> Stop script execution (can be caught with try/catch)</li>
+                            <li><strong>Non-terminating errors:</strong> Display error but continue execution (cannot be caught with try/catch unless converted)</li>
+                        </ul>
+                    </div>
+
+                    <h3>Try/Catch/Finally Blocks</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 try/catch/finally Structure</h4>
+                        <div class="code-block"># Syntax
+try {
+    # Commands that might fail
+}
+catch {
+    # Error handling
+}
+finally {
+    # Always executes (cleanup)
+}</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Basic Error Handling Examples</h4>
+                        <div class="code-block"># Simple try/catch
+try {
+    $service = Get-Service -Name "NonExistentService" -ErrorAction Stop
+}
+catch {
+    Write-Host "Error occurred: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# try/catch/finally
+try {
+    $file = Get-Content "C:\Data\file.txt" -ErrorAction Stop
+    Write-Host "File read successfully"
+}
+catch {
+    Write-Host "Failed to read file: $($_.Exception.Message)" -ForegroundColor Red
+}
+finally {
+    Write-Host "Cleanup operations"
+    # Close connections, release resources, etc.
+}
+
+# Multiple catch blocks
+try {
+    # Some operation
+    $result = 10 / 0
+}
+catch [System.DivideByZeroException] {
+    Write-Host "Cannot divide by zero"
+}
+catch [System.IO.FileNotFoundException] {
+    Write-Host "File not found"
+}
+catch {
+    Write-Host "An unexpected error occurred: $($_.Exception.Message)"
+}
+
+# Accessing error details
+try {
+    Get-Item "C:\NonExistent\file.txt" -ErrorAction Stop
+}
+catch {
+    Write-Host "Error Message: $($_.Exception.Message)"
+    Write-Host "Error Type: $($_.Exception.GetType().FullName)"
+    Write-Host "Script Line: $($_.InvocationInfo.ScriptLineNumber)"
+    Write-Host "Command: $($_.InvocationInfo.MyCommand)"
+}</div>
+                    </div>
+
+                    <h3>ErrorAction Parameter</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 ErrorAction Values</h4>
+                        <p>The <code>-ErrorAction</code> parameter controls how cmdlets handle non-terminating errors:</p>
+                        <ul>
+                            <li><strong>Continue:</strong> Display error and continue (default)</li>
+                            <li><strong>SilentlyContinue:</strong> Suppress error and continue</li>
+                            <li><strong>Stop:</strong> Convert to terminating error (catchable)</li>
+                            <li><strong>Inquire:</strong> Ask user what to do</li>
+                            <li><strong>Ignore:</strong> Suppress error completely (don't add to $Error)</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>ErrorAction Examples</h4>
+                        <div class="code-block"># Default behavior (Continue)
+Get-Service -Name "NonExistent"
+# Displays error but continues
+
+# Suppress error
+Get-Service -Name "NonExistent" -ErrorAction SilentlyContinue
+# No error displayed, continues
+
+# Convert to terminating error (for try/catch)
+try {
+    Get-Service -Name "NonExistent" -ErrorAction Stop
+}
+catch {
+    Write-Host "Caught error: $($_.Exception.Message)"
+}
+
+# Set default for entire script
+$ErrorActionPreference = "Stop"  # All errors become terminating
+
+# Ignore errors completely
+Get-Service -Name "NonExistent" -ErrorAction Ignore
+
+# Check if command succeeded
+$service = Get-Service -Name "wuauserv" -ErrorAction SilentlyContinue
+
+if ($service) {
+    Write-Host "Service found"
+} else {
+    Write-Host "Service not found"
+}</div>
+                    </div>
+
+                    <h3>The $Error Variable</h3>
+
+                    <div class="example-box">
+                        <h4>Working with $Error</h4>
+                        <div class="code-block"># View most recent error
+$Error[0]
+
+# View all errors in session
+$Error
+
+# Count errors
+$Error.Count
+
+# Clear error collection
+$Error.Clear()
+
+# Access error properties
+$Error[0].Exception
+$Error[0].Exception.Message
+$Error[0].InvocationInfo.ScriptLineNumber
+
+# Loop through recent errors
+foreach ($err in $Error) {
+    Write-Host "Error: $($err.Exception.Message)"
+}</div>
+                    </div>
+
+                    <h3>Custom Error Messages</h3>
+
+                    <div class="example-box">
+                        <h4>Writing Error and Warning Messages</h4>
+                        <div class="code-block"># Write error (non-terminating)
+Write-Error "This is an error message"
+
+# Write warning
+Write-Warning "This is a warning message"
+
+# Write verbose (only shows with -Verbose)
+Write-Verbose "This is verbose output"
+
+# Write debug (only shows with -Debug)
+Write-Debug "This is debug output"
+
+# Throw terminating error
+throw "Critical error occurred"
+
+# Custom error with details
+function Invoke-CustomOperation {
+    param([string]$Path)
+    
+    if (-not (Test-Path $Path)) {
+        $errorMessage = "Path not found: $Path"
+        $exception = New-Object System.IO.FileNotFoundException $errorMessage
+        $errorRecord = New-Object System.Management.Automation.ErrorRecord(
+            $exception,
+            "PathNotFound",
+            [System.Management.Automation.ErrorCategory]::ObjectNotFound,
+            $Path
+        )
+        $PSCmdlet.ThrowTerminatingError($errorRecord)
+    }
+}</div>
+                    </div>
+
+                    <h3>Comprehensive Error Handling Example</h3>
+
+                    <div class="example-box">
+                        <h4>Production-Ready Error Handling</h4>
+                        <div class="code-block">function Backup-ImportantData {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateScript({Test-Path $_})]
+        [string]$SourcePath,
+        
+        [Parameter(Mandatory=$true)]
+        [string]$DestinationPath
+    )
+    
+    # Set error action preference
+    $ErrorActionPreference = "Stop"
+    
+    try {
+        Write-Verbose "Starting backup of $SourcePath"
+        
+        # Validate source exists
+        if (-not (Test-Path $SourcePath)) {
+            throw "Source path does not exist: $SourcePath"
+        }
+        
+        # Create destination if needed
+        if (-not (Test-Path $DestinationPath)) {
+            Write-Verbose "Creating destination directory"
+            New-Item -Path $DestinationPath -ItemType Directory -Force | Out-Null
+        }
+        
+        # Perform backup
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+        $backupName = "Backup_$timestamp.zip"
+        $backupPath = Join-Path $DestinationPath $backupName
+        
+        Write-Verbose "Creating archive: $backupPath"
+        Compress-Archive -Path $SourcePath -DestinationPath $backupPath -Force
+        
+        # Verify backup
+        if (Test-Path $backupPath) {
+            $backupSize = (Get-Item $backupPath).Length / 1MB
+            Write-Host "Backup successful: $backupPath" -ForegroundColor Green
+            Write-Host "Backup size: $([math]::Round($backupSize, 2)) MB"
+            return $true
+        } else {
+            throw "Backup file was not created"
+        }
+    }
+    catch [System.IO.IOException] {
+        Write-Error "IO Error: $($_.Exception.Message)"
+        return $false
+    }
+    catch [System.UnauthorizedAccessException] {
+        Write-Error "Access Denied: $($_.Exception.Message)"
+        return $false
+    }
+    catch {
+        Write-Error "Unexpected error: $($_.Exception.Message)"
+        Write-Error "Error type: $($_.Exception.GetType().FullName)"
+        return $false
+    }
+    finally {
+        Write-Verbose "Backup operation completed"
+    }
+}
+
+# Usage
+Backup-ImportantData -SourcePath "C:\Data" -DestinationPath "D:\Backups" -Verbose</div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Error Handling Best Practices</h4>
+                        <ul>
+                            <li><strong>Use try/catch:</strong> Wrap risky operations in try blocks</li>
+                            <li><strong>Set ErrorAction:</strong> Use -ErrorAction Stop to make errors catchable</li>
+                            <li><strong>Be specific:</strong> Catch specific exception types when possible</li>
+                            <li><strong>Provide context:</strong> Include helpful error messages</li>
+                            <li><strong>Clean up:</strong> Use finally blocks for cleanup operations</li>
+                            <li><strong>Log errors:</strong> Write errors to log files for troubleshooting</li>
+                            <li><strong>Don't hide errors:</strong> Always handle or report errors</li>
+                        </ul>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice error handling:</p>
+                        <ol>
+                            <li>Create a script that handles file not found errors</li>
+                            <li>Write a function with try/catch/finally blocks</li>
+                            <li>Implement retry logic with error handling</li>
+                            <li>Create a script that logs all errors to a file</li>
+                            <li>Build an advanced function with comprehensive error handling</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Practice Section -->
+                <section id="practice" class="section">
+                    <h2>Practice Scripts</h2>
+                    
+                    <p>Let's apply everything you've learned by creating comprehensive, production-ready PowerShell scripts.</p>
+
+                    <div class="interactive-exercise">
+                        <h3>Practice Script 1: System Health Monitor</h3>
+                        <p><strong>Scenario:</strong> Create a script that monitors system health and generates alerts.</p>
+                        
+                        <div class="code-block"><#
+.SYNOPSIS
+    Monitors system health and generates alerts
+
+.DESCRIPTION
+    Checks disk space, memory usage, CPU load, and service status.
+    Generates warnings when thresholds are exceeded.
+
+.PARAMETER ComputerName
+    Computer to monitor (default: local computer)
+
+.PARAMETER DiskThreshold
+    Disk usage percentage threshold (default: 80)
+
+.PARAMETER MemoryThreshold
+    Memory usage percentage threshold (default: 80)
+
+.EXAMPLE
+    .\Monitor-SystemHealth.ps1 -Verbose
+
+.EXAMPLE
+    .\Monitor-SystemHealth.ps1 -ComputerName "Server01" -DiskThreshold 90
+#>
+
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$ComputerName = $env:COMPUTERNAME,
+    
+    [Parameter(Mandatory=$false)]
+    [ValidateRange(1,100)]
+    [int]$DiskThreshold = 80,
+    
+    [Parameter(Mandatory=$false)]
+    [ValidateRange(1,100)]
+    [int]$MemoryThreshold = 80
+)
+
+# Configuration
+$reportPath = "C:\Reports"
+$logFile = Join-Path $reportPath "health_monitor.log"
+
+# Logging function
+function Write-Log {
+    param([string]$Message, [string]$Level = "INFO")
+    
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logMessage = "[$timestamp] [$Level] $Message"
+    
+    # Write to console
+    switch ($Level) {
+        "ERROR" { Write-Host $logMessage -ForegroundColor Red }
+        "WARNING" { Write-Host $logMessage -ForegroundColor Yellow }
+        "INFO" { Write-Host $logMessage -ForegroundColor Green }
+        default { Write-Host $logMessage }
+    }
+    
+    # Write to log file
+    $logMessage | Out-File -FilePath $logFile -Append
+}
+
+# Check disk space
+function Test-DiskSpace {
+    Write-Verbose "Checking disk space..."
+    
+    $drives = Get-PSDrive -PSProvider FileSystem | Where-Object {$_.Used -ne $null}
+    
+    foreach ($drive in $drives) {
+        $usedPercent = [math]::Round(($drive.Used / ($drive.Used + $drive.Free)) * 100, 2)
+        
+        if ($usedPercent -gt $DiskThreshold) {
+            Write-Log "WARNING: Drive $($drive.Name) is ${usedPercent}% full" "WARNING"
+        } else {
+            Write-Log "Drive $($drive.Name): ${usedPercent}% used" "INFO"
+        }
+    }
+}
+
+# Check memory usage
+function Test-MemoryUsage {
+    Write-Verbose "Checking memory usage..."
+    
+    $os = Get-CimInstance Win32_OperatingSystem
+    $totalMemory = $os.TotalVisibleMemorySize
+    $freeMemory = $os.FreePhysicalMemory
+    $usedPercent = [math]::Round((($totalMemory - $freeMemory) / $totalMemory) * 100, 2)
+    
+    if ($usedPercent -gt $MemoryThreshold) {
+        Write-Log "WARNING: Memory usage is ${usedPercent}%" "WARNING"
+    } else {
+        Write-Log "Memory usage: ${usedPercent}%" "INFO"
+    }
+}
+
+# Check critical services
+function Test-CriticalServices {
+    Write-Verbose "Checking critical services..."
+    
+    $criticalServices = @("wuauserv", "Spooler", "W32Time")
+    
+    foreach ($serviceName in $criticalServices) {
+        try {
+            $service = Get-Service -Name $serviceName -ErrorAction Stop
+            
+            if ($service.Status -ne "Running") {
+                Write-Log "WARNING: Service $serviceName is $($service.Status)" "WARNING"
+            } else {
+                Write-Log "Service $serviceName is running" "INFO"
+            }
+        }
+        catch {
+            Write-Log "ERROR: Could not check service $serviceName" "ERROR"
+        }
+    }
+}
+
+# Main execution
+try {
+    Write-Log "=== System Health Check Started ===" "INFO"
+    Write-Log "Computer: $ComputerName" "INFO"
+    
+    # Ensure report directory exists
+    if (-not (Test-Path $reportPath)) {
+        New-Item -Path $reportPath -ItemType Directory -Force | Out-Null
+    }
+    
+    # Run checks
+    Test-DiskSpace
+    Test-MemoryUsage
+    Test-CriticalServices
+    
+    Write-Log "=== System Health Check Completed ===" "INFO"
+}
+catch {
+    Write-Log "CRITICAL ERROR: $($_.Exception.Message)" "ERROR"
+    exit 1
+}</div>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>Practice Script 2: User Account Creation</h3>
+                        <p><strong>Scenario:</strong> Automate user account creation from CSV file.</p>
+                        
+                        <div class="code-block"><#
+.SYNOPSIS
+    Creates local user accounts from CSV file
+
+.DESCRIPTION
+    Reads user data from CSV and creates local user accounts with
+    proper error handling and logging.
+
+.PARAMETER CSVPath
+    Path to CSV file containing user data
+
+.EXAMPLE
+    .\New-UsersFromCSV.ps1 -CSVPath "C:\Data\users.csv"
+#>
+
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory=$true)]
+    [ValidateScript({Test-Path $_})]
+    [string]$CSVPath
+)
+
+# Logging function
+function Write-Log {
+    param([string]$Message)
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    "[$timestamp] $Message" | Out-File -FilePath "C:\Logs\user_creation.log" -Append
+    Write-Host $Message
+}
+
+# Validate username format
+function Test-Username {
+    param([string]$Username)
+    
+    if ([string]::IsNullOrEmpty($Username)) {
+        return $false
+    }
+    
+    if ($Username -match "^[a-zA-Z][a-zA-Z0-9_-]{2,19}$") {
+        return $true
+    }
+    
+    return $false
+}
+
+# Create user account
+function New-LocalUserAccount {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Username,
+        
+        [Parameter(Mandatory=$true)]
+        [string]$FullName,
+        
+        [Parameter(Mandatory=$false)]
+        [string]$Description = ""
+    )
+    
+    try {
+        # Check if user already exists
+        $existingUser = Get-LocalUser -Name $Username -ErrorAction SilentlyContinue
+        
+        if ($existingUser) {
+            Write-Log "WARNING: User $Username already exists"
+            return $false
+        }
+        
+        # Generate secure password
+        Add-Type -AssemblyName System.Web
+        $password = [System.Web.Security.Membership]::GeneratePassword(12, 3)
+        $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+        
+        # Create user
+        New-LocalUser -Name $Username `
+                      -Password $securePassword `
+                      -FullName $FullName `
+                      -Description $Description `
+                      -PasswordNeverExpires:$false `
+                      -UserMayNotChangePassword:$false
+        
+        Write-Log "SUCCESS: Created user $Username"
+        Write-Log "  Full Name: $FullName"
+        Write-Log "  Temporary Password: $password"
+        
+        # Save password to secure file
+        "$Username,$password" | Out-File -FilePath "C:\Logs\new_passwords.txt" -Append
+        
+        return $true
+    }
+    catch {
+        Write-Log "ERROR: Failed to create user $Username - $($_.Exception.Message)"
+        return $false
+    }
+}
+
+# Main execution
+try {
+    Write-Log "=== User Creation Process Started ==="
+    
+    # Read CSV
+    $users = Import-Csv -Path $CSVPath
+    
+    Write-Log "Found $($users.Count) users in CSV"
+    
+    $successCount = 0
+    $failCount = 0
+    
+    foreach ($user in $users) {
+        # Validate username
+        if (-not (Test-Username $user.Username)) {
+            Write-Log "ERROR: Invalid username format: $($user.Username)"
+            $failCount++
+            continue
+        }
+        
+        # Create user
+        if (New-LocalUserAccount -Username $user.Username `
+                                  -FullName $user.FullName `
+                                  -Description $user.Description) {
+            $successCount++
+        } else {
+            $failCount++
+        }
+    }
+    
+    # Summary
+    Write-Log "=== Summary ==="
+    Write-Log "Successful: $successCount"
+    Write-Log "Failed: $failCount"
+    Write-Log "=== Process Complete ==="
+}
+catch {
+    Write-Log "CRITICAL ERROR: $($_.Exception.Message)"
+    exit 1
+}</div>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>Practice Script 3: Service Management Automation</h3>
+                        <p><strong>Scenario:</strong> Monitor and manage Windows services automatically.</p>
+                        
+                        <div class="code-block"><#
+.SYNOPSIS
+    Monitors and manages Windows services
+
+.DESCRIPTION
+    Checks status of specified services and automatically starts
+    stopped services that should be running.
+
+.PARAMETER ServiceNames
+    Array of service names to monitor
+
+.PARAMETER AutoStart
+    Automatically start stopped services
+
+.EXAMPLE
+    .\Manage-Services.ps1 -ServiceNames "wuauserv","Spooler" -AutoStart
+#>
+
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory=$true)]
+    [string[]]$ServiceNames,
+    
+    [Parameter(Mandatory=$false)]
+    [switch]$AutoStart
+)
+
+# Function to check and manage service
+function Manage-ServiceStatus {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ServiceName,
+        
+        [Parameter(Mandatory=$false)]
+        [bool]$AutoStart = $false
+    )
+    
+    try {
+        $service = Get-Service -Name $ServiceName -ErrorAction Stop
+        
+        Write-Host "`nService: $($service.DisplayName)" -ForegroundColor Cyan
+        Write-Host "  Name: $($service.Name)"
+        Write-Host "  Status: $($service.Status)"
+        Write-Host "  Start Type: $($service.StartType)"
+        
+        # Check if service should be running
+        if ($service.Status -ne "Running" -and $service.StartType -eq "Automatic") {
+            Write-Host "  WARNING: Service is stopped but set to Automatic" -ForegroundColor Yellow
+            
+            if ($AutoStart) {
+                Write-Host "  Attempting to start service..." -ForegroundColor Yellow
+                
+                try {
+                    Start-Service -Name $ServiceName -ErrorAction Stop
+                    Write-Host "  SUCCESS: Service started" -ForegroundColor Green
+                }
+                catch {
+                    Write-Host "  ERROR: Failed to start service - $($_.Exception.Message)" -ForegroundColor Red
+                }
+            }
+        } elseif ($service.Status -eq "Running") {
+            Write-Host "  Status: OK" -ForegroundColor Green
+        }
+        
+        return $true
+    }
+    catch [Microsoft.PowerShell.Commands.ServiceCommandException] {
+        Write-Host "ERROR: Service not found: $ServiceName" -ForegroundColor Red
+        return $false
+    }
+    catch {
+        Write-Host "ERROR: $($_.Exception.Message)" -ForegroundColor Red
+        return $false
+    }
+}
+
+# Main execution
+Write-Host "=== Service Management Script ===" -ForegroundColor Cyan
+Write-Host "Monitoring $($ServiceNames.Count) services"
+Write-Host "Auto-start: $AutoStart"
+Write-Host ""
+
+$results = @{
+    Total = $ServiceNames.Count
+    Success = 0
+    Failed = 0
+}
+
+foreach ($serviceName in $ServiceNames) {
+    if (Manage-ServiceStatus -ServiceName $serviceName -AutoStart:$AutoStart) {
+        $results.Success++
+    } else {
+        $results.Failed++
+    }
+}
+
+# Summary
+Write-Host "`n=== Summary ===" -ForegroundColor Cyan
+Write-Host "Total services checked: $($results.Total)"
+Write-Host "Successful: $($results.Success)" -ForegroundColor Green
+Write-Host "Failed: $($results.Failed)" -ForegroundColor Red</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Create Your Own Scripts</h4>
+                        <p>Use these templates to create custom scripts:</p>
+                        <ol>
+                            <li><strong>Event Log Analyzer:</strong> Parse Windows event logs and generate reports</li>
+                            <li><strong>Disk Cleanup:</strong> Find and remove old files based on age and size</li>
+                            <li><strong>Backup Automation:</strong> Backup directories with rotation and verification</li>
+                            <li><strong>Network Scanner:</strong> Test connectivity to multiple servers</li>
+                            <li><strong>Configuration Auditor:</strong> Check system settings against baseline</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Summary Section -->
+                <section id="summary" class="section">
+                    <h2>Module 5.4 Summary & Review</h2>
+                    
+                    <p>Congratulations on completing Module 5.4! You've learned to create comprehensive PowerShell scripts with professional-grade error handling and automation capabilities.</p>
+
+                    <div class="key-takeaways">
+                        <h3>🎯 What You've Mastered</h3>
+                        
+                        <h4>Script Fundamentals</h4>
+                        <ul>
+                            <li>Creating .ps1 script files with proper structure</li>
+                            <li>Comment-based help for documentation</li>
+                            <li>Script parameters with validation</li>
+                            <li>Execution policies and security</li>
+                        </ul>
+
+                        <h4>Variables and Data Types</h4>
+                        <ul>
+                            <li>Declaring and using typed variables</li>
+                            <li>Working with strings, numbers, booleans, dates</li>
+                            <li>Understanding variable scope</li>
+                            <li>Using automatic variables</li>
+                        </ul>
+
+                        <h4>Conditional Logic</h4>
+                        <ul>
+                            <li>if/elseif/else statements</li>
+                            <li>Comparison operators (-eq, -ne, -gt, -lt, etc.)</li>
+                            <li>Logical operators (-and, -or, -not)</li>
+                            <li>switch statements for multiple conditions</li>
+                        </ul>
+
+                        <h4>Loops and Iteration</h4>
+                        <ul>
+                            <li>foreach loops for collections</li>
+                            <li>ForEach-Object cmdlet for pipelines</li>
+                            <li>for loops with counters</li>
+                            <li>while and do-while loops</li>
+                            <li>Loop control with break and continue</li>
+                        </ul>
+
+                        <h4>Arrays and Collections</h4>
+                        <ul>
+                            <li>Creating and manipulating arrays</li>
+                            <li>Working with hash tables (dictionaries)</li>
+                            <li>Using ArrayList and Generic Lists</li>
+                            <li>Collection operations and methods</li>
+                        </ul>
+
+                        <h4>Functions</h4>
+                        <ul>
+                            <li>Creating basic and advanced functions</li>
+                            <li>Function parameters and validation</li>
+                            <li>Pipeline input support</li>
+                            <li>Common parameters (Verbose, WhatIf, etc.)</li>
+                        </ul>
+
+                        <h4>Error Handling</h4>
+                        <ul>
+                            <li>try/catch/finally blocks</li>
+                            <li>ErrorAction parameter</li>
+                            <li>Working with $Error variable</li>
+                            <li>Custom error messages and logging</li>
+                        </ul>
+                    </div>
+
+                    <h3>PowerShell vs Bash Scripting Comparison</h3>
+
+                    <div class="comparison-table">
+                        <div class="comparison-card">
+                            <h4>🐧 Bash Scripting</h4>
+                            <ul>
+                                <li><strong>Variables:</strong> <code>name="value"</code></li>
+                                <li><strong>Conditionals:</strong> <code>if [ ]; then</code></li>
+                                <li><strong>Loops:</strong> <code>for i in list; do</code></li>
+                                <li><strong>Functions:</strong> <code>function_name() {</code></li>
+                                <li><strong>Arrays:</strong> <code>array=(1 2 3)</code></li>
+                                <li><strong>Pipeline:</strong> Text-based</li>
+                            </ul>
+                        </div>
+
+                        <div class="comparison-card">
+                            <h4>⚡ PowerShell Scripting</h4>
+                            <ul>
+                                <li><strong>Variables:</strong> <code>$name = "value"</code></li>
+                                <li><strong>Conditionals:</strong> <code>if ($condition) {</code></li>
+                                <li><strong>Loops:</strong> <code>foreach ($i in $list) {</code></li>
+                                <li><strong>Functions:</strong> <code>function Verb-Noun {</code></li>
+                                <li><strong>Arrays:</strong> <code>$array = @(1,2,3)</code></li>
+                                <li><strong>Pipeline:</strong> Object-based</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3>PowerShell Scripting Best Practices</h3>
+
+                    <div class="tip-box">
+                        <h4>💡 Professional Scripting Standards</h4>
+                        <ol>
+                            <li><strong>Use comment-based help:</strong> Document purpose, parameters, and examples</li>
+                            <li><strong>Validate parameters:</strong> Use validation attributes</li>
+                            <li><strong>Handle errors:</strong> Use try/catch for risky operations</li>
+                            <li><strong>Use Verb-Noun naming:</strong> Follow PowerShell conventions for functions</li>
+                            <li><strong>Implement logging:</strong> Track script execution and errors</li>
+                            <li><strong>Use -WhatIf:</strong> Support preview mode for destructive operations</li>
+                            <li><strong>Write verbose output:</strong> Help troubleshooting with -Verbose</li>
+                            <li><strong>Use approved verbs:</strong> <code>Get-Verb</code> shows approved verbs</li>
+                            <li><strong>Return objects:</strong> Not formatted text</li>
+                            <li><strong>Test thoroughly:</strong> Test with various inputs and edge cases</li>
+                        </ol>
+                    </div>
+
+                    <h3>Quick Reference: PowerShell Scripting</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Concept</th>
+                                <th>Syntax</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Variable</td>
+                                <td><code>$var = value</code></td>
+                                <td><code>$name = "John"</code></td>
+                            </tr>
+                            <tr>
+                                <td>Array</td>
+                                <td><code>@(items)</code></td>
+                                <td><code>$arr = @(1,2,3)</code></td>
+                            </tr>
+                            <tr>
+                                <td>Hash Table</td>
+                                <td><code>@{key=value}</code></td>
+                                <td><code>$h = @{a=1}</code></td>
+                            </tr>
+                            <tr>
+                                <td>If Statement</td>
+                                <td><code>if ($cond) {}</code></td>
+                                <td><code>if ($x -gt 5) {}</code></td>
+                            </tr>
+                            <tr>
+                                <td>foreach Loop</td>
+                                <td><code>foreach ($i in $col) {}</code></td>
+                                <td><code>foreach ($s in $servers) {}</code></td>
+                            </tr>
+                            <tr>
+                                <td>Function</td>
+                                <td><code>function Name {}</code></td>
+                                <td><code>function Get-Data {}</code></td>
+                            </tr>
+                            <tr>
+                                <td>Try/Catch</td>
+                                <td><code>try {} catch {}</code></td>
+                                <td><code>try {cmd} catch {log}</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Next Steps</h3>
+
+                    <div class="tip-box">
+                        <h4>💡 Continuing Your PowerShell Journey</h4>
+                        
+                        <p><strong>Module 5.5: SSH Configuration (Linux)</strong></p>
+                        <p>Next, you'll learn secure remote access for Linux systems</p>
+
+                        <p><strong>Module 5.6: PowerShell Remoting (Windows)</strong></p>
+                        <p>You'll apply your PowerShell scripting skills to remote server management</p>
+
+                        <p><strong>Practice Recommendations:</strong></p>
+                        <ul>
+                            <li>Complete Lab 5 Parts C and D</li>
+                            <li>Convert manual tasks to PowerShell scripts</li>
+                            <li>Study scripts from PowerShell Gallery</li>
+                            <li>Contribute to your personal script library</li>
+                            <li>Compare Bash and PowerShell approaches</li>
+                        </ul>
+                    </div>
+
+                    <h3>Additional Resources</h3>
+
+                    <div class="example-box">
+                        <h4>📚 Further Learning</h4>
+                        
+                        <p><strong>Microsoft Resources:</strong></p>
+                        <ul>
+                            <li>Microsoft Learn: PowerShell scripting paths</li>
+                            <li>PowerShell documentation</li>
+                            <li>PowerShell Gallery for script examples</li>
+                        </ul>
+
+                        <p><strong>Books:</strong></p>
+                        <ul>
+                            <li>"Learn PowerShell Scripting in a Month of Lunches"</li>
+                            <li>"PowerShell for Sysadmins" by Adam Bertram</li>
+                            <li>"Windows PowerShell Cookbook"</li>
+                        </ul>
+
+                        <p><strong>Community:</strong></p>
+                        <ul>
+                            <li>PowerShell.org forums</li>
+                            <li>Reddit: r/PowerShell</li>
+                            <li>Stack Overflow: PowerShell tag</li>
+                        </ul>
+                    </div>
+
+                    <div class="key-takeaways">
+                        <h3>🎓 Module 5.4 Complete!</h3>
+                        <p>You've successfully completed PowerShell Scripting! You should now be able to:</p>
+                        <ul>
+                            <li>✅ Create professional PowerShell scripts</li>
+                            <li>✅ Use variables and data types effectively</li>
+                            <li>✅ Implement conditional logic and loops</li>
+                            <li>✅ Work with arrays and hash tables</li>
+                            <li>✅ Create reusable functions</li>
+                            <li>✅ Handle errors comprehensively</li>
+                            <li>✅ Automate administrative tasks</li>
+                        </ul>
+                        
+                        <p style="margin-top: 20px;"><strong>CSLO 1 Connection:</strong> This module directly supports your ability to manage and maintain servers through automated PowerShell scripts.</p>
+                    </div>
+
+                    <div class="navigation-buttons">
+                        <button class="nav-btn prev" onclick="showSection('practice')">← Previous: Practice</button>
+                        <button class="nav-btn next" onclick="window.print()">🖨️ Print Module</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer>
+            <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+            <p>Module 5.4: PowerShell Scripting</p>
+            <p style="margin-top: 10px;">Mendocino College | Computer Science Department</p>
+            <p style="margin-top: 5px; font-size: 0.9em;">© 2026 | Version 1.0 | For Educational Use</p>
+        </footer>
+    </div>
+
+    <script>
+        const sections = ['intro', 'script-basics', 'variables', 'conditionals', 'loops', 'arrays', 'functions', 'error-handling', 'practice', 'summary'];
+        let currentSectionIndex = 0;
+        let completedSections = new Set();
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (currentSectionIndex >= 0) {
+                completedSections.add(sections[currentSectionIndex]);
+                updateProgress();
+            }
+            
+            currentSectionIndex = sections.indexOf(sectionId);
+            window.scrollTo(0, 0);
+        }
+
+        function updateProgress() {
+            const total = sections.length;
+            const completed = completedSections.size;
+            const percentage = Math.round((completed / total) * 100);
+            
+            document.getElementById('moduleProgress').style.width = percentage + '%';
+            document.getElementById('moduleProgress').textContent = percentage + '%';
+            document.getElementById('sectionsCompleted').textContent = completed;
+            
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                if (completedSections.has(sections[index])) {
+                    item.classList.add('completed');
+                }
+            });
+        }
+
+        function checkAnswer(questionName, correctAnswer, feedbackId) {
+            const selected = document.querySelector(`input[name="${questionName}"]:checked`);
+            const feedback = document.getElementById(feedbackId);
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '⚠️ Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === correctAnswer) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✅ Correct! ' + getExplanation(questionName);
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '❌ Incorrect. ' + getExplanation(questionName);
+            }
+        }
+
+        function getExplanation(questionName) {
+            const explanations = {
+                'q1': '.ps1 is the file extension for PowerShell scripts. .sh is for shell scripts, .bat and .cmd are for batch files.',
+                'q2': 'The -ge operator means "greater than or equal to". -gt is "greater than", -eq is "equal to", -le is "less than or equal to".',
+                'q3': 'The continue statement skips the rest of the current iteration. When $i equals 3, continue is executed, so 3 is not printed. Output: 1 2 4 5'
+            };
+            return explanations[questionName] || '';
+        }
+
+        document.addEventListener('DOMContentLoaded', updateProgress);
+    </script>
+</body>
+</html>

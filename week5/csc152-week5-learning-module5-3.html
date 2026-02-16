@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Module 5.3 - PowerShell Fundamentals and Cmdlets">
+    <title>Module 5.3: PowerShell Fundamentals and Cmdlets | CSC 152</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #0078d4;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #16a085;
+            --ps-blue: #012456;
+            --light-bg: #ecf0f1;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --border-color: #bdc3c7;
+            --code-bg: #012456;
+            --code-text: #f8f8f2;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--light-bg);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--ps-blue), var(--secondary-color));
+            color: var(--white);
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .module-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .content-wrapper {
+            display: flex;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #f8f9fa;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(0, 120, 212, 0.1);
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-item.active {
+            background-color: rgba(0, 120, 212, 0.15);
+            border-left-color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .nav-item.completed::after {
+            content: " ✓";
+            color: var(--success-color);
+            float: right;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--secondary-color);
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: var(--primary-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .definition-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid var(--info-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .definition-box h4 {
+            color: var(--info-color);
+            margin-top: 0;
+        }
+
+        .example-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .example-box h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .tip-box {
+            background-color: #d4edda;
+            border-left: 4px solid var(--success-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .tip-box h4 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        .code-block {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: "PowerShell";
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.7em;
+            color: #5c9fd8;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .inline-code {
+            background-color: #e8f4f8;
+            color: #0078d4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .command-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .command-table th {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 12px;
+            text-align: left;
+        }
+
+        .command-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .command-table tr:hover {
+            background-color: var(--light-bg);
+        }
+
+        .interactive-exercise {
+            background-color: var(--white);
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .interactive-exercise h3 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .exercise-question {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .exercise-options {
+            margin: 15px 0;
+        }
+
+        .exercise-option {
+            display: block;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .exercise-option:hover {
+            border-color: var(--secondary-color);
+            background-color: #f0f7ff;
+        }
+
+        .exercise-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .exercise-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1em;
+            margin: 10px 0;
+        }
+
+        .exercise-input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+
+        .check-answer-btn {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .check-answer-btn:hover {
+            background-color: #005a9e;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .check-answer-btn:disabled {
+            background-color: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background-color: #d4edda;
+            border: 1px solid var(--success-color);
+            color: #155724;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            border: 1px solid var(--accent-color);
+            color: #721c24;
+            display: block;
+        }
+
+        .progress-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .progress-bar-wrapper {
+            background-color: var(--light-bg);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--secondary-color), #5c9fd8);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.prev {
+            background-color: var(--text-light);
+            color: var(--white);
+        }
+
+        .nav-btn.next {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .key-takeaways {
+            background: linear-gradient(135deg, var(--ps-blue) 0%, var(--secondary-color) 100%);
+            color: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .key-takeaways h3 {
+            color: var(--white);
+            margin-top: 0;
+        }
+
+        .key-takeaways ul {
+            margin-left: 20px;
+        }
+
+        .key-takeaways li {
+            margin-bottom: 10px;
+        }
+
+        .try-it-yourself {
+            background-color: #fff9e6;
+            border: 2px dashed var(--warning-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .try-it-yourself h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .script-output {
+            background-color: #012456;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .comparison-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .comparison-card h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .cmdlet-card {
+            background-color: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+        }
+
+        .cmdlet-card:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: var(--secondary-color);
+        }
+
+        .cmdlet-name {
+            color: var(--secondary-color);
+            font-size: 1.2em;
+            font-weight: bold;
+            font-family: 'Consolas', monospace;
+            margin-bottom: 10px;
+        }
+
+        .cmdlet-description {
+            color: var(--text-dark);
+            margin-bottom: 15px;
+        }
+
+        .verb-noun-highlight {
+            background: linear-gradient(135deg, rgba(0, 120, 212, 0.1), rgba(92, 159, 216, 0.1));
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        footer {
+            background-color: var(--primary-color);
+            color: var(--white);
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media print {
+            .sidebar, .navigation-buttons, .interactive-exercise {
+                display: none;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .section {
+                display: block !important;
+                page-break-after: always;
+            }
+        }
+
+        @media (max-width: 968px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .comparison-table {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .ps-logo {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Module 5.3: PowerShell Fundamentals and Cmdlets</h1>
+            <div class="module-info">
+                <div class="info-badge">📚 CSC 152 - Week 5</div>
+                <div class="info-badge">⏱️ 90 minutes</div>
+                <div class="info-badge">🎯 CSLO 1</div>
+                <div class="info-badge">💻 Windows Server</div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <h3>Module Contents</h3>
+                <div class="nav-item active" onclick="showSection('intro')">Introduction</div>
+                <div class="nav-item" onclick="showSection('cmdlets')">Cmdlet Fundamentals</div>
+                <div class="nav-item" onclick="showSection('essential')">Essential Cmdlets</div>
+                <div class="nav-item" onclick="showSection('objects')">Working with Objects</div>
+                <div class="nav-item" onclick="showSection('pipeline')">The PowerShell Pipeline</div>
+                <div class="nav-item" onclick="showSection('discovery')">Discovery & Help</div>
+                <div class="nav-item" onclick="showSection('providers')">PowerShell Providers</div>
+                <div class="nav-item" onclick="showSection('summary')">Summary</div>
+
+                <div class="progress-container" style="margin-top: 30px;">
+                    <h3>Your Progress</h3>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="moduleProgress">0%</div>
+                    </div>
+                    <p style="text-align: center; color: var(--text-light); font-size: 0.9em;">
+                        <span id="sectionsCompleted">0</span> of 8 sections completed
+                    </p>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <!-- Introduction Section -->
+                <section id="intro" class="section active">
+                    <h2>Introduction to PowerShell</h2>
+                    
+                    <p>Welcome to Module 5.3! Building on your introduction to PowerShell from Week 4 (Module 4.6) and your Bash scripting experience from Modules 5.1 and 5.2, this module provides comprehensive coverage of PowerShell cmdlets, the PowerShell pipeline, and object-oriented command-line administration in Windows Server environments.</p>
+
+                    <div class="definition-box">
+                        <h4>📖 What is PowerShell?</h4>
+                        <p><strong>PowerShell</strong> is Microsoft's task automation and configuration management framework, consisting of a command-line shell and scripting language built on the .NET Framework. Unlike traditional command-line interfaces that work with text, PowerShell works with <strong>objects</strong>, making it more powerful and flexible for system administration.</p>
+                        
+                        <p><strong>Key characteristics:</strong></p>
+                        <ul>
+                            <li><strong>Object-based:</strong> Commands pass .NET objects, not text</li>
+                            <li><strong>Consistent syntax:</strong> Verb-Noun naming convention</li>
+                            <li><strong>Discoverable:</strong> Built-in help and command discovery</li>
+                            <li><strong>Extensible:</strong> Modules and custom cmdlets</li>
+                            <li><strong>Cross-platform:</strong> PowerShell Core runs on Windows, Linux, and macOS</li>
+                        </ul>
+                    </div>
+
+                    <h3>PowerShell vs. Bash: Key Differences</h3>
+
+                    <div class="comparison-table">
+                        <div class="comparison-card">
+                            <h4>🐧 Bash (Linux/Unix)</h4>
+                            <ul>
+                                <li><strong>Text-based:</strong> Commands output text strings</li>
+                                <li><strong>Parsing required:</strong> Use grep, awk, sed to extract data</li>
+                                <li><strong>Case-sensitive:</strong> Commands and variables</li>
+                                <li><strong>Compact syntax:</strong> Short commands (ls, cd, grep)</li>
+                                <li><strong>Pipeline:</strong> Passes text between commands</li>
+                                <li><strong>Philosophy:</strong> Do one thing well, chain tools</li>
+                            </ul>
+                        </div>
+
+                        <div class="comparison-card">
+                            <h4>⚡ PowerShell (Windows)</h4>
+                            <ul>
+                                <li><strong>Object-based:</strong> Commands output .NET objects</li>
+                                <li><strong>Direct access:</strong> Access properties without parsing</li>
+                                <li><strong>Case-insensitive:</strong> Commands and variables</li>
+                                <li><strong>Verbose syntax:</strong> Descriptive cmdlet names</li>
+                                <li><strong>Pipeline:</strong> Passes objects between commands</li>
+                                <li><strong>Philosophy:</strong> Consistency, discoverability, power</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Comparison Example: Listing Processes</h4>
+                        
+                        <p><strong>Bash approach (text-based):</strong></p>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+# Get processes using more than 10% CPU
+ps aux | awk '$3 > 10 {print $2, $3, $11}'
+
+# Output is text that must be parsed
+# 1234 15.2 /usr/bin/firefox
+# 5678 12.8 /usr/bin/chrome</div>
+
+                        <p><strong>PowerShell approach (object-based):</strong></p>
+                        <div class="code-block"># Get processes using more than 10% CPU
+Get-Process | Where-Object {$_.CPU -gt 10} | 
+    Select-Object Id, CPU, ProcessName
+
+# Output is objects with properties
+# Id  CPU      ProcessName
+# --  ---      -----------
+# 1234 15.2    firefox
+# 5678 12.8    chrome</div>
+
+                        <p><strong>Key difference:</strong> In PowerShell, you work directly with process objects and their properties. In Bash, you work with text and must parse it.</p>
+                    </div>
+
+                    <h3>Skills Transfer from Bash</h3>
+
+                    <div class="tip-box">
+                        <h4>💡 Concepts That Transfer from Bash</h4>
+                        <p>If you've learned Bash (Modules 5.1 and 5.2), many concepts transfer to PowerShell:</p>
+                        
+                        <table class="command-table">
+                            <thead>
+                                <tr>
+                                    <th>Concept</th>
+                                    <th>Bash</th>
+                                    <th>PowerShell</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Pipeline</td>
+                                    <td><code>command1 | command2</code></td>
+                                    <td><code>Cmdlet1 | Cmdlet2</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Variables</td>
+                                    <td><code>name="value"</code></td>
+                                    <td><code>$name = "value"</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Conditionals</td>
+                                    <td><code>if [ condition ]; then</code></td>
+                                    <td><code>if ($condition) {</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Loops</td>
+                                    <td><code>for i in list; do</code></td>
+                                    <td><code>foreach ($i in $list) {</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Functions</td>
+                                    <td><code>function_name() {</code></td>
+                                    <td><code>function FunctionName {</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Scripts</td>
+                                    <td><code>script.sh</code></td>
+                                    <td><code>script.ps1</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <p><strong>The fundamental concepts are similar; the syntax and approaches differ.</strong></p>
+                    </div>
+
+                    <h3>Module Learning Objectives</h3>
+                    <p>By the end of this module, you will be able to:</p>
+                    <ul>
+                        <li>Execute common PowerShell cmdlets for system administration</li>
+                        <li>Understand the PowerShell verb-noun naming convention</li>
+                        <li>Work with PowerShell objects and properties</li>
+                        <li>Use the PowerShell pipeline effectively</li>
+                        <li>Filter, sort, and format PowerShell output</li>
+                        <li>Discover and learn new cmdlets using Get-Command and Get-Help</li>
+                        <li>Navigate PowerShell providers like the file system and registry</li>
+                    </ul>
+
+                    <h3>Prerequisites</h3>
+                    <p>Before beginning this module, you should have:</p>
+                    <ul>
+                        <li>Completed Module 4.6 (Introduction to PowerShell)</li>
+                        <li>Access to a Windows Server VM from Week 4</li>
+                        <li>Understanding of basic Windows Server administration</li>
+                        <li>Experience with Bash scripting (Modules 5.1 and 5.2) - helpful but not required</li>
+                    </ul>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Execution Policy Reminder</h4>
+                        <p>Before running PowerShell scripts, ensure your execution policy is set appropriately:</p>
+                        <div class="code-block"># Check current execution policy
+Get-ExecutionPolicy
+
+# Set execution policy for current user (recommended for learning)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Or for testing in your VM
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser</div>
+                        <p><strong>Note:</strong> In production environments, use more restrictive policies and sign your scripts.</p>
+                    </div>
+
+                    <div class="tip-box">
+                        <h4>💡 Getting Started Tips</h4>
+                        <ul>
+                            <li><strong>Use Tab Completion:</strong> Press Tab to auto-complete cmdlet names, parameters, and file paths</li>
+                            <li><strong>Case Doesn't Matter:</strong> PowerShell is case-insensitive (Get-Process = get-process = GET-PROCESS)</li>
+                            <li><strong>Use ISE or VS Code:</strong> PowerShell ISE provides IntelliSense and debugging tools</li>
+                            <li><strong>Experiment Safely:</strong> Use -WhatIf parameter to preview changes without executing</li>
+                            <li><strong>Get-Help is Your Friend:</strong> Use it liberally to learn cmdlets</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Cmdlets Section -->
+                <section id="cmdlets" class="section">
+                    <h2>Cmdlet Fundamentals</h2>
+                    
+                    <p>Cmdlets (pronounced "command-lets") are the building blocks of PowerShell. Understanding their structure and naming convention is essential for PowerShell proficiency.</p>
+
+                    <h3>The Verb-Noun Naming Convention</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Cmdlet Naming Convention</h4>
+                        <p>All PowerShell cmdlets follow a consistent <strong>Verb-Noun</strong> naming pattern:</p>
+                        
+                        <div class="verb-noun-highlight">
+                            <p style="font-size: 1.3em; font-family: 'Consolas', monospace; text-align: center; margin: 20px 0;">
+                                <span style="color: #e74c3c; font-weight: bold;">Verb</span><span style="color: var(--text-dark);">-</span><span style="color: var(--secondary-color); font-weight: bold;">Noun</span>
+                            </p>
+                            <p style="text-align: center; margin-top: 10px;">
+                                <strong>Example:</strong> <span class="inline-code">Get-Process</span>
+                            </p>
+                            <ul style="margin-top: 15px;">
+                                <li><strong style="color: #e74c3c;">Verb</strong> = Action to perform (Get, Set, New, Remove, Start, Stop, etc.)</li>
+                                <li><strong style="color: var(--secondary-color);">Noun</strong> = Resource to act upon (Process, Service, Item, Content, etc.)</li>
+                            </ul>
+                        </div>
+                        
+                        <p><strong>Why this convention?</strong></p>
+                        <ul>
+                            <li><strong>Consistency:</strong> All cmdlets follow the same pattern</li>
+                            <li><strong>Predictability:</strong> If you know one cmdlet, you can guess others</li>
+                            <li><strong>Discoverability:</strong> Easy to find cmdlets for specific tasks</li>
+                            <li><strong>Readability:</strong> Self-documenting code</li>
+                        </ul>
+                    </div>
+
+                    <h3>Common PowerShell Verbs</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Verb</th>
+                                <th>Action</th>
+                                <th>Examples</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Get</strong></td>
+                                <td>Retrieve information</td>
+                                <td>Get-Process, Get-Service, Get-ChildItem</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Set</strong></td>
+                                <td>Modify existing resource</td>
+                                <td>Set-Service, Set-Location, Set-Content</td>
+                            </tr>
+                            <tr>
+                                <td><strong>New</strong></td>
+                                <td>Create new resource</td>
+                                <td>New-Item, New-Service, New-ADUser</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Remove</strong></td>
+                                <td>Delete resource</td>
+                                <td>Remove-Item, Remove-Service, Remove-ADUser</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Start</strong></td>
+                                <td>Begin operation</td>
+                                <td>Start-Service, Start-Process, Start-Job</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stop</strong></td>
+                                <td>End operation</td>
+                                <td>Stop-Service, Stop-Process, Stop-Computer</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Restart</strong></td>
+                                <td>Stop and start</td>
+                                <td>Restart-Service, Restart-Computer</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Test</strong></td>
+                                <td>Verify condition</td>
+                                <td>Test-Connection, Test-Path, Test-NetConnection</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Enable</strong></td>
+                                <td>Activate feature</td>
+                                <td>Enable-PSRemoting, Enable-WindowsFeature</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Disable</strong></td>
+                                <td>Deactivate feature</td>
+                                <td>Disable-PSRemoting, Disable-WindowsFeature</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Verb-Noun Pattern Examples</h4>
+                        <div class="code-block"># Get cmdlets follow predictable pattern
+Get-Process      # Get running processes
+Get-Service      # Get Windows services
+Get-EventLog     # Get event log entries
+Get-ChildItem    # Get files and directories
+Get-Content      # Get file contents
+Get-ComputerInfo # Get computer information
+
+# Set cmdlets modify existing resources
+Set-Service      # Modify service configuration
+Set-Location     # Change current directory
+Set-Content      # Write content to file
+Set-ExecutionPolicy  # Change script execution policy
+
+# New cmdlets create resources
+New-Item         # Create new file or directory
+New-Service      # Create new Windows service
+New-LocalUser    # Create new local user account
+
+# Remove cmdlets delete resources
+Remove-Item      # Delete file or directory
+Remove-Service   # Delete Windows service
+Remove-LocalUser # Delete local user account
+
+# Start/Stop cmdlets control operations
+Start-Service    # Start a Windows service
+Stop-Process     # Stop a running process
+Restart-Computer # Restart the computer</div>
+                    </div>
+
+                    <h3>Cmdlet Parameters</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Cmdlet Parameters</h4>
+                        <p><strong>Parameters</strong> modify how a cmdlet operates. They provide additional information or options to the cmdlet.</p>
+                        
+                        <p><strong>Parameter syntax:</strong></p>
+                        <div class="code-block">Cmdlet-Name -ParameterName ParameterValue
+
+# Examples:
+Get-Process -Name "chrome"
+Get-Service -ComputerName "Server01"
+Get-ChildItem -Path "C:\Windows" -Recurse</div>
+
+                        <p><strong>Parameter types:</strong></p>
+                        <ul>
+                            <li><strong>Named parameters:</strong> Explicitly specify parameter name</li>
+                            <li><strong>Positional parameters:</strong> Order determines which parameter</li>
+                            <li><strong>Switch parameters:</strong> Boolean flags (present = true, absent = false)</li>
+                            <li><strong>Required parameters:</strong> Must be provided</li>
+                            <li><strong>Optional parameters:</strong> Have default values</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Parameter Examples</h4>
+                        <div class="code-block"># Named parameters (explicit)
+Get-Process -Name "notepad"
+Get-ChildItem -Path "C:\Windows" -Filter "*.exe"
+
+# Positional parameters (order matters)
+Get-Process "notepad"           # Name is first positional parameter
+Get-ChildItem "C:\Windows"      # Path is first positional parameter
+
+# Switch parameters (boolean flags)
+Get-ChildItem -Recurse          # Include subdirectories
+Get-ChildItem -Force            # Include hidden files
+Get-Service -DependentServices  # Show dependent services
+
+# Multiple parameters
+Get-ChildItem -Path "C:\Windows" -Filter "*.log" -Recurse -Force
+
+# Parameter shortcuts (aliases)
+Get-ChildItem -Path "C:\Windows"   # Full parameter name
+Get-ChildItem -P "C:\Windows"      # Abbreviated (minimum unique)
+gci "C:\Windows"                   # Alias for cmdlet
+
+# Common parameters (available on all cmdlets)
+Get-Process -Verbose               # Show detailed information
+Get-Service -ErrorAction SilentlyContinue  # Suppress errors
+Get-ChildItem -WhatIf              # Preview without executing</div>
+                    </div>
+
+                    <h3>Cmdlet Aliases</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 PowerShell Aliases</h4>
+                        <p><strong>Aliases</strong> are shortcut names for cmdlets. PowerShell includes many built-in aliases for common cmdlets, including aliases that match Linux/Unix commands.</p>
+                    </div>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Cmdlet</th>
+                                <th>Aliases</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Get-ChildItem</td>
+                                <td>gci, ls, dir</td>
+                                <td>List files and directories</td>
+                            </tr>
+                            <tr>
+                                <td>Set-Location</td>
+                                <td>sl, cd, chdir</td>
+                                <td>Change directory</td>
+                            </tr>
+                            <tr>
+                                <td>Copy-Item</td>
+                                <td>cpi, cp, copy</td>
+                                <td>Copy files</td>
+                            </tr>
+                            <tr>
+                                <td>Remove-Item</td>
+                                <td>ri, rm, del</td>
+                                <td>Delete files</td>
+                            </tr>
+                            <tr>
+                                <td>Move-Item</td>
+                                <td>mi, mv, move</td>
+                                <td>Move files</td>
+                            </tr>
+                            <tr>
+                                <td>Get-Content</td>
+                                <td>gc, cat, type</td>
+                                <td>Read file contents</td>
+                            </tr>
+                            <tr>
+                                <td>Write-Output</td>
+                                <td>echo, write</td>
+                                <td>Display output</td>
+                            </tr>
+                            <tr>
+                                <td>Select-Object</td>
+                                <td>select</td>
+                                <td>Select properties</td>
+                            </tr>
+                            <tr>
+                                <td>Where-Object</td>
+                                <td>where, ?</td>
+                                <td>Filter objects</td>
+                            </tr>
+                            <tr>
+                                <td>ForEach-Object</td>
+                                <td>foreach, %</td>
+                                <td>Process each object</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Using Aliases</h4>
+                        <div class="code-block"># These are equivalent:
+Get-ChildItem
+gci
+ls
+dir
+
+# These are equivalent:
+Set-Location C:\Windows
+sl C:\Windows
+cd C:\Windows
+chdir C:\Windows
+
+# View all aliases
+Get-Alias
+
+# Find aliases for a cmdlet
+Get-Alias -Definition Get-ChildItem
+
+# Find cmdlet for an alias
+Get-Alias ls
+
+# Create your own alias
+New-Alias -Name list -Value Get-ChildItem
+
+# Remove an alias
+Remove-Alias -Name list</div>
+                    </div>
+
+                    <div class="tip-box">
+                        <h4>💡 Best Practice: When to Use Aliases</h4>
+                        <ul>
+                            <li><strong>Interactive use:</strong> Aliases are great for typing commands quickly</li>
+                            <li><strong>Scripts:</strong> Use full cmdlet names for clarity and maintainability</li>
+                            <li><strong>Documentation:</strong> Always use full cmdlet names</li>
+                            <li><strong>Shared code:</strong> Full names prevent confusion</li>
+                        </ul>
+                        <div class="code-block"># Good for interactive use:
+gci | where {$_.Length -gt 1MB}
+
+# Better for scripts:
+Get-ChildItem | Where-Object {$_.Length -gt 1MB}</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice with cmdlet basics:</p>
+                        <ol>
+                            <li>Open PowerShell and try various Get- cmdlets</li>
+                            <li>Use Tab completion to discover cmdlet parameters</li>
+                            <li>Experiment with both full cmdlet names and aliases</li>
+                            <li>Use Get-Alias to explore available shortcuts</li>
+                            <li>Try the -WhatIf parameter on Set- or Remove- cmdlets</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Cmdlet Fundamentals</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question 1:</strong> Which cmdlet would you use to retrieve information about Windows services?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="a">
+                                <span><code>Get-Process</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="b">
+                                <span><code>Get-Service</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="c">
+                                <span><code>Get-Item</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="d">
+                                <span><code>Get-Information</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q1', 'b', 'feedback1')">Check Answer</button>
+                        <div id="feedback1" class="feedback"></div>
+
+                        <div class="exercise-question" style="margin-top: 30px;">
+                            <p><strong>Question 2:</strong> What is the purpose of the -WhatIf parameter?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="a">
+                                <span>It speeds up cmdlet execution</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="b">
+                                <span>It shows what would happen without actually executing</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="c">
+                                <span>It provides detailed help information</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="d">
+                                <span>It forces the cmdlet to execute</span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q2', 'b', 'feedback2')">Check Answer</button>
+                        <div id="feedback2" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Essential Cmdlets Section -->
+                <section id="essential" class="section">
+                    <h2>Essential Administrative Cmdlets</h2>
+                    
+                    <p>These cmdlets form the foundation of PowerShell server administration. Mastering them enables you to perform most common administrative tasks from the command line.</p>
+
+                    <h3>File System Management</h3>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Get-ChildItem</div>
+                        <div class="cmdlet-description">List files and directories (like ls in Linux or dir in CMD)</div>
+                        <div class="code-block"># Basic usage
+Get-ChildItem
+
+# List specific directory
+Get-ChildItem C:\Windows
+
+# List with filter
+Get-ChildItem -Path C:\Windows -Filter "*.exe"
+
+# Recursive listing
+Get-ChildItem -Path C:\Windows -Recurse
+
+# Show hidden files
+Get-ChildItem -Force
+
+# List only directories
+Get-ChildItem -Directory
+
+# List only files
+Get-ChildItem -File
+
+# Combine parameters
+Get-ChildItem -Path C:\Windows\System32 -Filter "*.dll" -Recurse -Force</div>
+                        
+                        <p><strong>Output:</strong></p>
+                        <div class="script-output">    Directory: C:\Windows
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d-----        12/7/2023   3:14 PM                Program Files
+d-----        12/7/2023   3:14 PM                Windows
+-a----        12/7/2023   3:14 PM          12345 test.txt</div>
+                    </div>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Set-Location</div>
+                        <div class="cmdlet-description">Change current directory (like cd in Linux/CMD)</div>
+                        <div class="code-block"># Change to specific directory
+Set-Location C:\Windows
+
+# Change to parent directory
+Set-Location ..
+
+# Change to user's home directory
+Set-Location ~
+
+# Return to previous location
+Set-Location -
+
+# Using alias
+cd C:\Windows
+sl C:\Windows</div>
+                    </div>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Copy-Item</div>
+                        <div class="cmdlet-description">Copy files and directories</div>
+                        <div class="code-block"># Copy file
+Copy-Item -Path "C:\source\file.txt" -Destination "C:\destination\"
+
+# Copy and rename
+Copy-Item -Path "C:\source\file.txt" -Destination "C:\destination\newname.txt"
+
+# Copy directory recursively
+Copy-Item -Path "C:\source\folder" -Destination "C:\destination\" -Recurse
+
+# Copy with confirmation
+Copy-Item -Path "C:\source\*" -Destination "C:\destination\" -Confirm
+
+# Using alias
+cp source.txt destination.txt</div>
+                    </div>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Remove-Item</div>
+                        <div class="cmdlet-description">Delete files and directories</div>
+                        <div class="code-block"># Delete file
+Remove-Item -Path "C:\temp\file.txt"
+
+# Delete directory and contents
+Remove-Item -Path "C:\temp\folder" -Recurse
+
+# Delete with confirmation
+Remove-Item -Path "C:\temp\*" -Confirm
+
+# Force delete (including read-only)
+Remove-Item -Path "C:\temp\file.txt" -Force
+
+# Preview deletion without executing
+Remove-Item -Path "C:\temp\*" -WhatIf
+
+# Using alias
+rm file.txt
+del file.txt</div>
+                    </div>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">New-Item</div>
+                        <div class="cmdlet-description">Create new files and directories</div>
+                        <div class="code-block"># Create directory
+New-Item -Path "C:\temp\newfolder" -ItemType Directory
+
+# Create file
+New-Item -Path "C:\temp\newfile.txt" -ItemType File
+
+# Create file with content
+New-Item -Path "C:\temp\newfile.txt" -ItemType File -Value "Hello, World!"
+
+# Create multiple directories
+New-Item -Path "C:\temp\dir1", "C:\temp\dir2", "C:\temp\dir3" -ItemType Directory
+
+# Using alias
+mkdir newfolder</div>
+                    </div>
+
+                    <h3>Service Management</h3>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Get-Service</div>
+                        <div class="cmdlet-description">Retrieve Windows service information</div>
+                        <div class="code-block"># List all services
+Get-Service
+
+# Get specific service
+Get-Service -Name "wuauserv"
+
+# Get services by display name pattern
+Get-Service -DisplayName "*Windows Update*"
+
+# Get only running services
+Get-Service | Where-Object {$_.Status -eq "Running"}
+
+# Get stopped services
+Get-Service | Where-Object {$_.Status -eq "Stopped"}
+
+# Get services that can be stopped
+Get-Service | Where-Object {$_.CanStop -eq $true}
+
+# Get services on remote computer
+Get-Service -ComputerName "Server01"</div>
+                        
+                        <p><strong>Output:</strong></p>
+                        <div class="script-output">Status   Name               DisplayName
+------   ----               -----------
+Running  wuauserv           Windows Update
+Stopped  BITS               Background Intelligent Transfer Ser...
+Running  Spooler            Print Spooler</div>
+                    </div>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Start-Service / Stop-Service / Restart-Service</div>
+                        <div class="cmdlet-description">Control Windows services</div>
+                        <div class="code-block"># Start a service
+Start-Service -Name "wuauserv"
+
+# Stop a service
+Stop-Service -Name "wuauserv"
+
+# Restart a service
+Restart-Service -Name "wuauserv"
+
+# Start with confirmation
+Start-Service -Name "wuauserv" -Confirm
+
+# Start and wait for it to complete
+Start-Service -Name "wuauserv" -PassThru
+
+# Stop multiple services
+Stop-Service -Name "service1", "service2", "service3"
+
+# Restart all services matching pattern
+Get-Service -Name "App*" | Restart-Service</div>
+                    </div>
+
+                    <h3>Process Management</h3>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Get-Process</div>
+                        <div class="cmdlet-description">Get information about running processes</div>
+                        <div class="code-block"># List all processes
+Get-Process
+
+# Get specific process
+Get-Process -Name "notepad"
+
+# Get processes using wildcard
+Get-Process -Name "chrome*"
+
+# Get process by ID
+Get-Process -Id 1234
+
+# Get processes sorted by CPU usage
+Get-Process | Sort-Object CPU -Descending
+
+# Get processes using more than 100MB memory
+Get-Process | Where-Object {$_.WorkingSet -gt 100MB}
+
+# Get top 10 memory consumers
+Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First 10
+
+# Get processes on remote computer
+Get-Process -ComputerName "Server01"</div>
+                        
+                        <p><strong>Output:</strong></p>
+                        <div class="script-output">Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
+-------  ------    -----      -----     ------     --  -- -----------
+    467      32    45628      52384       1.25   4532   1 chrome
+    234      18    12456      18764       0.45   2344   1 notepad
+    892      45    98234     124568      12.67   1234   1 firefox</div>
+                    </div>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Stop-Process</div>
+                        <div class="cmdlet-description">Terminate running processes</div>
+                        <div class="code-block"># Stop process by name
+Stop-Process -Name "notepad"
+
+# Stop process by ID
+Stop-Process -Id 1234
+
+# Force stop process
+Stop-Process -Name "chrome" -Force
+
+# Stop with confirmation
+Stop-Process -Name "notepad" -Confirm
+
+# Stop all processes matching pattern
+Get-Process -Name "chrome*" | Stop-Process
+
+# Stop processes using more than 500MB
+Get-Process | Where-Object {$_.WorkingSet -gt 500MB} | Stop-Process</div>
+                    </div>
+
+                    <h3>System Information</h3>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Get-ComputerInfo</div>
+                        <div class="cmdlet-description">Get comprehensive computer information</div>
+                        <div class="code-block"># Get all computer information
+Get-ComputerInfo
+
+# Get specific properties
+Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsArchitecture
+
+# Get OS information
+Get-ComputerInfo | Select-Object Os*
+
+# Get BIOS information
+Get-ComputerInfo | Select-Object Bios*
+
+# Get network information
+Get-ComputerInfo | Select-Object *Network*
+
+# Get time zone
+Get-ComputerInfo | Select-Object TimeZone</div>
+                    </div>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Get-EventLog</div>
+                        <div class="cmdlet-description">Read Windows event logs</div>
+                        <div class="code-block"># List available event logs
+Get-EventLog -List
+
+# Get latest 20 entries from System log
+Get-EventLog -LogName System -Newest 20
+
+# Get error entries
+Get-EventLog -LogName System -EntryType Error -Newest 50
+
+# Get entries from specific source
+Get-EventLog -LogName Application -Source "Application Error"
+
+# Get entries from last 24 hours
+Get-EventLog -LogName System -After (Get-Date).AddDays(-1)
+
+# Get entries with specific Event ID
+Get-EventLog -LogName System -InstanceId 1074</div>
+                    </div>
+
+                    <h3>Network Commands</h3>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Test-Connection</div>
+                        <div class="cmdlet-description">Test network connectivity (like ping)</div>
+                        <div class="code-block"># Ping a computer
+Test-Connection -ComputerName "google.com"
+
+# Ping with specific count
+Test-Connection -ComputerName "google.com" -Count 4
+
+# Quiet mode (returns boolean)
+Test-Connection -ComputerName "google.com" -Quiet
+
+# Ping multiple computers
+Test-Connection -ComputerName "server1", "server2", "server3"
+
+# Continuous ping
+Test-Connection -ComputerName "google.com" -Count ([int]::MaxValue)</div>
+                    </div>
+
+                    <div class="cmdlet-card">
+                        <div class="cmdlet-name">Get-NetIPAddress</div>
+                        <div class="cmdlet-description">Get IP address configuration</div>
+                        <div class="code-block"># Get all IP addresses
+Get-NetIPAddress
+
+# Get IPv4 addresses only
+Get-NetIPAddress -AddressFamily IPv4
+
+# Get IP addresses for specific adapter
+Get-NetIPAddress -InterfaceAlias "Ethernet"
+
+# Get IP configuration (like ipconfig)
+Get-NetIPConfiguration</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice essential cmdlets:</p>
+                        <ol>
+                            <li>Use Get-Service to find all running services</li>
+                            <li>Use Get-Process to identify the top 5 memory-consuming processes</li>
+                            <li>Create a test directory and files using New-Item</li>
+                            <li>Use Get-ChildItem with various filters</li>
+                            <li>Test connectivity to google.com using Test-Connection</li>
+                            <li>View recent System event log errors</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Summary Section (abbreviated for length) -->
+                <section id="summary" class="section">
+                    <h2>Module Summary</h2>
+                    
+                    <div class="key-takeaways">
+                        <h3>🎯 Key Concepts Mastered</h3>
+                        <ul>
+                            <li>PowerShell verb-noun naming convention</li>
+                            <li>Essential cmdlets for file, service, and process management</li>
+                            <li>Working with PowerShell objects and properties</li>
+                            <li>Using the PowerShell pipeline effectively</li>
+                            <li>Discovery and help system</li>
+                        </ul>
+                    </div>
+
+                    <div class="tip-box">
+                        <h4>💡 Next Steps</h4>
+                        <p><strong>Module 5.4:</strong> PowerShell Scripting - Learn to create automated administrative scripts</p>
+                        <p><strong>Practice:</strong> Use PowerShell for daily administrative tasks</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer>
+            <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+            <p>Module 5.3: PowerShell Fundamentals and Cmdlets</p>
+            <p style="margin-top: 10px;">Mendocino College | Computer Science Department</p>
+        </footer>
+    </div>
+
+    <script>
+        const sections = ['intro', 'cmdlets', 'essential', 'objects', 'pipeline', 'discovery', 'providers', 'summary'];
+        let currentSectionIndex = 0;
+        let completedSections = new Set();
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (currentSectionIndex >= 0) {
+                completedSections.add(sections[currentSectionIndex]);
+                updateProgress();
+            }
+            
+            currentSectionIndex = sections.indexOf(sectionId);
+            window.scrollTo(0, 0);
+        }
+
+        function updateProgress() {
+            const total = sections.length;
+            const completed = completedSections.size;
+            const percentage = Math.round((completed / total) * 100);
+            
+            document.getElementById('moduleProgress').style.width = percentage + '%';
+            document.getElementById('moduleProgress').textContent = percentage + '%';
+            document.getElementById('sectionsCompleted').textContent = completed;
+            
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                if (completedSections.has(sections[index])) {
+                    item.classList.add('completed');
+                }
+            });
+        }
+
+        function checkAnswer(questionName, correctAnswer, feedbackId) {
+            const selected = document.querySelector(`input[name="${questionName}"]:checked`);
+            const feedback = document.getElementById(feedbackId);
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '⚠️ Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === correctAnswer) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✅ Correct! ' + getExplanation(questionName);
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '❌ Incorrect. ' + getExplanation(questionName);
+            }
+        }
+
+        function getExplanation(questionName) {
+            const explanations = {
+                'q1': 'Get-Service retrieves information about Windows services. Get-Process is for processes, Get-Item is for file system items.',
+                'q2': 'The -WhatIf parameter shows what would happen if the cmdlet runs, without actually executing it. This is useful for testing potentially destructive commands.'
+            };
+            return explanations[questionName] || '';
+        }
+
+        document.addEventListener('DOMContentLoaded', updateProgress);
+    </script>
+</body>
+</html>

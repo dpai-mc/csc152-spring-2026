@@ -1,0 +1,3046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Module 5.1 - Advanced Bash Command-Line Administration">
+    <title>Module 5.1: Advanced Bash Command-Line Administration | CSC 152</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #16a085;
+            --light-bg: #ecf0f1;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --border-color: #bdc3c7;
+            --code-bg: #2d2d2d;
+            --code-text: #f8f8f2;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--light-bg);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .module-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .content-wrapper {
+            display: flex;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #f8f9fa;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left-color: var(--secondary-color);
+        }
+
+        .nav-item.active {
+            background-color: rgba(52, 152, 219, 0.15);
+            border-left-color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .nav-item.completed::after {
+            content: " ✓";
+            color: var(--success-color);
+            float: right;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--secondary-color);
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: var(--primary-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .definition-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid var(--info-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .definition-box h4 {
+            color: var(--info-color);
+            margin-top: 0;
+        }
+
+        .example-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .example-box h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .tip-box {
+            background-color: #d4edda;
+            border-left: 4px solid var(--success-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .tip-box h4 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        .code-block {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.7em;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        .inline-code {
+            background-color: #f4f4f4;
+            color: #c7254e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .command-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .command-table th {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 12px;
+            text-align: left;
+        }
+
+        .command-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .command-table tr:hover {
+            background-color: var(--light-bg);
+        }
+
+        .interactive-exercise {
+            background-color: var(--white);
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .interactive-exercise h3 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .exercise-question {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .exercise-options {
+            margin: 15px 0;
+        }
+
+        .exercise-option {
+            display: block;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .exercise-option:hover {
+            border-color: var(--secondary-color);
+            background-color: #f0f7ff;
+        }
+
+        .exercise-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .exercise-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            margin: 10px 0;
+        }
+
+        .exercise-input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+
+        .check-answer-btn {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .check-answer-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .check-answer-btn:disabled {
+            background-color: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background-color: #d4edda;
+            border: 1px solid var(--success-color);
+            color: #155724;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            border: 1px solid var(--accent-color);
+            color: #721c24;
+            display: block;
+        }
+
+        .progress-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .progress-bar-wrapper {
+            background-color: var(--light-bg);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--success-color), #2ecc71);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.prev {
+            background-color: var(--text-light);
+            color: var(--white);
+        }
+
+        .nav-btn.next {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .key-takeaways {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .key-takeaways h3 {
+            color: var(--white);
+            margin-top: 0;
+        }
+
+        .key-takeaways ul {
+            margin-left: 20px;
+        }
+
+        .key-takeaways li {
+            margin-bottom: 10px;
+        }
+
+        .try-it-yourself {
+            background-color: #fff9e6;
+            border: 2px dashed var(--warning-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .try-it-yourself h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        footer {
+            background-color: var(--primary-color);
+            color: var(--white);
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media print {
+            .sidebar, .navigation-buttons, .interactive-exercise {
+                display: none;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .section {
+                display: block !important;
+                page-break-after: always;
+            }
+        }
+
+        @media (max-width: 968px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .main-content {
+                padding: 20px;
+            }
+        }
+
+        .cheat-sheet {
+            background-color: #f8f9fa;
+            border: 2px solid var(--info-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .cheat-sheet h4 {
+            color: var(--info-color);
+            margin-top: 0;
+        }
+
+        .command-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .command-card {
+            background-color: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .command-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .command-card h5 {
+            color: var(--secondary-color);
+            margin-bottom: 8px;
+        }
+
+        .command-card code {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Module 5.1: Advanced Bash Command-Line Administration</h1>
+            <div class="module-info">
+                <div class="info-badge">📚 CSC 152 - Week 5</div>
+                <div class="info-badge">⏱️ 90 minutes</div>
+                <div class="info-badge">🎯 CSLO 1</div>
+                <div class="info-badge">🔧 Hands-On Practice</div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <h3>Module Contents</h3>
+                <div class="nav-item active" onclick="showSection('intro')">Introduction</div>
+                <div class="nav-item" onclick="showSection('file-ops')">Advanced File Operations</div>
+                <div class="nav-item" onclick="showSection('text-processing')">Text Processing</div>
+                <div class="nav-item" onclick="showSection('command-chaining')">Command Chaining</div>
+                <div class="nav-item" onclick="showSection('process-mgmt')">Process Management</div>
+                <div class="nav-item" onclick="showSection('system-info')">System Information</div>
+                <div class="nav-item" onclick="showSection('practice')">Practice Exercises</div>
+                <div class="nav-item" onclick="showSection('summary')">Summary</div>
+
+                <div class="progress-container" style="margin-top: 30px;">
+                    <h3>Your Progress</h3>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="moduleProgress">0%</div>
+                    </div>
+                    <p style="text-align: center; color: var(--text-light); font-size: 0.9em;">
+                        <span id="sectionsCompleted">0</span> of 8 sections completed
+                    </p>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <!-- Introduction Section -->
+                <section id="intro" class="section active">
+                    <h2>Introduction to Advanced Bash Commands</h2>
+                    
+                    <p>Welcome to Module 5.1! This module builds upon your foundational Linux command-line skills from Week 3 by introducing advanced Bash commands, text processing utilities, and command chaining techniques that are essential for efficient server administration.</p>
+
+                    <div class="definition-box">
+                        <h4>📖 What is Advanced Command-Line Administration?</h4>
+                        <p><strong>Advanced command-line administration</strong> refers to the use of sophisticated command combinations, text processing tools, and automation techniques to perform complex system administration tasks efficiently. Unlike basic commands that perform simple operations, advanced techniques leverage the power of command chaining, regular expressions, and stream processing to handle large-scale administrative tasks.</p>
+                    </div>
+
+                    <h3>Module Learning Objectives</h3>
+                    <p>By the end of this module, you will be able to:</p>
+                    <ul>
+                        <li>Execute advanced file and text manipulation commands</li>
+                        <li>Use pipes and redirection to chain commands effectively</li>
+                        <li>Apply text processing tools (grep, sed, awk) for system administration tasks</li>
+                        <li>Utilize command history and shortcuts for efficiency</li>
+                        <li>Search and filter system information using command-line tools</li>
+                    </ul>
+
+                    <h3>Why Advanced Bash Commands Matter</h3>
+                    <p>As a system administrator, you'll frequently need to:</p>
+                    <ul>
+                        <li><strong>Process log files:</strong> Search through thousands of lines to find specific errors or patterns</li>
+                        <li><strong>Manage files at scale:</strong> Find, modify, or delete files across complex directory structures</li>
+                        <li><strong>Automate repetitive tasks:</strong> Combine commands to create powerful one-liners</li>
+                        <li><strong>Monitor system resources:</strong> Track processes, memory, disk usage, and network connections</li>
+                        <li><strong>Troubleshoot issues:</strong> Quickly identify problems using command-line diagnostic tools</li>
+                    </ul>
+
+                    <div class="example-box">
+                        <h4>💡 Real-World Scenario</h4>
+                        <p>Imagine you're managing a web server that's experiencing performance issues. Using advanced Bash commands, you can:</p>
+                        <ol>
+                            <li>Search Apache logs for all 500 errors in the last hour using <span class="inline-code">grep</span></li>
+                            <li>Count how many times each error occurred using <span class="inline-code">sort</span> and <span class="inline-code">uniq</span></li>
+                            <li>Identify the top IP addresses generating errors using <span class="inline-code">awk</span></li>
+                            <li>Find processes consuming excessive memory using <span class="inline-code">ps</span> and <span class="inline-code">sort</span></li>
+                        </ol>
+                        <p>All of this can be accomplished with a few well-crafted command pipelines!</p>
+                    </div>
+
+                    <h3>Prerequisites</h3>
+                    <p>Before beginning this module, you should be comfortable with:</p>
+                    <ul>
+                        <li>Basic Linux navigation (<span class="inline-code">cd</span>, <span class="inline-code">ls</span>, <span class="inline-code">pwd</span>)</li>
+                        <li>File operations (<span class="inline-code">cp</span>, <span class="inline-code">mv</span>, <span class="inline-code">rm</span>, <span class="inline-code">mkdir</span>)</li>
+                        <li>Viewing file contents (<span class="inline-code">cat</span>, <span class="inline-code">less</span>, <span class="inline-code">head</span>, <span class="inline-code">tail</span>)</li>
+                        <li>Basic file permissions (<span class="inline-code">chmod</span>, <span class="inline-code">chown</span>)</li>
+                    </ul>
+
+                    <div class="tip-box">
+                        <h4>💡 Learning Tip</h4>
+                        <p>The best way to learn advanced Bash commands is through practice. Have your Linux VM ready and try each command as you learn it. Don't worry about making mistakes—that's how you learn! Use a test directory with sample files so you can experiment safely.</p>
+                    </div>
+                </section>
+
+                <!-- Advanced File Operations Section -->
+                <section id="file-ops" class="section">
+                    <h2>Advanced File Operations</h2>
+                    
+                    <p>While basic file commands like <span class="inline-code">cp</span> and <span class="inline-code">mv</span> handle simple file management, advanced file operations allow you to search, compare, compress, and manipulate files at scale.</p>
+
+                    <h3>Finding Files: The <code>find</code> Command</h3>
+                    
+                    <div class="definition-box">
+                        <h4>📖 The find Command</h4>
+                        <p>The <span class="inline-code">find</span> command searches for files and directories in a directory hierarchy based on various criteria such as name, type, size, modification time, and permissions. It's one of the most powerful and versatile commands for file management.</p>
+                    </div>
+
+                    <h4>Basic find Syntax</h4>
+                    <div class="code-block" data-lang="bash">find [path] [options] [expression]</div>
+
+                    <h4>Common find Examples</h4>
+
+                    <div class="example-box">
+                        <h4>Example 1: Find Files by Name</h4>
+                        <div class="code-block" data-lang="bash"># Find all .log files in /var/log
+find /var/log -name "*.log"
+
+# Find files with exact name (case-sensitive)
+find /home -name "config.txt"
+
+# Find files with name (case-insensitive)
+find /etc -iname "*.CONF"</div>
+                        <p><strong>Explanation:</strong> The <span class="inline-code">-name</span> option searches for files matching the pattern. Use <span class="inline-code">-iname</span> for case-insensitive searches. Wildcards (* and ?) work as in shell globbing.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Example 2: Find Files by Type</h4>
+                        <div class="code-block" data-lang="bash"># Find all directories
+find /home/user -type d
+
+# Find all regular files
+find /tmp -type f
+
+# Find all symbolic links
+find /usr/bin -type l</div>
+                        <p><strong>Explanation:</strong> The <span class="inline-code">-type</span> option filters by file type: <strong>f</strong> (regular file), <strong>d</strong> (directory), <strong>l</strong> (symbolic link), <strong>b</strong> (block device), <strong>c</strong> (character device).</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Example 3: Find Files by Size</h4>
+                        <div class="code-block" data-lang="bash"># Find files larger than 100MB
+find /var -type f -size +100M
+
+# Find files smaller than 1KB
+find /tmp -type f -size -1k
+
+# Find files exactly 50MB
+find /home -type f -size 50M</div>
+                        <p><strong>Explanation:</strong> The <span class="inline-code">-size</span> option uses: <strong>+</strong> (greater than), <strong>-</strong> (less than), no prefix (exactly). Units: <strong>k</strong> (kilobytes), <strong>M</strong> (megabytes), <strong>G</strong> (gigabytes).</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Example 4: Find Files by Modification Time</h4>
+                        <div class="code-block" data-lang="bash"># Find files modified in the last 7 days
+find /var/log -type f -mtime -7
+
+# Find files modified more than 30 days ago
+find /tmp -type f -mtime +30
+
+# Find files modified exactly 10 days ago
+find /home -type f -mtime 10</div>
+                        <p><strong>Explanation:</strong> <span class="inline-code">-mtime</span> measures in days. <span class="inline-code">-atime</span> (access time) and <span class="inline-code">-ctime</span> (change time) work similarly. For minutes, use <span class="inline-code">-mmin</span>, <span class="inline-code">-amin</span>, <span class="inline-code">-cmin</span>.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Example 5: Find and Execute Commands</h4>
+                        <div class="code-block" data-lang="bash"># Find and delete all .tmp files
+find /tmp -name "*.tmp" -type f -delete
+
+# Find and display detailed info
+find /var/log -name "*.log" -exec ls -lh {} \;
+
+# Find and move files to archive
+find /data -name "*.old" -exec mv {} /archive/ \;
+
+# Find and change permissions
+find /var/www -type f -exec chmod 644 {} \;</div>
+                        <p><strong>Explanation:</strong> <span class="inline-code">-exec</span> runs a command on each found file. <span class="inline-code">{}</span> represents the current file. <span class="inline-code">\;</span> terminates the command. Use <span class="inline-code">-delete</span> for simple deletions.</p>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Warning: Be Careful with -delete</h4>
+                        <p>The <span class="inline-code">-delete</span> option permanently removes files without confirmation. Always test your find command without <span class="inline-code">-delete</span> first to verify it finds the correct files!</p>
+                        <div class="code-block" data-lang="bash"># SAFE: Test first
+find /tmp -name "*.tmp" -type f
+
+# DANGEROUS: Only run after verifying
+find /tmp -name "*.tmp" -type f -delete</div>
+                    </div>
+
+                    <h3>Other File Search Tools</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Purpose</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>locate</code></td>
+                                <td>Fast file search using database</td>
+                                <td><code>locate config.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>which</code></td>
+                                <td>Find location of executable</td>
+                                <td><code>which python3</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>whereis</code></td>
+                                <td>Find binary, source, and man page</td>
+                                <td><code>whereis bash</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>type</code></td>
+                                <td>Display command type</td>
+                                <td><code>type cd</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Using locate</h4>
+                        <div class="code-block" data-lang="bash"># Update the locate database (run as root)
+sudo updatedb
+
+# Search for files
+locate nginx.conf
+
+# Case-insensitive search
+locate -i README
+
+# Count matches
+locate -c "*.pdf"</div>
+                        <p><strong>Note:</strong> <span class="inline-code">locate</span> is much faster than <span class="inline-code">find</span> because it searches a pre-built database, but the database must be updated regularly with <span class="inline-code">updatedb</span>.</p>
+                    </div>
+
+                    <h3>File Comparison</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 File Comparison Tools</h4>
+                        <p>File comparison tools help you identify differences between files, which is essential for configuration management, troubleshooting, and version control.</p>
+                    </div>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Purpose</th>
+                                <th>Best For</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>diff</code></td>
+                                <td>Line-by-line comparison</td>
+                                <td>Text files, configuration files</td>
+                            </tr>
+                            <tr>
+                                <td><code>cmp</code></td>
+                                <td>Byte-by-byte comparison</td>
+                                <td>Binary files</td>
+                            </tr>
+                            <tr>
+                                <td><code>comm</code></td>
+                                <td>Compare sorted files</td>
+                                <td>Finding unique/common lines</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Using diff</h4>
+                        <div class="code-block" data-lang="bash"># Basic comparison
+diff file1.txt file2.txt
+
+# Side-by-side comparison
+diff -y file1.txt file2.txt
+
+# Unified format (like git diff)
+diff -u original.conf modified.conf
+
+# Compare directories
+diff -r /etc/apache2/ /backup/apache2/
+
+# Ignore whitespace differences
+diff -w file1.txt file2.txt</div>
+                    </div>
+
+                    <h3>Archive and Compression</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Archives and Compression</h4>
+                        <p>Archives combine multiple files into a single file, while compression reduces file size. The <span class="inline-code">tar</span> command handles both archiving and compression, making it essential for backups and file distribution.</p>
+                    </div>
+
+                    <h4>The tar Command</h4>
+
+                    <div class="code-block" data-lang="bash"># Create a tar archive
+tar -cvf archive.tar /path/to/directory
+
+# Create a compressed tar.gz archive
+tar -czvf archive.tar.gz /path/to/directory
+
+# Create a compressed tar.bz2 archive (better compression)
+tar -cjvf archive.tar.bz2 /path/to/directory
+
+# Extract a tar archive
+tar -xvf archive.tar
+
+# Extract a tar.gz archive
+tar -xzvf archive.tar.gz
+
+# List contents without extracting
+tar -tvf archive.tar
+
+# Extract to specific directory
+tar -xzvf archive.tar.gz -C /destination/path</div>
+
+                    <div class="tip-box">
+                        <h4>💡 Remembering tar Options</h4>
+                        <p>Common tar options:</p>
+                        <ul>
+                            <li><strong>c</strong> - <strong>C</strong>reate an archive</li>
+                            <li><strong>x</strong> - e<strong>X</strong>tract an archive</li>
+                            <li><strong>v</strong> - <strong>V</strong>erbose (show files being processed)</li>
+                            <li><strong>f</strong> - <strong>F</strong>ile (specify archive filename)</li>
+                            <li><strong>z</strong> - g<strong>Z</strong>ip compression</li>
+                            <li><strong>j</strong> - b<strong>Z</strong>ip2 compression</li>
+                            <li><strong>t</strong> - lis<strong>T</strong> contents</li>
+                        </ul>
+                    </div>
+
+                    <h4>Other Compression Tools</h4>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Extension</th>
+                                <th>Compression</th>
+                                <th>Speed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>gzip</code></td>
+                                <td>.gz</td>
+                                <td>Good</td>
+                                <td>Fast</td>
+                            </tr>
+                            <tr>
+                                <td><code>bzip2</code></td>
+                                <td>.bz2</td>
+                                <td>Better</td>
+                                <td>Slower</td>
+                            </tr>
+                            <tr>
+                                <td><code>xz</code></td>
+                                <td>.xz</td>
+                                <td>Best</td>
+                                <td>Slowest</td>
+                            </tr>
+                            <tr>
+                                <td><code>zip</code></td>
+                                <td>.zip</td>
+                                <td>Good</td>
+                                <td>Fast</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Compression Examples</h4>
+                        <div class="code-block" data-lang="bash"># Compress a file with gzip
+gzip largefile.log
+# Creates largefile.log.gz
+
+# Decompress
+gunzip largefile.log.gz
+
+# Keep original file
+gzip -k largefile.log
+
+# Compress with bzip2
+bzip2 largefile.log
+
+# Decompress
+bunzip2 largefile.log.bz2
+
+# Create a zip archive
+zip -r archive.zip /path/to/directory
+
+# Extract a zip archive
+unzip archive.zip</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice these file operations in your Linux VM:</p>
+                        <ol>
+                            <li>Create a test directory with several files and subdirectories</li>
+                            <li>Use <span class="inline-code">find</span> to locate all files larger than 1KB</li>
+                            <li>Create a compressed tar archive of your test directory</li>
+                            <li>Extract the archive to a different location</li>
+                            <li>Use <span class="inline-code">diff</span> to compare the original and extracted directories</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: File Operations</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question 1:</strong> Which command would you use to find all files in /var/log that were modified in the last 24 hours?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="a">
+                                <span><code>find /var/log -mtime -1</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="b">
+                                <span><code>find /var/log -mmin -1440</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="c">
+                                <span><code>locate /var/log -mtime 1</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="d">
+                                <span><code>whereis /var/log -modified</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q1', 'b', 'feedback1')">Check Answer</button>
+                        <div id="feedback1" class="feedback"></div>
+
+                        <div class="exercise-question" style="margin-top: 30px;">
+                            <p><strong>Question 2:</strong> Write the command to create a compressed tar.gz archive named "backup.tar.gz" of the directory "/home/user/documents":</p>
+                        </div>
+                        
+                        <input type="text" class="exercise-input" id="q2-input" placeholder="Type your command here...">
+                        <button class="check-answer-btn" onclick="checkCommandAnswer('q2-input', ['tar -czvf backup.tar.gz /home/user/documents', 'tar -czf backup.tar.gz /home/user/documents'], 'feedback2')">Check Answer</button>
+                        <div id="feedback2" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Text Processing Section -->
+                <section id="text-processing" class="section">
+                    <h2>Text Processing and Manipulation</h2>
+                    
+                    <p>Text processing is one of the most powerful capabilities of the Linux command line. As a system administrator, you'll spend significant time analyzing log files, configuration files, and command output. Mastering text processing tools is essential for efficient troubleshooting and automation.</p>
+
+                    <h3>Pattern Searching with grep</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is grep?</h4>
+                        <p><strong>grep</strong> (Global Regular Expression Print) searches text for patterns and prints matching lines. It's one of the most frequently used commands in system administration for log analysis, configuration file searches, and filtering command output.</p>
+                    </div>
+
+                    <h4>Basic grep Syntax</h4>
+                    <div class="code-block" data-lang="bash">grep [options] pattern [file...]</div>
+
+                    <div class="example-box">
+                        <h4>Basic grep Examples</h4>
+                        <div class="code-block" data-lang="bash"># Search for a pattern in a file
+grep "error" /var/log/syslog
+
+# Case-insensitive search
+grep -i "error" /var/log/syslog
+
+# Search recursively in directories
+grep -r "TODO" /home/user/projects/
+
+# Show line numbers
+grep -n "error" /var/log/syslog
+
+# Count matching lines
+grep -c "error" /var/log/syslog
+
+# Show only filenames with matches
+grep -l "error" /var/log/*.log
+
+# Invert match (show non-matching lines)
+grep -v "debug" /var/log/application.log</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Advanced grep with Regular Expressions</h4>
+                        <div class="code-block" data-lang="bash"># Match lines starting with "Error"
+grep "^Error" /var/log/syslog
+
+# Match lines ending with "failed"
+grep "failed$" /var/log/syslog
+
+# Match any single character (.)
+grep "err.r" /var/log/syslog  # Matches "error", "err0r", etc.
+
+# Match IP addresses (basic pattern)
+grep "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}" access.log
+
+# Extended regex with -E (or egrep)
+grep -E "error|warning|critical" /var/log/syslog
+
+# Match word boundaries
+grep -w "error" /var/log/syslog  # Won't match "errors" or "terrored"
+
+# Show context around matches
+grep -A 3 "error" /var/log/syslog  # Show 3 lines After
+grep -B 2 "error" /var/log/syslog  # Show 2 lines Before
+grep -C 2 "error" /var/log/syslog  # Show 2 lines of Context</div>
+                    </div>
+
+                    <div class="tip-box">
+                        <h4>💡 Common grep Use Cases for Sysadmins</h4>
+                        <div class="code-block" data-lang="bash"># Find all failed SSH login attempts
+grep "Failed password" /var/log/auth.log
+
+# Find all HTTP 500 errors in Apache logs
+grep " 500 " /var/log/apache2/access.log
+
+# Find processes using port 80
+sudo netstat -tulpn | grep ":80"
+
+# Search for configuration errors
+grep -i "error" /etc/apache2/apache2.conf
+
+# Find all TODO comments in code
+grep -rn "TODO" /var/www/html/</div>
+                    </div>
+
+                    <h3>Stream Editing with sed</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is sed?</h4>
+                        <p><strong>sed</strong> (Stream Editor) performs text transformations on an input stream (file or pipeline). It's particularly useful for find-and-replace operations, deleting lines, and modifying text in automated scripts.</p>
+                    </div>
+
+                    <h4>Basic sed Operations</h4>
+
+                    <div class="example-box">
+                        <h4>Substitution (Find and Replace)</h4>
+                        <div class="code-block" data-lang="bash"># Replace first occurrence on each line
+sed 's/old/new/' file.txt
+
+# Replace all occurrences (global)
+sed 's/old/new/g' file.txt
+
+# Replace and save to new file
+sed 's/old/new/g' file.txt > newfile.txt
+
+# Replace in-place (modify original file)
+sed -i 's/old/new/g' file.txt
+
+# Replace with backup
+sed -i.bak 's/old/new/g' file.txt
+
+# Case-insensitive replacement
+sed 's/old/new/gi' file.txt</div>
+                        <p><strong>Syntax:</strong> <code>s/pattern/replacement/flags</code></p>
+                        <ul>
+                            <li><strong>s</strong> = substitute command</li>
+                            <li><strong>g</strong> = global (all occurrences)</li>
+                            <li><strong>i</strong> = case-insensitive</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Deleting Lines</h4>
+                        <div class="code-block" data-lang="bash"># Delete line 5
+sed '5d' file.txt
+
+# Delete lines 5-10
+sed '5,10d' file.txt
+
+# Delete last line
+sed '$d' file.txt
+
+# Delete lines containing pattern
+sed '/pattern/d' file.txt
+
+# Delete empty lines
+sed '/^$/d' file.txt
+
+# Delete lines starting with #
+sed '/^#/d' file.txt</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Practical sed Examples</h4>
+                        <div class="code-block" data-lang="bash"># Change IP address in configuration
+sed -i 's/192.168.1.100/192.168.1.200/g' /etc/network/interfaces
+
+# Remove comments and empty lines from config
+sed '/^#/d; /^$/d' /etc/ssh/sshd_config
+
+# Add text at beginning of each line
+sed 's/^/# /' file.txt
+
+# Add text at end of each line
+sed 's/$/ - processed/' file.txt
+
+# Print only lines 10-20
+sed -n '10,20p' file.txt
+
+# Replace multiple spaces with single space
+sed 's/  */ /g' file.txt</div>
+                    </div>
+
+                    <h3>Text Processing with awk</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is awk?</h4>
+                        <p><strong>awk</strong> is a powerful text processing language designed for data extraction and reporting. It excels at processing structured text (columns and rows) and is particularly useful for log analysis and generating reports from command output.</p>
+                    </div>
+
+                    <h4>Basic awk Concepts</h4>
+                    <p>awk processes text line by line and splits each line into fields (columns). By default, fields are separated by whitespace.</p>
+
+                    <div class="code-block" data-lang="bash"># Basic syntax
+awk 'pattern { action }' file
+
+# Print specific fields (columns)
+# $1 = first field, $2 = second field, $0 = entire line</div>
+
+                    <div class="example-box">
+                        <h4>Basic awk Examples</h4>
+                        <div class="code-block" data-lang="bash"># Print first column
+awk '{print $1}' file.txt
+
+# Print first and third columns
+awk '{print $1, $3}' file.txt
+
+# Print last column
+awk '{print $NF}' file.txt
+
+# Print with custom separator
+awk '{print $1 " - " $2}' file.txt
+
+# Use different field separator (e.g., colon for /etc/passwd)
+awk -F: '{print $1}' /etc/passwd
+
+# Print lines longer than 80 characters
+awk 'length > 80' file.txt
+
+# Print line numbers with content
+awk '{print NR, $0}' file.txt</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>awk for System Administration</h4>
+                        <div class="code-block" data-lang="bash"># Print usernames from /etc/passwd
+awk -F: '{print $1}' /etc/passwd
+
+# Show users with UID >= 1000 (regular users)
+awk -F: '$3 >= 1000 {print $1}' /etc/passwd
+
+# Calculate total disk usage
+df -h | awk 'NR>1 {sum+=$3} END {print "Total:", sum}'
+
+# Print processes using more than 10% CPU
+ps aux | awk '$3 > 10 {print $2, $3, $11}'
+
+# Extract IP addresses from log
+awk '{print $1}' /var/log/apache2/access.log | sort | uniq -c | sort -rn
+
+# Print 5th column of CSV file
+awk -F, '{print $5}' data.csv
+
+# Sum values in second column
+awk '{sum += $2} END {print "Total:", sum}' numbers.txt</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Advanced awk: Pattern Matching</h4>
+                        <div class="code-block" data-lang="bash"># Print lines containing "error"
+awk '/error/ {print}' /var/log/syslog
+
+# Print lines NOT containing "debug"
+awk '!/debug/ {print}' /var/log/application.log
+
+# Print lines where 3rd field equals "ESTABLISHED"
+awk '$3 == "ESTABLISHED" {print}' netstat_output.txt
+
+# Print if 4th field is greater than 1000
+awk '$4 > 1000 {print $1, $4}' data.txt
+
+# Multiple conditions
+awk '$3 > 10 && $4 < 100 {print}' data.txt</div>
+                    </div>
+
+                    <h3>Sorting and Filtering</h3>
+
+                    <div class="command-grid">
+                        <div class="command-card">
+                            <h5>sort</h5>
+                            <p>Sort lines of text</p>
+                            <div class="code-block" data-lang="bash"># Alphabetical sort
+sort file.txt
+
+# Reverse sort
+sort -r file.txt
+
+# Numeric sort
+sort -n numbers.txt
+
+# Sort by 2nd column
+sort -k2 data.txt</div>
+                        </div>
+
+                        <div class="command-card">
+                            <h5>uniq</h5>
+                            <p>Remove duplicate lines</p>
+                            <div class="code-block" data-lang="bash"># Remove duplicates
+sort file.txt | uniq
+
+# Count occurrences
+sort file.txt | uniq -c
+
+# Show only duplicates
+sort file.txt | uniq -d</div>
+                        </div>
+
+                        <div class="command-card">
+                            <h5>wc</h5>
+                            <p>Count lines, words, bytes</p>
+                            <div class="code-block" data-lang="bash"># Count lines
+wc -l file.txt
+
+# Count words
+wc -w file.txt
+
+# Count characters
+wc -m file.txt</div>
+                        </div>
+
+                        <div class="command-card">
+                            <h5>cut</h5>
+                            <p>Extract columns from text</p>
+                            <div class="code-block" data-lang="bash"># Extract 1st field
+cut -d: -f1 /etc/passwd
+
+# Extract fields 1-3
+cut -d: -f1-3 /etc/passwd
+
+# Extract characters
+cut -c1-10 file.txt</div>
+                        </div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice text processing with these exercises:</p>
+                        <ol>
+                            <li>Use <code>grep</code> to find all lines containing "error" in /var/log/syslog (if available)</li>
+                            <li>Create a file with duplicate lines and use <code>sort | uniq</code> to remove them</li>
+                            <li>Use <code>awk</code> to print only usernames from /etc/passwd</li>
+                            <li>Use <code>sed</code> to replace all occurrences of "test" with "production" in a sample file</li>
+                            <li>Combine commands: find the top 10 most common words in a text file</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Text Processing</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> You want to find all lines containing "ERROR" (case-insensitive) in a log file and show 2 lines of context before and after each match. Which command would you use?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="a">
+                                <span><code>grep -i ERROR logfile.txt</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="b">
+                                <span><code>grep -C 2 ERROR logfile.txt</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="c">
+                                <span><code>grep -i -C 2 ERROR logfile.txt</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="d">
+                                <span><code>grep -n -i ERROR logfile.txt</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q3', 'c', 'feedback3')">Check Answer</button>
+                        <div id="feedback3" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Command Chaining Section -->
+                <section id="command-chaining" class="section">
+                    <h2>Command Chaining and Redirection</h2>
+                    
+                    <p>One of the most powerful features of the Linux command line is the ability to chain commands together, creating complex operations from simple building blocks. This is the essence of the Unix philosophy: "Do one thing and do it well."</p>
+
+                    <h3>Understanding Standard Streams</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 The Three Standard Streams</h4>
+                        <p>Every Linux process has three standard streams:</p>
+                        <ul>
+                            <li><strong>stdin (0):</strong> Standard Input - where the command reads input (usually keyboard)</li>
+                            <li><strong>stdout (1):</strong> Standard Output - where the command writes normal output (usually screen)</li>
+                            <li><strong>stderr (2):</strong> Standard Error - where the command writes error messages (usually screen)</li>
+                        </ul>
+                    </div>
+
+                    <h3>Output Redirection</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>&gt;</code></td>
+                                <td>Redirect stdout to file (overwrite)</td>
+                                <td><code>ls &gt; filelist.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>&gt;&gt;</code></td>
+                                <td>Redirect stdout to file (append)</td>
+                                <td><code>echo "new line" &gt;&gt; log.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>2&gt;</code></td>
+                                <td>Redirect stderr to file</td>
+                                <td><code>command 2&gt; errors.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>&amp;&gt;</code></td>
+                                <td>Redirect both stdout and stderr</td>
+                                <td><code>command &amp;&gt; output.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>2&gt;&amp;1</code></td>
+                                <td>Redirect stderr to stdout</td>
+                                <td><code>command &gt; out.txt 2&gt;&amp;1</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Redirection Examples</h4>
+                        <div class="code-block" data-lang="bash"># Save command output to file
+ls -l > directory_listing.txt
+
+# Append to existing file
+date >> log.txt
+
+# Discard output (send to /dev/null)
+command > /dev/null
+
+# Save errors to separate file
+find / -name "*.conf" 2> errors.txt
+
+# Save both output and errors
+command > output.txt 2>&1
+
+# Separate output and errors
+command > output.txt 2> errors.txt
+
+# Discard errors, keep output
+command 2> /dev/null
+
+# Discard everything
+command &> /dev/null</div>
+                    </div>
+
+                    <h3>Input Redirection</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>&lt;</code></td>
+                                <td>Read input from file</td>
+                                <td><code>sort &lt; unsorted.txt</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>&lt;&lt;</code></td>
+                                <td>Here document (multi-line input)</td>
+                                <td><code>cat &lt;&lt; EOF</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>&lt;&lt;&lt;</code></td>
+                                <td>Here string (single line input)</td>
+                                <td><code>grep "pattern" &lt;&lt;&lt; "$variable"</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Input Redirection Examples</h4>
+                        <div class="code-block" data-lang="bash"># Sort contents of file
+sort < unsorted.txt > sorted.txt
+
+# Count lines in file
+wc -l < file.txt
+
+# Here document example
+cat << EOF > newfile.txt
+Line 1
+Line 2
+Line 3
+EOF
+
+# Here string example
+grep "error" <<< "This is an error message"</div>
+                    </div>
+
+                    <h3>Pipes: Connecting Commands</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is a Pipe?</h4>
+                        <p>A <strong>pipe</strong> (<code>|</code>) connects the stdout of one command to the stdin of another command. This allows you to chain commands together, with each command processing the output of the previous one.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Basic Pipe Examples</h4>
+                        <div class="code-block" data-lang="bash"># List files and count them
+ls | wc -l
+
+# Search and sort results
+grep "error" /var/log/syslog | sort
+
+# Process listing sorted by memory usage
+ps aux | sort -k4 -rn | head -10
+
+# Find largest files
+du -h /home | sort -rh | head -10
+
+# Count unique IP addresses in log
+cat access.log | awk '{print $1}' | sort | uniq | wc -l</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Complex Pipeline Examples</h4>
+                        <div class="code-block" data-lang="bash"># Find top 10 IP addresses accessing your server
+cat /var/log/apache2/access.log | \
+  awk '{print $1}' | \
+  sort | \
+  uniq -c | \
+  sort -rn | \
+  head -10
+
+# Find processes using most CPU
+ps aux | \
+  awk '{print $3, $11}' | \
+  sort -rn | \
+  head -10
+
+# Analyze disk usage by directory
+du -h /var | \
+  sort -rh | \
+  head -20
+
+# Find and list largest files
+find /home -type f -exec du -h {} \; | \
+  sort -rh | \
+  head -20
+
+# Count error types in log
+grep "ERROR" /var/log/application.log | \
+  awk '{print $5}' | \
+  sort | \
+  uniq -c | \
+  sort -rn</div>
+                    </div>
+
+                    <h3>Command Substitution</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Command Substitution</h4>
+                        <p><strong>Command substitution</strong> allows you to use the output of one command as an argument to another command. There are two syntaxes: <code>$(command)</code> (preferred) and <code>`command`</code> (backticks, legacy).</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Command Substitution Examples</h4>
+                        <div class="code-block" data-lang="bash"># Store command output in variable
+current_date=$(date +%Y-%m-%d)
+echo "Today is $current_date"
+
+# Use command output as argument
+echo "There are $(ls | wc -l) files in this directory"
+
+# Nested command substitution
+echo "The user $(whoami) is logged in from $(hostname)"
+
+# Create backup with timestamp
+cp important.conf important.conf.$(date +%Y%m%d)
+
+# Find and process files
+for file in $(find /tmp -name "*.tmp"); do
+    rm "$file"
+done
+
+# Check disk usage of specific directory
+disk_usage=$(du -sh /var/log | awk '{print $1}')
+echo "Log directory size: $disk_usage"</div>
+                    </div>
+
+                    <h3>Combining Commands</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>;</code></td>
+                                <td>Run commands sequentially</td>
+                                <td><code>cd /tmp; ls</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>&amp;&amp;</code></td>
+                                <td>Run second command only if first succeeds</td>
+                                <td><code>mkdir test &amp;&amp; cd test</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>||</code></td>
+                                <td>Run second command only if first fails</td>
+                                <td><code>ping -c1 server || echo "Server down"</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>&amp;</code></td>
+                                <td>Run command in background</td>
+                                <td><code>long_process &amp;</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Command Combination Examples</h4>
+                        <div class="code-block" data-lang="bash"># Sequential execution (both run regardless of success)
+command1; command2; command3
+
+# Conditional execution (AND)
+cd /var/www/html && git pull && sudo systemctl restart apache2
+
+# Conditional execution (OR)
+ping -c1 google.com || echo "No internet connection"
+
+# Combined conditional
+command1 && command2 || command3
+# If command1 succeeds, run command2; otherwise run command3
+
+# Background execution
+./long_running_script.sh &
+
+# Multiple conditions
+mkdir backup && cp *.txt backup/ && echo "Backup complete" || echo "Backup failed"</div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Common Pitfall: Understanding && and ||</h4>
+                        <p>Be careful with the order of operations when combining <code>&&</code> and <code>||</code>:</p>
+                        <div class="code-block" data-lang="bash"># This might not work as expected:
+command1 && command2 || command3
+# If command2 fails, command3 will run!
+
+# Better approach:
+if command1; then
+    command2
+else
+    command3
+fi</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice command chaining with these exercises:</p>
+                        <ol>
+                            <li>Create a pipeline that lists files, sorts them by size, and shows only the top 5</li>
+                            <li>Find all .txt files, count them, and save the count to a file</li>
+                            <li>Use command substitution to create a backup file with today's date</li>
+                            <li>Create a one-liner that checks if a directory exists, creates it if not, and changes into it</li>
+                            <li>Build a pipeline that finds the 10 largest files in your home directory</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Command Chaining</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> You want to find all .log files, search for lines containing "error", and save the results to errors.txt. Which command is correct?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q4" value="a">
+                                <span><code>find . -name "*.log" && grep "error" > errors.txt</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q4" value="b">
+                                <span><code>find . -name "*.log" | grep "error" > errors.txt</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q4" value="c">
+                                <span><code>find . -name "*.log" -exec grep "error" {} \; > errors.txt</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q4" value="d">
+                                <span><code>grep "error" $(find . -name "*.log") > errors.txt</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q4', 'c', 'feedback4')">Check Answer</button>
+                        <div id="feedback4" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Process Management Section -->
+                <section id="process-mgmt" class="section">
+                    <h2>Process Management</h2>
+                    
+                    <p>Understanding and managing processes is crucial for system administration. Processes are running instances of programs, and you'll need to monitor, control, and troubleshoot them regularly.</p>
+
+                    <h3>Viewing Processes</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is a Process?</h4>
+                        <p>A <strong>process</strong> is an instance of a running program. Each process has a unique Process ID (PID), consumes system resources (CPU, memory), and has a parent process (except for init/systemd, PID 1).</p>
+                    </div>
+
+                    <h4>The ps Command</h4>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                                <th>Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>ps</code></td>
+                                <td>Show processes for current user</td>
+                                <td>Quick check of your processes</td>
+                            </tr>
+                            <tr>
+                                <td><code>ps aux</code></td>
+                                <td>Show all processes (BSD style)</td>
+                                <td>System-wide process view</td>
+                            </tr>
+                            <tr>
+                                <td><code>ps -ef</code></td>
+                                <td>Show all processes (Unix style)</td>
+                                <td>Alternative to ps aux</td>
+                            </tr>
+                            <tr>
+                                <td><code>ps -u username</code></td>
+                                <td>Show processes for specific user</td>
+                                <td>User-specific troubleshooting</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>ps Command Examples</h4>
+                        <div class="code-block" data-lang="bash"># Show all processes
+ps aux
+
+# Show processes in tree format
+ps auxf
+
+# Show processes for specific user
+ps -u www-data
+
+# Find specific process
+ps aux | grep apache2
+
+# Show processes sorted by CPU usage
+ps aux --sort=-%cpu | head -10
+
+# Show processes sorted by memory usage
+ps aux --sort=-%mem | head -10
+
+# Custom output format
+ps -eo pid,ppid,cmd,%cpu,%mem --sort=-%cpu | head -10</div>
+                    </div>
+
+                    <div class="tip-box">
+                        <h4>💡 Understanding ps aux Output</h4>
+                        <div class="code-block" data-lang="bash">USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.1 169604 11896 ?        Ss   Jan15   0:03 /sbin/init
+www-data  1234  2.5  1.5 234567 98765 ?        S    10:23   1:45 /usr/sbin/apache2</div>
+                        <ul>
+                            <li><strong>USER:</strong> Process owner</li>
+                            <li><strong>PID:</strong> Process ID</li>
+                            <li><strong>%CPU:</strong> CPU usage percentage</li>
+                            <li><strong>%MEM:</strong> Memory usage percentage</li>
+                            <li><strong>VSZ:</strong> Virtual memory size (KB)</li>
+                            <li><strong>RSS:</strong> Resident set size (physical memory, KB)</li>
+                            <li><strong>STAT:</strong> Process state (R=running, S=sleeping, Z=zombie, etc.)</li>
+                            <li><strong>START:</strong> Start time</li>
+                            <li><strong>TIME:</strong> CPU time consumed</li>
+                            <li><strong>COMMAND:</strong> Command that started the process</li>
+                        </ul>
+                    </div>
+
+                    <h4>The top Command</h4>
+
+                    <div class="definition-box">
+                        <h4>📖 What is top?</h4>
+                        <p><strong>top</strong> provides a real-time, dynamic view of running processes. It updates continuously and shows system summary information plus a list of processes sorted by resource usage.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Using top</h4>
+                        <div class="code-block" data-lang="bash"># Start top
+top
+
+# Common top commands (while running):
+# q - quit
+# k - kill process (prompts for PID)
+# M - sort by memory usage
+# P - sort by CPU usage
+# 1 - show individual CPU cores
+# h - help
+# u - filter by user
+
+# Run top in batch mode (non-interactive)
+top -b -n 1 > top_snapshot.txt
+
+# Show processes for specific user
+top -u www-data
+
+# Update every 5 seconds instead of default 3
+top -d 5</div>
+                    </div>
+
+                    <h4>Alternative: htop</h4>
+
+                    <div class="tip-box">
+                        <h4>💡 htop - An Improved top</h4>
+                        <p><strong>htop</strong> is an enhanced version of top with a more user-friendly interface, color coding, and mouse support. It may need to be installed separately:</p>
+                        <div class="code-block" data-lang="bash"># Install htop
+sudo apt install htop  # Debian/Ubuntu
+sudo yum install htop  # RHEL/CentOS
+
+# Run htop
+htop</div>
+                        <p>Features of htop:</p>
+                        <ul>
+                            <li>Color-coded display</li>
+                            <li>Horizontal and vertical scrolling</li>
+                            <li>Mouse support</li>
+                            <li>Tree view of processes</li>
+                            <li>Easier to kill processes</li>
+                        </ul>
+                    </div>
+
+                    <h3>Process Control</h3>
+
+                    <h4>Killing Processes</h4>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                                <th>Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>kill PID</code></td>
+                                <td>Send TERM signal (graceful shutdown)</td>
+                                <td>Standard way to stop a process</td>
+                            </tr>
+                            <tr>
+                                <td><code>kill -9 PID</code></td>
+                                <td>Send KILL signal (force kill)</td>
+                                <td>When process won't respond to TERM</td>
+                            </tr>
+                            <tr>
+                                <td><code>killall name</code></td>
+                                <td>Kill all processes with name</td>
+                                <td>Stop all instances of a program</td>
+                            </tr>
+                            <tr>
+                                <td><code>pkill pattern</code></td>
+                                <td>Kill processes matching pattern</td>
+                                <td>Pattern-based process termination</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Process Termination Examples</h4>
+                        <div class="code-block" data-lang="bash"># Find and kill a process
+ps aux | grep firefox
+kill 1234  # Replace 1234 with actual PID
+
+# Force kill if needed
+kill -9 1234
+
+# Kill all Firefox processes
+killall firefox
+
+# Kill processes by pattern
+pkill -f "python.*script.py"
+
+# Kill processes for specific user
+pkill -u username
+
+# Send different signals
+kill -SIGHUP 1234  # Reload configuration
+kill -SIGTERM 1234  # Graceful shutdown (default)
+kill -SIGKILL 1234  # Force kill (same as -9)</div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Warning: Use kill -9 Carefully</h4>
+                        <p>The <code>kill -9</code> (SIGKILL) command forcefully terminates a process without allowing it to clean up. This can lead to:</p>
+                        <ul>
+                            <li>Corrupted data files</li>
+                            <li>Orphaned child processes</li>
+                            <li>Unreleased resources</li>
+                            <li>Lock files left behind</li>
+                        </ul>
+                        <p>Always try <code>kill</code> (SIGTERM) first, and only use <code>kill -9</code> as a last resort!</p>
+                    </div>
+
+                    <h3>Background and Foreground Processes</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Foreground vs Background</h4>
+                        <ul>
+                            <li><strong>Foreground process:</strong> Runs in the current terminal and receives keyboard input. You must wait for it to complete before running another command.</li>
+                            <li><strong>Background process:</strong> Runs independently of the terminal. You can continue using the terminal while it runs.</li>
+                        </ul>
+                    </div>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>command &amp;</code></td>
+                                <td>Start command in background</td>
+                            </tr>
+                            <tr>
+                                <td><code>Ctrl+Z</code></td>
+                                <td>Suspend current foreground process</td>
+                            </tr>
+                            <tr>
+                                <td><code>bg</code></td>
+                                <td>Resume suspended process in background</td>
+                            </tr>
+                            <tr>
+                                <td><code>fg</code></td>
+                                <td>Bring background process to foreground</td>
+                            </tr>
+                            <tr>
+                                <td><code>jobs</code></td>
+                                <td>List background jobs</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Background Process Examples</h4>
+                        <div class="code-block" data-lang="bash"># Start process in background
+./long_running_script.sh &
+
+# List background jobs
+jobs
+# Output: [1]+ Running ./long_running_script.sh &
+
+# Suspend current process (Ctrl+Z), then resume in background
+./script.sh
+# Press Ctrl+Z
+bg
+
+# Bring to foreground
+fg %1  # %1 refers to job number 1
+
+# Start multiple background jobs
+./job1.sh &
+./job2.sh &
+./job3.sh &
+jobs
+
+# Bring specific job to foreground
+fg %2
+
+# Kill background job
+kill %1</div>
+                    </div>
+
+                    <h3>Process Priority</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Nice Values</h4>
+                        <p>Process priority is controlled by "nice" values ranging from -20 (highest priority) to 19 (lowest priority). Default is 0. Only root can set negative nice values.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Priority Management</h4>
+                        <div class="code-block" data-lang="bash"># Start process with lower priority (nice value 10)
+nice -n 10 ./cpu_intensive_task.sh
+
+# Start with higher priority (requires root)
+sudo nice -n -10 ./important_task.sh
+
+# Change priority of running process
+renice -n 5 -p 1234  # Set PID 1234 to nice value 5
+
+# Change priority for all processes of a user
+sudo renice -n 10 -u username
+
+# View nice values
+ps -eo pid,ni,cmd | grep script.sh</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice process management with these exercises:</p>
+                        <ol>
+                            <li>Use <code>ps aux</code> to find the top 5 processes using the most CPU</li>
+                            <li>Run <code>top</code> and practice sorting by different columns</li>
+                            <li>Start a long-running command (like <code>sleep 300</code>) in the background</li>
+                            <li>Use <code>jobs</code> to list your background jobs</li>
+                            <li>Practice bringing a background job to the foreground and suspending it</li>
+                            <li>Find all processes for a specific user</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Process Management</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> A process with PID 5678 is not responding to the standard kill command. What should you do next?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q5" value="a">
+                                <span><code>killall 5678</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q5" value="b">
+                                <span><code>kill -9 5678</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q5" value="c">
+                                <span><code>pkill 5678</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q5" value="d">
+                                <span><code>stop 5678</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q5', 'b', 'feedback5')">Check Answer</button>
+                        <div id="feedback5" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- System Information Section -->
+                <section id="system-info" class="section">
+                    <h2>System Information and Monitoring</h2>
+                    
+                    <p>As a system administrator, you need to regularly check system information to monitor health, troubleshoot issues, and plan capacity. Linux provides numerous commands to gather system information.</p>
+
+                    <h3>System Information Commands</h3>
+
+                    <div class="command-grid">
+                        <div class="command-card">
+                            <h5>uname</h5>
+                            <p>Display system information</p>
+                            <div class="code-block" data-lang="bash"># Show all info
+uname -a
+
+# Kernel name
+uname -s
+
+# Kernel version
+uname -r
+
+# Machine hardware
+uname -m</div>
+                        </div>
+
+                        <div class="command-card">
+                            <h5>hostname</h5>
+                            <p>Display or set hostname</p>
+                            <div class="code-block" data-lang="bash"># Show hostname
+hostname
+
+# Show FQDN
+hostname -f
+
+# Show IP address
+hostname -I</div>
+                        </div>
+
+                        <div class="command-card">
+                            <h5>uptime</h5>
+                            <p>Show system uptime and load</p>
+                            <div class="code-block" data-lang="bash"># Show uptime
+uptime
+
+# Pretty format
+uptime -p
+
+# Since when
+uptime -s</div>
+                        </div>
+
+                        <div class="command-card">
+                            <h5>lscpu</h5>
+                            <p>Display CPU information</p>
+                            <div class="code-block" data-lang="bash"># Show CPU info
+lscpu
+
+# Show online CPUs
+lscpu -e</div>
+                        </div>
+                    </div>
+
+                    <h3>User Information</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                                <th>Example Output</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>who</code></td>
+                                <td>Show who is logged in</td>
+                                <td>user1 pts/0 2026-02-15 10:30</td>
+                            </tr>
+                            <tr>
+                                <td><code>w</code></td>
+                                <td>Show who is logged in and what they're doing</td>
+                                <td>Detailed user activity</td>
+                            </tr>
+                            <tr>
+                                <td><code>last</code></td>
+                                <td>Show login history</td>
+                                <td>Historical login records</td>
+                            </tr>
+                            <tr>
+                                <td><code>id</code></td>
+                                <td>Show user and group IDs</td>
+                                <td>uid=1000(user) gid=1000(user)</td>
+                            </tr>
+                            <tr>
+                                <td><code>whoami</code></td>
+                                <td>Show current username</td>
+                                <td>username</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>User Information Examples</h4>
+                        <div class="code-block" data-lang="bash"># Show currently logged in users
+who
+
+# Detailed user information
+w
+
+# Show login history (last 10)
+last -n 10
+
+# Show failed login attempts
+sudo lastb
+
+# Show current user info
+id
+
+# Show all groups for user
+groups username
+
+# Show who is logged in to specific terminal
+who | grep pts/0</div>
+                    </div>
+
+                    <h3>Disk Usage</h3>
+
+                    <div class="command-grid">
+                        <div class="command-card">
+                            <h5>df</h5>
+                            <p>Show disk space usage</p>
+                            <div class="code-block" data-lang="bash"># Human-readable
+df -h
+
+# Show inodes
+df -i
+
+# Specific filesystem
+df -h /home</div>
+                        </div>
+
+                        <div class="command-card">
+                            <h5>du</h5>
+                            <p>Show directory space usage</p>
+                            <div class="code-block" data-lang="bash"># Directory size
+du -sh /var/log
+
+# All subdirectories
+du -h /var/log
+
+# Sort by size
+du -h | sort -rh</div>
+                        </div>
+
+                        <div class="command-card">
+                            <h5>lsblk</h5>
+                            <p>List block devices</p>
+                            <div class="code-block" data-lang="bash"># Show all devices
+lsblk
+
+# Show filesystems
+lsblk -f
+
+# Show size info
+lsblk -o NAME,SIZE,TYPE</div>
+                        </div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Disk Usage Analysis</h4>
+                        <div class="code-block" data-lang="bash"># Check overall disk usage
+df -h
+
+# Find largest directories in /var
+sudo du -h /var | sort -rh | head -10
+
+# Find files larger than 100MB
+find /home -type f -size +100M -exec ls -lh {} \;
+
+# Show disk usage by directory (one level deep)
+du -h --max-depth=1 /var | sort -rh
+
+# Check inode usage (can cause "disk full" errors even with space)
+df -i</div>
+                    </div>
+
+                    <h3>Memory Usage</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Understanding Memory Usage</h4>
+                        <p>Linux memory management is complex. The system uses "available" memory for caching to improve performance. This cached memory is automatically released when applications need it, so high memory usage doesn't necessarily indicate a problem.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Memory Monitoring Commands</h4>
+                        <div class="code-block" data-lang="bash"># Show memory usage (human-readable)
+free -h
+
+# Show memory in MB
+free -m
+
+# Continuous updates every 2 seconds
+free -h -s 2
+
+# Show memory usage from /proc/meminfo
+cat /proc/meminfo
+
+# Show memory-intensive processes
+ps aux --sort=-%mem | head -10
+
+# Detailed memory statistics
+vmstat 1 5  # Update every 1 second, 5 times</div>
+                    </div>
+
+                    <div class="tip-box">
+                        <h4>💡 Reading free Output</h4>
+                        <div class="code-block" data-lang="bash">$ free -h
+              total        used        free      shared  buff/cache   available
+Mem:           7.7G        2.1G        3.2G        156M        2.4G        5.2G
+Swap:          2.0G          0B        2.0G</div>
+                        <ul>
+                            <li><strong>total:</strong> Total installed RAM</li>
+                            <li><strong>used:</strong> Memory used by processes</li>
+                            <li><strong>free:</strong> Completely unused memory</li>
+                            <li><strong>shared:</strong> Memory used by tmpfs</li>
+                            <li><strong>buff/cache:</strong> Memory used for caching (can be freed if needed)</li>
+                            <li><strong>available:</strong> Memory available for new applications (most important number!)</li>
+                        </ul>
+                    </div>
+
+                    <h3>Network Information</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                                <th>Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>ip addr</code></td>
+                                <td>Show IP addresses</td>
+                                <td>View network configuration</td>
+                            </tr>
+                            <tr>
+                                <td><code>ip link</code></td>
+                                <td>Show network interfaces</td>
+                                <td>Check interface status</td>
+                            </tr>
+                            <tr>
+                                <td><code>ss</code></td>
+                                <td>Show socket statistics</td>
+                                <td>View network connections</td>
+                            </tr>
+                            <tr>
+                                <td><code>netstat</code></td>
+                                <td>Network statistics (legacy)</td>
+                                <td>Alternative to ss</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Network Information Examples</h4>
+                        <div class="code-block" data-lang="bash"># Show all IP addresses
+ip addr show
+
+# Show specific interface
+ip addr show eth0
+
+# Show network interfaces
+ip link show
+
+# Show routing table
+ip route show
+
+# Show listening ports
+ss -tuln
+
+# Show all TCP connections
+ss -tan
+
+# Show process using port 80
+sudo ss -tulpn | grep :80
+
+# Legacy netstat equivalents
+netstat -tuln  # Same as ss -tuln
+netstat -tan   # Same as ss -tan</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Common Network Diagnostic Commands</h4>
+                        <div class="code-block" data-lang="bash"># Test connectivity
+ping -c 4 google.com
+
+# Show route to destination
+traceroute google.com
+
+# DNS lookup
+nslookup google.com
+dig google.com
+
+# Show DNS configuration
+cat /etc/resolv.conf
+
+# Test port connectivity
+telnet hostname 80
+nc -zv hostname 80  # Using netcat
+
+# Show network statistics
+netstat -s
+
+# Show interface statistics
+ip -s link</div>
+                    </div>
+
+                    <div class="cheat-sheet">
+                        <h4>📋 Quick Reference: System Information</h4>
+                        <div class="code-block" data-lang="bash"># System
+uname -a          # All system info
+hostnamectl       # Hostname and OS info
+uptime            # System uptime and load
+
+# CPU
+lscpu             # CPU information
+cat /proc/cpuinfo # Detailed CPU info
+
+# Memory
+free -h           # Memory usage
+cat /proc/meminfo # Detailed memory info
+
+# Disk
+df -h             # Filesystem usage
+lsblk             # Block devices
+du -sh /path      # Directory size
+
+# Network
+ip addr           # IP addresses
+ss -tuln          # Listening ports
+ip route          # Routing table
+
+# Users
+who               # Logged in users
+w                 # Detailed user activity
+last              # Login history
+
+# Processes
+ps aux            # All processes
+top               # Real-time process viewer
+pgrep name        # Find process by name</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice gathering system information:</p>
+                        <ol>
+                            <li>Use <code>uname</code>, <code>hostname</code>, and <code>uptime</code> to gather basic system info</li>
+                            <li>Check memory usage with <code>free -h</code> and identify available memory</li>
+                            <li>Use <code>df -h</code> to check disk space and identify the fullest filesystem</li>
+                            <li>Use <code>du</code> to find the largest directories in /var</li>
+                            <li>Check network configuration with <code>ip addr</code></li>
+                            <li>Use <code>ss -tuln</code> to see what ports are listening</li>
+                            <li>Create a simple script that gathers all this information into a report</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Practice Exercises Section -->
+                <section id="practice" class="section">
+                    <h2>Practice Exercises</h2>
+                    
+                    <p>Now it's time to put everything together! These comprehensive exercises will help you master advanced Bash commands through practical scenarios.</p>
+
+                    <div class="interactive-exercise">
+                        <h3>Exercise 1: Log File Analysis</h3>
+                        <p><strong>Scenario:</strong> You're troubleshooting a web server and need to analyze Apache access logs.</p>
+                        
+                        <h4>Tasks:</h4>
+                        <ol>
+                            <li>Find all 404 errors in the access log</li>
+                            <li>Count how many 404 errors occurred</li>
+                            <li>Identify the top 10 URLs that generated 404 errors</li>
+                            <li>Find the IP addresses that generated the most 404 errors</li>
+                        </ol>
+
+                        <h4>Sample Commands to Practice:</h4>
+                        <div class="code-block" data-lang="bash"># Create sample log file (for practice)
+cat > access.log << 'EOF'
+192.168.1.100 - - [15/Feb/2026:10:30:45] "GET /index.html HTTP/1.1" 200 1234
+192.168.1.101 - - [15/Feb/2026:10:31:12] "GET /missing.html HTTP/1.1" 404 512
+192.168.1.100 - - [15/Feb/2026:10:32:05] "GET /about.html HTTP/1.1" 200 2048
+192.168.1.102 - - [15/Feb/2026:10:33:22] "GET /notfound.php HTTP/1.1" 404 512
+192.168.1.101 - - [15/Feb/2026:10:34:15] "GET /missing.html HTTP/1.1" 404 512
+EOF
+
+# Task 1: Find all 404 errors
+grep " 404 " access.log
+
+# Task 2: Count 404 errors
+grep " 404 " access.log | wc -l
+
+# Task 3: Top 10 URLs with 404 errors
+grep " 404 " access.log | awk '{print $7}' | sort | uniq -c | sort -rn | head -10
+
+# Task 4: Top IP addresses generating 404s
+grep " 404 " access.log | awk '{print $1}' | sort | uniq -c | sort -rn | head -10</div>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>Exercise 2: System Health Check Script</h3>
+                        <p><strong>Scenario:</strong> Create a one-liner or simple script that generates a system health report.</p>
+                        
+                        <h4>Requirements:</h4>
+                        <ul>
+                            <li>Show system uptime</li>
+                            <li>Display CPU load average</li>
+                            <li>Show memory usage</li>
+                            <li>Display disk usage for all filesystems</li>
+                            <li>List top 5 processes by CPU usage</li>
+                            <li>List top 5 processes by memory usage</li>
+                        </ul>
+
+                        <h4>Sample Solution:</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+# System Health Check Report
+
+echo "=== SYSTEM HEALTH REPORT ==="
+echo "Generated: $(date)"
+echo ""
+
+echo "=== SYSTEM UPTIME ==="
+uptime
+echo ""
+
+echo "=== MEMORY USAGE ==="
+free -h
+echo ""
+
+echo "=== DISK USAGE ==="
+df -h
+echo ""
+
+echo "=== TOP 5 PROCESSES BY CPU ==="
+ps aux --sort=-%cpu | head -6
+echo ""
+
+echo "=== TOP 5 PROCESSES BY MEMORY ==="
+ps aux --sort=-%mem | head -6
+echo ""
+
+echo "=== LISTENING PORTS ==="
+ss -tuln
+echo ""
+
+echo "=== END OF REPORT ==="</div>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>Exercise 3: File Cleanup Task</h3>
+                        <p><strong>Scenario:</strong> Clean up old temporary files and generate a report.</p>
+                        
+                        <h4>Tasks:</h4>
+                        <ol>
+                            <li>Find all .tmp files older than 7 days in /tmp</li>
+                            <li>Calculate total size of these files</li>
+                            <li>Create a list of files to be deleted</li>
+                            <li>Delete the files (be careful!)</li>
+                        </ol>
+
+                        <h4>Sample Commands:</h4>
+                        <div class="code-block" data-lang="bash"># Task 1: Find old .tmp files
+find /tmp -name "*.tmp" -type f -mtime +7
+
+# Task 2: Calculate total size
+find /tmp -name "*.tmp" -type f -mtime +7 -exec du -ch {} + | tail -1
+
+# Task 3: Create list of files
+find /tmp -name "*.tmp" -type f -mtime +7 > files_to_delete.txt
+
+# Task 4: Review the list, then delete
+cat files_to_delete.txt  # Review first!
+find /tmp -name "*.tmp" -type f -mtime +7 -delete
+
+# Or safer: move to archive instead of delete
+mkdir -p /archive/tmp_cleanup
+find /tmp -name "*.tmp" -type f -mtime +7 -exec mv {} /archive/tmp_cleanup/ \;</div>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>Exercise 4: User Activity Monitoring</h3>
+                        <p><strong>Scenario:</strong> Monitor user activity and generate a report.</p>
+                        
+                        <h4>Tasks:</h4>
+                        <ol>
+                            <li>List all currently logged-in users</li>
+                            <li>Show login history for the last 24 hours</li>
+                            <li>Find all processes owned by a specific user</li>
+                            <li>Calculate total CPU and memory usage by user</li>
+                        </ol>
+
+                        <h4>Sample Commands:</h4>
+                        <div class="code-block" data-lang="bash"># Task 1: Currently logged-in users
+who
+w
+
+# Task 2: Login history (last 24 hours)
+last -s yesterday
+
+# Task 3: Processes for specific user
+ps -u username
+pgrep -u username
+
+# Task 4: Total resource usage by user
+ps aux | awk '$1=="username" {cpu+=$3; mem+=$4} END {print "CPU:", cpu"%", "MEM:", mem"%"}'
+
+# Show all users' resource usage
+ps aux | awk 'NR>1 {cpu[$1]+=$3; mem[$1]+=$4} END {for(u in cpu) print u, "CPU:", cpu[u]"%", "MEM:", mem[u]"%"}' | sort -k3 -rn</div>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>Exercise 5: Backup Verification</h3>
+                        <p><strong>Scenario:</strong> Verify that backups are being created and are complete.</p>
+                        
+                        <h4>Tasks:</h4>
+                        <ol>
+                            <li>Find all backup files created today</li>
+                            <li>Verify backup files are not empty</li>
+                            <li>Compare backup size with source directory</li>
+                            <li>Check backup file integrity (for tar.gz files)</li>
+                        </ol>
+
+                        <h4>Sample Commands:</h4>
+                        <div class="code-block" data-lang="bash"># Task 1: Find today's backups
+find /backup -name "*.tar.gz" -type f -mtime -1
+
+# Task 2: Verify non-empty
+find /backup -name "*.tar.gz" -type f -mtime -1 -size +0
+
+# Task 3: Compare sizes
+SOURCE_SIZE=$(du -sb /data | awk '{print $1}')
+BACKUP_SIZE=$(du -sb /backup/data_backup.tar.gz | awk '{print $1}')
+echo "Source: $SOURCE_SIZE bytes"
+echo "Backup: $BACKUP_SIZE bytes"
+
+# Task 4: Verify tar.gz integrity
+tar -tzf /backup/data_backup.tar.gz > /dev/null && echo "Backup OK" || echo "Backup CORRUPTED"
+
+# List contents without extracting
+tar -tzf /backup/data_backup.tar.gz | head -20</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Challenge Exercises</h4>
+                        <p>Try these advanced challenges to test your skills:</p>
+                        
+                        <ol>
+                            <li><strong>Process Monitor:</strong> Create a command that continuously monitors a specific process and alerts if it stops running</li>
+                            
+                            <li><strong>Disk Space Alert:</strong> Write a one-liner that checks if any filesystem is more than 80% full and sends an alert</li>
+                            
+                            <li><strong>Log Rotation:</strong> Create commands to compress old log files and keep only the 5 most recent compressed logs</li>
+                            
+                            <li><strong>Security Audit:</strong> Find all files with world-writable permissions in /var and /tmp</li>
+                            
+                            <li><strong>Network Monitor:</strong> Create a command that shows all established network connections and groups them by remote IP</li>
+                        </ol>
+
+                        <h4>Sample Solutions:</h4>
+                        <div class="code-block" data-lang="bash"># Challenge 1: Process Monitor
+while true; do
+    pgrep apache2 > /dev/null || echo "Apache is down!"
+    sleep 60
+done
+
+# Challenge 2: Disk Space Alert
+df -h | awk '$5+0 > 80 {print "ALERT: " $6 " is " $5 " full"}'
+
+# Challenge 3: Log Rotation
+cd /var/log
+gzip -9 application.log.1
+ls -t application.log.*.gz | tail -n +6 | xargs rm -f
+
+# Challenge 4: Security Audit
+find /var /tmp -type f -perm -002 2>/dev/null
+
+# Challenge 5: Network Monitor
+ss -tan | awk 'NR>1 && $1=="ESTAB" {print $5}' | cut -d: -f1 | sort | uniq -c | sort -rn</div>
+                    </div>
+
+                    <div class="key-takeaways">
+                        <h3>🎯 Practice Tips</h3>
+                        <ul>
+                            <li>Always test commands with a small dataset first</li>
+                            <li>Use <code>echo</code> to preview destructive operations</li>
+                            <li>Build complex commands incrementally, testing each step</li>
+                            <li>Save useful command combinations as scripts or aliases</li>
+                            <li>Document your commands with comments for future reference</li>
+                            <li>Practice regularly—command-line skills improve with repetition</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Summary Section -->
+                <section id="summary" class="section">
+                    <h2>Module Summary</h2>
+                    
+                    <p>Congratulations on completing Module 5.1: Advanced Bash Command-Line Administration! Let's review what you've learned and how these skills apply to real-world system administration.</p>
+
+                    <h3>Key Concepts Covered</h3>
+
+                    <div class="key-takeaways">
+                        <h3>🎯 What You've Learned</h3>
+                        
+                        <h4>1. Advanced File Operations</h4>
+                        <ul>
+                            <li>Using <code>find</code> to locate files by name, size, type, and modification time</li>
+                            <li>Executing commands on found files with <code>-exec</code> and <code>-delete</code></li>
+                            <li>Fast file searches with <code>locate</code>, <code>which</code>, and <code>whereis</code></li>
+                            <li>Comparing files with <code>diff</code> and <code>cmp</code></li>
+                            <li>Creating and extracting archives with <code>tar</code></li>
+                            <li>Compressing files with <code>gzip</code>, <code>bzip2</code>, and <code>xz</code></li>
+                        </ul>
+
+                        <h4>2. Text Processing</h4>
+                        <ul>
+                            <li>Pattern searching with <code>grep</code> and regular expressions</li>
+                            <li>Stream editing with <code>sed</code> for find-and-replace operations</li>
+                            <li>Data extraction and reporting with <code>awk</code></li>
+                            <li>Sorting, filtering, and counting with <code>sort</code>, <code>uniq</code>, and <code>wc</code></li>
+                            <li>Column extraction with <code>cut</code> and <code>paste</code></li>
+                        </ul>
+
+                        <h4>3. Command Chaining</h4>
+                        <ul>
+                            <li>Understanding stdin, stdout, and stderr</li>
+                            <li>Output redirection with <code>&gt;</code>, <code>&gt;&gt;</code>, <code>2&gt;</code>, and <code>&amp;&gt;</code></li>
+                            <li>Input redirection with <code>&lt;</code> and here documents</li>
+                            <li>Connecting commands with pipes (<code>|</code>)</li>
+                            <li>Command substitution with <code>$()</code></li>
+                            <li>Combining commands with <code>;</code>, <code>&amp;&amp;</code>, and <code>||</code></li>
+                        </ul>
+
+                        <h4>4. Process Management</h4>
+                        <ul>
+                            <li>Viewing processes with <code>ps</code>, <code>top</code>, and <code>htop</code></li>
+                            <li>Killing processes with <code>kill</code>, <code>killall</code>, and <code>pkill</code></li>
+                            <li>Managing background and foreground processes</li>
+                            <li>Controlling process priority with <code>nice</code> and <code>renice</code></li>
+                        </ul>
+
+                        <h4>5. System Information</h4>
+                        <ul>
+                            <li>Gathering system info with <code>uname</code>, <code>hostname</code>, and <code>uptime</code></li>
+                            <li>Monitoring users with <code>who</code>, <code>w</code>, and <code>last</code></li>
+                            <li>Checking disk usage with <code>df</code>, <code>du</code>, and <code>lsblk</code></li>
+                            <li>Monitoring memory with <code>free</code> and <code>vmstat</code></li>
+                            <li>Viewing network info with <code>ip</code>, <code>ss</code>, and <code>netstat</code></li>
+                        </ul>
+                    </div>
+
+                    <h3>Real-World Applications</h3>
+
+                    <div class="example-box">
+                        <h4>How These Skills Help in System Administration</h4>
+                        
+                        <p><strong>Log Analysis:</strong></p>
+                        <ul>
+                            <li>Quickly find errors in thousands of log lines</li>
+                            <li>Identify patterns and trends in system behavior</li>
+                            <li>Generate reports on system events</li>
+                        </ul>
+
+                        <p><strong>Troubleshooting:</strong></p>
+                        <ul>
+                            <li>Identify resource-intensive processes</li>
+                            <li>Find configuration file differences</li>
+                            <li>Track down missing or corrupted files</li>
+                        </ul>
+
+                        <p><strong>Automation:</strong></p>
+                        <ul>
+                            <li>Create scripts to automate repetitive tasks</li>
+                            <li>Build monitoring and alerting systems</li>
+                            <li>Develop backup and maintenance procedures</li>
+                        </ul>
+
+                        <p><strong>Capacity Planning:</strong></p>
+                        <ul>
+                            <li>Monitor disk space trends</li>
+                            <li>Track memory and CPU usage patterns</li>
+                            <li>Identify files and directories consuming resources</li>
+                        </ul>
+                    </div>
+
+                    <h3>Command Cheat Sheet</h3>
+
+                    <div class="cheat-sheet">
+                        <h4>📋 Essential Commands Quick Reference</h4>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                            <div>
+                                <h5>File Operations</h5>
+                                <div class="code-block" data-lang="bash">find / -name "*.log"
+locate filename
+tar -czvf archive.tar.gz dir/
+tar -xzvf archive.tar.gz
+diff file1 file2</div>
+                            </div>
+
+                            <div>
+                                <h5>Text Processing</h5>
+                                <div class="code-block" data-lang="bash">grep "pattern" file
+sed 's/old/new/g' file
+awk '{print $1}' file
+sort file | uniq -c
+wc -l file</div>
+                            </div>
+
+                            <div>
+                                <h5>Process Management</h5>
+                                <div class="code-block" data-lang="bash">ps aux
+top
+kill PID
+killall process_name
+bg / fg / jobs</div>
+                            </div>
+
+                            <div>
+                                <h5>System Info</h5>
+                                <div class="code-block" data-lang="bash">df -h
+du -sh directory
+free -h
+uptime
+ss -tuln</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Next Steps</h3>
+
+                    <div class="tip-box">
+                        <h4>💡 Continuing Your Learning</h4>
+                        <p><strong>What's Next?</strong></p>
+                        <ul>
+                            <li><strong>Module 5.2:</strong> Bash Scripting Fundamentals - Learn to combine these commands into powerful scripts</li>
+                            <li><strong>Practice:</strong> Use these commands daily in your Linux VM</li>
+                            <li><strong>Experiment:</strong> Try different combinations and see what works</li>
+                            <li><strong>Document:</strong> Keep a personal cheat sheet of useful commands</li>
+                        </ul>
+
+                        <p><strong>Recommended Practice:</strong></p>
+                        <ol>
+                            <li>Set up a test directory with sample files and practice all commands</li>
+                            <li>Analyze real log files from /var/log</li>
+                            <li>Create your own system monitoring commands</li>
+                            <li>Build a personal library of useful one-liners</li>
+                            <li>Share your knowledge—teach someone else what you've learned</li>
+                        </ol>
+                    </div>
+
+                    <h3>Additional Resources</h3>
+
+                    <div class="resource-section" style="background-color: var(--white); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <h4>📚 Further Reading</h4>
+                        <ul>
+                            <li><strong>Man Pages:</strong> Use <code>man command</code> for detailed documentation</li>
+                            <li><strong>Info Pages:</strong> Use <code>info command</code> for alternative documentation</li>
+                            <li><strong>Online Resources:</strong>
+                                <ul>
+                                    <li>explainshell.com - Explains shell commands</li>
+                                    <li>regex101.com - Regular expression testing</li>
+                                    <li>commandlinefu.com - Community command examples</li>
+                                </ul>
+                            </li>
+                            <li><strong>Books:</strong>
+                                <ul>
+                                    <li>"The Linux Command Line" by William Shotts (free online)</li>
+                                    <li>"Unix Power Tools" by Shelley Powers et al.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="key-takeaways">
+                        <h3>🎓 Module Completion</h3>
+                        <p>You've successfully completed Module 5.1! You should now be able to:</p>
+                        <ul>
+                            <li>✅ Execute advanced file operations efficiently</li>
+                            <li>✅ Process and analyze text files</li>
+                            <li>✅ Chain commands together to solve complex problems</li>
+                            <li>✅ Manage and monitor system processes</li>
+                            <li>✅ Gather comprehensive system information</li>
+                        </ul>
+                        <p style="margin-top: 20px; font-size: 1.1em;"><strong>Estimated Time to Master:</strong> These skills improve with practice. Aim to use these commands daily for 2-3 weeks to build proficiency.</p>
+                    </div>
+
+                    <div class="navigation-buttons">
+                        <button class="nav-btn prev" onclick="showSection('practice')">← Previous: Practice</button>
+                        <button class="nav-btn next" onclick="window.print()">🖨️ Print Module</button>
+                    </div>
+                </section>
+
+                <!-- Navigation Buttons (shown at bottom of each section except summary) -->
+                <div class="navigation-buttons" id="section-nav" style="display: none;">
+                    <button class="nav-btn prev" id="prev-btn" onclick="navigateSection('prev')">← Previous</button>
+                    <button class="nav-btn next" id="next-btn" onclick="navigateSection('next')">Next →</button>
+                </div>
+            </main>
+        </div>
+
+        <footer>
+            <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+            <p>Module 5.1: Advanced Bash Command-Line Administration</p>
+            <p style="margin-top: 10px;">Mendocino College | Computer Science Department</p>
+            <p style="margin-top: 5px; font-size: 0.9em;">© 2026 | Version 1.0 | For Educational Use</p>
+        </footer>
+    </div>
+
+    <script>
+        // Section navigation
+        const sections = ['intro', 'file-ops', 'text-processing', 'command-chaining', 'process-mgmt', 'system-info', 'practice', 'summary'];
+        let currentSectionIndex = 0;
+        let completedSections = new Set();
+
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+
+            // Update sidebar navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Mark previous section as completed
+            if (currentSectionIndex >= 0 && currentSectionIndex < sections.length) {
+                completedSections.add(sections[currentSectionIndex]);
+                updateProgress();
+            }
+
+            // Update current section index
+            currentSectionIndex = sections.indexOf(sectionId);
+
+            // Update navigation buttons
+            updateNavigationButtons();
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        function navigateSection(direction) {
+            if (direction === 'next' && currentSectionIndex < sections.length - 1) {
+                currentSectionIndex++;
+            } else if (direction === 'prev' && currentSectionIndex > 0) {
+                currentSectionIndex--;
+            }
+
+            const sectionId = sections[currentSectionIndex];
+            
+            // Simulate click on nav item
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems[currentSectionIndex].click();
+        }
+
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const sectionNav = document.getElementById('section-nav');
+
+            // Show navigation buttons except on summary page
+            if (currentSectionIndex === sections.length - 1) {
+                sectionNav.style.display = 'none';
+            } else {
+                sectionNav.style.display = 'flex';
+            }
+
+            // Disable/enable buttons
+            prevBtn.disabled = currentSectionIndex === 0;
+            nextBtn.disabled = currentSectionIndex === sections.length - 1;
+
+            // Update button text for last section
+            if (currentSectionIndex === sections.length - 2) {
+                nextBtn.textContent = 'Summary →';
+            } else {
+                nextBtn.textContent = 'Next →';
+            }
+        }
+
+        function updateProgress() {
+            const totalSections = sections.length;
+            const completed = completedSections.size;
+            const percentage = Math.round((completed / totalSections) * 100);
+
+            const progressBar = document.getElementById('moduleProgress');
+            const sectionsCompleted = document.getElementById('sectionsCompleted');
+
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = percentage + '%';
+            sectionsCompleted.textContent = completed;
+
+            // Update sidebar to show completed sections
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                if (completedSections.has(sections[index])) {
+                    item.classList.add('completed');
+                }
+            });
+        }
+
+        // Exercise answer checking
+        function checkAnswer(questionName, correctAnswer, feedbackId) {
+            const selected = document.querySelector(`input[name="${questionName}"]:checked`);
+            const feedback = document.getElementById(feedbackId);
+
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '⚠️ Please select an answer.';
+                return;
+            }
+
+            if (selected.value === correctAnswer) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✅ Correct! ' + getExplanation(questionName, correctAnswer);
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '❌ Incorrect. ' + getExplanation(questionName, correctAnswer);
+            }
+        }
+
+        function checkCommandAnswer(inputId, correctAnswers, feedbackId) {
+            const input = document.getElementById(inputId);
+            const feedback = document.getElementById(feedbackId);
+            const userAnswer = input.value.trim();
+
+            if (!userAnswer) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '⚠️ Please enter a command.';
+                return;
+            }
+
+            const isCorrect = correctAnswers.some(answer => 
+                userAnswer.toLowerCase() === answer.toLowerCase()
+            );
+
+            if (isCorrect) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✅ Correct! Your command will create a compressed tar archive.';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '❌ Not quite. Try: tar -czvf backup.tar.gz /home/user/documents';
+            }
+        }
+
+        function getExplanation(questionName, correctAnswer) {
+            const explanations = {
+                'q1': {
+                    'b': 'The -mmin option measures time in minutes, and -1440 equals 24 hours (24 × 60 = 1440 minutes). The -mtime option uses days, so -1 would mean "less than 1 day ago" which is what we want, but -mmin -1440 is more precise for exactly 24 hours.'
+                },
+                'q3': {
+                    'c': 'The -i flag makes the search case-insensitive, and -C 2 shows 2 lines of context (before and after) each match. Both options are needed.'
+                },
+                'q4': {
+                    'c': 'Using find with -exec grep allows you to search within all found files and redirect the combined output. Options a and b won\'t work as intended, and option d might fail with too many arguments.'
+                },
+                'q5': {
+                    'b': 'The kill -9 command sends SIGKILL, which forcefully terminates a process. This should only be used when the standard kill command (SIGTERM) doesn\'t work.'
+                }
+            };
+
+            return explanations[questionName]?.[correctAnswer] || 'See the explanation above.';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateNavigationButtons();
+            updateProgress();
+        });
+
+        // Print function
+        function printModule() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

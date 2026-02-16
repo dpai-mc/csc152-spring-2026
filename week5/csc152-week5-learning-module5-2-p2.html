@@ -1,0 +1,2765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Module 5.2 Part 2 - Bash Scripting Fundamentals (Loops, Functions, Debugging)">
+    <title>Module 5.2 Part 2: Bash Scripting Fundamentals | CSC 152</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #16a085;
+            --light-bg: #ecf0f1;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --border-color: #bdc3c7;
+            --code-bg: #2d2d2d;
+            --code-text: #f8f8f2;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--light-bg);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #16a085, #27ae60);
+            color: var(--white);
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .module-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .content-wrapper {
+            display: flex;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #f8f9fa;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(39, 174, 96, 0.1);
+            border-left-color: var(--success-color);
+        }
+
+        .nav-item.active {
+            background-color: rgba(39, 174, 96, 0.15);
+            border-left-color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .nav-item.completed::after {
+            content: " ✓";
+            color: var(--success-color);
+            float: right;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--success-color);
+        }
+
+        h3 {
+            color: var(--success-color);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: var(--primary-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .definition-box {
+            background-color: #e8f8f5;
+            border-left: 4px solid var(--info-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .definition-box h4 {
+            color: var(--info-color);
+            margin-top: 0;
+        }
+
+        .example-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .example-box h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .tip-box {
+            background-color: #d4edda;
+            border-left: 4px solid var(--success-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .tip-box h4 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        .code-block {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.7em;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        .inline-code {
+            background-color: #f4f4f4;
+            color: #c7254e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .command-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .command-table th {
+            background-color: var(--success-color);
+            color: var(--white);
+            padding: 12px;
+            text-align: left;
+        }
+
+        .command-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .command-table tr:hover {
+            background-color: var(--light-bg);
+        }
+
+        .interactive-exercise {
+            background-color: var(--white);
+            border: 2px solid var(--success-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .interactive-exercise h3 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        .exercise-question {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .exercise-options {
+            margin: 15px 0;
+        }
+
+        .exercise-option {
+            display: block;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .exercise-option:hover {
+            border-color: var(--success-color);
+            background-color: #f0f7ff;
+        }
+
+        .exercise-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .exercise-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            margin: 10px 0;
+        }
+
+        .exercise-input:focus {
+            outline: none;
+            border-color: var(--success-color);
+        }
+
+        .check-answer-btn {
+            background-color: var(--success-color);
+            color: var(--white);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .check-answer-btn:hover {
+            background-color: #229954;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .check-answer-btn:disabled {
+            background-color: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background-color: #d4edda;
+            border: 1px solid var(--success-color);
+            color: #155724;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            border: 1px solid var(--accent-color);
+            color: #721c24;
+            display: block;
+        }
+
+        .progress-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .progress-bar-wrapper {
+            background-color: var(--light-bg);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--success-color), #2ecc71);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.prev {
+            background-color: var(--text-light);
+            color: var(--white);
+        }
+
+        .nav-btn.next {
+            background-color: var(--success-color);
+            color: var(--white);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .key-takeaways {
+            background: linear-gradient(135deg, #16a085 0%, #27ae60 100%);
+            color: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .key-takeaways h3 {
+            color: var(--white);
+            margin-top: 0;
+        }
+
+        .key-takeaways ul {
+            margin-left: 20px;
+        }
+
+        .key-takeaways li {
+            margin-bottom: 10px;
+        }
+
+        .try-it-yourself {
+            background-color: #fff9e6;
+            border: 2px dashed var(--warning-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .try-it-yourself h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .script-output {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .comparison-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .comparison-card h4 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        footer {
+            background-color: var(--primary-color);
+            color: var(--white);
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media print {
+            .sidebar, .navigation-buttons, .interactive-exercise {
+                display: none;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .section {
+                display: block !important;
+                page-break-after: always;
+            }
+        }
+
+        @media (max-width: 968px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .comparison-table {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Module 5.2 Part 2: Bash Scripting Fundamentals</h1>
+            <div class="module-info">
+                <div class="info-badge">📚 CSC 152 - Week 5</div>
+                <div class="info-badge">⏱️ Continuation</div>
+                <div class="info-badge">🎯 CSLO 1</div>
+                <div class="info-badge">💻 Advanced Scripting</div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <h3>Module Contents</h3>
+                <div class="nav-item active" onclick="showSection('loops')">Loops & Iteration</div>
+                <div class="nav-item" onclick="showSection('functions')">Functions</div>
+                <div class="nav-item" onclick="showSection('debugging')">Debugging & Error Handling</div>
+                <div class="nav-item" onclick="showSection('practice')">Practice Scripts</div>
+                <div class="nav-item" onclick="showSection('summary')">Summary & Review</div>
+
+                <div class="progress-container" style="margin-top: 30px;">
+                    <h3>Your Progress</h3>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="moduleProgress">0%</div>
+                    </div>
+                    <p style="text-align: center; color: var(--text-light); font-size: 0.9em;">
+                        <span id="sectionsCompleted">0</span> of 5 sections completed
+                    </p>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <!-- Loops Section -->
+                <section id="loops" class="section active">
+                    <h2>Loops and Iteration</h2>
+                    
+                    <p>Loops allow you to repeat commands multiple times, making them essential for processing lists, automating repetitive tasks, and working with large datasets. Bash provides several loop constructs, each suited for different scenarios.</p>
+
+                    <h3>The for Loop</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is a for Loop?</h4>
+                        <p>A <strong>for loop</strong> iterates over a list of items, executing commands for each item. It's the most common loop in Bash scripting and is perfect for processing files, arrays, or command output.</p>
+                        
+                        <p><strong>Basic syntax:</strong></p>
+                        <div class="code-block" data-lang="bash">for variable in list; do
+    commands
+done</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Basic for Loop Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Example 1: Loop through a simple list
+for fruit in apple banana orange grape; do
+    echo "I like $fruit"
+done
+
+# Example 2: Loop through numbers
+for number in 1 2 3 4 5; do
+    echo "Number: $number"
+done
+
+# Example 3: Loop through a range (brace expansion)
+for i in {1..10}; do
+    echo "Count: $i"
+done
+
+# Example 4: Loop with step (every 2)
+for i in {0..20..2}; do
+    echo "Even number: $i"
+done
+
+# Example 5: Loop through files in current directory
+for file in *.txt; do
+    echo "Processing: $file"
+    # Do something with the file
+done
+
+# Example 6: Loop through command output
+for user in $(cat /etc/passwd | cut -d: -f1); do
+    echo "User: $user"
+done</div>
+
+                        <p><strong>Output (Example 1):</strong></p>
+                        <div class="script-output">I like apple
+I like banana
+I like orange
+I like grape</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>C-Style for Loop</h4>
+                        <p>Bash also supports C-style for loops, useful when you need precise control over iteration:</p>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# C-style for loop syntax
+for (( initialization; condition; increment )); do
+    commands
+done
+
+# Example: Count from 1 to 10
+for (( i=1; i<=10; i++ )); do
+    echo "Iteration $i"
+done
+
+# Example: Countdown
+for (( count=10; count>=0; count-- )); do
+    echo "T-minus $count"
+    sleep 1
+done
+echo "Liftoff!"
+
+# Example: Process array indices
+files=("file1.txt" "file2.txt" "file3.txt")
+for (( i=0; i<${#files[@]}; i++ )); do
+    echo "File $((i+1)): ${files[$i]}"
+done</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Real-World for Loop Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Example 1: Batch file renaming
+for file in *.jpg; do
+    # Rename .jpg to .jpeg
+    mv "$file" "${file%.jpg}.jpeg"
+    echo "Renamed: $file -> ${file%.jpg}.jpeg"
+done
+
+# Example 2: Create multiple directories
+for month in Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec; do
+    mkdir -p "reports_2026/$month"
+    echo "Created directory: reports_2026/$month"
+done
+
+# Example 3: Backup multiple databases
+databases=("customers" "products" "orders" "inventory")
+backup_dir="/backup/$(date +%Y%m%d)"
+mkdir -p "$backup_dir"
+
+for db in "${databases[@]}"; do
+    echo "Backing up database: $db"
+    mysqldump "$db" > "$backup_dir/${db}_backup.sql"
+    if [ $? -eq 0 ]; then
+        echo "✓ Successfully backed up $db"
+    else
+        echo "✗ Failed to backup $db"
+    fi
+done
+
+# Example 4: Process log files
+for logfile in /var/log/apache2/access.log.*; do
+    echo "Analyzing: $logfile"
+    
+    # Count 404 errors
+    errors=$(grep " 404 " "$logfile" | wc -l)
+    echo "  404 errors: $errors"
+    
+    # Find top 5 IP addresses
+    echo "  Top 5 IPs:"
+    awk '{print $1}' "$logfile" | sort | uniq -c | sort -rn | head -5
+    echo ""
+done
+
+# Example 5: Create user accounts from file
+while IFS=, read -r username fullname email; do
+    echo "Creating user: $username ($fullname)"
+    sudo useradd -m -c "$fullname" "$username"
+    echo "$username:ChangeMe123" | sudo chpasswd
+    echo "Email notification would be sent to: $email"
+done < users.csv</div>
+                    </div>
+
+                    <h3>The while Loop</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is a while Loop?</h4>
+                        <p>A <strong>while loop</strong> executes commands repeatedly as long as a condition is true. It's useful when you don't know in advance how many iterations you'll need.</p>
+                        
+                        <p><strong>Syntax:</strong></p>
+                        <div class="code-block" data-lang="bash">while [ condition ]; do
+    commands
+done</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>while Loop Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Example 1: Simple counter
+count=1
+while [ $count -le 5 ]; do
+    echo "Count: $count"
+    ((count++))  # Increment counter
+done
+
+# Example 2: Read file line by line
+while read -r line; do
+    echo "Line: $line"
+done < input.txt
+
+# Example 3: Monitor disk usage
+while true; do
+    usage=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
+    echo "Disk usage: ${usage}%"
+    
+    if [ $usage -gt 90 ]; then
+        echo "WARNING: Disk usage above 90%!"
+        # Send alert
+        break
+    fi
+    
+    sleep 300  # Check every 5 minutes
+done
+
+# Example 4: Retry logic
+max_attempts=3
+attempt=1
+
+while [ $attempt -le $max_attempts ]; do
+    echo "Attempt $attempt of $max_attempts"
+    
+    # Try to connect to server
+    if ping -c 1 server.example.com > /dev/null 2>&1; then
+        echo "Connection successful!"
+        break
+    else
+        echo "Connection failed, retrying..."
+        ((attempt++))
+        sleep 2
+    fi
+done
+
+if [ $attempt -gt $max_attempts ]; then
+    echo "Failed after $max_attempts attempts"
+    exit 1
+fi
+
+# Example 5: Menu system
+while true; do
+    echo ""
+    echo "===== System Menu ====="
+    echo "1. Show disk usage"
+    echo "2. Show memory usage"
+    echo "3. Show running processes"
+    echo "4. Exit"
+    echo "======================="
+    read -p "Enter choice [1-4]: " choice
+    
+    case $choice in
+        1)
+            df -h
+            ;;
+        2)
+            free -h
+            ;;
+        3)
+            ps aux | head -10
+            ;;
+        4)
+            echo "Goodbye!"
+            break
+            ;;
+        *)
+            echo "Invalid choice, please try again"
+            ;;
+    esac
+done</div>
+                    </div>
+
+                    <h3>The until Loop</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is an until Loop?</h4>
+                        <p>An <strong>until loop</strong> is the opposite of a while loop—it executes commands until a condition becomes true (while loop continues while condition is true).</p>
+                        
+                        <p><strong>Syntax:</strong></p>
+                        <div class="code-block" data-lang="bash">until [ condition ]; do
+    commands
+done</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>until Loop Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Example 1: Wait for file to exist
+until [ -f /tmp/ready.flag ]; do
+    echo "Waiting for ready flag..."
+    sleep 1
+done
+echo "Ready flag found, proceeding..."
+
+# Example 2: Wait for service to start
+until systemctl is-active --quiet apache2; do
+    echo "Waiting for Apache to start..."
+    sleep 2
+done
+echo "Apache is running!"
+
+# Example 3: Countdown timer
+seconds=10
+until [ $seconds -eq 0 ]; do
+    echo "Time remaining: $seconds seconds"
+    ((seconds--))
+    sleep 1
+done
+echo "Time's up!"
+
+# Example 4: Wait for network connectivity
+until ping -c 1 8.8.8.8 > /dev/null 2>&1; do
+    echo "No network connection, waiting..."
+    sleep 5
+done
+echo "Network is available!"</div>
+                    </div>
+
+                    <h3>Loop Control: break and continue</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Loop Control Statements</h4>
+                        <ul>
+                            <li><strong>break:</strong> Exits the loop immediately</li>
+                            <li><strong>continue:</strong> Skips the rest of the current iteration and moves to the next one</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>break and continue Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Example 1: Using break
+for i in {1..10}; do
+    if [ $i -eq 5 ]; then
+        echo "Reached 5, breaking out of loop"
+        break
+    fi
+    echo "Number: $i"
+done
+
+# Example 2: Using continue
+for i in {1..10}; do
+    # Skip even numbers
+    if [ $((i % 2)) -eq 0 ]; then
+        continue
+    fi
+    echo "Odd number: $i"
+done
+
+# Example 3: Real-world use - process files
+for file in *.txt; do
+    # Skip if file doesn't exist (glob didn't match)
+    [ -f "$file" ] || continue
+    
+    # Skip empty files
+    if [ ! -s "$file" ]; then
+        echo "Skipping empty file: $file"
+        continue
+    fi
+    
+    # Skip files larger than 1MB
+    size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
+    if [ $size -gt 1048576 ]; then
+        echo "Skipping large file: $file"
+        continue
+    fi
+    
+    echo "Processing: $file"
+    # Process the file
+done
+
+# Example 4: Search and stop when found
+found=false
+for dir in /usr/bin /usr/local/bin /opt/bin; do
+    if [ -f "$dir/myapp" ]; then
+        echo "Found myapp in $dir"
+        found=true
+        break
+    fi
+done
+
+if [ "$found" = false ]; then
+    echo "myapp not found in any directory"
+fi</div>
+                    </div>
+
+                    <h3>Nested Loops</h3>
+
+                    <div class="example-box">
+                        <h4>Nested Loop Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Example 1: Multiplication table
+for i in {1..5}; do
+    for j in {1..5}; do
+        result=$((i * j))
+        printf "%2d " $result
+    done
+    echo ""  # New line after each row
+done
+
+# Example 2: Process files in multiple directories
+for dir in /var/log /var/log/apache2 /var/log/nginx; do
+    echo "Processing directory: $dir"
+    
+    if [ ! -d "$dir" ]; then
+        echo "  Directory doesn't exist, skipping"
+        continue
+    fi
+    
+    for file in "$dir"/*.log; do
+        [ -f "$file" ] || continue
+        
+        echo "  Analyzing: $file"
+        errors=$(grep -c "ERROR" "$file")
+        echo "    Errors found: $errors"
+    done
+    echo ""
+done
+
+# Example 3: Create directory structure
+for year in 2024 2025 2026; do
+    for month in {01..12}; do
+        dir="archives/$year/$month"
+        mkdir -p "$dir"
+        echo "Created: $dir"
+    done
+done</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Create scripts using loops:</p>
+                        <ol>
+                            <li>Write a for loop that creates backup copies of all .conf files in /etc (backup_filename.conf)</li>
+                            <li>Create a while loop that monitors a log file and alerts when a specific error appears</li>
+                            <li>Write a script that uses nested loops to organize files by year and month</li>
+                            <li>Create a menu-driven script using a while loop with case statements</li>
+                            <li>Write a script that retries a command up to 5 times with increasing wait times</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Loops</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question 1:</strong> What will this loop output?</p>
+                            <div class="code-block" data-lang="bash">for i in {1..5}; do
+    if [ $i -eq 3 ]; then
+        continue
+    fi
+    echo $i
+done</div>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="a">
+                                <span>1 2 3 4 5</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="b">
+                                <span>1 2 4 5</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="c">
+                                <span>1 2</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="d">
+                                <span>3</span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q1', 'b', 'feedback1')">Check Answer</button>
+                        <div id="feedback1" class="feedback"></div>
+
+                        <div class="exercise-question" style="margin-top: 30px;">
+                            <p><strong>Question 2:</strong> Write a for loop that prints numbers 1 through 10:</p>
+                        </div>
+                        
+                        <input type="text" class="exercise-input" id="q2-input" placeholder="Type your for loop here...">
+                        <button class="check-answer-btn" onclick="checkLoopAnswer('q2-input', 'feedback2')">Check Answer</button>
+                        <div id="feedback2" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Functions Section -->
+                <section id="functions" class="section">
+                    <h2>Functions</h2>
+                    
+                    <p>Functions allow you to organize code into reusable blocks, making scripts more maintainable and easier to understand. They're essential for avoiding code duplication and creating modular scripts.</p>
+
+                    <h3>Function Basics</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is a Function?</h4>
+                        <p>A <strong>function</strong> is a named block of code that can be called multiple times from different parts of your script. Functions help organize code, promote reusability, and make scripts easier to maintain.</p>
+                        
+                        <p><strong>Syntax (two forms):</strong></p>
+                        <div class="code-block" data-lang="bash"># Form 1: Using 'function' keyword
+function function_name {
+    commands
+}
+
+# Form 2: Without 'function' keyword (more portable)
+function_name() {
+    commands
+}</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Basic Function Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Example 1: Simple function
+greet() {
+    echo "Hello, World!"
+}
+
+# Call the function
+greet
+
+# Example 2: Function with logic
+check_root() {
+    if [ "$EUID" -ne 0 ]; then
+        echo "This script must be run as root"
+        exit 1
+    fi
+    echo "Running as root, proceeding..."
+}
+
+check_root
+
+# Example 3: Function that returns a value
+is_even() {
+    local number=$1
+    if [ $((number % 2)) -eq 0 ]; then
+        return 0  # True (even)
+    else
+        return 1  # False (odd)
+    fi
+}
+
+# Use the function
+if is_even 4; then
+    echo "4 is even"
+fi
+
+if ! is_even 7; then
+    echo "7 is odd"
+fi</div>
+                    </div>
+
+                    <h3>Function Parameters and Arguments</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Function Arguments</h4>
+                        <p>Functions can accept arguments just like scripts. Inside a function:</p>
+                        <ul>
+                            <li><code>$1, $2, $3...</code> - Positional parameters</li>
+                            <li><code>$@</code> - All arguments as separate words</li>
+                            <li><code>$*</code> - All arguments as single word</li>
+                            <li><code>$#</code> - Number of arguments</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Functions with Parameters</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Example 1: Function with single parameter
+greet_user() {
+    local name=$1
+    echo "Hello, $name!"
+}
+
+greet_user "Alice"
+greet_user "Bob"
+
+# Example 2: Function with multiple parameters
+create_backup() {
+    local source=$1
+    local destination=$2
+    
+    echo "Backing up $source to $destination"
+    cp -r "$source" "$destination"
+    
+    if [ $? -eq 0 ]; then
+        echo "Backup successful"
+        return 0
+    else
+        echo "Backup failed"
+        return 1
+    fi
+}
+
+create_backup "/etc/nginx" "/backup/nginx_$(date +%Y%m%d)"
+
+# Example 3: Function with variable number of arguments
+sum_numbers() {
+    local total=0
+    
+    for number in "$@"; do
+        total=$((total + number))
+    done
+    
+    echo $total
+}
+
+result=$(sum_numbers 1 2 3 4 5)
+echo "Sum: $result"
+
+# Example 4: Function with argument validation
+divide() {
+    local numerator=$1
+    local denominator=$2
+    
+    # Validate arguments
+    if [ $# -ne 2 ]; then
+        echo "Error: divide requires exactly 2 arguments"
+        return 1
+    fi
+    
+    if [ $denominator -eq 0 ]; then
+        echo "Error: division by zero"
+        return 1
+    fi
+    
+    echo $((numerator / denominator))
+    return 0
+}
+
+# Use the function
+result=$(divide 10 2)
+echo "10 / 2 = $result"
+
+divide 10 0  # Will print error message</div>
+                    </div>
+
+                    <h3>Local vs Global Variables</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Variable Scope in Functions</h4>
+                        <ul>
+                            <li><strong>Global variables:</strong> Accessible throughout the entire script</li>
+                            <li><strong>Local variables:</strong> Declared with <code>local</code> keyword, only exist within the function</li>
+                        </ul>
+                        <p><strong>Best practice:</strong> Always use <code>local</code> for variables inside functions to avoid unintended side effects.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Variable Scope Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Global variable
+global_var="I'm global"
+
+function test_scope() {
+    # Local variable
+    local local_var="I'm local"
+    
+    # Accessing global variable
+    echo "Inside function:"
+    echo "  Global: $global_var"
+    echo "  Local: $local_var"
+    
+    # Modifying global variable
+    global_var="Modified by function"
+    
+    # Creating another local variable
+    local temp="Temporary"
+    echo "  Temp: $temp"
+}
+
+# Before function call
+echo "Before function:"
+echo "  Global: $global_var"
+echo "  Local: $local_var"  # Empty - doesn't exist yet
+echo ""
+
+# Call function
+test_scope
+echo ""
+
+# After function call
+echo "After function:"
+echo "  Global: $global_var"  # Modified
+echo "  Local: $local_var"    # Still empty - local to function
+echo "  Temp: $temp"          # Empty - local to function
+
+# Example showing why local is important
+counter=0
+
+bad_increment() {
+    counter=$((counter + 1))  # Modifies global
+}
+
+good_increment() {
+    local counter=$1
+    counter=$((counter + 1))
+    echo $counter  # Return value via stdout
+}
+
+echo ""
+echo "Counter: $counter"
+bad_increment
+echo "After bad_increment: $counter"  # Changed to 1
+
+result=$(good_increment $counter)
+echo "After good_increment: $counter (unchanged)"
+echo "Returned value: $result"</div>
+                    </div>
+
+                    <h3>Return Values</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Function Return Values</h4>
+                        <p>Bash functions have two ways to return data:</p>
+                        <ol>
+                            <li><strong>Exit status (return):</strong> Returns 0-255, used for success/failure
+                                <ul>
+                                    <li>0 = success</li>
+                                    <li>1-255 = various error codes</li>
+                                </ul>
+                            </li>
+                            <li><strong>Output (echo):</strong> Print data that can be captured with command substitution
+                                <ul>
+                                    <li>More flexible for returning complex data</li>
+                                    <li>Can return strings, numbers, multiple values</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Return Value Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Example 1: Using return for exit status
+file_exists() {
+    local filename=$1
+    
+    if [ -f "$filename" ]; then
+        return 0  # Success
+    else
+        return 1  # Failure
+    fi
+}
+
+# Use with if statement
+if file_exists "/etc/passwd"; then
+    echo "File exists"
+fi
+
+# Example 2: Using echo to return data
+get_file_size() {
+    local filename=$1
+    
+    if [ ! -f "$filename" ]; then
+        echo "0"
+        return 1
+    fi
+    
+    local size=$(stat -f%z "$filename" 2>/dev/null || stat -c%s "$filename" 2>/dev/null)
+    echo "$size"
+    return 0
+}
+
+# Capture output
+size=$(get_file_size "/etc/passwd")
+echo "File size: $size bytes"
+
+# Example 3: Returning multiple values
+get_system_info() {
+    local hostname=$(hostname)
+    local kernel=$(uname -r)
+    local uptime=$(uptime -p 2>/dev/null || uptime | awk '{print $3}')
+    
+    # Return multiple values separated by delimiter
+    echo "$hostname|$kernel|$uptime"
+}
+
+# Parse returned values
+info=$(get_system_info)
+IFS='|' read -r host kern up <<< "$info"
+echo "Hostname: $host"
+echo "Kernel: $kern"
+echo "Uptime: $up"
+
+# Example 4: Combining both approaches
+validate_and_process() {
+    local input=$1
+    
+    # Validation
+    if [ -z "$input" ]; then
+        echo "ERROR: Empty input"
+        return 1
+    fi
+    
+    if [ ${#input} -lt 3 ]; then
+        echo "ERROR: Input too short"
+        return 2
+    fi
+    
+    # Process and return result
+    local result=$(echo "$input" | tr '[:lower:]' '[:upper:]')
+    echo "$result"
+    return 0
+}
+
+# Use the function
+output=$(validate_and_process "hello")
+status=$?
+
+if [ $status -eq 0 ]; then
+    echo "Success: $output"
+else
+    echo "Failed with status $status: $output"
+fi</div>
+                    </div>
+
+                    <h3>Real-World Function Examples</h3>
+
+                    <div class="example-box">
+                        <h4>Practical Function Library</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+# Common administrative functions
+
+# Logging function
+log_message() {
+    local level=$1
+    shift  # Remove first argument, leaving message
+    local message="$@"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    echo "[$timestamp] [$level] $message" | tee -a /var/log/myscript.log
+}
+
+# Usage
+log_message "INFO" "Script started"
+log_message "ERROR" "Failed to connect to database"
+
+# Backup function with error handling
+backup_directory() {
+    local source=$1
+    local dest_base=$2
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local dest="${dest_base}/backup_${timestamp}.tar.gz"
+    
+    log_message "INFO" "Starting backup of $source"
+    
+    # Validate source exists
+    if [ ! -d "$source" ]; then
+        log_message "ERROR" "Source directory does not exist: $source"
+        return 1
+    fi
+    
+    # Create destination directory
+    mkdir -p "$dest_base"
+    if [ $? -ne 0 ]; then
+        log_message "ERROR" "Failed to create destination directory"
+        return 2
+    fi
+    
+    # Perform backup
+    tar -czf "$dest" "$source" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        local size=$(du -h "$dest" | cut -f1)
+        log_message "INFO" "Backup successful: $dest ($size)"
+        return 0
+    else
+        log_message "ERROR" "Backup failed"
+        return 3
+    fi
+}
+
+# Service management function
+manage_service() {
+    local action=$1
+    local service=$2
+    
+    case $action in
+        start|stop|restart|status)
+            log_message "INFO" "Performing $action on $service"
+            systemctl $action $service
+            return $?
+            ;;
+        *)
+            log_message "ERROR" "Invalid action: $action"
+            return 1
+            ;;
+    esac
+}
+
+# Disk space check function
+check_disk_space() {
+    local threshold=${1:-80}  # Default 80%
+    local mount_point=${2:-/}
+    
+    local usage=$(df "$mount_point" | tail -1 | awk '{print $5}' | sed 's/%//')
+    
+    if [ $usage -gt $threshold ]; then
+        log_message "WARNING" "Disk usage on $mount_point is ${usage}% (threshold: ${threshold}%)"
+        return 1
+    else
+        log_message "INFO" "Disk usage on $mount_point is ${usage}% (OK)"
+        return 0
+    fi
+}
+
+# User validation function
+validate_user() {
+    local username=$1
+    
+    if id "$username" &>/dev/null; then
+        echo "User $username exists"
+        return 0
+    else
+        echo "User $username does not exist"
+        return 1
+    fi
+}
+
+# Email notification function
+send_notification() {
+    local subject=$1
+    local message=$2
+    local recipient=${3:-admin@example.com}
+    
+    echo "$message" | mail -s "$subject" "$recipient"
+    
+    if [ $? -eq 0 ]; then
+        log_message "INFO" "Notification sent to $recipient"
+        return 0
+    else
+        log_message "ERROR" "Failed to send notification"
+        return 1
+    fi
+}
+
+# Main script logic using functions
+main() {
+    log_message "INFO" "=== Script Execution Started ==="
+    
+    # Check disk space
+    if ! check_disk_space 90 "/"; then
+        send_notification "Disk Space Alert" "Root partition is running low on space"
+    fi
+    
+    # Backup important directories
+    for dir in /etc /home; do
+        backup_directory "$dir" "/backup"
+    done
+    
+    # Restart service if needed
+    if ! systemctl is-active --quiet nginx; then
+        manage_service start nginx
+    fi
+    
+    log_message "INFO" "=== Script Execution Completed ==="
+}
+
+# Run main function
+main</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Create functions for common tasks:</p>
+                        <ol>
+                            <li>Write a function that checks if a command exists on the system</li>
+                            <li>Create a function that validates an IP address format</li>
+                            <li>Write a function that creates a user with proper error handling</li>
+                            <li>Create a function library with common administrative tasks</li>
+                            <li>Write a function that retries another function up to N times</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Functions</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> What's the difference between these two functions?</p>
+                            <div class="code-block" data-lang="bash"># Function A
+get_value_a() {
+    result="Hello"
+}
+
+# Function B
+get_value_b() {
+    local result="Hello"
+    echo "$result"
+}</div>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="a">
+                                <span>No difference, they work the same</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="b">
+                                <span>Function A modifies a global variable, Function B returns a value via echo</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="c">
+                                <span>Function A is faster than Function B</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="d">
+                                <span>Function B has a syntax error</span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q3', 'b', 'feedback3')">Check Answer</button>
+                        <div id="feedback3" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Debugging Section -->
+                <section id="debugging" class="section">
+                    <h2>Debugging and Error Handling</h2>
+                    
+                    <p>Even experienced scripters make mistakes. Learning to debug scripts and handle errors gracefully is essential for creating robust, production-ready automation.</p>
+
+                    <h3>Common Script Errors</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Types of Script Errors</h4>
+                        <ol>
+                            <li><strong>Syntax Errors:</strong> Invalid Bash syntax (missing quotes, brackets, etc.)</li>
+                            <li><strong>Logic Errors:</strong> Script runs but produces wrong results</li>
+                            <li><strong>Runtime Errors:</strong> Errors that occur during execution (file not found, permission denied)</li>
+                            <li><strong>Semantic Errors:</strong> Script does something different than intended</li>
+                        </ol>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Common Mistakes and Fixes</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# MISTAKE 1: Spaces in variable assignment
+name = "John"        # WRONG - spaces around =
+name="John"          # CORRECT
+
+# MISTAKE 2: Missing spaces in test conditions
+if ["$name" = "John"]; then    # WRONG - no space after [
+if [ "$name" = "John" ]; then  # CORRECT
+
+# MISTAKE 3: Unquoted variables with spaces
+file="my document.txt"
+cat $file            # WRONG - tries to cat "my" and "document.txt"
+cat "$file"          # CORRECT - treats as single filename
+
+# MISTAKE 4: Using = instead of -eq for numbers
+if [ $count = 5 ]; then        # WRONG - string comparison
+if [ $count -eq 5 ]; then      # CORRECT - numeric comparison
+
+# MISTAKE 5: Forgetting to make script executable
+# Wrong: bash script.sh (works but not ideal)
+# Right: chmod +x script.sh, then ./script.sh
+
+# MISTAKE 6: Not checking command success
+cp file.txt backup.txt
+rm file.txt          # WRONG - deletes even if copy failed
+
+cp file.txt backup.txt
+if [ $? -eq 0 ]; then
+    rm file.txt      # CORRECT - only delete if copy succeeded
+fi
+
+# MISTAKE 7: Infinite loops
+while true; do
+    echo "Running forever"
+    # Missing break condition
+done
+
+# MISTAKE 8: Wrong shebang or missing shebang
+#!/bin/sh             # May not support Bash features
+#!/bin/bash           # CORRECT for Bash scripts</div>
+                    </div>
+
+                    <h3>Debugging Techniques</h3>
+
+                    <div class="example-box">
+                        <h4>Method 1: Using set Options</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Enable debugging modes at start of script
+set -x  # Print each command before executing (xtrace)
+set -e  # Exit immediately if a command fails
+set -u  # Treat unset variables as errors
+set -o pipefail  # Return exit status of last failed command in pipeline
+
+# Or combine them:
+set -euxo pipefail
+
+# Example script with debugging
+echo "Starting script..."
+
+# This will show the variable expansion
+name="Alice"
+echo "Hello, $name"
+
+# This will fail and exit due to set -e
+# false
+
+# This would cause error with set -u
+# echo $undefined_variable
+
+# Disable debugging for sensitive sections
+set +x
+password="secret"
+set -x
+
+echo "Script completed"</div>
+
+                        <p><strong>Debugging options explained:</strong></p>
+                        <ul>
+                            <li><code>set -x</code> (xtrace): Shows each command with expanded variables before execution</li>
+                            <li><code>set -e</code> (errexit): Exits script if any command returns non-zero</li>
+                            <li><code>set -u</code> (nounset): Treats undefined variables as errors</li>
+                            <li><code>set -o pipefail</code>: Catches errors in pipelines</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Method 2: Echo Debugging</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Add echo statements to trace execution
+echo "DEBUG: Starting function"
+
+process_file() {
+    local file=$1
+    echo "DEBUG: Processing file: $file"
+    
+    if [ ! -f "$file" ]; then
+        echo "DEBUG: File does not exist"
+        return 1
+    fi
+    
+    local lines=$(wc -l < "$file")
+    echo "DEBUG: File has $lines lines"
+    
+    # Process file
+    echo "DEBUG: Processing complete"
+    return 0
+}
+
+# Call function
+process_file "test.txt"
+
+# Better: Use a debug function
+DEBUG=1  # Set to 0 to disable debug output
+
+debug() {
+    if [ "$DEBUG" = "1" ]; then
+        echo "DEBUG: $@" >&2  # Send to stderr
+    fi
+}
+
+debug "This is a debug message"
+debug "Variable value: $name"</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Method 3: Using trap for Debugging</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Trap ERR to catch errors
+trap 'echo "Error on line $LINENO"' ERR
+
+# Trap EXIT to show where script exits
+trap 'echo "Script exiting..."' EXIT
+
+# Trap DEBUG to trace every command
+trap 'echo "Executing: $BASH_COMMAND"' DEBUG
+
+# Example usage
+echo "Starting script"
+# false  # This would trigger ERR trap
+echo "Script continues"
+
+# Remove traps
+trap - ERR DEBUG EXIT</div>
+                    </div>
+
+                    <h3>Error Handling Patterns</h3>
+
+                    <div class="example-box">
+                        <h4>Robust Error Handling</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Pattern 1: Check exit status
+cp source.txt destination.txt
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to copy file"
+    exit 1
+fi
+
+# Pattern 2: Use || operator
+cp source.txt destination.txt || {
+    echo "Error: Failed to copy file"
+    exit 1
+}
+
+# Pattern 3: Use && for success chain
+cd /tmp && rm -f tempfile.txt && echo "Cleanup successful"
+
+# Pattern 4: Validate inputs
+validate_input() {
+    local input=$1
+    
+    if [ -z "$input" ]; then
+        echo "Error: Input cannot be empty" >&2
+        return 1
+    fi
+    
+    if [ ${#input} -lt 3 ]; then
+        echo "Error: Input must be at least 3 characters" >&2
+        return 1
+    fi
+    
+    return 0
+}
+
+# Pattern 5: Comprehensive error handling
+safe_backup() {
+    local source=$1
+    local dest=$2
+    
+    # Validate arguments
+    if [ $# -ne 2 ]; then
+        echo "Error: Usage: safe_backup <source> <destination>" >&2
+        return 1
+    fi
+    
+    # Check source exists
+    if [ ! -e "$source" ]; then
+        echo "Error: Source does not exist: $source" >&2
+        return 2
+    fi
+    
+    # Check destination directory exists
+    local dest_dir=$(dirname "$dest")
+    if [ ! -d "$dest_dir" ]; then
+        echo "Error: Destination directory does not exist: $dest_dir" >&2
+        return 3
+    fi
+    
+    # Check write permission
+    if [ ! -w "$dest_dir" ]; then
+        echo "Error: No write permission to: $dest_dir" >&2
+        return 4
+    fi
+    
+    # Perform backup
+    cp -r "$source" "$dest" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        echo "Success: Backed up $source to $dest"
+        return 0
+    else
+        echo "Error: Backup failed" >&2
+        return 5
+    fi
+}
+
+# Pattern 6: Try-catch simulation
+try_operation() {
+    local operation=$1
+    local error_handler=$2
+    
+    # Try the operation
+    eval "$operation"
+    local status=$?
+    
+    # If failed, run error handler
+    if [ $status -ne 0 ]; then
+        eval "$error_handler"
+    fi
+    
+    return $status
+}
+
+# Usage
+try_operation \
+    "cp nonexistent.txt backup.txt" \
+    "echo 'Backup failed, using default file'; touch backup.txt"</div>
+                    </div>
+
+                    <h3>Logging and Monitoring</h3>
+
+                    <div class="example-box">
+                        <h4>Implementing Logging</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Logging configuration
+LOG_FILE="/var/log/myscript.log"
+LOG_LEVEL="INFO"  # DEBUG, INFO, WARN, ERROR
+
+# Logging function
+log() {
+    local level=$1
+    shift
+    local message="$@"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    # Check if we should log this level
+    case $LOG_LEVEL in
+        DEBUG)
+            ;;  # Log everything
+        INFO)
+            if [ "$level" = "DEBUG" ]; then return; fi
+            ;;
+        WARN)
+            if [ "$level" = "DEBUG" ] || [ "$level" = "INFO" ]; then return; fi
+            ;;
+        ERROR)
+            if [ "$level" != "ERROR" ]; then return; fi
+            ;;
+    esac
+    
+    # Format and write log entry
+    echo "[$timestamp] [$level] $message" | tee -a "$LOG_FILE"
+}
+
+# Convenience functions
+log_debug() { log "DEBUG" "$@"; }
+log_info() { log "INFO" "$@"; }
+log_warn() { log "WARN" "$@"; }
+log_error() { log "ERROR" "$@"; }
+
+# Usage example
+log_info "Script started"
+log_debug "Debug information: variable=$variable"
+log_warn "Disk space is running low"
+log_error "Failed to connect to database"
+
+# Log with context
+log_info "Processing file: $filename"
+if process_file "$filename"; then
+    log_info "File processed successfully"
+else
+    log_error "Failed to process file"
+fi</div>
+                    </div>
+
+                    <div class="tip-box">
+                        <h4>💡 Debugging Best Practices</h4>
+                        <ol>
+                            <li><strong>Start Simple:</strong> Test basic functionality before adding complexity</li>
+                            <li><strong>Use ShellCheck:</strong> Run your scripts through shellcheck.net for syntax checking</li>
+                            <li><strong>Test Edge Cases:</strong> Test with empty inputs, special characters, large files</li>
+                            <li><strong>Add Comments:</strong> Explain complex logic for future debugging</li>
+                            <li><strong>Validate Inputs:</strong> Always check user input and command-line arguments</li>
+                            <li><strong>Check Exit Codes:</strong> Don't assume commands succeeded</li>
+                            <li><strong>Use Meaningful Variable Names:</strong> Makes debugging much easier</li>
+                            <li><strong>Log Important Operations:</strong> Especially in production scripts</li>
+                            <li><strong>Test in Safe Environment:</strong> Use VMs or test directories</li>
+                            <li><strong>Version Control:</strong> Use git to track changes and revert if needed</li>
+                        </ol>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Common Debugging Pitfalls</h4>
+                        <ul>
+                            <li><strong>Not quoting variables:</strong> Causes word splitting and glob expansion</li>
+                            <li><strong>Ignoring exit codes:</strong> Assuming commands always succeed</li>
+                            <li><strong>Using == instead of =:</strong> Works in [[ ]] but not in [ ]</li>
+                            <li><strong>Forgetting to export variables:</strong> Child processes won't see them</li>
+                            <li><strong>Path issues:</strong> Using relative paths that break when PWD changes</li>
+                            <li><strong>Race conditions:</strong> Assuming file exists between check and use</li>
+                        </ul>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Practice debugging skills:</p>
+                        <ol>
+                            <li>Create a script with intentional errors and use set -x to debug it</li>
+                            <li>Write a script that validates all inputs before processing</li>
+                            <li>Implement comprehensive error handling in a file backup script</li>
+                            <li>Create a logging system with different log levels</li>
+                            <li>Use ShellCheck to analyze one of your existing scripts</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Practice Scripts Section -->
+                <section id="practice" class="section">
+                    <h2>Practice Scripts</h2>
+                    
+                    <p>Now let's put everything together! These comprehensive practice scripts demonstrate real-world system administration scenarios using all the concepts you've learned.</p>
+
+                    <div class="interactive-exercise">
+                        <h3>Practice Script 1: System Health Check</h3>
+                        <p><strong>Scenario:</strong> Create a script that performs a comprehensive system health check and generates a report.</p>
+                        
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+# system_health_check.sh
+# Performs comprehensive system health check
+
+# Configuration
+REPORT_FILE="/tmp/health_report_$(date +%Y%m%d_%H%M%S).txt"
+EMAIL_RECIPIENT="admin@example.com"
+DISK_THRESHOLD=80
+MEM_THRESHOLD=80
+
+# Logging function
+log_section() {
+    local title=$1
+    echo "" | tee -a "$REPORT_FILE"
+    echo "==== $title ====" | tee -a "$REPORT_FILE"
+    echo "" | tee -a "$REPORT_FILE"
+}
+
+# Check disk space
+check_disk_space() {
+    log_section "DISK SPACE CHECK"
+    
+    df -h | tee -a "$REPORT_FILE"
+    
+    # Check if any partition exceeds threshold
+    while read -r line; do
+        usage=$(echo "$line" | awk '{print $5}' | sed 's/%//')
+        mount=$(echo "$line" | awk '{print $6}')
+        
+        if [ "$usage" -gt "$DISK_THRESHOLD" ]; then
+            echo "WARNING: $mount is ${usage}% full" | tee -a "$REPORT_FILE"
+        fi
+    done < <(df -h | tail -n +2)
+}
+
+# Check memory usage
+check_memory() {
+    log_section "MEMORY USAGE"
+    
+    free -h | tee -a "$REPORT_FILE"
+    
+    # Calculate memory usage percentage
+    mem_total=$(free | awk '/Mem:/ {print $2}')
+    mem_used=$(free | awk '/Mem:/ {print $3}')
+    mem_percent=$((mem_used * 100 / mem_total))
+    
+    echo "" | tee -a "$REPORT_FILE"
+    echo "Memory usage: ${mem_percent}%" | tee -a "$REPORT_FILE"
+    
+    if [ $mem_percent -gt $MEM_THRESHOLD ]; then
+        echo "WARNING: Memory usage exceeds ${MEM_THRESHOLD}%" | tee -a "$REPORT_FILE"
+    fi
+}
+
+# Check CPU load
+check_cpu_load() {
+    log_section "CPU LOAD"
+    
+    uptime | tee -a "$REPORT_FILE"
+    
+    # Get load average
+    load=$(uptime | awk -F'load average:' '{print $2}' | awk '{print $1}' | sed 's/,//')
+    cores=$(nproc)
+    
+    echo "CPU cores: $cores" | tee -a "$REPORT_FILE"
+    echo "Load average (1 min): $load" | tee -a "$REPORT_FILE"
+}
+
+# Check running services
+check_services() {
+    log_section "CRITICAL SERVICES"
+    
+    local services=("sshd" "nginx" "mysql")
+    
+    for service in "${services[@]}"; do
+        if systemctl is-active --quiet "$service" 2>/dev/null; then
+            echo "✓ $service is running" | tee -a "$REPORT_FILE"
+        else
+            echo "✗ $service is NOT running" | tee -a "$REPORT_FILE"
+        fi
+    done
+}
+
+# Check failed login attempts
+check_failed_logins() {
+    log_section "FAILED LOGIN ATTEMPTS"
+    
+    if [ -f /var/log/auth.log ]; then
+        failed=$(grep "Failed password" /var/log/auth.log | wc -l)
+        echo "Failed login attempts: $failed" | tee -a "$REPORT_FILE"
+        
+        if [ $failed -gt 10 ]; then
+            echo "WARNING: High number of failed login attempts" | tee -a "$REPORT_FILE"
+        fi
+    else
+        echo "Auth log not available" | tee -a "$REPORT_FILE"
+    fi
+}
+
+# Main execution
+main() {
+    echo "System Health Check Report" > "$REPORT_FILE"
+    echo "Generated: $(date)" >> "$REPORT_FILE"
+    echo "Hostname: $(hostname)" >> "$REPORT_FILE"
+    
+    check_disk_space
+    check_memory
+    check_cpu_load
+    check_services
+    check_failed_logins
+    
+    log_section "REPORT COMPLETE"
+    echo "Report saved to: $REPORT_FILE"
+    
+    # Optionally email report
+    # mail -s "System Health Report" "$EMAIL_RECIPIENT" < "$REPORT_FILE"
+}
+
+# Run main function
+main</div>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>Practice Script 2: Automated Backup System</h3>
+                        <p><strong>Scenario:</strong> Create a comprehensive backup script with rotation and error handling.</p>
+                        
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+# backup_system.sh
+# Automated backup with rotation and verification
+
+# Configuration
+BACKUP_SOURCE="/home /etc"
+BACKUP_DEST="/backup"
+RETENTION_DAYS=7
+LOG_FILE="/var/log/backup.log"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+# Logging function
+log() {
+    local level=$1
+    shift
+    local message="$@"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" | tee -a "$LOG_FILE"
+}
+
+# Check if running as root
+check_root() {
+    if [ "$EUID" -ne 0 ]; then
+        log "ERROR" "This script must be run as root"
+        exit 1
+    fi
+}
+
+# Create backup directory structure
+setup_backup_dir() {
+    local backup_dir="$BACKUP_DEST/$(date +%Y%m%d)"
+    
+    if [ ! -d "$backup_dir" ]; then
+        mkdir -p "$backup_dir"
+        if [ $? -eq 0 ]; then
+            log "INFO" "Created backup directory: $backup_dir"
+        else
+            log "ERROR" "Failed to create backup directory"
+            exit 1
+        fi
+    fi
+    
+    echo "$backup_dir"
+}
+
+# Perform backup
+do_backup() {
+    local source=$1
+    local dest=$2
+    local name=$(basename "$source")
+    local archive="$dest/${name}_${TIMESTAMP}.tar.gz"
+    
+    log "INFO" "Starting backup of $source"
+    
+    tar -czf "$archive" "$source" 2>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        local size=$(du -h "$archive" | cut -f1)
+        log "INFO" "Backup successful: $archive ($size)"
+        
+        # Verify archive
+        if tar -tzf "$archive" >/dev/null 2>&1; then
+            log "INFO" "Archive verification passed"
+            return 0
+        else
+            log "ERROR" "Archive verification failed"
+            rm -f "$archive"
+            return 1
+        fi
+    else
+        log "ERROR" "Backup failed for $source"
+        return 1
+    fi
+}
+
+# Clean old backups
+cleanup_old_backups() {
+    log "INFO" "Cleaning up backups older than $RETENTION_DAYS days"
+    
+    find "$BACKUP_DEST" -type f -name "*.tar.gz" -mtime +$RETENTION_DAYS -delete
+    
+    local deleted=$?
+    if [ $deleted -eq 0 ]; then
+        log "INFO" "Cleanup completed"
+    else
+        log "WARN" "Cleanup encountered issues"
+    fi
+}
+
+# Send notification
+send_notification() {
+    local status=$1
+    local message=$2
+    
+    # Email notification (requires mail command)
+    # echo "$message" | mail -s "Backup $status" admin@example.com
+    
+    log "INFO" "Notification: $status - $message"
+}
+
+# Main execution
+main() {
+    log "INFO" "==== Backup Process Started ===="
+    
+    check_root
+    
+    local backup_dir=$(setup_backup_dir)
+    local backup_count=0
+    local failed_count=0
+    
+    # Backup each source
+    for source in $BACKUP_SOURCE; do
+        if [ -e "$source" ]; then
+            if do_backup "$source" "$backup_dir"; then
+                ((backup_count++))
+            else
+                ((failed_count++))
+            fi
+        else
+            log "WARN" "Source does not exist: $source"
+        fi
+    done
+    
+    # Cleanup old backups
+    cleanup_old_backups
+    
+    # Generate summary
+    log "INFO" "Backup Summary:"
+    log "INFO" "  Successful: $backup_count"
+    log "INFO" "  Failed: $failed_count"
+    log "INFO" "  Location: $backup_dir"
+    
+    # Send notification
+    if [ $failed_count -eq 0 ]; then
+        send_notification "SUCCESS" "All backups completed successfully"
+        exit 0
+    else
+        send_notification "PARTIAL" "$failed_count backup(s) failed"
+        exit 1
+    fi
+}
+
+# Run main function
+main</div>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>Practice Script 3: User Management Automation</h3>
+                        <p><strong>Scenario:</strong> Create users from a CSV file with proper validation and error handling.</p>
+                        
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+# user_management.sh
+# Automated user creation from CSV file
+
+# Configuration
+CSV_FILE="users.csv"
+LOG_FILE="/var/log/user_management.log"
+DEFAULT_SHELL="/bin/bash"
+DEFAULT_GROUP="users"
+
+# Logging
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $@" | tee -a "$LOG_FILE"
+}
+
+# Validate CSV file exists
+validate_csv() {
+    if [ ! -f "$CSV_FILE" ]; then
+        log "ERROR: CSV file not found: $CSV_FILE"
+        exit 1
+    fi
+    
+    if [ ! -r "$CSV_FILE" ]; then
+        log "ERROR: Cannot read CSV file: $CSV_FILE"
+        exit 1
+    fi
+}
+
+# Validate username
+validate_username() {
+    local username=$1
+    
+    # Check if empty
+    if [ -z "$username" ]; then
+        return 1
+    fi
+    
+    # Check if already exists
+    if id "$username" &>/dev/null; then
+        log "WARN: User already exists: $username"
+        return 1
+    fi
+    
+    # Check format (alphanumeric, underscore, dash)
+    if [[ ! "$username" =~ ^[a-z][a-z0-9_-]*$ ]]; then
+        log "ERROR: Invalid username format: $username"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Create user account
+create_user() {
+    local username=$1
+    local fullname=$2
+    local email=$3
+    local groups=$4
+    
+    log "Creating user: $username ($fullname)"
+    
+    # Create user
+    useradd -m -c "$fullname" -s "$DEFAULT_SHELL" "$username"
+    
+    if [ $? -ne 0 ]; then
+        log "ERROR: Failed to create user: $username"
+        return 1
+    fi
+    
+    # Set initial password
+    local password=$(openssl rand -base64 12)
+    echo "$username:$password" | chpasswd
+    
+    # Force password change on first login
+    chage -d 0 "$username"
+    
+    # Add to additional groups
+    if [ -n "$groups" ]; then
+        usermod -aG "$groups" "$username"
+    fi
+    
+    # Save password to secure file
+    echo "$username,$password" >> /root/new_user_passwords.txt
+    chmod 600 /root/new_user_passwords.txt
+    
+    log "SUCCESS: User created: $username"
+    log "  Password: $password (saved to /root/new_user_passwords.txt)"
+    log "  Email: $email"
+    
+    return 0
+}
+
+# Process CSV file
+process_csv() {
+    local success_count=0
+    local fail_count=0
+    local skip_count=0
+    
+    # Read CSV file (skip header)
+    while IFS=, read -r username fullname email groups; do
+        # Skip header line
+        if [ "$username" = "username" ]; then
+            continue
+        fi
+        
+        # Validate username
+        if ! validate_username "$username"; then
+            ((skip_count++))
+            continue
+        fi
+        
+        # Create user
+        if create_user "$username" "$fullname" "$email" "$groups"; then
+            ((success_count++))
+        else
+            ((fail_count++))
+        fi
+        
+    done < "$CSV_FILE"
+    
+    # Print summary
+    log "==== Summary ===="
+    log "Users created: $success_count"
+    log "Failed: $fail_count"
+    log "Skipped: $skip_count"
+}
+
+# Generate sample CSV
+generate_sample_csv() {
+    cat > users.csv << EOF
+username,fullname,email,groups
+jdoe,John Doe,jdoe@example.com,developers
+asmith,Alice Smith,asmith@example.com,developers,sudo
+bwilson,Bob Wilson,bwilson@example.com,
+EOF
+    
+    log "Sample CSV file created: users.csv"
+}
+
+# Main function
+main() {
+    log "==== User Management Script Started ===="
+    
+    # Check if running as root
+    if [ "$EUID" -ne 0 ]; then
+        log "ERROR: This script must be run as root"
+        exit 1
+    fi
+    
+    # Check if CSV file exists
+    if [ ! -f "$CSV_FILE" ]; then
+        log "CSV file not found, generating sample..."
+        generate_sample_csv
+        log "Please edit users.csv and run again"
+        exit 0
+    fi
+    
+    validate_csv
+    process_csv
+    
+    log "==== Script Completed ===="
+}
+
+# Run main function
+main</div>
+                    </div>
+
+                    <div class="key-takeaways">
+                        <h3>🎯 Key Patterns in Practice Scripts</h3>
+                        <ul>
+                            <li><strong>Logging:</strong> All scripts use comprehensive logging for troubleshooting</li>
+                            <li><strong>Validation:</strong> Input validation prevents errors before they occur</li>
+                            <li><strong>Error Handling:</strong> Proper checking of command exit codes</li>
+                            <li><strong>Functions:</strong> Code organized into reusable functions</li>
+                            <li><strong>Configuration:</strong> Variables at top for easy customization</li>
+                            <li><strong>Documentation:</strong> Comments explain purpose and usage</li>
+                            <li><strong>Security:</strong> Proper permission checks and secure practices</li>
+                        </ul>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Your Turn: Create Custom Scripts</h4>
+                        <p>Use these templates to create your own scripts:</p>
+                        <ol>
+                            <li><strong>Log Analyzer:</strong> Parse Apache/Nginx logs and generate reports</li>
+                            <li><strong>Service Monitor:</strong> Check critical services and restart if down</li>
+                            <li><strong>Disk Cleanup:</strong> Find and remove old files based on criteria</li>
+                            <li><strong>Security Audit:</strong> Check for common security issues</li>
+                            <li><strong>Database Backup:</strong> Backup multiple databases with rotation</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- Summary Section -->
+                <section id="summary" class="section">
+                    <h2>Module 5.2 Summary & Review</h2>
+                    
+                    <p>Congratulations on completing Module 5.2! You've learned the essential skills for creating robust, production-ready Bash scripts.</p>
+
+                    <div class="key-takeaways">
+                        <h3>🎯 What You've Mastered</h3>
+                        
+                        <h4>Loops and Iteration</h4>
+                        <ul>
+                            <li><strong>for loops:</strong> Iterating over lists, files, and ranges</li>
+                            <li><strong>while loops:</strong> Condition-based iteration</li>
+                            <li><strong>until loops:</strong> Looping until condition becomes true</li>
+                            <li><strong>Loop control:</strong> Using break and continue effectively</li>
+                            <li><strong>Nested loops:</strong> Complex iteration patterns</li>
+                        </ul>
+
+                        <h4>Functions</h4>
+                        <ul>
+                            <li><strong>Function definition:</strong> Creating reusable code blocks</li>
+                            <li><strong>Parameters:</strong> Passing and using arguments</li>
+                            <li><strong>Return values:</strong> Using return codes and echo output</li>
+                            <li><strong>Variable scope:</strong> Local vs. global variables</li>
+                            <li><strong>Function libraries:</strong> Organizing common functions</li>
+                        </ul>
+
+                        <h4>Debugging and Error Handling</h4>
+                        <ul>
+                            <li><strong>Debug techniques:</strong> set -x, echo debugging, trap</li>
+                            <li><strong>Error handling:</strong> Checking exit codes and validation</li>
+                            <li><strong>Logging:</strong> Implementing comprehensive logging systems</li>
+                            <li><strong>Best practices:</strong> Writing maintainable, debuggable code</li>
+                        </ul>
+
+                        <h4>Real-World Applications</h4>
+                        <ul>
+                            <li><strong>System monitoring:</strong> Health checks and alerts</li>
+                            <li><strong>Backup automation:</strong> Scheduled backups with rotation</li>
+                            <li><strong>User management:</strong> Bulk user creation and configuration</li>
+                            <li><strong>Log analysis:</strong> Processing and reporting on log files</li>
+                        </ul>
+                    </div>
+
+                    <h3>Complete Bash Scripting Reference</h3>
+
+                    <div class="comparison-table">
+                        <div class="comparison-card">
+                            <h4>Script Structure</h4>
+                            <div class="code-block" data-lang="bash">#!/bin/bash
+# Script header
+# Author, date, description
+
+# Configuration
+VAR="value"
+
+# Functions
+function_name() {
+    local var=$1
+    # code
+    return 0
+}
+
+# Main logic
+main() {
+    # code
+}
+
+# Execute
+main "$@"</div>
+                        </div>
+
+                        <div class="comparison-card">
+                            <h4>Essential Patterns</h4>
+                            <div class="code-block" data-lang="bash"># Error handling
+command || exit 1
+
+# Validation
+[ -z "$var" ] && exit 1
+
+# Loops
+for i in {1..10}; do
+    echo $i
+done
+
+# Functions
+func() {
+    local arg=$1
+    echo "result"
+}
+
+# Logging
+log() {
+    echo "[$(date)] $@"
+}</div>
+                        </div>
+                    </div>
+
+                    <h3>Bash Scripting Cheat Sheet</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Syntax</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Variables</td>
+                                <td><code>VAR="value"</code></td>
+                                <td><code>name="John"</code></td>
+                            </tr>
+                            <tr>
+                                <td>If statement</td>
+                                <td><code>if [ cond ]; then ... fi</code></td>
+                                <td><code>if [ $x -eq 5 ]; then echo "5"; fi</code></td>
+                            </tr>
+                            <tr>
+                                <td>For loop</td>
+                                <td><code>for i in list; do ... done</code></td>
+                                <td><code>for f in *.txt; do cat $f; done</code></td>
+                            </tr>
+                            <tr>
+                                <td>While loop</td>
+                                <td><code>while [ cond ]; do ... done</code></td>
+                                <td><code>while [ $x -lt 10 ]; do ((x++)); done</code></td>
+                            </tr>
+                            <tr>
+                                <td>Function</td>
+                                <td><code>func() { ... }</code></td>
+                                <td><code>greet() { echo "Hello $1"; }</code></td>
+                            </tr>
+                            <tr>
+                                <td>Exit code</td>
+                                <td><code>$?</code></td>
+                                <td><code>if [ $? -eq 0 ]; then ...</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Next Steps</h3>
+
+                    <div class="tip-box">
+                        <h4>💡 Continuing Your Bash Journey</h4>
+                        
+                        <p><strong>Immediate Next Steps:</strong></p>
+                        <ul>
+                            <li>Complete Lab 5 Parts A and B using your new skills</li>
+                            <li>Practice writing scripts for your own administrative tasks</li>
+                            <li>Study the practice scripts and modify them for your needs</li>
+                            <li>Join the Week 5 Discussion to share your scripting experiences</li>
+                        </ul>
+
+                        <p><strong>Module 5.3 Preview: PowerShell Fundamentals</strong></p>
+                        <p>Next, you'll learn PowerShell, Microsoft's powerful scripting language. Many concepts from Bash transfer to PowerShell:</p>
+                        <ul>
+                            <li>Variables and data types</li>
+                            <li>Conditional logic and loops</li>
+                            <li>Functions and error handling</li>
+                            <li>Pipeline concepts (with object-based approach)</li>
+                        </ul>
+
+                        <p><strong>Long-term Learning:</strong></p>
+                        <ul>
+                            <li>Build a personal script library for common tasks</li>
+                            <li>Contribute to open-source projects</li>
+                            <li>Study scripts written by experienced administrators</li>
+                            <li>Consider Linux certification (LPIC, RHCSA)</li>
+                            <li>Practice, practice, practice!</li>
+                        </ul>
+                    </div>
+
+                    <h3>Resources for Continued Learning</h3>
+
+                    <div class="example-box">
+                        <h4>📚 Recommended Resources</h4>
+                        
+                        <p><strong>Online Resources:</strong></p>
+                        <ul>
+                            <li><strong>Advanced Bash-Scripting Guide:</strong> Comprehensive free guide</li>
+                            <li><strong>ShellCheck:</strong> shellcheck.net - Validate your scripts</li>
+                            <li><strong>Bash Hackers Wiki:</strong> Detailed Bash documentation</li>
+                            <li><strong>GitHub:</strong> Search for bash scripts to learn from</li>
+                        </ul>
+
+                        <p><strong>Practice Platforms:</strong></p>
+                        <ul>
+                            <li><strong>HackerRank:</strong> Shell scripting challenges</li>
+                            <li><strong>LeetCode:</strong> Shell problems</li>
+                            <li><strong>OverTheWire:</strong> Bandit wargame for bash practice</li>
+                        </ul>
+
+                        <p><strong>Books:</strong></p>
+                        <ul>
+                            <li>"Learning the bash Shell" by Cameron Newham</li>
+                            <li>"Bash Cookbook" by Carl Albing and JP Vossen</li>
+                            <li>"Classic Shell Scripting" by Arnold Robbins</li>
+                        </ul>
+                    </div>
+
+                    <div class="key-takeaways">
+                        <h3>🎓 Module 5.2 Complete!</h3>
+                        <p>You've successfully completed the second part of Bash Scripting Fundamentals. You should now be able to:</p>
+                        <ul>
+                            <li>✅ Create complex loops for data processing</li>
+                            <li>✅ Write reusable functions with proper scope</li>
+                            <li>✅ Debug scripts using multiple techniques</li>
+                            <li>✅ Implement comprehensive error handling</li>
+                            <li>✅ Create production-ready administrative scripts</li>
+                        </ul>
+                        
+                        <p style="margin-top: 20px; font-size: 1.1em;"><strong>Time to Practice:</strong> The best way to master scripting is to write scripts. Start with simple automation tasks and gradually increase complexity.</p>
+                        
+                        <p style="margin-top: 15px;"><strong>Remember:</strong> Every expert was once a beginner. Keep practicing, learn from errors, and don't be afraid to experiment!</p>
+                    </div>
+
+                    <div class="navigation-buttons">
+                        <button class="nav-btn prev" onclick="showSection('practice')">← Previous: Practice</button>
+                        <button class="nav-btn next" onclick="window.print()">🖨️ Print Module</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer>
+            <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+            <p>Module 5.2 Part 2: Bash Scripting Fundamentals</p>
+            <p style="margin-top: 10px;">Mendocino College | Computer Science Department</p>
+            <p style="margin-top: 5px; font-size: 0.9em;">© 2026 | Version 1.0 | For Educational Use</p>
+        </footer>
+    </div>
+
+    <script>
+        const sections = ['loops', 'functions', 'debugging', 'practice', 'summary'];
+        let currentSectionIndex = 0;
+        let completedSections = new Set();
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (currentSectionIndex >= 0) {
+                completedSections.add(sections[currentSectionIndex]);
+                updateProgress();
+            }
+            
+            currentSectionIndex = sections.indexOf(sectionId);
+            window.scrollTo(0, 0);
+        }
+
+        function updateProgress() {
+            const total = sections.length;
+            const completed = completedSections.size;
+            const percentage = Math.round((completed / total) * 100);
+            
+            document.getElementById('moduleProgress').style.width = percentage + '%';
+            document.getElementById('moduleProgress').textContent = percentage + '%';
+            document.getElementById('sectionsCompleted').textContent = completed;
+            
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                if (completedSections.has(sections[index])) {
+                    item.classList.add('completed');
+                }
+            });
+        }
+
+        function checkAnswer(questionName, correctAnswer, feedbackId) {
+            const selected = document.querySelector(`input[name="${questionName}"]:checked`);
+            const feedback = document.getElementById(feedbackId);
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '⚠️ Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === correctAnswer) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✅ Correct! ' + getExplanation(questionName);
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '❌ Incorrect. ' + getExplanation(questionName);
+            }
+        }
+
+        function checkLoopAnswer(inputId, feedbackId) {
+            const input = document.getElementById(inputId);
+            const feedback = document.getElementById(feedbackId);
+            const answer = input.value.trim().toLowerCase();
+            
+            const validAnswers = [
+                'for i in {1..10}; do echo $i; done',
+                'for i in {1..10}; do echo "$i"; done',
+                'for ((i=1; i<=10; i++)); do echo $i; done',
+                'for ((i=1; i<=10; i++)); do echo "$i"; done'
+            ];
+            
+            const isCorrect = validAnswers.some(valid => 
+                answer.replace(/\s+/g, ' ') === valid.replace(/\s+/g, ' ')
+            );
+            
+            if (isCorrect) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✅ Correct! That\'s a valid for loop that prints 1 through 10.';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '❌ Not quite. Try: for i in {1..10}; do echo $i; done';
+            }
+        }
+
+        function getExplanation(questionName) {
+            const explanations = {
+                'q1': 'The continue statement skips the rest of the current iteration. When i equals 3, continue is executed, so 3 is not printed. The output is: 1 2 4 5',
+                'q3': 'Function A modifies a global variable named "result", which can cause unintended side effects. Function B uses a local variable and returns the value via echo, which is the preferred approach for returning data from functions.'
+            };
+            return explanations[questionName] || '';
+        }
+
+        document.addEventListener('DOMContentLoaded', updateProgress);
+    </script>
+</body>
+</html>

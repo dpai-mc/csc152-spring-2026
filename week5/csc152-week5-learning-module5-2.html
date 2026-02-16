@@ -1,0 +1,2244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Module 5.2 - Bash Scripting Fundamentals">
+    <title>Module 5.2: Bash Scripting Fundamentals | CSC 152</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #16a085;
+            --light-bg: #ecf0f1;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --border-color: #bdc3c7;
+            --code-bg: #2d2d2d;
+            --code-text: #f8f8f2;
+            --shadow: 0 2px 4px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--light-bg);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #16a085, #27ae60);
+            color: var(--white);
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .module-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .content-wrapper {
+            display: flex;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #f8f9fa;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(39, 174, 96, 0.1);
+            border-left-color: var(--success-color);
+        }
+
+        .nav-item.active {
+            background-color: rgba(39, 174, 96, 0.15);
+            border-left-color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .nav-item.completed::after {
+            content: " ✓";
+            color: var(--success-color);
+            float: right;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--success-color);
+        }
+
+        h3 {
+            color: var(--success-color);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: var(--primary-color);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .definition-box {
+            background-color: #e8f8f5;
+            border-left: 4px solid var(--info-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .definition-box h4 {
+            color: var(--info-color);
+            margin-top: 0;
+        }
+
+        .example-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid var(--secondary-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .example-box h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .tip-box {
+            background-color: #d4edda;
+            border-left: 4px solid var(--success-color);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .tip-box h4 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        .code-block {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.7em;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        .inline-code {
+            background-color: #f4f4f4;
+            color: #c7254e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .command-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .command-table th {
+            background-color: var(--success-color);
+            color: var(--white);
+            padding: 12px;
+            text-align: left;
+        }
+
+        .command-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .command-table tr:hover {
+            background-color: var(--light-bg);
+        }
+
+        .interactive-exercise {
+            background-color: var(--white);
+            border: 2px solid var(--success-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+
+        .interactive-exercise h3 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        .exercise-question {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .exercise-options {
+            margin: 15px 0;
+        }
+
+        .exercise-option {
+            display: block;
+            padding: 12px;
+            margin: 8px 0;
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .exercise-option:hover {
+            border-color: var(--success-color);
+            background-color: #f0f7ff;
+        }
+
+        .exercise-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .exercise-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            margin: 10px 0;
+        }
+
+        .exercise-input:focus {
+            outline: none;
+            border-color: var(--success-color);
+        }
+
+        .check-answer-btn {
+            background-color: var(--success-color);
+            color: var(--white);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .check-answer-btn:hover {
+            background-color: #229954;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .check-answer-btn:disabled {
+            background-color: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background-color: #d4edda;
+            border: 1px solid var(--success-color);
+            color: #155724;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            border: 1px solid var(--accent-color);
+            color: #721c24;
+            display: block;
+        }
+
+        .progress-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .progress-bar-wrapper {
+            background-color: var(--light-bg);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--success-color), #2ecc71);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.prev {
+            background-color: var(--text-light);
+            color: var(--white);
+        }
+
+        .nav-btn.next {
+            background-color: var(--success-color);
+            color: var(--white);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .key-takeaways {
+            background: linear-gradient(135deg, #16a085 0%, #27ae60 100%);
+            color: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .key-takeaways h3 {
+            color: var(--white);
+            margin-top: 0;
+        }
+
+        .key-takeaways ul {
+            margin-left: 20px;
+        }
+
+        .key-takeaways li {
+            margin-bottom: 10px;
+        }
+
+        .try-it-yourself {
+            background-color: #fff9e6;
+            border: 2px dashed var(--warning-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .try-it-yourself h4 {
+            color: var(--warning-color);
+            margin-top: 0;
+        }
+
+        .script-output {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .comparison-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            background-color: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .comparison-card h4 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        footer {
+            background-color: var(--primary-color);
+            color: var(--white);
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media print {
+            .sidebar, .navigation-buttons, .interactive-exercise {
+                display: none;
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .section {
+                display: block !important;
+                page-break-after: always;
+            }
+        }
+
+        @media (max-width: 968px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .main-content {
+                padding: 20px;
+            }
+            .comparison-table {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .syntax-highlight {
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .syntax-highlight .comment {
+            color: #75715e;
+        }
+
+        .syntax-highlight .keyword {
+            color: #f92672;
+        }
+
+        .syntax-highlight .string {
+            color: #e6db74;
+        }
+
+        .syntax-highlight .variable {
+            color: #66d9ef;
+        }
+
+        .syntax-highlight .function {
+            color: #a6e22e;
+        }
+
+        .code-playground {
+            background-color: #f8f9fa;
+            border: 2px solid var(--success-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .code-playground h4 {
+            color: var(--success-color);
+            margin-top: 0;
+        }
+
+        .code-playground textarea {
+            width: 100%;
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            resize: vertical;
+        }
+
+        .run-code-btn {
+            background-color: var(--success-color);
+            color: var(--white);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .run-code-btn:hover {
+            background-color: #229954;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Module 5.2: Bash Scripting Fundamentals</h1>
+            <div class="module-info">
+                <div class="info-badge">📚 CSC 152 - Week 5</div>
+                <div class="info-badge">⏱️ 120 minutes</div>
+                <div class="info-badge">🎯 CSLO 1</div>
+                <div class="info-badge">💻 Hands-On Scripting</div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <h3>Module Contents</h3>
+                <div class="nav-item active" onclick="showSection('intro')">Introduction</div>
+                <div class="nav-item" onclick="showSection('script-basics')">Script Basics</div>
+                <div class="nav-item" onclick="showSection('variables')">Variables & Data</div>
+                <div class="nav-item" onclick="showSection('conditionals')">Conditional Statements</div>
+                <div class="nav-item" onclick="showSection('loops')">Loops & Iteration</div>
+                <div class="nav-item" onclick="showSection('functions')">Functions</div>
+                <div class="nav-item" onclick="showSection('debugging')">Debugging & Error Handling</div>
+                <div class="nav-item" onclick="showSection('practice')">Practice Scripts</div>
+                <div class="nav-item" onclick="showSection('summary')">Summary</div>
+
+                <div class="progress-container" style="margin-top: 30px;">
+                    <h3>Your Progress</h3>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar" id="moduleProgress">0%</div>
+                    </div>
+                    <p style="text-align: center; color: var(--text-light); font-size: 0.9em;">
+                        <span id="sectionsCompleted">0</span> of 9 sections completed
+                    </p>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <!-- Introduction Section -->
+                <section id="intro" class="section active">
+                    <h2>Introduction to Bash Scripting</h2>
+                    
+                    <p>Welcome to Module 5.2! Building on the advanced Bash commands you learned in Module 5.1, this module introduces you to Bash scripting—the art of combining commands into automated, reusable tools. Scripting transforms you from a command executor into a system automation expert.</p>
+
+                    <div class="definition-box">
+                        <h4>📖 What is a Bash Script?</h4>
+                        <p>A <strong>Bash script</strong> is a text file containing a series of Bash commands that are executed sequentially. Scripts automate repetitive tasks, combine multiple commands into workflows, and create custom administrative tools. Think of a script as a recipe—a set of instructions that can be followed repeatedly to achieve consistent results.</p>
+                    </div>
+
+                    <h3>Why Learn Bash Scripting?</h3>
+
+                    <div class="comparison-table">
+                        <div class="comparison-card">
+                            <h4>Manual Command Execution</h4>
+                            <ul>
+                                <li>Type commands one at a time</li>
+                                <li>Easy to make typos or mistakes</li>
+                                <li>Time-consuming for repetitive tasks</li>
+                                <li>Hard to remember complex sequences</li>
+                                <li>Not easily shareable</li>
+                                <li>No consistency guarantee</li>
+                            </ul>
+                        </div>
+
+                        <div class="comparison-card">
+                            <h4>Automated Script Execution</h4>
+                            <ul>
+                                <li>Execute hundreds of commands instantly</li>
+                                <li>Consistent, error-free execution</li>
+                                <li>Saves hours on repetitive tasks</li>
+                                <li>Self-documenting (with comments)</li>
+                                <li>Easily shared with team</li>
+                                <li>Guaranteed consistency</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3>Real-World Scripting Scenarios</h3>
+
+                    <div class="example-box">
+                        <h4>💡 System Administration Use Cases</h4>
+                        
+                        <p><strong>1. User Account Creation</strong></p>
+                        <p>Instead of manually creating users one at a time, a script can:</p>
+                        <ul>
+                            <li>Read user data from a CSV file</li>
+                            <li>Create user accounts with proper settings</li>
+                            <li>Set up home directories</li>
+                            <li>Configure group memberships</li>
+                            <li>Send welcome emails</li>
+                            <li>Log all actions for auditing</li>
+                        </ul>
+
+                        <p><strong>2. System Backup</strong></p>
+                        <p>A backup script can:</p>
+                        <ul>
+                            <li>Identify files that changed today</li>
+                            <li>Create compressed archives</li>
+                            <li>Upload to remote storage</li>
+                            <li>Verify backup integrity</li>
+                            <li>Send success/failure notifications</li>
+                            <li>Clean up old backups automatically</li>
+                        </ul>
+
+                        <p><strong>3. Log File Analysis</strong></p>
+                        <p>An analysis script can:</p>
+                        <ul>
+                            <li>Parse Apache/Nginx logs</li>
+                            <li>Identify error patterns</li>
+                            <li>Count requests by IP address</li>
+                            <li>Generate HTML reports</li>
+                            <li>Email alerts for critical issues</li>
+                        </ul>
+
+                        <p><strong>4. System Health Monitoring</strong></p>
+                        <p>A monitoring script can:</p>
+                        <ul>
+                            <li>Check disk space usage</li>
+                            <li>Monitor CPU and memory</li>
+                            <li>Verify critical services are running</li>
+                            <li>Test network connectivity</li>
+                            <li>Alert administrators if thresholds exceeded</li>
+                        </ul>
+                    </div>
+
+                    <h3>Module Learning Objectives</h3>
+                    <p>By the end of this module, you will be able to:</p>
+                    <ul>
+                        <li>Create and execute Bash shell scripts</li>
+                        <li>Implement variables and command-line arguments in scripts</li>
+                        <li>Use conditional statements (if/then/else) for decision-making</li>
+                        <li>Implement loops (for, while) for repetitive tasks</li>
+                        <li>Write functions for code reusability</li>
+                        <li>Handle errors and debug scripts effectively</li>
+                        <li>Apply best practices for script documentation and structure</li>
+                    </ul>
+
+                    <h3>Prerequisites</h3>
+                    <p>Before beginning this module, you should be comfortable with:</p>
+                    <ul>
+                        <li>Basic Bash commands (from Week 3)</li>
+                        <li>Advanced Bash commands (from Module 5.1)</li>
+                        <li>File system navigation and manipulation</li>
+                        <li>Text processing tools (grep, sed, awk)</li>
+                        <li>Command chaining and redirection</li>
+                    </ul>
+
+                    <div class="tip-box">
+                        <h4>💡 Learning Approach</h4>
+                        <p>Scripting is a hands-on skill. The most effective way to learn is by:</p>
+                        <ol>
+                            <li><strong>Start Simple:</strong> Begin with basic scripts and gradually add complexity</li>
+                            <li><strong>Type, Don't Copy:</strong> Type scripts yourself to build muscle memory</li>
+                            <li><strong>Make Mistakes:</strong> Errors are learning opportunities—embrace them!</li>
+                            <li><strong>Test Frequently:</strong> Run your script after each addition</li>
+                            <li><strong>Read Others' Scripts:</strong> Study well-written scripts to learn techniques</li>
+                            <li><strong>Comment Everything:</strong> Explain your code—it helps you understand it better</li>
+                        </ol>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Safety First</h4>
+                        <p>Scripts can be powerful—and dangerous if misused. Always:</p>
+                        <ul>
+                            <li>Test scripts in a safe environment (VM or test directory)</li>
+                            <li>Use <span class="inline-code">echo</span> to preview destructive commands before executing</li>
+                            <li>Back up important data before running scripts that modify files</li>
+                            <li>Be especially careful with commands like <span class="inline-code">rm</span>, <span class="inline-code">mv</span>, and <span class="inline-code">chmod</span></li>
+                            <li>Validate user input to prevent unexpected behavior</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Script Basics Section -->
+                <section id="script-basics" class="section">
+                    <h2>Script Basics</h2>
+                    
+                    <p>Let's create your first Bash script and understand the fundamental components that make scripts work.</p>
+
+                    <h3>Creating Your First Script</h3>
+
+                    <div class="example-box">
+                        <h4>Step-by-Step: Hello World Script</h4>
+                        
+                        <p><strong>Step 1: Create the Script File</strong></p>
+                        <div class="code-block" data-lang="bash"># Create a new file called hello.sh
+nano hello.sh
+
+# Or use vim if you prefer
+vim hello.sh</div>
+
+                        <p><strong>Step 2: Add the Shebang and Content</strong></p>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+# My first Bash script
+# Author: Your Name
+# Date: February 17, 2026
+
+echo "Hello, World!"
+echo "Welcome to Bash scripting!"
+echo "Today is $(date)"</div>
+
+                        <p><strong>Step 3: Save and Exit</strong></p>
+                        <ul>
+                            <li>In nano: Press <kbd>Ctrl+X</kbd>, then <kbd>Y</kbd>, then <kbd>Enter</kbd></li>
+                            <li>In vim: Press <kbd>Esc</kbd>, type <code>:wq</code>, press <kbd>Enter</kbd></li>
+                        </ul>
+
+                        <p><strong>Step 4: Make the Script Executable</strong></p>
+                        <div class="code-block" data-lang="bash"># Add execute permission
+chmod +x hello.sh
+
+# Verify permissions
+ls -l hello.sh
+# Output: -rwxr-xr-x 1 user user 123 Feb 17 10:30 hello.sh</div>
+
+                        <p><strong>Step 5: Execute the Script</strong></p>
+                        <div class="code-block" data-lang="bash"># Method 1: Direct execution (requires execute permission)
+./hello.sh
+
+# Method 2: Explicit bash invocation (no execute permission needed)
+bash hello.sh
+
+# Method 3: Source the script (runs in current shell)
+source hello.sh
+# or
+. hello.sh</div>
+
+                        <p><strong>Expected Output:</strong></p>
+                        <div class="script-output">Hello, World!
+Welcome to Bash scripting!
+Today is Mon Feb 17 10:30:45 PST 2026</div>
+                    </div>
+
+                    <h3>Understanding the Shebang</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 What is a Shebang?</h4>
+                        <p>The <strong>shebang</strong> (also called "hashbang") is the <code>#!/bin/bash</code> line at the beginning of a script. It tells the system which interpreter to use to execute the script.</p>
+                        
+                        <p><strong>Syntax:</strong> <code>#!</code> followed by the absolute path to the interpreter</p>
+                        
+                        <p><strong>Common shebangs:</strong></p>
+                        <ul>
+                            <li><code>#!/bin/bash</code> - Bash shell (most common)</li>
+                            <li><code>#!/bin/sh</code> - POSIX shell (more portable)</li>
+                            <li><code>#!/usr/bin/env bash</code> - Finds bash in PATH (portable)</li>
+                            <li><code>#!/usr/bin/python3</code> - Python 3 script</li>
+                            <li><code>#!/usr/bin/perl</code> - Perl script</li>
+                        </ul>
+                    </div>
+
+                    <div class="tip-box">
+                        <h4>💡 Shebang Best Practice</h4>
+                        <p>Use <code>#!/usr/bin/env bash</code> for maximum portability:</p>
+                        <div class="code-block" data-lang="bash">#!/usr/bin/env bash
+# This works even if bash is installed in a non-standard location</div>
+                        <p>This searches for bash in the user's PATH, making the script more portable across different systems.</p>
+                    </div>
+
+                    <h3>Comments in Scripts</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Script Comments</h4>
+                        <p><strong>Comments</strong> are lines that the shell ignores. They document your code for humans (including future you!).</p>
+                        
+                        <p><strong>Syntax:</strong> Lines beginning with <code>#</code> (except the shebang)</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Comment Examples and Best Practices</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# ============================================
+# Script: backup_system.sh
+# Author: John Doe
+# Date: February 17, 2026
+# Description: Creates a compressed backup of
+#              important system directories
+# Usage: ./backup_system.sh [destination]
+# ============================================
+
+# Single-line comment explaining the next command
+echo "Starting backup process..."
+
+# Multi-line comment for complex logic
+# This section checks if the backup directory exists
+# If it doesn't, the script creates it with proper permissions
+# The -p flag creates parent directories if needed
+if [ ! -d "/backup" ]; then
+    mkdir -p /backup  # Create backup directory
+fi
+
+# Inline comment explaining a specific parameter
+tar -czf backup.tar.gz /etc /home  # -c=create -z=gzip -f=file
+
+# TODO: Add email notification feature
+# FIXME: Handle case when disk is full
+# NOTE: This requires root privileges</div>
+                    </div>
+
+                    <h3>Script Structure and Organization</h3>
+
+                    <div class="example-box">
+                        <h4>Well-Structured Script Template</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# ============================================
+# Script Header (Metadata)
+# ============================================
+# Script Name: template.sh
+# Author: Your Name
+# Date: 2026-02-17
+# Version: 1.0
+# Description: Brief description of what the script does
+# Usage: ./template.sh [arguments]
+# ============================================
+
+# ============================================
+# Configuration Section
+# ============================================
+# Set script-wide variables and constants
+BACKUP_DIR="/backup"
+LOG_FILE="/var/log/script.log"
+MAX_RETRIES=3
+
+# ============================================
+# Function Definitions
+# ============================================
+# Define functions before main script logic
+
+function log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+function check_prerequisites() {
+    # Check if required commands are available
+    command -v tar >/dev/null 2>&1 || { echo "tar is required"; exit 1; }
+}
+
+# ============================================
+# Main Script Logic
+# ============================================
+
+# Check prerequisites
+check_prerequisites
+
+# Main operations
+log_message "Script started"
+
+# Your main script code here
+
+log_message "Script completed successfully"
+
+# ============================================
+# Exit with appropriate status
+# ============================================
+exit 0</div>
+                    </div>
+
+                    <h3>Script Execution Methods</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Command</th>
+                                <th>Requirements</th>
+                                <th>Behavior</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Direct execution</td>
+                                <td><code>./script.sh</code></td>
+                                <td>Execute permission, shebang</td>
+                                <td>Runs in new subshell</td>
+                            </tr>
+                            <tr>
+                                <td>Bash invocation</td>
+                                <td><code>bash script.sh</code></td>
+                                <td>None</td>
+                                <td>Runs in new bash subshell</td>
+                            </tr>
+                            <tr>
+                                <td>Source</td>
+                                <td><code>source script.sh</code></td>
+                                <td>None</td>
+                                <td>Runs in current shell</td>
+                            </tr>
+                            <tr>
+                                <td>Source (short)</td>
+                                <td><code>. script.sh</code></td>
+                                <td>None</td>
+                                <td>Runs in current shell</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Subshell vs. Current Shell</h4>
+                        <p><strong>Subshell (<code>./script.sh</code> or <code>bash script.sh</code>):</strong></p>
+                        <ul>
+                            <li>Creates a new shell process</li>
+                            <li>Variables set in script don't affect parent shell</li>
+                            <li>Use for most scripts</li>
+                        </ul>
+                        
+                        <p><strong>Current shell (<code>source script.sh</code> or <code>. script.sh</code>):</strong></p>
+                        <ul>
+                            <li>Runs in your current shell</li>
+                            <li>Variables set in script affect current shell</li>
+                            <li>Use for environment setup scripts</li>
+                        </ul>
+
+                        <div class="code-block" data-lang="bash"># Example demonstrating the difference
+echo 'export MY_VAR="hello"' > test.sh
+
+# Method 1: Subshell (variable not available after)
+bash test.sh
+echo $MY_VAR  # Output: (empty)
+
+# Method 2: Source (variable available after)
+source test.sh
+echo $MY_VAR  # Output: hello</div>
+                    </div>
+
+                    <h3>Exit Codes and Status</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Exit Codes</h4>
+                        <p>Every command and script returns an <strong>exit code</strong> (also called exit status or return code) when it finishes:</p>
+                        <ul>
+                            <li><strong>0</strong> = Success</li>
+                            <li><strong>1-255</strong> = Various error conditions</li>
+                        </ul>
+                        <p>The special variable <code>$?</code> contains the exit code of the last executed command.</p>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Working with Exit Codes</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Check if a file exists
+ls /etc/passwd
+echo "Exit code: $?"  # Output: 0 (success)
+
+ls /nonexistent/file
+echo "Exit code: $?"  # Output: 2 (file not found)
+
+# Use exit codes in scripts
+if ls /etc/passwd > /dev/null 2>&1; then
+    echo "File exists"
+else
+    echo "File does not exist"
+fi
+
+# Set custom exit codes
+function divide() {
+    if [ "$2" -eq 0 ]; then
+        echo "Error: Division by zero"
+        return 1  # Return error code
+    fi
+    echo $(( $1 / $2 ))
+    return 0  # Return success
+}
+
+divide 10 2
+echo "Exit code: $?"  # Output: 0
+
+divide 10 0
+echo "Exit code: $?"  # Output: 1</div>
+                    </div>
+
+                    <h3>Common Exit Codes</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Exit Code</th>
+                                <th>Meaning</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>0</td>
+                                <td>Success</td>
+                                <td>Command completed successfully</td>
+                            </tr>
+                            <tr>
+                                <td>1</td>
+                                <td>General error</td>
+                                <td>Catchall for general errors</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>Misuse of shell builtin</td>
+                                <td>Missing keyword or command</td>
+                            </tr>
+                            <tr>
+                                <td>126</td>
+                                <td>Command cannot execute</td>
+                                <td>Permission problem or not executable</td>
+                            </tr>
+                            <tr>
+                                <td>127</td>
+                                <td>Command not found</td>
+                                <td>Possible problem with $PATH</td>
+                            </tr>
+                            <tr>
+                                <td>128+n</td>
+                                <td>Fatal error signal "n"</td>
+                                <td>130 = terminated by Ctrl+C (128+2)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Create and test your first script:</p>
+                        <ol>
+                            <li>Create a script called <code>system_info.sh</code></li>
+                            <li>Add a proper shebang and header comments</li>
+                            <li>Make the script display:
+                                <ul>
+                                    <li>Current date and time</li>
+                                    <li>Hostname</li>
+                                    <li>Current user</li>
+                                    <li>Current working directory</li>
+                                    <li>Disk space usage</li>
+                                </ul>
+                            </li>
+                            <li>Make it executable and run it</li>
+                            <li>Check its exit code</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Script Basics</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question 1:</strong> Which shebang is most portable across different Linux systems?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="a">
+                                <span><code>#!/bin/bash</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="b">
+                                <span><code>#!/usr/bin/env bash</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="c">
+                                <span><code>#!/bash</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q1" value="d">
+                                <span><code>#!bash</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q1', 'b', 'feedback1')">Check Answer</button>
+                        <div id="feedback1" class="feedback"></div>
+
+                        <div class="exercise-question" style="margin-top: 30px;">
+                            <p><strong>Question 2:</strong> What does an exit code of 0 indicate?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="a">
+                                <span>The script encountered an error</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="b">
+                                <span>The script completed successfully</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="c">
+                                <span>The script was terminated by the user</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q2" value="d">
+                                <span>The script is still running</span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q2', 'b', 'feedback2')">Check Answer</button>
+                        <div id="feedback2" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Variables Section -->
+                <section id="variables" class="section">
+                    <h2>Variables and Data Types</h2>
+                    
+                    <p>Variables are containers that store data. They're essential for creating dynamic, flexible scripts that can work with different inputs and conditions.</p>
+
+                    <h3>Variable Declaration and Assignment</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Bash Variables</h4>
+                        <p>In Bash, variables are created when you assign a value to them. There's no need to declare them beforehand or specify a type.</p>
+                        
+                        <p><strong>Syntax:</strong></p>
+                        <div class="code-block" data-lang="bash">VARIABLE_NAME="value"  # No spaces around =</div>
+                        
+                        <p><strong>Important rules:</strong></p>
+                        <ul>
+                            <li>No spaces around the <code>=</code> sign</li>
+                            <li>Variable names are case-sensitive</li>
+                            <li>By convention, use UPPERCASE for environment/global variables</li>
+                            <li>Use lowercase for local variables</li>
+                            <li>Variable names can contain letters, numbers, and underscores</li>
+                            <li>Cannot start with a number</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Variable Assignment Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# String variables
+name="John Doe"
+server="web01.example.com"
+message='Hello, World!'  # Single quotes: literal string
+
+# Numeric variables (stored as strings but can be used in arithmetic)
+age=25
+port=8080
+count=0
+
+# Variables with command output
+current_date=$(date +%Y-%m-%d)
+user_home=$(echo $HOME)
+file_count=$(ls -1 | wc -l)
+
+# Empty variables
+empty_var=""
+unset_var=
+
+# Multiple assignments
+first="John" last="Doe" age=30
+
+# Using variables
+echo "Name: $name"
+echo "Age: $age"
+echo "Date: $current_date"</div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Common Variable Mistakes</h4>
+                        <div class="code-block" data-lang="bash"># WRONG: Spaces around =
+name = "John"        # Error: command not found
+
+# WRONG: $ in assignment
+$name="John"         # Error: command not found
+
+# RIGHT: No spaces
+name="John"          # Correct
+
+# WRONG: Starting with number
+1name="John"         # Error: invalid variable name
+
+# RIGHT: Letter or underscore first
+name1="John"         # Correct
+_name="John"         # Correct</div>
+                    </div>
+
+                    <h3>Using Variables</h3>
+
+                    <div class="example-box">
+                        <h4>Variable Expansion</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+name="Alice"
+
+# Basic expansion
+echo $name           # Output: Alice
+echo "Hello, $name"  # Output: Hello, Alice
+
+# Brace expansion (recommended)
+echo ${name}         # Output: Alice
+echo "Hello, ${name}!"  # Output: Hello, Alice!
+
+# Why braces matter
+echo "$nameTest"     # Output: (empty - looks for variable nameTest)
+echo "${name}Test"   # Output: AliceTest
+
+# Concatenation
+full_name="${name} Smith"
+echo $full_name      # Output: Alice Smith
+
+# In commands
+mkdir "${name}_backup"
+cp file.txt "${name}_file.txt"</div>
+                    </div>
+
+                    <h3>Special Variables</h3>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Example Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>$0</code></td>
+                                <td>Script name</td>
+                                <td>./myscript.sh</td>
+                            </tr>
+                            <tr>
+                                <td><code>$1, $2, $3...</code></td>
+                                <td>Positional parameters (arguments)</td>
+                                <td>First, second, third argument</td>
+                            </tr>
+                            <tr>
+                                <td><code>$#</code></td>
+                                <td>Number of arguments</td>
+                                <td>3</td>
+                            </tr>
+                            <tr>
+                                <td><code>$@</code></td>
+                                <td>All arguments as separate words</td>
+                                <td>"arg1" "arg2" "arg3"</td>
+                            </tr>
+                            <tr>
+                                <td><code>$*</code></td>
+                                <td>All arguments as single word</td>
+                                <td>"arg1 arg2 arg3"</td>
+                            </tr>
+                            <tr>
+                                <td><code>$?</code></td>
+                                <td>Exit status of last command</td>
+                                <td>0 (success) or 1-255 (error)</td>
+                            </tr>
+                            <tr>
+                                <td><code>$$</code></td>
+                                <td>Process ID of current script</td>
+                                <td>12345</td>
+                            </tr>
+                            <tr>
+                                <td><code>$!</code></td>
+                                <td>PID of last background command</td>
+                                <td>12346</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Command-Line Arguments</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+# Script: greet.sh
+# Usage: ./greet.sh John 25
+
+echo "Script name: $0"
+echo "First argument: $1"
+echo "Second argument: $2"
+echo "Number of arguments: $#"
+echo "All arguments: $@"
+
+# Using arguments
+name=$1
+age=$2
+
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <name> <age>"
+    exit 1
+fi
+
+echo "Hello, $name! You are $age years old."</div>
+
+                        <p><strong>Running the script:</strong></p>
+                        <div class="code-block" data-lang="bash">$ ./greet.sh John 25
+Script name: ./greet.sh
+First argument: John
+Second argument: 25
+Number of arguments: 2
+All arguments: John 25
+Hello, John! You are $age years old.</div>
+                    </div>
+
+                    <h3>Reading User Input</h3>
+
+                    <div class="example-box">
+                        <h4>Interactive Input with read</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Basic input
+echo "What is your name?"
+read name
+echo "Hello, $name!"
+
+# Prompt on same line
+read -p "Enter your age: " age
+echo "You are $age years old"
+
+# Silent input (for passwords)
+read -sp "Enter password: " password
+echo  # New line after password
+echo "Password saved (not really!)"
+
+# Reading multiple values
+read -p "Enter first and last name: " first last
+echo "First: $first, Last: $last"
+
+# Default value with timeout
+read -t 5 -p "Enter choice (default: yes): " choice
+choice=${choice:-yes}  # Use 'yes' if empty
+echo "You chose: $choice"
+
+# Reading from file
+while read line; do
+    echo "Line: $line"
+done < input.txt</div>
+                    </div>
+
+                    <h3>Environment Variables</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Environment Variables</h4>
+                        <p><strong>Environment variables</strong> are variables that are available to all processes started from the current shell. They're typically set by the system or user configuration files.</p>
+                    </div>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>$HOME</code></td>
+                                <td>User's home directory</td>
+                                <td>/home/username</td>
+                            </tr>
+                            <tr>
+                                <td><code>$USER</code></td>
+                                <td>Current username</td>
+                                <td>username</td>
+                            </tr>
+                            <tr>
+                                <td><code>$PATH</code></td>
+                                <td>Executable search path</td>
+                                <td>/usr/bin:/bin:/usr/local/bin</td>
+                            </tr>
+                            <tr>
+                                <td><code>$PWD</code></td>
+                                <td>Current working directory</td>
+                                <td>/home/username/projects</td>
+                            </tr>
+                            <tr>
+                                <td><code>$SHELL</code></td>
+                                <td>Current shell</td>
+                                <td>/bin/bash</td>
+                            </tr>
+                            <tr>
+                                <td><code>$HOSTNAME</code></td>
+                                <td>System hostname</td>
+                                <td>server01</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Working with Environment Variables</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# View environment variables
+echo "Home: $HOME"
+echo "User: $USER"
+echo "Path: $PATH"
+
+# Create environment variable (available to child processes)
+export MY_VAR="Hello"
+
+# Create local variable (not available to child processes)
+local_var="World"
+
+# Check if variable is set
+if [ -z "$MY_VAR" ]; then
+    echo "MY_VAR is not set"
+else
+    echo "MY_VAR is set to: $MY_VAR"
+fi
+
+# Unset variable
+unset MY_VAR
+
+# List all environment variables
+env
+
+# List all variables (including local)
+set</div>
+                    </div>
+
+                    <h3>Variable Scope</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 Variable Scope</h4>
+                        <p><strong>Scope</strong> determines where a variable can be accessed:</p>
+                        <ul>
+                            <li><strong>Global variables:</strong> Available throughout the script</li>
+                            <li><strong>Local variables:</strong> Available only within a function</li>
+                            <li><strong>Environment variables:</strong> Available to child processes</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>Variable Scope Example</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+# Global variable
+global_var="I'm global"
+
+function test_scope() {
+    # Local variable (only exists in this function)
+    local local_var="I'm local"
+    
+    # Can access global variable
+    echo "Inside function:"
+    echo "  Global: $global_var"
+    echo "  Local: $local_var"
+    
+    # Modify global variable
+    global_var="Modified global"
+}
+
+# Call function
+test_scope
+
+# After function
+echo "Outside function:"
+echo "  Global: $global_var"
+echo "  Local: $local_var"  # Empty - local_var doesn't exist here</div>
+
+                        <p><strong>Output:</strong></p>
+                        <div class="script-output">Inside function:
+  Global: I'm global
+  Local: I'm local
+Outside function:
+  Global: Modified global
+  Local: </div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Create a script that:</p>
+                        <ol>
+                            <li>Accepts two command-line arguments: name and age</li>
+                            <li>Validates that both arguments are provided</li>
+                            <li>Asks for the user's favorite color using <code>read</code></li>
+                            <li>Creates a backup directory named with the format: <code>backup_NAME_DATE</code></li>
+                            <li>Displays a summary of all collected information</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Variables</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> What's wrong with this variable assignment?</p>
+                            <div class="code-block" data-lang="bash">user name = "John Doe"</div>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="a">
+                                <span>Variable name cannot contain spaces</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="b">
+                                <span>There cannot be spaces around the = sign</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="c">
+                                <span>Both A and B are correct</span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q3" value="d">
+                                <span>Nothing is wrong</span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q3', 'c', 'feedback3')">Check Answer</button>
+                        <div id="feedback3" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Conditionals Section -->
+                <section id="conditionals" class="section">
+                    <h2>Conditional Statements</h2>
+                    
+                    <p>Conditional statements allow your scripts to make decisions and execute different code based on conditions. This is what transforms simple command sequences into intelligent programs.</p>
+
+                    <h3>The if Statement</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 if/then/else Structure</h4>
+                        <p>The <code>if</code> statement executes commands based on whether a condition is true or false.</p>
+                        
+                        <p><strong>Basic syntax:</strong></p>
+                        <div class="code-block" data-lang="bash">if [ condition ]; then
+    # commands if condition is true
+fi</div>
+
+                        <p><strong>With else:</strong></p>
+                        <div class="code-block" data-lang="bash">if [ condition ]; then
+    # commands if condition is true
+else
+    # commands if condition is false
+fi</div>
+
+                        <p><strong>With elif (else if):</strong></p>
+                        <div class="code-block" data-lang="bash">if [ condition1 ]; then
+    # commands if condition1 is true
+elif [ condition2 ]; then
+    # commands if condition2 is true
+else
+    # commands if all conditions are false
+fi</div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Important Syntax Notes</h4>
+                        <ul>
+                            <li>Spaces are required after <code>[</code> and before <code>]</code></li>
+                            <li>Semicolon before <code>then</code> is required (or <code>then</code> on next line)</li>
+                            <li>Always close with <code>fi</code> (if backwards)</li>
+                            <li>Use <code>[[ ]]</code> for advanced conditions (recommended in Bash)</li>
+                        </ul>
+                    </div>
+
+                    <h3>Test Conditions and Operators</h3>
+
+                    <h4>File Test Operators</h4>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-e file</code></td>
+                                <td>File exists</td>
+                                <td><code>[ -e /etc/passwd ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-f file</code></td>
+                                <td>File exists and is regular file</td>
+                                <td><code>[ -f script.sh ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-d file</code></td>
+                                <td>File exists and is directory</td>
+                                <td><code>[ -d /home ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-r file</code></td>
+                                <td>File exists and is readable</td>
+                                <td><code>[ -r config.txt ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-w file</code></td>
+                                <td>File exists and is writable</td>
+                                <td><code>[ -w log.txt ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-x file</code></td>
+                                <td>File exists and is executable</td>
+                                <td><code>[ -x script.sh ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-s file</code></td>
+                                <td>File exists and is not empty</td>
+                                <td><code>[ -s data.txt ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-L file</code></td>
+                                <td>File exists and is symbolic link</td>
+                                <td><code>[ -L link ]</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>File Test Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+file="/etc/passwd"
+
+# Check if file exists
+if [ -e "$file" ]; then
+    echo "File exists"
+fi
+
+# Check if it's a regular file
+if [ -f "$file" ]; then
+    echo "It's a regular file"
+fi
+
+# Check if readable
+if [ -r "$file" ]; then
+    echo "File is readable"
+fi
+
+# Multiple conditions
+if [ -f "$file" ] && [ -r "$file" ]; then
+    echo "File exists and is readable"
+    cat "$file"
+fi
+
+# Check if directory exists, create if not
+backup_dir="/backup"
+if [ ! -d "$backup_dir" ]; then
+    echo "Creating backup directory..."
+    mkdir -p "$backup_dir"
+fi</div>
+                    </div>
+
+                    <h4>String Comparison Operators</h4>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>=</code> or <code>==</code></td>
+                                <td>Strings are equal</td>
+                                <td><code>[ "$a" = "$b" ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>!=</code></td>
+                                <td>Strings are not equal</td>
+                                <td><code>[ "$a" != "$b" ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-z string</code></td>
+                                <td>String is empty (zero length)</td>
+                                <td><code>[ -z "$var" ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-n string</code></td>
+                                <td>String is not empty</td>
+                                <td><code>[ -n "$var" ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>&lt;</code></td>
+                                <td>String is less than (alphabetically)</td>
+                                <td><code>[[ "$a" &lt; "$b" ]]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>&gt;</code></td>
+                                <td>String is greater than</td>
+                                <td><code>[[ "$a" &gt; "$b" ]]</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>String Comparison Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+name="Alice"
+
+# Check if string equals value
+if [ "$name" = "Alice" ]; then
+    echo "Hello, Alice!"
+fi
+
+# Check if variable is empty
+read -p "Enter your name: " input
+if [ -z "$input" ]; then
+    echo "You didn't enter a name"
+    input="Guest"
+fi
+echo "Hello, $input!"
+
+# Check if variable is not empty
+if [ -n "$name" ]; then
+    echo "Name is set to: $name"
+fi
+
+# Case-insensitive comparison (convert to lowercase)
+read -p "Continue? (yes/no): " answer
+answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]')
+if [ "$answer" = "yes" ]; then
+    echo "Continuing..."
+elif [ "$answer" = "no" ]; then
+    echo "Exiting..."
+    exit 0
+else
+    echo "Invalid response"
+fi</div>
+                    </div>
+
+                    <h4>Numeric Comparison Operators</h4>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>-eq</code></td>
+                                <td>Equal to</td>
+                                <td><code>[ "$a" -eq "$b" ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-ne</code></td>
+                                <td>Not equal to</td>
+                                <td><code>[ "$a" -ne "$b" ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-lt</code></td>
+                                <td>Less than</td>
+                                <td><code>[ "$a" -lt "$b" ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-le</code></td>
+                                <td>Less than or equal to</td>
+                                <td><code>[ "$a" -le "$b" ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-gt</code></td>
+                                <td>Greater than</td>
+                                <td><code>[ "$a" -gt "$b" ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-ge</code></td>
+                                <td>Greater than or equal to</td>
+                                <td><code>[ "$a" -ge "$b" ]</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Numeric Comparison Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+age=25
+
+# Check if age is valid
+if [ "$age" -ge 18 ]; then
+    echo "You are an adult"
+else
+    echo "You are a minor"
+fi
+
+# Check disk usage
+disk_usage=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
+if [ "$disk_usage" -gt 90 ]; then
+    echo "WARNING: Disk usage is at ${disk_usage}%"
+elif [ "$disk_usage" -gt 75 ]; then
+    echo "CAUTION: Disk usage is at ${disk_usage}%"
+else
+    echo "Disk usage is normal: ${disk_usage}%"
+fi
+
+# Check number of arguments
+if [ $# -eq 0 ]; then
+    echo "Error: No arguments provided"
+    echo "Usage: $0 <filename>"
+    exit 1
+elif [ $# -gt 1 ]; then
+    echo "Warning: Only first argument will be used"
+fi</div>
+                    </div>
+
+                    <h4>Logical Operators</h4>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Operator</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>&&</code></td>
+                                <td>Logical AND</td>
+                                <td><code>[ cond1 ] && [ cond2 ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>||</code></td>
+                                <td>Logical OR</td>
+                                <td><code>[ cond1 ] || [ cond2 ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>!</code></td>
+                                <td>Logical NOT</td>
+                                <td><code>[ ! cond ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-a</code></td>
+                                <td>AND (inside [ ])</td>
+                                <td><code>[ cond1 -a cond2 ]</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>-o</code></td>
+                                <td>OR (inside [ ])</td>
+                                <td><code>[ cond1 -o cond2 ]</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="example-box">
+                        <h4>Logical Operator Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+file="data.txt"
+min_size=1000
+
+# AND: File must exist AND be larger than min_size
+if [ -f "$file" ] && [ $(stat -f%z "$file") -gt $min_size ]; then
+    echo "File exists and is large enough"
+fi
+
+# OR: Accept either .txt or .log files
+if [[ "$file" == *.txt ]] || [[ "$file" == *.log ]]; then
+    echo "Valid file type"
+fi
+
+# NOT: Check if file does NOT exist
+if [ ! -f "$file" ]; then
+    echo "File does not exist, creating..."
+    touch "$file"
+fi
+
+# Complex condition
+age=25
+has_license=true
+
+if [ "$age" -ge 18 ] && [ "$has_license" = true ]; then
+    echo "You can drive"
+else
+    echo "You cannot drive"
+fi</div>
+                    </div>
+
+                    <h3>The case Statement</h3>
+
+                    <div class="definition-box">
+                        <h4>📖 case Statement</h4>
+                        <p>The <code>case</code> statement is useful when you need to compare a variable against multiple patterns. It's cleaner than multiple <code>if/elif</code> statements.</p>
+                        
+                        <p><strong>Syntax:</strong></p>
+                        <div class="code-block" data-lang="bash">case $variable in
+    pattern1)
+        commands
+        ;;
+    pattern2)
+        commands
+        ;;
+    *)
+        default commands
+        ;;
+esac</div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4>case Statement Examples</h4>
+                        <div class="code-block" data-lang="bash">#!/bin/bash
+
+read -p "Enter your choice (start/stop/restart): " action
+
+case $action in
+    start)
+        echo "Starting service..."
+        # systemctl start myservice
+        ;;
+    stop)
+        echo "Stopping service..."
+        # systemctl stop myservice
+        ;;
+    restart)
+        echo "Restarting service..."
+        # systemctl restart myservice
+        ;;
+    *)
+        echo "Invalid option: $action"
+        echo "Valid options: start, stop, restart"
+        exit 1
+        ;;
+esac
+
+# Pattern matching with wildcards
+filename="document.pdf"
+
+case $filename in
+    *.txt)
+        echo "Text file"
+        ;;
+    *.pdf)
+        echo "PDF file"
+        ;;
+    *.jpg|*.png|*.gif)
+        echo "Image file"
+        ;;
+    *)
+        echo "Unknown file type"
+        ;;
+esac
+
+# Multiple patterns
+read -p "Continue? (y/n): " answer
+
+case $answer in
+    y|Y|yes|Yes|YES)
+        echo "Continuing..."
+        ;;
+    n|N|no|No|NO)
+        echo "Exiting..."
+        exit 0
+        ;;
+    *)
+        echo "Please answer yes or no"
+        ;;
+esac</div>
+                    </div>
+
+                    <div class="try-it-yourself">
+                        <h4>🔨 Try It Yourself</h4>
+                        <p>Create a script that:</p>
+                        <ol>
+                            <li>Accepts a filename as an argument</li>
+                            <li>Checks if the file exists</li>
+                            <li>If it exists:
+                                <ul>
+                                    <li>Checks if it's readable</li>
+                                    <li>Checks if it's empty or not</li>
+                                    <li>Reports the file size</li>
+                                </ul>
+                            </li>
+                            <li>If it doesn't exist, offers to create it</li>
+                            <li>Uses a case statement to handle different file extensions (.txt, .log, .conf)</li>
+                        </ol>
+                    </div>
+
+                    <div class="interactive-exercise">
+                        <h3>🎯 Interactive Exercise: Conditionals</h3>
+                        
+                        <div class="exercise-question">
+                            <p><strong>Question:</strong> Which operator checks if a variable is empty?</p>
+                        </div>
+                        
+                        <div class="exercise-options">
+                            <label class="exercise-option">
+                                <input type="radio" name="q4" value="a">
+                                <span><code>[ -e "$var" ]</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q4" value="b">
+                                <span><code>[ -z "$var" ]</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q4" value="c">
+                                <span><code>[ -n "$var" ]</code></span>
+                            </label>
+                            <label class="exercise-option">
+                                <input type="radio" name="q4" value="d">
+                                <span><code>[ -f "$var" ]</code></span>
+                            </label>
+                        </div>
+                        
+                        <button class="check-answer-btn" onclick="checkAnswer('q4', 'b', 'feedback4')">Check Answer</button>
+                        <div id="feedback4" class="feedback"></div>
+                    </div>
+                </section>
+
+                <!-- Continue with remaining sections in next part due to length... -->
+                
+                <!-- Summary Section -->
+                <section id="summary" class="section">
+                    <h2>Module Summary</h2>
+                    
+                    <p>Congratulations on completing Module 5.2: Bash Scripting Fundamentals! You've learned the essential building blocks for creating powerful automation scripts.</p>
+
+                    <div class="key-takeaways">
+                        <h3>🎯 Key Concepts Mastered</h3>
+                        
+                        <h4>Script Basics</h4>
+                        <ul>
+                            <li>Creating executable scripts with proper shebang</li>
+                            <li>Understanding script execution methods</li>
+                            <li>Using comments for documentation</li>
+                            <li>Working with exit codes</li>
+                        </ul>
+
+                        <h4>Variables</h4>
+                        <ul>
+                            <li>Declaring and using variables</li>
+                            <li>Working with special variables ($1, $@, $?, etc.)</li>
+                            <li>Reading user input with read</li>
+                            <li>Understanding variable scope</li>
+                        </ul>
+
+                        <h4>Conditional Logic</h4>
+                        <ul>
+                            <li>if/then/else statements</li>
+                            <li>File, string, and numeric tests</li>
+                            <li>Logical operators (&&, ||, !)</li>
+                            <li>case statements for pattern matching</li>
+                        </ul>
+                    </div>
+
+                    <h3>Next Steps</h3>
+
+                    <div class="tip-box">
+                        <h4>💡 Continuing Your Journey</h4>
+                        <p><strong>Module 5.3: PowerShell Fundamentals</strong> - Learn Microsoft's powerful scripting language</p>
+                        <p><strong>Practice Recommendations:</strong></p>
+                        <ul>
+                            <li>Write scripts for your daily tasks</li>
+                            <li>Study scripts written by others</li>
+                            <li>Contribute to open-source projects</li>
+                            <li>Create a personal script library</li>
+                        </ul>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer>
+            <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+            <p>Module 5.2: Bash Scripting Fundamentals</p>
+            <p style="margin-top: 10px;">Mendocino College | Computer Science Department</p>
+        </footer>
+    </div>
+
+    <script>
+        const sections = ['intro', 'script-basics', 'variables', 'conditionals', 'loops', 'functions', 'debugging', 'practice', 'summary'];
+        let currentSectionIndex = 0;
+        let completedSections = new Set();
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (currentSectionIndex >= 0) {
+                completedSections.add(sections[currentSectionIndex]);
+                updateProgress();
+            }
+            
+            currentSectionIndex = sections.indexOf(sectionId);
+            window.scrollTo(0, 0);
+        }
+
+        function updateProgress() {
+            const total = sections.length;
+            const completed = completedSections.size;
+            const percentage = Math.round((completed / total) * 100);
+            
+            document.getElementById('moduleProgress').style.width = percentage + '%';
+            document.getElementById('moduleProgress').textContent = percentage + '%';
+            document.getElementById('sectionsCompleted').textContent = completed;
+            
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                if (completedSections.has(sections[index])) {
+                    item.classList.add('completed');
+                }
+            });
+        }
+
+        function checkAnswer(questionName, correctAnswer, feedbackId) {
+            const selected = document.querySelector(`input[name="${questionName}"]:checked`);
+            const feedback = document.getElementById(feedbackId);
+            
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '⚠️ Please select an answer.';
+                return;
+            }
+            
+            if (selected.value === correctAnswer) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✅ Correct! ' + getExplanation(questionName);
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '❌ Incorrect. ' + getExplanation(questionName);
+            }
+        }
+
+        function getExplanation(questionName) {
+            const explanations = {
+                'q1': '#!/usr/bin/env bash searches for bash in the PATH, making it work across different systems where bash might be in different locations.',
+                'q2': 'Exit code 0 always indicates success in Unix/Linux systems. Any non-zero exit code indicates an error.',
+                'q3': 'Variable names cannot contain spaces, and there must be no spaces around the = sign in assignments.',
+                'q4': 'The -z operator tests if a string is empty (zero length). -n tests if NOT empty, -e tests if file exists, -f tests if regular file exists.'
+            };
+            return explanations[questionName] || '';
+        }
+
+        document.addEventListener('DOMContentLoaded', updateProgress);
+    </script>
+</body>
+</html>
