@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Week 6 Overview: User & Group Administration - Linux and Windows Server user management, password policies, sudo configuration, and least privilege">
+    <meta name="author" content="David Pai">
+    <title>Week 6 Overview: User & Group Administration | CSC 152</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.7;
+            background-color: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        a {
+            color: #7c3aed;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        a:focus {
+            outline: 2px solid #7c3aed;
+            outline-offset: 2px;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #5b21b6;
+            color: white;
+            padding: 8px 16px;
+            z-index: 1000;
+            transition: top 0.3s;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        header {
+            background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px 20px;
+            margin: -20px -20px 30px -20px;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .course-tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .week-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .section h2 {
+            color: #5b21b6;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #ede9fe;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h3 {
+            color: #1f2937;
+            font-size: 1.15rem;
+            margin: 25px 0 15px 0;
+        }
+
+        .section h4 {
+            color: #374151;
+            font-size: 1.05rem;
+            margin: 20px 0 12px 0;
+        }
+
+        .section p {
+            margin-bottom: 15px;
+            color: #4b5563;
+        }
+
+        .section ul, .section ol {
+            margin: 15px 0 15px 20px;
+            color: #4b5563;
+        }
+
+        .section li {
+            margin-bottom: 10px;
+        }
+
+        .objectives-box {
+            background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+            border-left: 4px solid #7c3aed;
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+            margin: 20px 0;
+        }
+
+        .objectives-box h3 {
+            color: #5b21b6;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .objectives-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .objectives-box li {
+            margin-bottom: 8px;
+            color: #4c1d95;
+        }
+
+        .objectives-box li button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            font-size: inherit;
+            font-family: inherit;
+            color: inherit;
+            padding: 0;
+            line-height: inherit;
+        }
+
+        .objectives-box li button:hover {
+            text-decoration: underline;
+        }
+
+        .objectives-box li button:focus {
+            outline: 2px solid #7c3aed;
+            outline-offset: 2px;
+        }
+
+        .objectives-box li.completed button {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .objective-progress {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(124, 58, 237, 0.2);
+            font-size: 0.9rem;
+            color: #5b21b6;
+        }
+
+        .info-box {
+            background: #f5f3ff;
+            border-left: 4px solid #7c3aed;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .warning-box strong {
+            color: #b45309;
+        }
+
+        .important-box {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .important-box strong {
+            color: #b91c1c;
+        }
+
+        .success-box {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .success-box strong {
+            color: #047857;
+        }
+
+        .module-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .module-card:hover {
+            border-color: #7c3aed;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+        }
+
+        .module-card h4 {
+            color: #5b21b6;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .module-number {
+            background: #7c3aed;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .module-card p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .module-card .module-time {
+            display: inline-block;
+            background: #ede9fe;
+            color: #5b21b6;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        .assignment-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .assignment-card:hover {
+            border-color: #7c3aed;
+        }
+
+        .assignment-info h4 {
+            color: #1f2937;
+            margin: 0 0 5px 0;
+            font-size: 1.05rem;
+        }
+
+        .assignment-info p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .assignment-points {
+            background: #7c3aed;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .inline-code {
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: "Fira Code", "Consolas", monospace;
+            font-size: 0.9em;
+            color: #5b21b6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background: #5b21b6;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        tr:hover {
+            background: #f5f3ff;
+        }
+
+        .accordion {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .accordion-item {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .accordion-item:last-child {
+            border-bottom: none;
+        }
+
+        .accordion-header {
+            width: 100%;
+            padding: 18px 20px;
+            background: #f9fafb;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .accordion-header:hover {
+            background: #f3f4f6;
+        }
+
+        .accordion-header:focus {
+            outline: 2px solid #7c3aed;
+            outline-offset: -2px;
+        }
+
+        .accordion-header::after {
+            content: "+";
+            font-size: 1.4rem;
+            font-weight: 400;
+            color: #6b7280;
+        }
+
+        .accordion-header.active::after {
+            content: "−";
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: white;
+        }
+
+        .accordion-content.show {
+            max-height: 2000px;
+        }
+
+        .accordion-body {
+            padding: 20px;
+        }
+
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .topic-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .topic-item .topic-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .topic-item h5 {
+            color: #1f2937;
+            margin: 0 0 5px 0;
+            font-size: 0.95rem;
+        }
+
+        .topic-item p {
+            color: #6b7280;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        .time-summary {
+            background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .time-summary h3 {
+            color: white;
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+        }
+
+        .time-summary table {
+            margin: 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .time-summary th {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .time-summary th, .time-summary td {
+            border-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .time-summary tr:nth-child(even) {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .time-summary tr:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .cslo-box {
+            background: #f5f3ff;
+            border: 1px solid #ddd6fe;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .cslo-box h4 {
+            color: #5b21b6;
+            margin: 0 0 10px 0;
+        }
+
+        .cslo-box p {
+            margin: 0;
+            color: #4c1d95;
+        }
+
+        footer {
+            background: #1f2937;
+            color: white;
+            padding: 25px 20px;
+            margin: 40px -20px -20px -20px;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 5px 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                padding: 20px 15px;
+                margin: -15px -15px 20px -15px;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .week-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .section {
+                padding: 20px 15px;
+            }
+
+            .assignment-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+
+            .topic-grid {
+                grid-template-columns: 1fr;
+            }
+
+            footer {
+                margin: 30px -15px -15px -15px;
+            }
+        }
+
+        @media print {
+            .skip-link, .accordion-header::after {
+                display: none;
+            }
+
+            .accordion-content {
+                max-height: none !important;
+            }
+
+            .section {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="container">
+        <header>
+            <span class="course-tag">CSC 152 - Network OS and Administration</span>
+            <h1>Week 6: User & Group Administration</h1>
+            <div class="week-meta">
+                <div class="meta-item">📚 7 Learning Modules</div>
+                <div class="meta-item">⏱️ ~15-18 hours total</div>
+                <div class="meta-item">📊 40 points + Project 1 (50 pts)</div>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <!-- Week Overview Section -->
+            <section class="section">
+                <h2>📖 Week Overview</h2>
+                
+                <p>Week 6 transitions from command-line fundamentals to one of the most critical aspects of server administration: <strong>managing users and groups</strong>. Building directly upon Week 5's scripting skills, you will learn to create, modify, and manage user accounts and groups on both Linux and Windows Server platforms.</p>
+
+                <p>This week introduces essential security concepts including password policies, account restrictions, and the <strong>principle of least privilege</strong> through sudo and role-based access control. User and group administration forms the foundation of access control in multi-user environments—every organization must manage who can access systems, what resources they can use, and what actions they can perform.</p>
+
+                <div class="important-box">
+                    <strong>🎯 Project 1 Due This Week:</strong> This week also marks the deadline for <strong>Project 1: Multi-User Server Configuration</strong>, which integrates concepts from Weeks 1-6 into a comprehensive server deployment. Be sure to allocate time for both weekly content and project completion.
+                </div>
+
+                <div class="topic-grid">
+                    <div class="topic-item">
+                        <div class="topic-icon">🐧</div>
+                        <h5>Linux Users & Groups</h5>
+                        <p>useradd, usermod, groupadd, /etc/passwd, /etc/shadow</p>
+                    </div>
+                    <div class="topic-item">
+                        <div class="topic-icon">🪟</div>
+                        <h5>Windows Users & Groups</h5>
+                        <p>Local accounts, SIDs, PowerShell cmdlets, GUI tools</p>
+                    </div>
+                    <div class="topic-item">
+                        <div class="topic-icon">🔐</div>
+                        <h5>Password Policies</h5>
+                        <p>Aging, complexity, chage, Local Security Policy</p>
+                    </div>
+                    <div class="topic-item">
+                        <div class="topic-icon">🛡️</div>
+                        <h5>Privilege Management</h5>
+                        <p>sudo, sudoers, UAC, least privilege principle</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Learning Objectives Section -->
+            <section class="section">
+                <h2>🎯 Learning Objectives</h2>
+                
+                <p>By the end of Week 6, you will be able to:</p>
+
+                <div class="objectives-box">
+                    <h3>Week 6 Learning Objectives</h3>
+                    <ul id="objectives-list">
+                        <li id="obj-1"><button onclick="toggleObjective(1)">Create and manage user accounts on Linux using <code class="inline-code">useradd</code>, <code class="inline-code">usermod</code>, and <code class="inline-code">userdel</code></button></li>
+                        <li id="obj-2"><button onclick="toggleObjective(2)">Manage Linux groups and group memberships with <code class="inline-code">groupadd</code> and <code class="inline-code">gpasswd</code></button></li>
+                        <li id="obj-3"><button onclick="toggleObjective(3)">Create and manage local users and groups on Windows Server using GUI and PowerShell</button></li>
+                        <li id="obj-4"><button onclick="toggleObjective(4)">Configure password policies and account security on both platforms</button></li>
+                        <li id="obj-5"><button onclick="toggleObjective(5)">Implement sudo access and understand the sudoers file syntax</button></li>
+                        <li id="obj-6"><button onclick="toggleObjective(6)">Apply the principle of least privilege in user administration</button></li>
+                        <li id="obj-7"><button onclick="toggleObjective(7)">Develop automation scripts for user provisioning tasks</button></li>
+                    </ul>
+                    <div class="objective-progress">
+                        <span id="objectives-progress">Your Progress: 0 / 7</span>
+                        <br><small>Click on objectives to mark them as completed during this session.</small>
+                    </div>
+                </div>
+
+                <div class="cslo-box">
+                    <h4>CSLO Alignment</h4>
+                    <p><strong>CSLO 1:</strong> Manage and maintain servers, including operating system (OS) configuration, access control and virtualization.</p>
+                    <p><strong>CSLO 2:</strong> Apply physical and network data security techniques.</p>
+                </div>
+            </section>
+
+            <!-- Learning Modules Section -->
+            <section class="section">
+                <h2>📚 Learning Modules</h2>
+                
+                <p>Week 6 content is organized into 7 comprehensive learning modules that progressively build user and group administration skills across both Linux and Windows Server environments.</p>
+
+                <div class="module-card">
+                    <h4><span class="module-number">6.1</span> Linux User Account Fundamentals</h4>
+                    <p>Understanding user accounts on Linux: UIDs, /etc/passwd, /etc/shadow, account types, and the user creation process.</p>
+                    <span class="module-time">⏱️ 90 minutes</span>
+                </div>
+
+                <div class="module-card">
+                    <h4><span class="module-number">6.2</span> Linux User Management Commands</h4>
+                    <p>Hands-on with useradd, usermod, userdel, and passwd commands. Creating users with specific options and managing existing accounts.</p>
+                    <span class="module-time">⏱️ 90 minutes</span>
+                </div>
+
+                <div class="module-card">
+                    <h4><span class="module-number">6.3</span> Linux Group Management</h4>
+                    <p>Creating and managing groups with groupadd, groupmod, groupdel, and gpasswd. Understanding primary vs. supplementary groups.</p>
+                    <span class="module-time">⏱️ 90 minutes</span>
+                </div>
+
+                <div class="module-card">
+                    <h4><span class="module-number">6.4</span> Windows User Account Fundamentals</h4>
+                    <p>Understanding Windows user accounts: SIDs, local vs. domain accounts, built-in accounts, and the Windows security model.</p>
+                    <span class="module-time">⏱️ 90 minutes</span>
+                </div>
+
+                <div class="module-card">
+                    <h4><span class="module-number">6.5</span> Windows User & Group Management</h4>
+                    <p>Managing users and groups via Computer Management GUI and PowerShell cmdlets (New-LocalUser, Add-LocalGroupMember).</p>
+                    <span class="module-time">⏱️ 90 minutes</span>
+                </div>
+
+                <div class="module-card">
+                    <h4><span class="module-number">6.6</span> Password Policies & Security</h4>
+                    <p>Configuring password aging with chage, /etc/login.defs, Local Security Policy, and account lockout policies on both platforms.</p>
+                    <span class="module-time">⏱️ 90 minutes</span>
+                </div>
+
+                <div class="module-card">
+                    <h4><span class="module-number">6.7</span> Privilege Escalation & Least Privilege</h4>
+                    <p>Understanding and configuring sudo, the sudoers file, Windows UAC, User Rights Assignment, and implementing least privilege.</p>
+                    <span class="module-time">⏱️ 90 minutes</span>
+                </div>
+
+                <div class="info-box">
+                    <strong>💡 Module Sequence:</strong> Complete modules in order, as each builds upon concepts from previous modules. Modules 6.1-6.3 focus on Linux, 6.4-6.5 on Windows, and 6.6-6.7 cover cross-platform security concepts.
+                </div>
+            </section>
+
+            <!-- Key Concepts Section -->
+            <section class="section">
+                <h2>🔑 Key Concepts</h2>
+
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Linux User & Group Files</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>File</th>
+                                            <th>Purpose</th>
+                                            <th>Key Fields</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code class="inline-code">/etc/passwd</code></td>
+                                            <td>User account information</td>
+                                            <td>username:x:UID:GID:GECOS:home:shell</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">/etc/shadow</code></td>
+                                            <td>Encrypted passwords & aging</td>
+                                            <td>username:hash:lastchg:min:max:warn:inactive:expire</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">/etc/group</code></td>
+                                            <td>Group definitions</td>
+                                            <td>groupname:x:GID:members</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">/etc/gshadow</code></td>
+                                            <td>Secure group information</td>
+                                            <td>groupname:password:admins:members</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Essential Linux Commands</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Command</th>
+                                            <th>Purpose</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code class="inline-code">useradd</code></td>
+                                            <td>Create new user accounts</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">usermod</code></td>
+                                            <td>Modify existing user accounts</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">userdel</code></td>
+                                            <td>Delete user accounts</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">passwd</code></td>
+                                            <td>Change user passwords</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">groupadd</code></td>
+                                            <td>Create new groups</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">gpasswd</code></td>
+                                            <td>Administer group memberships</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">chage</code></td>
+                                            <td>Change password aging settings</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">visudo</code></td>
+                                            <td>Safely edit sudoers file</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Windows PowerShell Cmdlets</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Cmdlet</th>
+                                            <th>Purpose</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code class="inline-code">New-LocalUser</code></td>
+                                            <td>Create new local user</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">Get-LocalUser</code></td>
+                                            <td>View local user information</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">Set-LocalUser</code></td>
+                                            <td>Modify local user properties</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">Remove-LocalUser</code></td>
+                                            <td>Delete local user</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">New-LocalGroup</code></td>
+                                            <td>Create new local group</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">Add-LocalGroupMember</code></td>
+                                            <td>Add user to group</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code class="inline-code">Get-LocalGroupMember</code></td>
+                                            <td>View group members</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Principle of Least Privilege</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p><strong>Definition:</strong> Users, processes, and systems should have only the minimum permissions necessary to perform their job functions—nothing more.</p>
+                                
+                                <h5 style="margin-top: 15px;">Implementation Strategies:</h5>
+                                <ul>
+                                    <li><strong>Default to no access</strong> - Grant permissions only when explicitly needed</li>
+                                    <li><strong>Use groups</strong> - Assign permissions to groups, not individual users</li>
+                                    <li><strong>Separate accounts</strong> - Admins should have regular and admin accounts</li>
+                                    <li><strong>Time-limited access</strong> - sudo sessions expire; use JIT access where possible</li>
+                                    <li><strong>Regular reviews</strong> - Audit and remove unnecessary permissions</li>
+                                </ul>
+
+                                <h5 style="margin-top: 15px;">Platform Implementation:</h5>
+                                <ul>
+                                    <li><strong>Linux:</strong> sudo with granular sudoers rules in /etc/sudoers.d/</li>
+                                    <li><strong>Windows:</strong> User Account Control (UAC), User Rights Assignment</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">sudoers File Syntax</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p><strong>Basic Format:</strong> <code class="inline-code">user host=(runas) commands</code></p>
+                                
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Component</th>
+                                            <th>Description</th>
+                                            <th>Example</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>user</td>
+                                            <td>Username or %groupname</td>
+                                            <td>jsmith, %webadmins</td>
+                                        </tr>
+                                        <tr>
+                                            <td>host</td>
+                                            <td>Hostname or ALL</td>
+                                            <td>ALL, webserver1</td>
+                                        </tr>
+                                        <tr>
+                                            <td>(runas)</td>
+                                            <td>Target user:group</td>
+                                            <td>(root), (ALL:ALL)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>commands</td>
+                                            <td>Allowed commands</td>
+                                            <td>ALL, /bin/systemctl</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <div class="warning-box" style="margin-top: 15px;">
+                                    <strong>⚠️ Always use visudo!</strong> Never edit /etc/sudoers directly. The visudo command validates syntax before saving, preventing lockouts.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Assignments Section -->
+            <section class="section">
+                <h2>📝 Assignments</h2>
+
+                <p>Complete the following assignments this week. Check Canvas for specific due dates.</p>
+
+                <div class="assignment-card">
+                    <div class="assignment-info">
+                        <h4>📋 Lab 6: User & Group Administration</h4>
+                        <p>Create users, groups, configure sudo, and develop automation scripts on both Linux and Windows.</p>
+                    </div>
+                    <div class="assignment-points">27 points</div>
+                </div>
+
+                <div class="assignment-card">
+                    <div class="assignment-info">
+                        <h4>📝 Quiz 6: User & Group Management</h4>
+                        <p>10 questions covering Linux/Windows user management, password policies, sudo, and least privilege.</p>
+                    </div>
+                    <div class="assignment-points">10 points</div>
+                </div>
+
+                <div class="assignment-card">
+                    <div class="assignment-info">
+                        <h4>💬 Discussion 6: User Administration Challenges</h4>
+                        <p>Discuss least privilege scenarios, password policy trade-offs, provisioning challenges, and group strategies.</p>
+                    </div>
+                    <div class="assignment-points">3 points</div>
+                </div>
+
+                <div class="assignment-card" style="border-color: #ef4444; background: #fef2f2;">
+                    <div class="assignment-info">
+                        <h4>🎯 Project 1: Multi-User Server Configuration</h4>
+                        <p>Comprehensive server deployment integrating concepts from Weeks 1-6. <strong>Final deadline this week!</strong></p>
+                    </div>
+                    <div class="assignment-points" style="background: #ef4444;">50 points</div>
+                </div>
+
+                <div class="info-box">
+                    <strong>📊 Total Points This Week:</strong> 40 points (Lab + Quiz + Discussion) + 50 points (Project 1) = <strong>90 points</strong>
+                </div>
+            </section>
+
+            <!-- Lab 6 Overview Section -->
+            <section class="section">
+                <h2>🔬 Lab 6 Overview</h2>
+
+                <p>Lab 6 is divided into four parts that progressively build your user and group administration skills:</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Part</th>
+                            <th>Description</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Part A</strong></td>
+                            <td>Linux User & Group Management - Create users, groups, configure memberships</td>
+                            <td>9</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part B</strong></td>
+                            <td>Windows User & Group Management - GUI and PowerShell user creation</td>
+                            <td>9</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part C</strong></td>
+                            <td>sudo Configuration - Create granular sudoers.d rules</td>
+                            <td>5</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part D</strong></td>
+                            <td>Automation Scripts - Bash and PowerShell user creation scripts</td>
+                            <td>4</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>Users You'll Create</h4>
+                <p><strong>Linux (Part A):</strong> asmith, bwilson, cjones, dlee, svc_backup</p>
+                <p><strong>Windows (Part B):</strong> egarcia, fthomas, gmartin</p>
+
+                <div class="success-box">
+                    <strong>✅ Prerequisites:</strong> Complete Modules 6.1-6.7 before starting Lab 6. Ensure both your Rocky Linux and Windows Server VMs are running and accessible.
+                </div>
+            </section>
+
+            <!-- Time Commitment Section -->
+            <section class="section">
+                <h2>⏱️ Time Commitment</h2>
+
+                <div class="time-summary">
+                    <h3>Weekly Time Allocation</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Activity</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>In-class lecture</td>
+                                <td>2 hours</td>
+                            </tr>
+                            <tr>
+                                <td>In-class lab</td>
+                                <td>3 hours</td>
+                            </tr>
+                            <tr>
+                                <td>Module readings (6.1-6.7)</td>
+                                <td>3-3.5 hours</td>
+                            </tr>
+                            <tr>
+                                <td>Lab 6 completion</td>
+                                <td>4-5 hours</td>
+                            </tr>
+                            <tr>
+                                <td>Quiz 6</td>
+                                <td>0.25 hours</td>
+                            </tr>
+                            <tr>
+                                <td>Discussion 6</td>
+                                <td>0.5 hours</td>
+                            </tr>
+                            <tr>
+                                <td>Project 1 completion</td>
+                                <td>3-4 hours</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total</strong></td>
+                                <td><strong>15-18 hours</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="warning-box">
+                    <strong>⚠️ Note:</strong> Week 6 requires additional time due to the Project 1 deadline. Plan accordingly and start early!
+                </div>
+            </section>
+
+            <!-- Tips for Success Section -->
+            <section class="section">
+                <h2>💡 Tips for Success</h2>
+
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">User Management Best Practices</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li><strong>Plan before creating:</strong> Design user naming conventions and group structures before implementation</li>
+                                    <li><strong>Document decisions:</strong> Keep notes on why you made specific choices for future reference</li>
+                                    <li><strong>Test in safe environment:</strong> Use your lab VMs to experiment before applying to production</li>
+                                    <li><strong>Always use -a with usermod -G:</strong> Forgetting -a replaces all groups instead of adding!</li>
+                                    <li><strong>Verify changes:</strong> Use <code class="inline-code">id username</code> and <code class="inline-code">getent</code> to confirm configurations</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Common Mistakes to Avoid</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li><strong>usermod -G without -a:</strong> This replaces all supplementary groups. Always use <code class="inline-code">usermod -aG</code></li>
+                                    <li><strong>Editing sudoers directly:</strong> Always use <code class="inline-code">visudo</code> to prevent syntax errors that lock you out</li>
+                                    <li><strong>Wrong GIDs:</strong> Double-check GID assignments match the lab requirements</li>
+                                    <li><strong>Forgetting screenshots:</strong> Document every step as you complete it</li>
+                                    <li><strong>Script permissions:</strong> Remember <code class="inline-code">chmod +x</code> for Bash scripts</li>
+                                    <li><strong>PowerShell execution policy:</strong> Set to RemoteSigned if scripts won't run</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Study Strategies</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li><strong>Complete modules in order:</strong> Each module builds on previous concepts</li>
+                                    <li><strong>Practice commands:</strong> Type commands yourself rather than copy-pasting</li>
+                                    <li><strong>Compare platforms:</strong> Note similarities and differences between Linux and Windows</li>
+                                    <li><strong>Create cheat sheets:</strong> Summarize key commands and concepts for quick reference</li>
+                                    <li><strong>Use discussion forums:</strong> Ask questions and learn from classmates</li>
+                                    <li><strong>Attend office hours:</strong> Get help early if you're stuck</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Project 1 Final Push</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li><strong>Review requirements:</strong> Re-read the project rubric to ensure all items are addressed</li>
+                                    <li><strong>Test everything:</strong> Verify all configurations work as expected</li>
+                                    <li><strong>Document thoroughly:</strong> Include clear screenshots and explanations</li>
+                                    <li><strong>Check formatting:</strong> Ensure professional presentation of your report</li>
+                                    <li><strong>Submit early:</strong> Don't wait until the last minute—technical issues happen</li>
+                                    <li><strong>Ask for help:</strong> Reach out if you're stuck on any component</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Looking Ahead Section -->
+            <section class="section">
+                <h2>🔮 Looking Ahead: Week 7</h2>
+
+                <p><strong>Topic:</strong> File Systems and Storage Management</p>
+
+                <h4>What to Expect:</h4>
+                <ul>
+                    <li>Linux file system types (ext4, XFS, Btrfs)</li>
+                    <li>Disk partitioning with fdisk and parted</li>
+                    <li>Logical Volume Management (LVM)</li>
+                    <li>Windows disk management and Storage Spaces</li>
+                    <li>RAID concepts and implementation</li>
+                    <li>File system permissions (building on Week 6 user/group concepts)</li>
+                </ul>
+
+                <div class="info-box">
+                    <strong>📝 Preparation:</strong> Complete all Week 6 content and Project 1. The user and group concepts you learn this week are prerequisites for understanding file permissions in Week 7.
+                </div>
+            </section>
+
+            <!-- Resources Section -->
+            <section class="section">
+                <h2>📚 Additional Resources</h2>
+
+                <h4>Linux Documentation</h4>
+                <ul>
+                    <li><a href="https://man7.org/linux/man-pages/man8/useradd.8.html" target="_blank" rel="noopener">man useradd</a> - User creation command</li>
+                    <li><a href="https://man7.org/linux/man-pages/man8/usermod.8.html" target="_blank" rel="noopener">man usermod</a> - User modification command</li>
+                    <li><a href="https://man7.org/linux/man-pages/man5/sudoers.5.html" target="_blank" rel="noopener">man sudoers</a> - Sudoers file format</li>
+                    <li><a href="https://man7.org/linux/man-pages/man1/chage.1.html" target="_blank" rel="noopener">man chage</a> - Password aging</li>
+                </ul>
+
+                <h4>Windows Documentation</h4>
+                <ul>
+                    <li><a href="https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.localaccounts/" target="_blank" rel="noopener">LocalAccounts PowerShell Module</a></li>
+                    <li><a href="https://docs.microsoft.com/en-us/windows/security/identity-protection/user-account-control/" target="_blank" rel="noopener">User Account Control (UAC)</a></li>
+                    <li><a href="https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/password-policy" target="_blank" rel="noopener">Windows Password Policy</a></li>
+                </ul>
+
+                <h4>Security Resources</h4>
+                <ul>
+                    <li><a href="https://pages.nist.gov/800-63-3/sp800-63b.html" target="_blank" rel="noopener">NIST SP 800-63B: Digital Identity Guidelines</a></li>
+                    <li><a href="https://www.sudo.ws/docs/man/sudoers.man/" target="_blank" rel="noopener">Sudo Manual</a></li>
+                </ul>
+            </section>
+
+            <!-- Getting Help Section -->
+            <section class="section">
+                <h2>🆘 Getting Help</h2>
+
+                <ul>
+                    <li><strong>Discussion Forums:</strong> Post questions in the Week 6 Q&A forum</li>
+                    <li><strong>Office Hours:</strong> Check Canvas for scheduled times</li>
+                    <li><strong>Email:</strong> Contact instructor for private matters</li>
+                    <li><strong>Peer Support:</strong> Collaborate with classmates (without sharing answers)</li>
+                </ul>
+
+                <div class="success-box">
+                    <strong>💪 You've Got This!</strong> Week 6 covers essential skills that every system administrator uses daily. Take your time with the concepts, practice the commands, and don't hesitate to ask for help when needed.
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p><strong>CSC 152</strong> - Network Operating Systems and Administration</p>
+            <p>Mendocino College | Instructor: David Pai</p>
+            <p>Week 6: User & Group Administration</p>
+            <p>&copy; 2026 Mendocino College. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Accordion functionality
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const isActive = header.classList.contains('active');
+                
+                // Close all accordions in the same container
+                const accordion = header.closest('.accordion');
+                accordion.querySelectorAll('.accordion-header').forEach(h => {
+                    h.classList.remove('active');
+                    h.setAttribute('aria-expanded', 'false');
+                });
+                accordion.querySelectorAll('.accordion-content').forEach(c => {
+                    c.classList.remove('show');
+                });
+
+                // Open clicked accordion if it wasn't active
+                if (!isActive) {
+                    header.classList.add('active');
+                    header.setAttribute('aria-expanded', 'true');
+                    header.nextElementSibling.classList.add('show');
+                }
+            });
+        });
+
+        // Learning objectives tracking
+        let completedObjectives = new Set();
+
+        function toggleObjective(num) {
+            const li = document.getElementById('obj-' + num);
+            if (completedObjectives.has(num)) {
+                completedObjectives.delete(num);
+                li.classList.remove('completed');
+            } else {
+                completedObjectives.add(num);
+                li.classList.add('completed');
+            }
+            updateObjectivesProgress();
+            saveObjectivesProgress();
+        }
+
+        function updateObjectivesProgress() {
+            const total = 7;
+            const completed = completedObjectives.size;
+            document.getElementById('objectives-progress').textContent = `Your Progress: ${completed} / ${total}`;
+        }
+
+        function saveObjectivesProgress() {
+            sessionStorage.setItem('week6-objectives', JSON.stringify([...completedObjectives]));
+        }
+
+        function loadObjectivesProgress() {
+            const saved = sessionStorage.getItem('week6-objectives');
+            if (saved) {
+                completedObjectives = new Set(JSON.parse(saved));
+                completedObjectives.forEach(num => {
+                    const li = document.getElementById('obj-' + num);
+                    if (li) li.classList.add('completed');
+                });
+                updateObjectivesProgress();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadObjectivesProgress();
+        });
+    </script>
+</body>
+</html>
