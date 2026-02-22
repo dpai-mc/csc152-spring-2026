@@ -1,0 +1,2904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Week 6 Module 6.2 - Linux User Management Commands - Learn useradd, usermod, userdel, and passwd commands">
+    <meta name="author" content="David Pai">
+    <title>Module 6.2: Linux User Management Commands | CSC 152</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        a:focus {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #0066cc;
+            color: white;
+            padding: 8px 16px;
+            z-index: 1000;
+            transition: top 0.3s;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e8449 0%, #27ae60 100%);
+            color: white;
+            padding: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .course-info {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .module-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .progress-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .module-nav {
+            background: white;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .nav-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            list-style: none;
+        }
+
+        .nav-tabs button {
+            background: #f0f0f0;
+            border: 2px solid transparent;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #333;
+        }
+
+        .nav-tabs button:hover {
+            background: #e0e0e0;
+        }
+
+        .nav-tabs button:focus {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
+
+        .nav-tabs button.active {
+            background: #27ae60;
+            color: white;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h2 {
+            color: #1e8449;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #27ae60;
+        }
+
+        .section h3 {
+            color: #2c3e50;
+            font-size: 1.25rem;
+            margin: 25px 0 15px 0;
+        }
+
+        .section h4 {
+            color: #34495e;
+            font-size: 1.1rem;
+            margin: 20px 0 10px 0;
+        }
+
+        .section p {
+            margin-bottom: 15px;
+        }
+
+        .section ul, .section ol {
+            margin: 15px 0 15px 25px;
+        }
+
+        .section li {
+            margin-bottom: 8px;
+        }
+
+        .objectives-list {
+            background: #e8f6f3;
+            border-left: 4px solid #1abc9c;
+            padding: 20px 20px 20px 40px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .objectives-list li {
+            margin-bottom: 10px;
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: #fdf3e7;
+            border-left: 4px solid #e67e22;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .warning-box strong {
+            color: #d35400;
+        }
+
+        .danger-box {
+            background: #fdeef0;
+            border-left: 4px solid #e74c3c;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .danger-box strong {
+            color: #c0392b;
+        }
+
+        .success-box {
+            background: #e8f6e8;
+            border-left: 4px solid #27ae60;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .success-box strong {
+            color: #1e8449;
+        }
+
+        .key-term {
+            background: #fff9e6;
+            border-left: 4px solid #f1c40f;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: "Fira Code", "Consolas", "Monaco", monospace;
+            font-size: 0.9rem;
+            white-space: pre;
+            line-height: 1.5;
+        }
+
+        .code-block code {
+            font-family: inherit;
+            white-space: pre;
+        }
+
+        .code-header {
+            background: #1a1a1a;
+            color: #ccc;
+            padding: 8px 15px;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header + .code-block {
+            margin-top: 0;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .inline-code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: "Fira Code", "Consolas", monospace;
+            font-size: 0.9em;
+            color: #c7254e;
+        }
+
+        .command-prompt {
+            color: #50fa7b;
+        }
+
+        .command-comment {
+            color: #6272a4;
+        }
+
+        .command-flag {
+            color: #ff79c6;
+        }
+
+        .command-string {
+            color: #f1fa8c;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background: #27ae60;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        tr:hover {
+            background: #f0f7f0;
+        }
+
+        .interactive-component {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .interactive-component h4 {
+            color: #495057;
+            margin-top: 0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .interactive-component h4::before {
+            content: "🎯";
+        }
+
+        .quiz-question {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .quiz-question p {
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .quiz-options {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .quiz-options li {
+            margin-bottom: 10px;
+        }
+
+        .quiz-options label {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            gap: 10px;
+        }
+
+        .quiz-options label:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .quiz-options input[type="radio"] {
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .quiz-options label.correct {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .quiz-options label.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .quiz-feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .quiz-feedback.show {
+            display: block;
+        }
+
+        .quiz-feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .quiz-feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 25px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #1e8449;
+        }
+
+        .btn:focus {
+            outline: 2px solid #145a32;
+            outline-offset: 2px;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #0066cc;
+        }
+
+        .btn-primary:hover {
+            background: #0052a3;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .command-builder {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .command-builder-output {
+            background: #2d2d2d;
+            color: #50fa7b;
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-family: "Fira Code", "Consolas", monospace;
+            font-size: 0.95rem;
+            margin-top: 15px;
+            min-height: 50px;
+        }
+
+        .option-group {
+            margin-bottom: 15px;
+        }
+
+        .option-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .option-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .option-group input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: "Fira Code", "Consolas", monospace;
+            width: 200px;
+        }
+
+        .option-group input[type="text"]:focus {
+            outline: none;
+            border-color: #27ae60;
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+        }
+
+        .accordion {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .accordion-item {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .accordion-item:last-child {
+            border-bottom: none;
+        }
+
+        .accordion-header {
+            width: 100%;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s ease;
+        }
+
+        .accordion-header:hover {
+            background: #e9ecef;
+        }
+
+        .accordion-header:focus {
+            outline: 2px solid #0066cc;
+            outline-offset: -2px;
+        }
+
+        .accordion-header::after {
+            content: "+";
+            font-size: 1.5rem;
+            font-weight: 300;
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-header.active::after {
+            content: "−";
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: white;
+        }
+
+        .accordion-content.show {
+            max-height: 3000px;
+        }
+
+        .accordion-body {
+            padding: 20px;
+        }
+
+        .syntax-box {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .syntax-title {
+            color: #16c79a;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .syntax-content {
+            color: #e8e8e8;
+            font-family: "Fira Code", "Consolas", monospace;
+            font-size: 1rem;
+        }
+
+        .terminal-sim {
+            background: #0d0d0d;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terminal-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-btn.red { background: #ff5f56; }
+        .terminal-btn.yellow { background: #ffbd2e; }
+        .terminal-btn.green { background: #27ca40; }
+
+        .terminal-title {
+            color: #999;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+
+        .terminal-body {
+            padding: 20px;
+            font-family: "Fira Code", "Consolas", monospace;
+            font-size: 0.9rem;
+            color: #f8f8f2;
+            white-space: pre;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+
+        .terminal-prompt {
+            color: #50fa7b;
+        }
+
+        .terminal-command {
+            color: #f8f8f2;
+        }
+
+        .terminal-output {
+            color: #8be9fd;
+        }
+
+        .terminal-error {
+            color: #ff5555;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .step-indicator::before {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #ddd;
+            z-index: 1;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .step.active .step-number {
+            background: #27ae60;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #27ae60;
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+        }
+
+        .comparison-table {
+            margin: 20px 0;
+        }
+
+        .comparison-table th:first-child {
+            width: 30%;
+        }
+
+        .exercise-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: "Fira Code", "Consolas", monospace;
+            font-size: 0.95rem;
+            margin: 10px 0;
+        }
+
+        .exercise-input:focus {
+            outline: none;
+            border-color: #27ae60;
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+        }
+
+        .exercise-feedback {
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .exercise-feedback.show {
+            display: block;
+        }
+
+        .exercise-feedback.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .exercise-feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .exercise-feedback.hint {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .completion-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .completion-checkbox input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .completion-checkbox label {
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .cslo-tag {
+            display: inline-block;
+            background: #e8f6e8;
+            color: #1e8449;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .scenario-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .scenario-box h4 {
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+        }
+
+        .scenario-box p {
+            margin: 0;
+            opacity: 0.95;
+        }
+
+        footer {
+            background: #2c3e50;
+            color: white;
+            padding: 30px 20px;
+            margin-top: 40px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 15px;
+            color: #27ae60;
+        }
+
+        .footer-section ul {
+            list-style: none;
+            margin: 0;
+        }
+
+        .footer-section li {
+            margin-bottom: 8px;
+        }
+
+        .footer-section a {
+            color: #bdc3c7;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 30px auto 0;
+            padding-top: 20px;
+            border-top: 1px solid #34495e;
+            text-align: center;
+            color: #bdc3c7;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.4rem;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .nav-tabs button {
+                width: 100%;
+                text-align: center;
+            }
+
+            .section {
+                padding: 20px 15px;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 8px 10px;
+            }
+
+            .step-indicator {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .step-indicator::before {
+                display: none;
+            }
+
+            .option-group input[type="text"] {
+                width: 100%;
+            }
+        }
+
+        @media print {
+            .skip-link,
+            .nav-tabs,
+            .progress-container,
+            .interactive-component,
+            .completion-checkbox {
+                display: none;
+            }
+
+            .section {
+                display: block !important;
+                page-break-inside: avoid;
+            }
+
+            header {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header role="banner">
+        <div class="header-content">
+            <p class="course-info">CSC 152 - Network Operating Systems and Administration</p>
+            <h1>Module 6.2: Linux User Management Commands</h1>
+            <p class="module-subtitle">Week 6: User & Group Administration | February 23 - March 1, 2026</p>
+        </div>
+    </header>
+
+    <div class="progress-container" role="complementary" aria-label="Module progress">
+        <div class="progress-header">
+            <span>Module Progress</span>
+            <span id="progress-text">0% Complete</span>
+        </div>
+        <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <main id="main-content" role="main">
+        <nav class="module-nav" aria-label="Module sections">
+            <ul class="nav-tabs" role="tablist">
+                <li><button role="tab" aria-selected="true" aria-controls="overview" id="tab-overview" class="active">Overview</button></li>
+                <li><button role="tab" aria-selected="false" aria-controls="useradd" id="tab-useradd">useradd</button></li>
+                <li><button role="tab" aria-selected="false" aria-controls="passwd" id="tab-passwd">passwd</button></li>
+                <li><button role="tab" aria-selected="false" aria-controls="usermod" id="tab-usermod">usermod</button></li>
+                <li><button role="tab" aria-selected="false" aria-controls="userdel" id="tab-userdel">userdel</button></li>
+                <li><button role="tab" aria-selected="false" aria-controls="practice" id="tab-practice">Practice</button></li>
+                <li><button role="tab" aria-selected="false" aria-controls="summary" id="tab-summary">Summary</button></li>
+            </ul>
+        </nav>
+
+        <!-- Overview Section -->
+        <section id="overview" class="section active" role="tabpanel" aria-labelledby="tab-overview">
+            <h2>Module Overview <span class="cslo-tag">CSLO 1</span></h2>
+
+            <div class="info-box">
+                <strong>📚 Module Duration:</strong> Approximately 60 minutes<br>
+                <strong>📅 Complete By:</strong> Tuesday, February 24, 2026<br>
+                <strong>🔗 Prerequisites:</strong> Module 6.1 (Linux User Account Fundamentals)
+            </div>
+
+            <h3>Introduction</h3>
+            <p>Now that you understand how Linux stores user account information in <code class="inline-code">/etc/passwd</code> and <code class="inline-code">/etc/shadow</code>, it's time to learn the commands that create and manipulate these entries. This module covers the four essential user management commands that every Linux administrator must master:</p>
+
+            <div class="step-indicator">
+                <div class="step active">
+                    <div class="step-number">1</div>
+                    <span class="step-label">useradd</span>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <span class="step-label">passwd</span>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <span class="step-label">usermod</span>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <span class="step-label">userdel</span>
+                </div>
+            </div>
+
+            <p>These commands form the complete lifecycle of user account management: creating accounts, setting passwords, modifying account properties, and removing accounts when no longer needed.</p>
+
+            <h3>Learning Objectives</h3>
+            <ol class="objectives-list">
+                <li>Create user accounts using <code class="inline-code">useradd</code> with appropriate options</li>
+                <li>Set and manage user passwords using <code class="inline-code">passwd</code></li>
+                <li>Modify existing user accounts using <code class="inline-code">usermod</code></li>
+                <li>Safely delete user accounts using <code class="inline-code">userdel</code></li>
+                <li>Understand the difference between <code class="inline-code">-G</code> and <code class="inline-code">-aG</code> options</li>
+                <li>Create service accounts with appropriate security settings</li>
+            </ol>
+
+            <h3>Real-World Context</h3>
+            <div class="scenario-box">
+                <h4>📋 Scenario: New Employee Onboarding</h4>
+                <p>Your IT department just received a request to set up accounts for five new employees starting Monday. You need to create their accounts with appropriate home directories, assign them to department groups, set temporary passwords, and ensure they change their passwords on first login. This module teaches you exactly how to accomplish this efficiently.</p>
+            </div>
+
+            <h3>Command Overview</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Purpose</th>
+                        <th>Requires Root</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="inline-code">useradd</code></td>
+                        <td>Create a new user account</td>
+                        <td>Yes (sudo)</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">passwd</code></td>
+                        <td>Set or change user password</td>
+                        <td>Yes for other users</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">usermod</code></td>
+                        <td>Modify existing user account</td>
+                        <td>Yes (sudo)</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">userdel</code></td>
+                        <td>Delete a user account</td>
+                        <td>Yes (sudo)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box">
+                <strong>⚠️ Important:</strong> All user management commands require root privileges. Always use <code class="inline-code">sudo</code> when executing these commands. Making mistakes with user accounts can lock people out of systems or create security vulnerabilities.
+            </div>
+
+            <div class="completion-checkbox">
+                <input type="checkbox" id="complete-overview" onchange="updateProgress()">
+                <label for="complete-overview">I have read and understood the module overview</label>
+            </div>
+        </section>
+
+        <!-- useradd Section -->
+        <section id="useradd" class="section" role="tabpanel" aria-labelledby="tab-useradd">
+            <h2>Creating Users with useradd <span class="cslo-tag">CSLO 1</span></h2>
+
+            <h3>Command Overview</h3>
+            <p>The <code class="inline-code">useradd</code> command creates a new user account by adding entries to <code class="inline-code">/etc/passwd</code>, <code class="inline-code">/etc/shadow</code>, and <code class="inline-code">/etc/group</code>. It can also create the user's home directory and populate it with default files.</p>
+
+            <div class="syntax-box">
+                <div class="syntax-title">Basic Syntax</div>
+                <div class="syntax-content">sudo useradd [OPTIONS] USERNAME</div>
+            </div>
+
+            <h3>Essential Options</h3>
+            <p>The <code class="inline-code">useradd</code> command has many options. Here are the most commonly used:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Long Form</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="inline-code">-m</code></td>
+                        <td><code class="inline-code">--create-home</code></td>
+                        <td>Create the user's home directory</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-d</code></td>
+                        <td><code class="inline-code">--home-dir</code></td>
+                        <td>Specify home directory path</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-s</code></td>
+                        <td><code class="inline-code">--shell</code></td>
+                        <td>Specify login shell</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-c</code></td>
+                        <td><code class="inline-code">--comment</code></td>
+                        <td>Add comment (GECOS field, usually full name)</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-g</code></td>
+                        <td><code class="inline-code">--gid</code></td>
+                        <td>Specify primary group</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-G</code></td>
+                        <td><code class="inline-code">--groups</code></td>
+                        <td>Specify supplementary groups (comma-separated)</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-u</code></td>
+                        <td><code class="inline-code">--uid</code></td>
+                        <td>Specify user ID number</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-e</code></td>
+                        <td><code class="inline-code">--expiredate</code></td>
+                        <td>Set account expiration date (YYYY-MM-DD)</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-r</code></td>
+                        <td><code class="inline-code">--system</code></td>
+                        <td>Create a system account (UID < 1000)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Usage Examples</h3>
+
+            <div class="accordion">
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 1: Basic User Creation (Not Recommended)</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Minimal useradd</span>
+                            </div>
+                            <div class="code-block"><code>sudo useradd jsmith</code></div>
+                            
+                            <div class="warning-box">
+                                <strong>⚠️ Problem:</strong> This creates a user but:
+                                <ul style="margin-top: 10px;">
+                                    <li>No home directory is created</li>
+                                    <li>No password is set (cannot log in)</li>
+                                    <li>Uses system default shell</li>
+                                    <li>No descriptive information</li>
+                                </ul>
+                            </div>
+                            <p>While technically valid, this approach leaves the account incomplete and unusable for interactive login.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 2: Complete Interactive User (Recommended)</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Full useradd with common options</span>
+                            </div>
+                            <div class="code-block"><code>sudo useradd -m -d /home/jsmith -s /bin/bash -c "John Smith" jsmith</code></div>
+                            
+                            <p><strong>Option breakdown:</strong></p>
+                            <ul>
+                                <li><code class="inline-code">-m</code> — Create home directory</li>
+                                <li><code class="inline-code">-d /home/jsmith</code> — Set home directory path</li>
+                                <li><code class="inline-code">-s /bin/bash</code> — Set Bash as login shell</li>
+                                <li><code class="inline-code">-c "John Smith"</code> — Set full name in GECOS field</li>
+                                <li><code class="inline-code">jsmith</code> — Username</li>
+                            </ul>
+
+                            <div class="success-box">
+                                <strong>✓ Best Practice:</strong> Always use <code class="inline-code">-m</code> for interactive users to ensure they have a home directory. The <code class="inline-code">-c</code> option helps identify accounts when reviewing the system.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 3: User with Group Assignments</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Create user with primary and supplementary groups</span>
+                            </div>
+                            <div class="code-block"><code># First, ensure groups exist
+sudo groupadd engineering
+sudo groupadd developers
+
+# Create user with group assignments
+sudo useradd -m -s /bin/bash -c "Alice Smith" -g engineering -G developers,sudo asmith</code></div>
+                            
+                            <p><strong>Option breakdown:</strong></p>
+                            <ul>
+                                <li><code class="inline-code">-g engineering</code> — Primary group is "engineering"</li>
+                                <li><code class="inline-code">-G developers,sudo</code> — Supplementary groups (comma-separated, no spaces)</li>
+                            </ul>
+
+                            <div class="info-box">
+                                <strong>💡 Primary vs Supplementary Groups:</strong>
+                                <ul style="margin-top: 10px;">
+                                    <li><strong>Primary group (-g):</strong> Default group for new files created by user</li>
+                                    <li><strong>Supplementary groups (-G):</strong> Additional groups for access permissions</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 4: Service Account (No Login)</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Create a service account</span>
+                            </div>
+                            <div class="code-block"><code>sudo useradd -r -s /sbin/nologin -c "Backup Service Account" -d /var/backup svc_backup</code></div>
+                            
+                            <p><strong>Option breakdown:</strong></p>
+                            <ul>
+                                <li><code class="inline-code">-r</code> — Create system account (UID in system range)</li>
+                                <li><code class="inline-code">-s /sbin/nologin</code> — Prevent interactive login</li>
+                                <li><code class="inline-code">-d /var/backup</code> — Service-specific directory</li>
+                            </ul>
+
+                            <div class="key-term">
+                                <strong>🔒 Security Best Practice:</strong> Service accounts should always use <code class="inline-code">/sbin/nologin</code> or <code class="inline-code">/usr/sbin/nologin</code> as their shell. This prevents anyone from using the account for interactive access, even if they obtain the password.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 5: Temporary/Contractor Account</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Create account with expiration date</span>
+                            </div>
+                            <div class="code-block"><code>sudo useradd -m -s /bin/bash -c "Contractor - Project X" -e 2026-06-30 contractor1</code></div>
+                            
+                            <p><strong>Option breakdown:</strong></p>
+                            <ul>
+                                <li><code class="inline-code">-e 2026-06-30</code> — Account expires on June 30, 2026</li>
+                            </ul>
+
+                            <div class="info-box">
+                                <strong>💡 Use Case:</strong> Setting expiration dates is essential for contractor accounts, interns, or temporary employees. The account automatically becomes unusable after the expiration date, reducing the risk of orphaned accounts.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Verifying User Creation</h3>
+            <p>After creating a user, verify the account was set up correctly:</p>
+
+            <div class="terminal-sim">
+                <div class="terminal-header">
+                    <span class="terminal-btn red"></span>
+                    <span class="terminal-btn yellow"></span>
+                    <span class="terminal-btn green"></span>
+                    <span class="terminal-title">Terminal - Verifying user creation</span>
+                </div>
+                <div class="terminal-body"><span class="terminal-prompt">$ </span><span class="terminal-command">sudo useradd -m -s /bin/bash -c "John Smith" jsmith</span>
+
+<span class="terminal-prompt">$ </span><span class="terminal-command">getent passwd jsmith</span>
+<span class="terminal-output">jsmith:x:1001:1001:John Smith:/home/jsmith:/bin/bash</span>
+
+<span class="terminal-prompt">$ </span><span class="terminal-command">id jsmith</span>
+<span class="terminal-output">uid=1001(jsmith) gid=1001(jsmith) groups=1001(jsmith)</span>
+
+<span class="terminal-prompt">$ </span><span class="terminal-command">ls -la /home/jsmith</span>
+<span class="terminal-output">total 20
+drwxr-xr-x 2 jsmith jsmith 4096 Feb 23 10:00 .
+drwxr-xr-x 5 root   root   4096 Feb 23 10:00 ..
+-rw-r--r-- 1 jsmith jsmith  220 Feb 23 10:00 .bash_logout
+-rw-r--r-- 1 jsmith jsmith 3771 Feb 23 10:00 .bashrc
+-rw-r--r-- 1 jsmith jsmith  807 Feb 23 10:00 .profile</span></div>
+            </div>
+
+            <h3>Default Settings</h3>
+            <p>The <code class="inline-code">useradd</code> command uses default values from two configuration files:</p>
+
+            <div class="code-header">
+                <span>Command: View useradd defaults</span>
+            </div>
+            <div class="code-block"><code>useradd -D</code></div>
+
+            <div class="code-header">
+                <span>Output: Default useradd settings</span>
+            </div>
+            <div class="code-block"><code>GROUP=100
+HOME=/home
+INACTIVE=-1
+EXPIRE=
+SHELL=/bin/sh
+SKEL=/etc/skel
+CREATE_MAIL_SPOOL=yes</code></div>
+
+            <div class="info-box">
+                <strong>📁 /etc/skel Directory:</strong> When <code class="inline-code">-m</code> is used, files from <code class="inline-code">/etc/skel</code> are copied to the new user's home directory. This typically includes <code class="inline-code">.bashrc</code>, <code class="inline-code">.profile</code>, and <code class="inline-code">.bash_logout</code>. Administrators can customize <code class="inline-code">/etc/skel</code> to provide standard configurations for all new users.
+            </div>
+
+            <div class="interactive-component">
+                <h4>Interactive: useradd Command Builder</h4>
+                <p>Build a <code class="inline-code">useradd</code> command by selecting options:</p>
+                
+                <div class="command-builder">
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="opt-m" onchange="buildUseraddCommand()" checked>
+                            <span><code class="inline-code">-m</code> Create home directory</span>
+                        </label>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="opt-s" onchange="buildUseraddCommand()" checked>
+                            <span><code class="inline-code">-s</code> Shell:</span>
+                        </label>
+                        <select id="opt-s-value" onchange="buildUseraddCommand()" style="padding: 5px; margin-left: 10px;">
+                            <option value="/bin/bash">/bin/bash</option>
+                            <option value="/bin/sh">/bin/sh</option>
+                            <option value="/bin/zsh">/bin/zsh</option>
+                            <option value="/sbin/nologin">/sbin/nologin</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="opt-c" onchange="buildUseraddCommand()">
+                            <span><code class="inline-code">-c</code> Comment:</span>
+                        </label>
+                        <input type="text" id="opt-c-value" placeholder="Full Name" onkeyup="buildUseraddCommand()">
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="opt-g" onchange="buildUseraddCommand()">
+                            <span><code class="inline-code">-g</code> Primary group:</span>
+                        </label>
+                        <input type="text" id="opt-g-value" placeholder="groupname" onkeyup="buildUseraddCommand()">
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="opt-G" onchange="buildUseraddCommand()">
+                            <span><code class="inline-code">-G</code> Supplementary groups:</span>
+                        </label>
+                        <input type="text" id="opt-G-value" placeholder="group1,group2" onkeyup="buildUseraddCommand()">
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <input type="checkbox" id="opt-e" onchange="buildUseraddCommand()">
+                            <span><code class="inline-code">-e</code> Expiration date:</span>
+                        </label>
+                        <input type="date" id="opt-e-value" onchange="buildUseraddCommand()">
+                    </div>
+                    <div class="option-group">
+                        <label>
+                            <span>Username:</span>
+                        </label>
+                        <input type="text" id="username-value" placeholder="username" value="newuser" onkeyup="buildUseraddCommand()">
+                    </div>
+                    
+                    <div class="command-builder-output" id="useradd-output">sudo useradd -m -s /bin/bash newuser</div>
+                </div>
+            </div>
+
+            <div class="completion-checkbox">
+                <input type="checkbox" id="complete-useradd" onchange="updateProgress()">
+                <label for="complete-useradd">I understand how to create users with useradd</label>
+            </div>
+        </section>
+
+        <!-- passwd Section -->
+        <section id="passwd" class="section" role="tabpanel" aria-labelledby="tab-passwd">
+            <h2>Managing Passwords with passwd <span class="cslo-tag">CSLO 1, 2</span></h2>
+
+            <h3>Command Overview</h3>
+            <p>The <code class="inline-code">passwd</code> command sets and manages user passwords. It modifies the <code class="inline-code">/etc/shadow</code> file and can also lock/unlock accounts and set password expiration policies.</p>
+
+            <div class="syntax-box">
+                <div class="syntax-title">Basic Syntax</div>
+                <div class="syntax-content">passwd [OPTIONS] [USERNAME]</div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Note:</strong> Regular users can change their own password by running <code class="inline-code">passwd</code> without arguments. Changing another user's password requires root privileges (<code class="inline-code">sudo</code>).
+            </div>
+
+            <h3>Essential Options</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="inline-code">-l</code></td>
+                        <td>Lock the account (disable password)</td>
+                        <td><code class="inline-code">sudo passwd -l jsmith</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-u</code></td>
+                        <td>Unlock the account</td>
+                        <td><code class="inline-code">sudo passwd -u jsmith</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-e</code></td>
+                        <td>Expire password (force change on next login)</td>
+                        <td><code class="inline-code">sudo passwd -e jsmith</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-d</code></td>
+                        <td>Delete password (make account passwordless)</td>
+                        <td><code class="inline-code">sudo passwd -d jsmith</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-S</code></td>
+                        <td>Display password status</td>
+                        <td><code class="inline-code">sudo passwd -S jsmith</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-n</code></td>
+                        <td>Set minimum days between password changes</td>
+                        <td><code class="inline-code">sudo passwd -n 7 jsmith</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-x</code></td>
+                        <td>Set maximum days password is valid</td>
+                        <td><code class="inline-code">sudo passwd -x 90 jsmith</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-w</code></td>
+                        <td>Set warning days before expiration</td>
+                        <td><code class="inline-code">sudo passwd -w 14 jsmith</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Common Operations</h3>
+
+            <div class="accordion">
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Setting a Password for a New User</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <p>After creating a user with <code class="inline-code">useradd</code>, you must set a password before the user can log in:</p>
+                            
+                            <div class="terminal-sim">
+                                <div class="terminal-header">
+                                    <span class="terminal-btn red"></span>
+                                    <span class="terminal-btn yellow"></span>
+                                    <span class="terminal-btn green"></span>
+                                    <span class="terminal-title">Terminal - Setting user password</span>
+                                </div>
+                                <div class="terminal-body"><span class="terminal-prompt">$ </span><span class="terminal-command">sudo passwd jsmith</span>
+<span class="terminal-output">New password: </span>
+<span class="terminal-output">Retype new password: </span>
+<span class="terminal-output">passwd: password updated successfully</span></div>
+                            </div>
+
+                            <div class="warning-box">
+                                <strong>⚠️ Security Note:</strong> Passwords are entered interactively and not displayed on screen. Never include passwords directly in scripts or command lines where they could be logged in shell history.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Forcing Password Change on First Login</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <p>Best practice: Set a temporary password and force the user to change it:</p>
+                            
+                            <div class="code-header">
+                                <span>Command: Set password and expire it</span>
+                            </div>
+                            <div class="code-block"><code># Set initial password
+sudo passwd jsmith
+
+# Force password change on next login
+sudo passwd -e jsmith</code></div>
+
+                            <p>When the user logs in, they'll see:</p>
+                            <div class="code-block"><code>WARNING: Your password has expired.
+You must change your password now and login again!
+Changing password for jsmith.
+Current password:
+New password:
+Retype new password:</code></div>
+
+                            <div class="success-box">
+                                <strong>✓ Best Practice:</strong> Always expire passwords for new accounts. This ensures users set their own passwords and the temporary password is never reused.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Checking Password Status</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="terminal-sim">
+                                <div class="terminal-header">
+                                    <span class="terminal-btn red"></span>
+                                    <span class="terminal-btn yellow"></span>
+                                    <span class="terminal-btn green"></span>
+                                    <span class="terminal-title">Terminal - Password status</span>
+                                </div>
+                                <div class="terminal-body"><span class="terminal-prompt">$ </span><span class="terminal-command">sudo passwd -S jsmith</span>
+<span class="terminal-output">jsmith P 02/23/2026 0 99999 7 -1</span></div>
+                            </div>
+
+                            <p><strong>Status field meanings:</strong></p>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Field</th>
+                                        <th>Position</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Username</td>
+                                        <td>1</td>
+                                        <td>jsmith</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Status</td>
+                                        <td>2</td>
+                                        <td>P=password set, L=locked, NP=no password</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Last change</td>
+                                        <td>3</td>
+                                        <td>Date of last password change</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Min days</td>
+                                        <td>4</td>
+                                        <td>Minimum days between changes</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Max days</td>
+                                        <td>5</td>
+                                        <td>Maximum password age</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Warn days</td>
+                                        <td>6</td>
+                                        <td>Warning period before expiration</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Inactive</td>
+                                        <td>7</td>
+                                        <td>Days after expiration until disabled</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Locking and Unlocking Accounts</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <p>Locking an account prevents login without deleting the account:</p>
+                            
+                            <div class="code-header">
+                                <span>Command: Lock and unlock account</span>
+                            </div>
+                            <div class="code-block"><code># Lock the account
+sudo passwd -l jsmith
+
+# Check status (note the L)
+sudo passwd -S jsmith
+jsmith L 02/23/2026 0 99999 7 -1
+
+# Unlock the account
+sudo passwd -u jsmith</code></div>
+
+                            <div class="info-box">
+                                <strong>💡 How locking works:</strong> The <code class="inline-code">-l</code> option prepends a <code class="inline-code">!</code> to the password hash in <code class="inline-code">/etc/shadow</code>, making the hash invalid. Unlocking removes the <code class="inline-code">!</code>.
+                            </div>
+
+                            <p><strong>When to lock accounts:</strong></p>
+                            <ul>
+                                <li>Employee leaves the organization (temporary measure before deletion)</li>
+                                <li>Security incident investigation</li>
+                                <li>Extended leave of absence</li>
+                                <li>Suspected account compromise</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Setting Password Aging Policies</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Configure password aging</span>
+                            </div>
+                            <div class="code-block"><code># Set maximum password age to 90 days
+sudo passwd -x 90 jsmith
+
+# Set minimum days between changes to 7
+sudo passwd -n 7 jsmith
+
+# Set warning period to 14 days
+sudo passwd -w 14 jsmith
+
+# Combine all options
+sudo passwd -x 90 -n 7 -w 14 jsmith</code></div>
+
+                            <div class="info-box">
+                                <strong>💡 Note:</strong> For more comprehensive password aging configuration, use the <code class="inline-code">chage</code> command (covered in Module 6.6). The <code class="inline-code">chage</code> command provides additional options and a more user-friendly interface.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>User Changing Their Own Password</h3>
+            <p>Regular users can change their own password without sudo:</p>
+
+            <div class="terminal-sim">
+                <div class="terminal-header">
+                    <span class="terminal-btn red"></span>
+                    <span class="terminal-btn yellow"></span>
+                    <span class="terminal-btn green"></span>
+                    <span class="terminal-title">Terminal - User changing own password</span>
+                </div>
+                <div class="terminal-body"><span class="terminal-prompt">jsmith@server:~$ </span><span class="terminal-command">passwd</span>
+<span class="terminal-output">Changing password for jsmith.
+Current password: </span>
+<span class="terminal-output">New password: </span>
+<span class="terminal-output">Retype new password: </span>
+<span class="terminal-output">passwd: password updated successfully</span></div>
+            </div>
+
+            <div class="danger-box">
+                <strong>🚫 Never Use:</strong> <code class="inline-code">sudo passwd -d username</code> removes the password entirely, allowing passwordless login. This is a serious security vulnerability and should never be used on production systems.
+            </div>
+
+            <div class="interactive-component">
+                <h4>Knowledge Check: passwd Command</h4>
+                <div class="quiz-question">
+                    <p>A user reports they cannot log in. You check and find their password status shows "L". What happened and how do you fix it?</p>
+                    <ul class="quiz-options">
+                        <li>
+                            <label>
+                                <input type="radio" name="q-passwd" value="a">
+                                <span>Password expired; use <code class="inline-code">sudo passwd username</code> to set new password</span>
+                            </label>
+                        </li>
+                        <li>
+                            <label>
+                                <input type="radio" name="q-passwd" value="b">
+                                <span>Account is locked; use <code class="inline-code">sudo passwd -u username</code> to unlock</span>
+                            </label>
+                        </li>
+                        <li>
+                            <label>
+                                <input type="radio" name="q-passwd" value="c">
+                                <span>No password set; use <code class="inline-code">sudo passwd -d username</code> to enable login</span>
+                            </label>
+                        </li>
+                        <li>
+                            <label>
+                                <input type="radio" name="q-passwd" value="d">
+                                <span>Account deleted; recreate with <code class="inline-code">useradd</code></span>
+                            </label>
+                        </li>
+                    </ul>
+                    <button class="btn" onclick="checkPasswdQuiz()">Check Answer</button>
+                    <div id="passwd-quiz-feedback" class="quiz-feedback"></div>
+                </div>
+            </div>
+
+            <div class="completion-checkbox">
+                <input type="checkbox" id="complete-passwd" onchange="updateProgress()">
+                <label for="complete-passwd">I understand how to manage passwords with passwd</label>
+            </div>
+        </section>
+
+        <!-- usermod Section -->
+        <section id="usermod" class="section" role="tabpanel" aria-labelledby="tab-usermod">
+            <h2>Modifying Users with usermod <span class="cslo-tag">CSLO 1</span></h2>
+
+            <h3>Command Overview</h3>
+            <p>The <code class="inline-code">usermod</code> command modifies existing user accounts. It can change almost any attribute that was set during user creation, including username, home directory, shell, and group memberships.</p>
+
+            <div class="syntax-box">
+                <div class="syntax-title">Basic Syntax</div>
+                <div class="syntax-content">sudo usermod [OPTIONS] USERNAME</div>
+            </div>
+
+            <h3>Essential Options</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="inline-code">-l</code></td>
+                        <td>Change username (login name)</td>
+                        <td><code class="inline-code">-l newname oldname</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-d</code></td>
+                        <td>Change home directory</td>
+                        <td><code class="inline-code">-d /new/home</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-m</code></td>
+                        <td>Move home directory contents (use with -d)</td>
+                        <td><code class="inline-code">-d /new/home -m</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-s</code></td>
+                        <td>Change login shell</td>
+                        <td><code class="inline-code">-s /bin/zsh</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-c</code></td>
+                        <td>Change comment (GECOS)</td>
+                        <td><code class="inline-code">-c "New Name"</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-g</code></td>
+                        <td>Change primary group</td>
+                        <td><code class="inline-code">-g newgroup</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-G</code></td>
+                        <td>Set supplementary groups (replaces all)</td>
+                        <td><code class="inline-code">-G group1,group2</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-aG</code></td>
+                        <td>Append to supplementary groups</td>
+                        <td><code class="inline-code">-aG newgroup</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-L</code></td>
+                        <td>Lock account</td>
+                        <td><code class="inline-code">-L</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-U</code></td>
+                        <td>Unlock account</td>
+                        <td><code class="inline-code">-U</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-e</code></td>
+                        <td>Set account expiration date</td>
+                        <td><code class="inline-code">-e 2026-12-31</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Critical Warning: -G vs -aG</h3>
+            <div class="danger-box">
+                <strong>🚨 CRITICAL: The Most Common usermod Mistake</strong>
+                <p style="margin-top: 10px;">Using <code class="inline-code">-G</code> alone <strong>REPLACES</strong> all supplementary groups. Using <code class="inline-code">-aG</code> <strong>APPENDS</strong> to existing groups.</p>
+                <p style="margin-top: 10px;">This mistake can remove users from critical groups like <code class="inline-code">sudo</code>, locking them out of administrative access!</p>
+            </div>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Wrong Command</th>
+                            <th>Correct Command</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Add user to "developers" group (user is already in sudo, docker)</td>
+                            <td><code class="inline-code">sudo usermod -G developers jsmith</code><br><span style="color: #e74c3c;">❌ Removes from sudo, docker!</span></td>
+                            <td><code class="inline-code">sudo usermod -aG developers jsmith</code><br><span style="color: #27ae60;">✓ Keeps existing groups</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Usage Examples</h3>
+
+            <div class="accordion">
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 1: Adding User to a Group (Safe Method)</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="terminal-sim">
+                                <div class="terminal-header">
+                                    <span class="terminal-btn red"></span>
+                                    <span class="terminal-btn yellow"></span>
+                                    <span class="terminal-btn green"></span>
+                                    <span class="terminal-title">Terminal - Adding user to group</span>
+                                </div>
+                                <div class="terminal-body"><span class="terminal-prompt">$ </span><span class="terminal-command">id jsmith</span>
+<span class="terminal-output">uid=1001(jsmith) gid=1001(jsmith) groups=1001(jsmith),27(sudo)</span>
+
+<span class="terminal-prompt">$ </span><span class="terminal-command">sudo usermod -aG docker jsmith</span>
+
+<span class="terminal-prompt">$ </span><span class="terminal-command">id jsmith</span>
+<span class="terminal-output">uid=1001(jsmith) gid=1001(jsmith) groups=1001(jsmith),27(sudo),999(docker)</span></div>
+                            </div>
+                            
+                            <div class="success-box">
+                                <strong>✓ Result:</strong> User is now in docker group while retaining membership in sudo and their primary group.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 2: Changing Username</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <p>When an employee changes their name (e.g., after marriage):</p>
+                            
+                            <div class="code-header">
+                                <span>Command: Change username and related attributes</span>
+                            </div>
+                            <div class="code-block"><code># Change the login name
+sudo usermod -l jdoe jsmith
+
+# Update the comment/full name
+sudo usermod -c "Jane Doe" jdoe
+
+# Move home directory to match new name
+sudo usermod -d /home/jdoe -m jdoe</code></div>
+
+                            <div class="warning-box">
+                                <strong>⚠️ Important:</strong> The user should not be logged in when changing their username. Use <code class="inline-code">who</code> to verify, and consider scheduling this during off-hours.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 3: Changing User's Shell</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Change login shell</span>
+                            </div>
+                            <div class="code-block"><code># Change to zsh
+sudo usermod -s /bin/zsh jsmith
+
+# Disable interactive login (for service accounts)
+sudo usermod -s /sbin/nologin svc_backup
+
+# Verify the change
+getent passwd jsmith | cut -d: -f7</code></div>
+
+                            <div class="info-box">
+                                <strong>💡 Available Shells:</strong> View valid shells with <code class="inline-code">cat /etc/shells</code>. Users can only be assigned shells listed in this file.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 4: Moving Home Directory</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Move home directory with contents</span>
+                            </div>
+                            <div class="code-block"><code># Move home directory and all contents
+sudo usermod -d /data/users/jsmith -m jsmith
+
+# Verify the change
+getent passwd jsmith
+ls -la /data/users/jsmith</code></div>
+
+                            <div class="warning-box">
+                                <strong>⚠️ Important:</strong> Always use <code class="inline-code">-m</code> with <code class="inline-code">-d</code> to move existing files. Without <code class="inline-code">-m</code>, only the home directory path in <code class="inline-code">/etc/passwd</code> changes—files are not moved.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 5: Setting Account Expiration</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Set and remove expiration</span>
+                            </div>
+                            <div class="code-block"><code># Set expiration date
+sudo usermod -e 2026-06-30 contractor1
+
+# Remove expiration (set to empty)
+sudo usermod -e "" contractor1
+
+# Verify with chage
+sudo chage -l contractor1</code></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Example 6: Changing Primary Group</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Change primary group</span>
+                            </div>
+                            <div class="code-block"><code># Change primary group to engineering
+sudo usermod -g engineering jsmith
+
+# Verify
+id jsmith</code></div>
+
+                            <div class="info-box">
+                                <strong>💡 Effect:</strong> New files created by the user will have the new primary group as their group owner. Existing files retain their original group ownership.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Locking and Unlocking with usermod</h3>
+            <p>Both <code class="inline-code">passwd</code> and <code class="inline-code">usermod</code> can lock/unlock accounts:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>passwd command</th>
+                        <th>usermod command</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Lock account</td>
+                        <td><code class="inline-code">sudo passwd -l username</code></td>
+                        <td><code class="inline-code">sudo usermod -L username</code></td>
+                    </tr>
+                    <tr>
+                        <td>Unlock account</td>
+                        <td><code class="inline-code">sudo passwd -u username</code></td>
+                        <td><code class="inline-code">sudo usermod -U username</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="interactive-component">
+                <h4>Practice Exercise: Fix the Command</h4>
+                <p>A junior admin ran this command to add user "asmith" to the "webdev" group:</p>
+                <div class="code-block"><code>sudo usermod -G webdev asmith</code></div>
+                <p>Before the command, <code class="inline-code">id asmith</code> showed:</p>
+                <div class="code-block"><code>uid=1002(asmith) gid=1002(asmith) groups=1002(asmith),27(sudo),1003(developers)</code></div>
+                
+                <div class="quiz-question">
+                    <p>What happened, and what command should have been used?</p>
+                    <input type="text" class="exercise-input" id="usermod-fix" placeholder="Enter the correct command">
+                    <button class="btn" onclick="checkUsermodFix()">Check Answer</button>
+                    <div id="usermod-fix-feedback" class="exercise-feedback"></div>
+                </div>
+            </div>
+
+            <div class="completion-checkbox">
+                <input type="checkbox" id="complete-usermod" onchange="updateProgress()">
+                <label for="complete-usermod">I understand how to modify users with usermod (especially -aG vs -G)</label>
+            </div>
+        </section>
+
+        <!-- userdel Section -->
+        <section id="userdel" class="section" role="tabpanel" aria-labelledby="tab-userdel">
+            <h2>Deleting Users with userdel <span class="cslo-tag">CSLO 1</span></h2>
+
+            <h3>Command Overview</h3>
+            <p>The <code class="inline-code">userdel</code> command removes user accounts from the system. It can optionally remove the user's home directory and mail spool.</p>
+
+            <div class="syntax-box">
+                <div class="syntax-title">Basic Syntax</div>
+                <div class="syntax-content">sudo userdel [OPTIONS] USERNAME</div>
+            </div>
+
+            <h3>Options</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Description</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="inline-code">-r</code></td>
+                        <td>Remove home directory and mail spool</td>
+                        <td>Complete user removal</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">-f</code></td>
+                        <td>Force removal even if user is logged in</td>
+                        <td>Emergency situations only</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Deletion Approaches</h3>
+
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Approach</th>
+                            <th>Command</th>
+                            <th>What Gets Removed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Account Only</strong></td>
+                            <td><code class="inline-code">sudo userdel jsmith</code></td>
+                            <td>
+                                ✓ /etc/passwd entry<br>
+                                ✓ /etc/shadow entry<br>
+                                ✓ /etc/group membership<br>
+                                ✗ Home directory (preserved)<br>
+                                ✗ Mail spool (preserved)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Complete Removal</strong></td>
+                            <td><code class="inline-code">sudo userdel -r jsmith</code></td>
+                            <td>
+                                ✓ /etc/passwd entry<br>
+                                ✓ /etc/shadow entry<br>
+                                ✓ /etc/group membership<br>
+                                ✓ Home directory<br>
+                                ✓ Mail spool
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Best Practices for User Deletion</h3>
+
+            <div class="accordion">
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Step 1: Verify the User Exists</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Check user before deletion</span>
+                            </div>
+                            <div class="code-block"><code># Verify user exists
+getent passwd jsmith
+
+# Check user's groups
+id jsmith
+
+# Check user's home directory contents
+ls -la /home/jsmith</code></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Step 2: Check for Running Processes</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Find user's processes</span>
+                            </div>
+                            <div class="code-block"><code># Check if user is logged in
+who | grep jsmith
+
+# Find processes owned by user
+ps -u jsmith
+
+# Find all processes by UID
+pgrep -u jsmith</code></div>
+
+                            <div class="warning-box">
+                                <strong>⚠️ Important:</strong> Users should not be logged in when deleted. Kill their processes or wait for them to log out. Using <code class="inline-code">-f</code> to force deletion while logged in can cause issues.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Step 3: Backup User Data (If Needed)</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="code-header">
+                                <span>Command: Backup before deletion</span>
+                            </div>
+                            <div class="code-block"><code># Create archive of home directory
+sudo tar -czvf /backup/jsmith_home_$(date +%Y%m%d).tar.gz /home/jsmith
+
+# Or copy to archive location
+sudo cp -r /home/jsmith /archive/departed_users/</code></div>
+
+                            <div class="info-box">
+                                <strong>💡 Policy Consideration:</strong> Many organizations require retaining user data for a period after departure (30-90 days is common). Check your organization's data retention policy before deleting user files.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Step 4: Delete the User</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="terminal-sim">
+                                <div class="terminal-header">
+                                    <span class="terminal-btn red"></span>
+                                    <span class="terminal-btn yellow"></span>
+                                    <span class="terminal-btn green"></span>
+                                    <span class="terminal-title">Terminal - Deleting user</span>
+                                </div>
+                                <div class="terminal-body"><span class="terminal-prompt">$ </span><span class="terminal-command">sudo userdel -r jsmith</span>
+
+<span class="terminal-prompt">$ </span><span class="terminal-command">getent passwd jsmith</span>
+<span class="terminal-output">(no output - user deleted)</span>
+
+<span class="terminal-prompt">$ </span><span class="terminal-command">ls /home/jsmith</span>
+<span class="terminal-error">ls: cannot access '/home/jsmith': No such file or directory</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <button class="accordion-header" aria-expanded="false">Step 5: Find Orphaned Files</button>
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <p>After deleting a user, files they owned outside their home directory become "orphaned" (owned by a non-existent UID):</p>
+                            
+                            <div class="code-header">
+                                <span>Command: Find orphaned files</span>
+                            </div>
+                            <div class="code-block"><code># Find files with no valid owner
+sudo find / -nouser -ls 2>/dev/null
+
+# Find files with no valid group
+sudo find / -nogroup -ls 2>/dev/null</code></div>
+
+                            <div class="info-box">
+                                <strong>💡 Cleanup:</strong> Orphaned files should be reassigned to appropriate owners or deleted. They display numeric UIDs instead of usernames.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Alternative: Lock Instead of Delete</h3>
+            <p>Sometimes it's better to lock an account rather than delete it immediately:</p>
+
+            <div class="code-header">
+                <span>Command: Lock account instead of deleting</span>
+            </div>
+            <div class="code-block"><code># Lock the account
+sudo usermod -L jsmith
+
+# Set expiration to today
+sudo usermod -e $(date +%Y-%m-%d) jsmith
+
+# Change shell to nologin
+sudo usermod -s /sbin/nologin jsmith</code></div>
+
+            <div class="success-box">
+                <strong>✓ Benefits of Locking:</strong>
+                <ul style="margin-top: 10px;">
+                    <li>User data preserved for potential recovery</li>
+                    <li>File ownership remains traceable</li>
+                    <li>Easy to restore if deletion was a mistake</li>
+                    <li>Allows time for data backup and review</li>
+                </ul>
+            </div>
+
+            <h3>Handling Deletion Errors</h3>
+
+            <div class="code-header">
+                <span>Error: User is currently logged in</span>
+            </div>
+            <div class="code-block"><code>$ sudo userdel jsmith
+userdel: user jsmith is currently used by process 12345</code></div>
+
+            <p><strong>Solutions:</strong></p>
+            <ol>
+                <li>Wait for user to log out</li>
+                <li>Ask user to log out</li>
+                <li>Kill user's processes: <code class="inline-code">sudo pkill -u jsmith</code></li>
+                <li>Force deletion (last resort): <code class="inline-code">sudo userdel -f jsmith</code></li>
+            </ol>
+
+            <div class="interactive-component">
+                <h4>Scenario Exercise</h4>
+                <div class="quiz-question">
+                    <p>An employee named "bwilson" is leaving the company. Your manager asks you to remove their account but preserve their files for 30 days. What's the best approach?</p>
+                    <ul class="quiz-options">
+                        <li>
+                            <label>
+                                <input type="radio" name="q-userdel" value="a">
+                                <span>Run <code class="inline-code">sudo userdel -r bwilson</code> immediately</span>
+                            </label>
+                        </li>
+                        <li>
+                            <label>
+                                <input type="radio" name="q-userdel" value="b">
+                                <span>Lock the account, backup home directory, then delete after 30 days</span>
+                            </label>
+                        </li>
+                        <li>
+                            <label>
+                                <input type="radio" name="q-userdel" value="c">
+                                <span>Run <code class="inline-code">sudo userdel bwilson</code> (without -r) to preserve files</span>
+                            </label>
+                        </li>
+                        <li>
+                            <label>
+                                <input type="radio" name="q-userdel" value="d">
+                                <span>Just change their password so they can't log in</span>
+                            </label>
+                        </li>
+                    </ul>
+                    <button class="btn" onclick="checkUserdelQuiz()">Check Answer</button>
+                    <div id="userdel-quiz-feedback" class="quiz-feedback"></div>
+                </div>
+            </div>
+
+            <div class="completion-checkbox">
+                <input type="checkbox" id="complete-userdel" onchange="updateProgress()">
+                <label for="complete-userdel">I understand how to safely delete users with userdel</label>
+            </div>
+        </section>
+
+        <!-- Practice Section -->
+        <section id="practice" class="section" role="tabpanel" aria-labelledby="tab-practice">
+            <h2>Practice Activities <span class="cslo-tag">CSLO 1</span></h2>
+
+            <h3>Lab 6 Part A Preview</h3>
+            <p>In Lab 6, you'll create the following users on your Linux server:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Primary Group</th>
+                        <th>Shell</th>
+                        <th>Home Directory</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>asmith</td>
+                        <td>Alice Smith</td>
+                        <td>accounting</td>
+                        <td>/bin/bash</td>
+                        <td>/home/asmith</td>
+                    </tr>
+                    <tr>
+                        <td>bwilson</td>
+                        <td>Bob Wilson</td>
+                        <td>engineering</td>
+                        <td>/bin/bash</td>
+                        <td>/home/bwilson</td>
+                    </tr>
+                    <tr>
+                        <td>cjones</td>
+                        <td>Carol Jones</td>
+                        <td>marketing</td>
+                        <td>/bin/bash</td>
+                        <td>/home/cjones</td>
+                    </tr>
+                    <tr>
+                        <td>dlee</td>
+                        <td>David Lee</td>
+                        <td>engineering</td>
+                        <td>/bin/bash</td>
+                        <td>/home/dlee</td>
+                    </tr>
+                    <tr>
+                        <td>svc_backup</td>
+                        <td>Backup Service</td>
+                        <td>backup</td>
+                        <td>/sbin/nologin</td>
+                        <td>/var/backup</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Command Construction Exercise</h3>
+            <div class="interactive-component">
+                <h4>Build the Commands</h4>
+                <p>For each user above, write the complete <code class="inline-code">useradd</code> command. (Assume groups already exist)</p>
+
+                <div class="quiz-question">
+                    <p><strong>User: asmith</strong> - Alice Smith, accounting group, bash shell</p>
+                    <input type="text" class="exercise-input" id="cmd-asmith" placeholder="sudo useradd ...">
+                    <button class="btn" onclick="checkCommand('asmith')">Check</button>
+                    <div id="cmd-asmith-feedback" class="exercise-feedback"></div>
+                </div>
+
+                <div class="quiz-question">
+                    <p><strong>User: svc_backup</strong> - Service account, backup group, no login shell, home at /var/backup</p>
+                    <input type="text" class="exercise-input" id="cmd-svcbackup" placeholder="sudo useradd ...">
+                    <button class="btn" onclick="checkCommand('svcbackup')">Check</button>
+                    <div id="cmd-svcbackup-feedback" class="exercise-feedback"></div>
+                </div>
+            </div>
+
+            <h3>Comprehensive Quiz</h3>
+            <div class="interactive-component">
+                <h4>Module 6.2 Assessment</h4>
+
+                <div class="quiz-question">
+                    <p><strong>Question 1:</strong> Which option creates a home directory when using useradd?</p>
+                    <ul class="quiz-options">
+                        <li><label><input type="radio" name="final-q1" value="a"><span><code class="inline-code">-h</code></span></label></li>
+                        <li><label><input type="radio" name="final-q1" value="b"><span><code class="inline-code">-m</code></span></label></li>
+                        <li><label><input type="radio" name="final-q1" value="c"><span><code class="inline-code">-d</code></span></label></li>
+                        <li><label><input type="radio" name="final-q1" value="d"><span><code class="inline-code">-c</code></span></label></li>
+                    </ul>
+                </div>
+
+                <div class="quiz-question">
+                    <p><strong>Question 2:</strong> What is the critical difference between <code class="inline-code">usermod -G</code> and <code class="inline-code">usermod -aG</code>?</p>
+                    <ul class="quiz-options">
+                        <li><label><input type="radio" name="final-q2" value="a"><span>-G is for groups, -aG is for administrators</span></label></li>
+                        <li><label><input type="radio" name="final-q2" value="b"><span>-G replaces all groups, -aG appends to existing groups</span></label></li>
+                        <li><label><input type="radio" name="final-q2" value="c"><span>-G adds groups, -aG removes groups</span></label></li>
+                        <li><label><input type="radio" name="final-q2" value="d"><span>There is no difference</span></label></li>
+                    </ul>
+                </div>
+
+                <div class="quiz-question">
+                    <p><strong>Question 3:</strong> How do you force a user to change their password on next login?</p>
+                    <ul class="quiz-options">
+                        <li><label><input type="radio" name="final-q3" value="a"><span><code class="inline-code">sudo passwd -f username</code></span></label></li>
+                        <li><label><input type="radio" name="final-q3" value="b"><span><code class="inline-code">sudo passwd -e username</code></span></label></li>
+                        <li><label><input type="radio" name="final-q3" value="c"><span><code class="inline-code">sudo passwd -r username</code></span></label></li>
+                        <li><label><input type="radio" name="final-q3" value="d"><span><code class="inline-code">sudo passwd -n username</code></span></label></li>
+                    </ul>
+                </div>
+
+                <div class="quiz-question">
+                    <p><strong>Question 4:</strong> What shell should be assigned to service accounts?</p>
+                    <ul class="quiz-options">
+                        <li><label><input type="radio" name="final-q4" value="a"><span><code class="inline-code">/bin/bash</code></span></label></li>
+                        <li><label><input type="radio" name="final-q4" value="b"><span><code class="inline-code">/bin/sh</code></span></label></li>
+                        <li><label><input type="radio" name="final-q4" value="c"><span><code class="inline-code">/sbin/nologin</code></span></label></li>
+                        <li><label><input type="radio" name="final-q4" value="d"><span><code class="inline-code">/bin/false</code></span></label></li>
+                    </ul>
+                </div>
+
+                <div class="quiz-question">
+                    <p><strong>Question 5:</strong> Which command removes a user AND their home directory?</p>
+                    <ul class="quiz-options">
+                        <li><label><input type="radio" name="final-q5" value="a"><span><code class="inline-code">sudo userdel username</code></span></label></li>
+                        <li><label><input type="radio" name="final-q5" value="b"><span><code class="inline-code">sudo userdel -r username</code></span></label></li>
+                        <li><label><input type="radio" name="final-q5" value="c"><span><code class="inline-code">sudo userdel -d username</code></span></label></li>
+                        <li><label><input type="radio" name="final-q5" value="d"><span><code class="inline-code">sudo userdel -h username</code></span></label></li>
+                    </ul>
+                </div>
+
+                <button class="btn btn-primary" onclick="checkFinalQuiz()">Submit Quiz</button>
+                <div id="final-quiz-result" class="quiz-feedback" style="margin-top: 15px;"></div>
+            </div>
+
+            <h3>Quick Reference Card</h3>
+            <div class="info-box">
+                <strong>📋 User Management Commands Cheat Sheet</strong>
+                <div class="code-block" style="background: #1a1a1a; margin-top: 15px;"><code># Create user with home directory and bash shell
+sudo useradd -m -s /bin/bash -c "Full Name" username
+
+# Set password
+sudo passwd username
+
+# Force password change on next login
+sudo passwd -e username
+
+# Add user to group (SAFE - preserves existing groups)
+sudo usermod -aG groupname username
+
+# Lock account
+sudo passwd -l username
+# OR
+sudo usermod -L username
+
+# Unlock account
+sudo passwd -u username
+# OR
+sudo usermod -U username
+
+# Delete user and home directory
+sudo userdel -r username
+
+# Check password status
+sudo passwd -S username
+
+# View user info
+id username
+getent passwd username</code></div>
+            </div>
+
+            <div class="completion-checkbox">
+                <input type="checkbox" id="complete-practice" onchange="updateProgress()">
+                <label for="complete-practice">I have completed the practice activities</label>
+            </div>
+        </section>
+
+        <!-- Summary Section -->
+        <section id="summary" class="section" role="tabpanel" aria-labelledby="tab-summary">
+            <h2>Module Summary <span class="cslo-tag">CSLO 1</span></h2>
+
+            <h3>Key Takeaways</h3>
+            <div class="key-term">
+                <strong>📝 Remember These Points:</strong>
+                <ul style="margin-top: 10px;">
+                    <li><strong>useradd:</strong> Always use <code class="inline-code">-m</code> for interactive users to create home directories</li>
+                    <li><strong>passwd:</strong> Always expire passwords for new accounts with <code class="inline-code">-e</code></li>
+                    <li><strong>usermod:</strong> Use <code class="inline-code">-aG</code> (not <code class="inline-code">-G</code>) to add users to groups safely</li>
+                    <li><strong>userdel:</strong> Backup data before using <code class="inline-code">-r</code> to remove home directories</li>
+                    <li>Service accounts should use <code class="inline-code">/sbin/nologin</code> as their shell</li>
+                    <li>Lock accounts rather than delete them when immediate removal isn't required</li>
+                </ul>
+            </div>
+
+            <h3>Commands Summary</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Command</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Create interactive user</td>
+                        <td><code class="inline-code">sudo useradd -m -s /bin/bash -c "Name" user</code></td>
+                    </tr>
+                    <tr>
+                        <td>Create service account</td>
+                        <td><code class="inline-code">sudo useradd -r -s /sbin/nologin user</code></td>
+                    </tr>
+                    <tr>
+                        <td>Set password</td>
+                        <td><code class="inline-code">sudo passwd user</code></td>
+                    </tr>
+                    <tr>
+                        <td>Force password change</td>
+                        <td><code class="inline-code">sudo passwd -e user</code></td>
+                    </tr>
+                    <tr>
+                        <td>Add to group (safe)</td>
+                        <td><code class="inline-code">sudo usermod -aG group user</code></td>
+                    </tr>
+                    <tr>
+                        <td>Change shell</td>
+                        <td><code class="inline-code">sudo usermod -s /bin/zsh user</code></td>
+                    </tr>
+                    <tr>
+                        <td>Lock account</td>
+                        <td><code class="inline-code">sudo passwd -l user</code></td>
+                    </tr>
+                    <tr>
+                        <td>Delete user completely</td>
+                        <td><code class="inline-code">sudo userdel -r user</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Common Mistakes to Avoid</h3>
+            <div class="danger-box">
+                <strong>🚫 Don't Do These:</strong>
+                <ul style="margin-top: 10px;">
+                    <li>Using <code class="inline-code">usermod -G</code> instead of <code class="inline-code">usermod -aG</code> (removes from all other groups)</li>
+                    <li>Forgetting <code class="inline-code">-m</code> with useradd (no home directory created)</li>
+                    <li>Using <code class="inline-code">passwd -d</code> (creates passwordless account - security risk)</li>
+                    <li>Deleting users while they're logged in without proper process termination</li>
+                    <li>Not backing up user data before deletion</li>
+                </ul>
+            </div>
+
+            <h3>What's Next</h3>
+            <p>In <strong>Module 6.3: Linux Group Management</strong>, you will learn to:</p>
+            <ul>
+                <li>Understand the <code class="inline-code">/etc/group</code> and <code class="inline-code">/etc/gshadow</code> files</li>
+                <li>Create and manage groups with <code class="inline-code">groupadd</code>, <code class="inline-code">groupmod</code>, <code class="inline-code">groupdel</code></li>
+                <li>Manage group memberships with <code class="inline-code">gpasswd</code></li>
+                <li>Implement group-based access control strategies</li>
+            </ul>
+
+            <h3>CSLO Alignment</h3>
+            <div class="info-box">
+                <p>This module supports the following Course Student Learning Outcomes:</p>
+                <ul style="margin-top: 10px;">
+                    <li><strong>CSLO 1:</strong> Manage and maintain servers, including operating system (OS) configuration, access control and virtualization.</li>
+                    <li><strong>CSLO 2:</strong> Apply physical and network data security techniques. (Password management and account security)</li>
+                </ul>
+            </div>
+
+            <h3>Additional Resources</h3>
+            <ul>
+                <li><a href="https://man7.org/linux/man-pages/man8/useradd.8.html" target="_blank" rel="noopener">Linux man page: useradd(8)</a></li>
+                <li><a href="https://man7.org/linux/man-pages/man8/usermod.8.html" target="_blank" rel="noopener">Linux man page: usermod(8)</a></li>
+                <li><a href="https://man7.org/linux/man-pages/man8/userdel.8.html" target="_blank" rel="noopener">Linux man page: userdel(8)</a></li>
+                <li><a href="https://man7.org/linux/man-pages/man1/passwd.1.html" target="_blank" rel="noopener">Linux man page: passwd(1)</a></li>
+            </ul>
+
+            <div class="completion-checkbox">
+                <input type="checkbox" id="complete-summary" onchange="updateProgress()">
+                <label for="complete-summary">I have reviewed the module summary and am ready for Module 6.3</label>
+            </div>
+
+            <div style="margin-top: 30px; padding: 20px; background: #e8f6e8; border-radius: 8px; text-align: center;">
+                <h4 style="color: #27ae60; margin-bottom: 10px;">🎉 Module 6.2 Complete!</h4>
+                <p>You've mastered the essential Linux user management commands. Continue to Module 6.3 to learn about group management.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer role="contentinfo">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Module Information</h4>
+                <ul>
+                    <li>Module 6.2: Linux User Management Commands</li>
+                    <li>Week 6: User & Group Administration</li>
+                    <li>CSC 152 - Network OS and Administration</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Week 6 Modules</h4>
+                <ul>
+                    <li>6.1 Linux User Fundamentals ✓</li>
+                    <li><strong>6.2 Linux User Management Commands</strong> (Current)</li>
+                    <li>6.3 Linux Group Management</li>
+                    <li>6.4 Windows User Fundamentals</li>
+                    <li>6.5 Windows User & Group Management</li>
+                    <li>6.6 Password Policies & Security</li>
+                    <li>6.7 Privilege Escalation & Least Privilege</li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="#">Course Canvas Page</a></li>
+                    <li><a href="#">Lab Environment</a></li>
+                    <li><a href="#">Office Hours</a></li>
+                    <li><a href="#">IT Help Desk</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Mendocino College | CSC 152 Network Operating Systems and Administration</p>
+            <p>Instructor: David Pai | Last Updated: February 2026</p>
+        </div>
+    </footer>
+
+    <script>
+        // Progress tracking
+        const checkboxes = ['complete-overview', 'complete-useradd', 'complete-passwd', 'complete-usermod', 'complete-userdel', 'complete-practice', 'complete-summary'];
+        
+        function updateProgress() {
+            const completed = checkboxes.filter(id => document.getElementById(id).checked).length;
+            const percentage = Math.round((completed / checkboxes.length) * 100);
+            document.getElementById('progress-fill').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = percentage + '% Complete';
+            document.querySelector('.progress-bar').setAttribute('aria-valuenow', percentage);
+            
+            // Save to session storage
+            checkboxes.forEach(id => {
+                sessionStorage.setItem('m62-' + id, document.getElementById(id).checked);
+            });
+        }
+
+        // Load saved progress
+        function loadProgress() {
+            checkboxes.forEach(id => {
+                const saved = sessionStorage.getItem('m62-' + id);
+                if (saved === 'true') {
+                    document.getElementById(id).checked = true;
+                }
+            });
+            updateProgress();
+        }
+
+        // Tab navigation
+        const tabs = document.querySelectorAll('[role="tab"]');
+        const sections = document.querySelectorAll('.section');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                });
+                sections.forEach(s => s.classList.remove('active'));
+
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+                const sectionId = tab.getAttribute('aria-controls');
+                document.getElementById(sectionId).classList.add('active');
+            });
+
+            tab.addEventListener('keydown', (e) => {
+                let index = Array.from(tabs).indexOf(e.target);
+                if (e.key === 'ArrowRight') {
+                    index = (index + 1) % tabs.length;
+                    tabs[index].focus();
+                    tabs[index].click();
+                } else if (e.key === 'ArrowLeft') {
+                    index = (index - 1 + tabs.length) % tabs.length;
+                    tabs[index].focus();
+                    tabs[index].click();
+                }
+            });
+        });
+
+        // Accordion functionality
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const isActive = header.classList.contains('active');
+                
+                const accordion = header.closest('.accordion');
+                accordion.querySelectorAll('.accordion-header').forEach(h => {
+                    h.classList.remove('active');
+                    h.setAttribute('aria-expanded', 'false');
+                });
+                accordion.querySelectorAll('.accordion-content').forEach(c => {
+                    c.classList.remove('show');
+                });
+
+                if (!isActive) {
+                    header.classList.add('active');
+                    header.setAttribute('aria-expanded', 'true');
+                    header.nextElementSibling.classList.add('show');
+                }
+            });
+        });
+
+        // useradd command builder
+        function buildUseraddCommand() {
+            let cmd = 'sudo useradd';
+            
+            if (document.getElementById('opt-m').checked) {
+                cmd += ' -m';
+            }
+            
+            if (document.getElementById('opt-s').checked) {
+                const shell = document.getElementById('opt-s-value').value;
+                cmd += ' -s ' + shell;
+            }
+            
+            if (document.getElementById('opt-c').checked) {
+                const comment = document.getElementById('opt-c-value').value.trim();
+                if (comment) {
+                    cmd += ' -c "' + comment + '"';
+                }
+            }
+            
+            if (document.getElementById('opt-g').checked) {
+                const group = document.getElementById('opt-g-value').value.trim();
+                if (group) {
+                    cmd += ' -g ' + group;
+                }
+            }
+            
+            if (document.getElementById('opt-G').checked) {
+                const groups = document.getElementById('opt-G-value').value.trim();
+                if (groups) {
+                    cmd += ' -G ' + groups;
+                }
+            }
+            
+            if (document.getElementById('opt-e').checked) {
+                const expDate = document.getElementById('opt-e-value').value;
+                if (expDate) {
+                    cmd += ' -e ' + expDate;
+                }
+            }
+            
+            const username = document.getElementById('username-value').value.trim() || 'username';
+            cmd += ' ' + username;
+            
+            document.getElementById('useradd-output').textContent = cmd;
+        }
+
+        // Quiz functions
+        function checkPasswdQuiz() {
+            const selected = document.querySelector('input[name="q-passwd"]:checked');
+            const feedback = document.getElementById('passwd-quiz-feedback');
+            
+            if (!selected) {
+                feedback.textContent = 'Please select an answer.';
+                feedback.className = 'quiz-feedback show incorrect';
+                return;
+            }
+
+            const options = document.querySelectorAll('input[name="q-passwd"]');
+            options.forEach(opt => opt.parentElement.classList.remove('correct', 'incorrect'));
+
+            if (selected.value === 'b') {
+                selected.parentElement.classList.add('correct');
+                feedback.textContent = '✓ Correct! "L" in password status means the account is locked. Use "sudo passwd -u username" to unlock it.';
+                feedback.className = 'quiz-feedback show correct';
+            } else {
+                selected.parentElement.classList.add('incorrect');
+                document.querySelector('input[name="q-passwd"][value="b"]').parentElement.classList.add('correct');
+                feedback.textContent = '✗ Incorrect. "L" indicates a locked account. The solution is to unlock with "sudo passwd -u username".';
+                feedback.className = 'quiz-feedback show incorrect';
+            }
+        }
+
+        function checkUsermodFix() {
+            const input = document.getElementById('usermod-fix');
+            const feedback = document.getElementById('usermod-fix-feedback');
+            const answer = input.value.trim().toLowerCase();
+            
+            const correctPatterns = [
+                'sudo usermod -ag webdev asmith',
+                'sudo usermod -ag webdev,sudo,developers asmith',
+                'usermod -ag webdev asmith'
+            ];
+            
+            if (answer.includes('-ag') && answer.includes('webdev') && answer.includes('asmith')) {
+                feedback.innerHTML = '✓ Correct! Using <code class="inline-code">-aG</code> (append to groups) instead of <code class="inline-code">-G</code> (replace groups) preserves existing group memberships. The original command removed asmith from sudo and developers groups!';
+                feedback.className = 'exercise-feedback show correct';
+            } else if (answer === '') {
+                feedback.textContent = 'Please enter a command.';
+                feedback.className = 'exercise-feedback show hint';
+            } else if (answer.includes('-g ') && !answer.includes('-ag')) {
+                feedback.innerHTML = '✗ Close, but remember: <code class="inline-code">-aG</code> (with lowercase a) appends to groups. The "a" stands for "append".';
+                feedback.className = 'exercise-feedback show incorrect';
+            } else {
+                feedback.innerHTML = '✗ The correct command is: <code class="inline-code">sudo usermod -aG webdev asmith</code>. The -aG option appends to existing groups instead of replacing them.';
+                feedback.className = 'exercise-feedback show incorrect';
+            }
+        }
+
+        function checkUserdelQuiz() {
+            const selected = document.querySelector('input[name="q-userdel"]:checked');
+            const feedback = document.getElementById('userdel-quiz-feedback');
+            
+            if (!selected) {
+                feedback.textContent = 'Please select an answer.';
+                feedback.className = 'quiz-feedback show incorrect';
+                return;
+            }
+
+            const options = document.querySelectorAll('input[name="q-userdel"]');
+            options.forEach(opt => opt.parentElement.classList.remove('correct', 'incorrect'));
+
+            if (selected.value === 'b') {
+                selected.parentElement.classList.add('correct');
+                feedback.textContent = '✓ Correct! Locking the account prevents access while preserving files. After 30 days, you can safely delete with -r. This follows best practices for data retention.';
+                feedback.className = 'quiz-feedback show correct';
+            } else {
+                selected.parentElement.classList.add('incorrect');
+                document.querySelector('input[name="q-userdel"][value="b"]').parentElement.classList.add('correct');
+                feedback.textContent = '✗ Incorrect. The best approach is to lock the account, backup data, then delete after the retention period. Option C would leave orphaned files with no owner.';
+                feedback.className = 'quiz-feedback show incorrect';
+            }
+        }
+
+        function checkCommand(user) {
+            const input = document.getElementById('cmd-' + (user === 'svcbackup' ? 'svcbackup' : user));
+            const feedback = document.getElementById('cmd-' + (user === 'svcbackup' ? 'svcbackup' : user) + '-feedback');
+            const answer = input.value.trim().toLowerCase();
+
+            if (user === 'asmith') {
+                if (answer.includes('useradd') && 
+                    answer.includes('-m') && 
+                    answer.includes('-s /bin/bash') && 
+                    answer.includes('-g accounting') && 
+                    answer.includes('asmith')) {
+                    if (answer.includes('-c') && answer.includes('alice smith')) {
+                        feedback.textContent = '✓ Excellent! Complete command with all options.';
+                        feedback.className = 'exercise-feedback show correct';
+                    } else {
+                        feedback.textContent = '✓ Good! Consider adding -c "Alice Smith" for the full name.';
+                        feedback.className = 'exercise-feedback show correct';
+                    }
+                } else {
+                    feedback.innerHTML = 'Check your command. Need: <code class="inline-code">sudo useradd -m -s /bin/bash -g accounting -c "Alice Smith" asmith</code>';
+                    feedback.className = 'exercise-feedback show hint';
+                }
+            } else if (user === 'svcbackup') {
+                if (answer.includes('useradd') && 
+                    (answer.includes('/sbin/nologin') || answer.includes('/usr/sbin/nologin')) && 
+                    answer.includes('svc_backup')) {
+                    if (answer.includes('-r') || answer.includes('-d /var/backup')) {
+                        feedback.textContent = '✓ Correct! Good service account configuration.';
+                        feedback.className = 'exercise-feedback show correct';
+                    } else {
+                        feedback.textContent = '✓ Good! Consider adding -r for system account or -d /var/backup for home directory.';
+                        feedback.className = 'exercise-feedback show correct';
+                    }
+                } else {
+                    feedback.innerHTML = 'Check your command. Need: <code class="inline-code">sudo useradd -r -s /sbin/nologin -g backup -c "Backup Service" -d /var/backup svc_backup</code>';
+                    feedback.className = 'exercise-feedback show hint';
+                }
+            }
+        }
+
+        // Final Quiz
+        function checkFinalQuiz() {
+            const answers = {
+                'final-q1': 'b',
+                'final-q2': 'b',
+                'final-q3': 'b',
+                'final-q4': 'c',
+                'final-q5': 'b'
+            };
+
+            let correct = 0;
+            let total = Object.keys(answers).length;
+
+            for (const [name, correctAnswer] of Object.entries(answers)) {
+                const selected = document.querySelector(`input[name="${name}"]:checked`);
+                const options = document.querySelectorAll(`input[name="${name}"]`);
+                
+                options.forEach(opt => opt.parentElement.classList.remove('correct', 'incorrect'));
+
+                if (selected) {
+                    if (selected.value === correctAnswer) {
+                        selected.parentElement.classList.add('correct');
+                        correct++;
+                    } else {
+                        selected.parentElement.classList.add('incorrect');
+                        document.querySelector(`input[name="${name}"][value="${correctAnswer}"]`).parentElement.classList.add('correct');
+                    }
+                } else {
+                    document.querySelector(`input[name="${name}"][value="${correctAnswer}"]`).parentElement.classList.add('correct');
+                }
+            }
+
+            const result = document.getElementById('final-quiz-result');
+            const percentage = Math.round((correct / total) * 100);
+            
+            if (percentage >= 80) {
+                result.innerHTML = `<strong>🎉 Excellent!</strong> You scored ${correct}/${total} (${percentage}%). You have a solid understanding of Linux user management commands.`;
+                result.className = 'quiz-feedback show correct';
+            } else if (percentage >= 60) {
+                result.innerHTML = `<strong>👍 Good effort!</strong> You scored ${correct}/${total} (${percentage}%). Review the sections you missed before proceeding.`;
+                result.className = 'quiz-feedback show hint';
+            } else {
+                result.innerHTML = `<strong>📚 Keep studying!</strong> You scored ${correct}/${total} (${percentage}%). Please review the module content and try again.`;
+                result.className = 'quiz-feedback show incorrect';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProgress();
+            buildUseraddCommand();
+        });
+    </script>
+</body>
+</html>
