@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Lab 6: User & Group Administration - Linux and Windows Server user management">
+    <meta name="author" content="David Pai">
+    <title>Lab 6: User & Group Administration | CSC 152</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.7;
+            background-color: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        a:focus {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #1e40af;
+            color: white;
+            padding: 8px 16px;
+            z-index: 1000;
+            transition: top 0.3s;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 30px 20px;
+            margin: -20px -20px 30px -20px;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .course-tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .lab-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .progress-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .progress-header h2 {
+            font-size: 1rem;
+            color: #374151;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1e40af, #3b82f6);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .section h2 {
+            color: #1e40af;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #dbeafe;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h3 {
+            color: #1f2937;
+            font-size: 1.15rem;
+            margin: 25px 0 15px 0;
+        }
+
+        .section h4 {
+            color: #374151;
+            font-size: 1.05rem;
+            margin: 20px 0 12px 0;
+        }
+
+        .section p {
+            margin-bottom: 15px;
+            color: #4b5563;
+        }
+
+        .section ul, .section ol {
+            margin: 15px 0 15px 20px;
+            color: #4b5563;
+        }
+
+        .section li {
+            margin-bottom: 10px;
+        }
+
+        .objectives-box {
+            background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+            border-left: 4px solid #2563eb;
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+            margin: 20px 0;
+        }
+
+        .objectives-box h3 {
+            color: #1e40af;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .objectives-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .objectives-box li {
+            margin-bottom: 8px;
+            color: #1e3a5f;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .warning-box strong {
+            color: #b45309;
+        }
+
+        .important-box {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .important-box strong {
+            color: #b91c1c;
+        }
+
+        .success-box {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .success-box strong {
+            color: #047857;
+        }
+
+        .part-header {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0 20px 0;
+            border-left: 5px solid #1e40af;
+        }
+
+        .part-header h3 {
+            color: #1e40af;
+            margin: 0 0 8px 0;
+            font-size: 1.2rem;
+        }
+
+        .part-header .points {
+            display: inline-block;
+            background: #1e40af;
+            color: white;
+            padding: 3px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .task-card {
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .task-card h4 {
+            color: #1f2937;
+            margin: 0 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-number {
+            background: #1e40af;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: "Fira Code", "Consolas", "Monaco", monospace;
+            font-size: 0.9rem;
+            white-space: pre;
+            line-height: 1.6;
+        }
+
+        .code-block code {
+            font-family: inherit;
+            white-space: pre;
+        }
+
+        .code-header {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 10px 15px;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-header.linux::before {
+            content: "🐧";
+        }
+
+        .code-header.windows::before {
+            content: "🪟";
+        }
+
+        .code-header + .code-block {
+            margin-top: 0;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .inline-code {
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: "Fira Code", "Consolas", monospace;
+            font-size: 0.9em;
+            color: #1e40af;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            border: 1px solid #e5e7eb;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background: #1e40af;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        tr:hover {
+            background: #eff6ff;
+        }
+
+        .accordion {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .accordion-item {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .accordion-item:last-child {
+            border-bottom: none;
+        }
+
+        .accordion-header {
+            width: 100%;
+            padding: 18px 20px;
+            background: #f9fafb;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .accordion-header:hover {
+            background: #f3f4f6;
+        }
+
+        .accordion-header:focus {
+            outline: 2px solid #2563eb;
+            outline-offset: -2px;
+        }
+
+        .accordion-header::after {
+            content: "+";
+            font-size: 1.4rem;
+            font-weight: 400;
+            color: #6b7280;
+        }
+
+        .accordion-header.active::after {
+            content: "−";
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: white;
+        }
+
+        .accordion-content.show {
+            max-height: 3000px;
+        }
+
+        .accordion-body {
+            padding: 20px;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .checklist li:last-child {
+            border-bottom: none;
+        }
+
+        .checklist input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: #1e40af;
+        }
+
+        .checklist label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .rubric-table {
+            margin: 20px 0;
+        }
+
+        .rubric-table th:first-child {
+            width: 60%;
+        }
+
+        .rubric-table th:last-child {
+            width: 15%;
+            text-align: center;
+        }
+
+        .rubric-table td:last-child {
+            text-align: center;
+            font-weight: 600;
+            color: #1e40af;
+        }
+
+        .submission-box {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+
+        .submission-box h3 {
+            color: white;
+            margin: 0 0 15px 0;
+        }
+
+        .submission-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .submission-box li {
+            margin-bottom: 8px;
+            opacity: 0.95;
+        }
+
+        .screenshot-tip {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .screenshot-tip h5 {
+            color: #92400e;
+            margin: 0 0 8px 0;
+            font-size: 0.95rem;
+        }
+
+        .screenshot-tip p {
+            margin: 0;
+            color: #78350f;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            background: #1f2937;
+            color: white;
+            padding: 25px 20px;
+            margin: 40px -20px -20px -20px;
+            text-align: center;
+        }
+
+        footer p {
+            margin: 5px 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            header {
+                padding: 20px 15px;
+                margin: -15px -15px 20px -15px;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .lab-meta {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .section {
+                padding: 20px 15px;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+
+            footer {
+                margin: 30px -15px -15px -15px;
+            }
+        }
+
+        @media print {
+            .skip-link, .progress-section, .accordion-header::after {
+                display: none;
+            }
+
+            .accordion-content {
+                max-height: none !important;
+            }
+
+            .section {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="container">
+        <header>
+            <span class="course-tag">CSC 152 - Week 6</span>
+            <h1>Lab 6: User & Group Administration</h1>
+            <div class="lab-meta">
+                <div class="meta-item">📊 Total Points: 27</div>
+                <div class="meta-item">⏱️ Estimated Time: 4-5 hours</div>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <section class="progress-section" aria-label="Lab progress">
+                <div class="progress-header">
+                    <h2>📋 Lab Progress</h2>
+                    <span id="progress-text">0% Complete</span>
+                </div>
+                <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>📖 Lab Overview</h2>
+                
+                <p>In this lab, you will demonstrate your ability to manage users and groups on both Linux and Windows Server platforms. You'll create user accounts, configure groups, implement password policies, configure sudo access, and automate user management tasks using scripts.</p>
+
+                <div class="objectives-box">
+                    <h3>🎯 Lab Objectives</h3>
+                    <ul>
+                        <li>Create and manage user accounts on Rocky Linux</li>
+                        <li>Create and manage groups with appropriate memberships</li>
+                        <li>Create and manage local users and groups on Windows Server</li>
+                        <li>Configure sudo access for specific users and commands</li>
+                        <li>Develop automation scripts for user management tasks</li>
+                        <li>Document all configurations with proper screenshots</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <strong>💡 Prerequisites:</strong> Complete Modules 6.1-6.7 before starting this lab. Ensure your Rocky Linux and Windows Server VMs are running and accessible.
+                </div>
+
+                <h3>Lab Environment Requirements</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>System</th>
+                            <th>Purpose</th>
+                            <th>Parts</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Rocky Linux 9 VM</td>
+                            <td>Linux user/group management</td>
+                            <td>Parts A, C, D</td>
+                        </tr>
+                        <tr>
+                            <td>Windows Server 2022 VM</td>
+                            <td>Windows user/group management</td>
+                            <td>Part B</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="section">
+                <h2>📝 Lab Parts Overview</h2>
+
+                <table class="rubric-table">
+                    <thead>
+                        <tr>
+                            <th>Part</th>
+                            <th>Description</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Part A:</strong> Linux User & Group Management</td>
+                            <td>Create users, groups, and configure memberships</td>
+                            <td>9</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part B:</strong> Windows User & Group Management</td>
+                            <td>Create local users and groups using GUI and PowerShell</td>
+                            <td>9</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part C:</strong> sudo Configuration</td>
+                            <td>Configure granular sudo access</td>
+                            <td>5</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part D:</strong> Automation Scripts</td>
+                            <td>Create user management scripts</td>
+                            <td>4</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><strong>Total Points</strong></td>
+                            <td><strong>27</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Part A -->
+            <section class="section">
+                <div class="part-header">
+                    <h3>Part A: Linux User & Group Management</h3>
+                    <span class="points">9 Points</span>
+                </div>
+
+                <p>In this part, you will create user accounts and groups on your Rocky Linux server, demonstrating proficiency with Linux user management commands.</p>
+
+                <h4>Users to Create</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Department</th>
+                            <th>Primary Group</th>
+                            <th>Supplementary Groups</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">asmith</code></td>
+                            <td>Alice Smith</td>
+                            <td>Accounting</td>
+                            <td>asmith</td>
+                            <td>accounting, allstaff</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">bwilson</code></td>
+                            <td>Bob Wilson</td>
+                            <td>Engineering</td>
+                            <td>bwilson</td>
+                            <td>engineering, allstaff</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">cjones</code></td>
+                            <td>Carol Jones</td>
+                            <td>Marketing</td>
+                            <td>cjones</td>
+                            <td>marketing, allstaff</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">dlee</code></td>
+                            <td>David Lee</td>
+                            <td>Engineering</td>
+                            <td>dlee</td>
+                            <td>engineering, allstaff</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">svc_backup</code></td>
+                            <td>Backup Service</td>
+                            <td>Service Account</td>
+                            <td>svc_backup</td>
+                            <td>backup</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>Groups to Create</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Group Name</th>
+                            <th>GID</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">accounting</code></td>
+                            <td>2001</td>
+                            <td>Accounting department</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">engineering</code></td>
+                            <td>2002</td>
+                            <td>Engineering department</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">marketing</code></td>
+                            <td>2003</td>
+                            <td>Marketing department</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">allstaff</code></td>
+                            <td>2000</td>
+                            <td>All employees</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">backup</code></td>
+                            <td>2010</td>
+                            <td>Backup operators</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Task A1: Create Groups (3 points)</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Create all required groups with the specified GIDs.</p>
+                                
+                                <div class="code-header linux">Example Commands</div>
+                                <div class="code-block"><code># Create groups with specific GIDs
+sudo groupadd -g 2000 allstaff
+sudo groupadd -g 2001 accounting
+sudo groupadd -g 2002 engineering
+sudo groupadd -g 2003 marketing
+sudo groupadd -g 2010 backup
+
+# Verify groups were created
+getent group allstaff accounting engineering marketing backup</code></div>
+
+                                <div class="screenshot-tip">
+                                    <h5>📸 Screenshot Required</h5>
+                                    <p>Capture the output of <code class="inline-code">getent group</code> showing all created groups with their GIDs.</p>
+                                </div>
+
+                                <ul class="checklist">
+                                    <li>
+                                        <input type="checkbox" id="a1-1" onchange="updateProgress()">
+                                        <label for="a1-1">Created allstaff group (GID 2000)</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="a1-2" onchange="updateProgress()">
+                                        <label for="a1-2">Created department groups (accounting, engineering, marketing)</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="a1-3" onchange="updateProgress()">
+                                        <label for="a1-3">Created backup group (GID 2010)</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="a1-4" onchange="updateProgress()">
+                                        <label for="a1-4">Screenshot captured showing all groups</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Task A2: Create User Accounts (4 points)</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Create all user accounts with appropriate settings including home directories and GECOS information.</p>
+
+                                <div class="code-header linux">Example Commands</div>
+                                <div class="code-block"><code># Create regular users with home directories
+sudo useradd -m -c "Alice Smith" asmith
+sudo useradd -m -c "Bob Wilson" bwilson
+sudo useradd -m -c "Carol Jones" cjones
+sudo useradd -m -c "David Lee" dlee
+
+# Create service account (no login shell, no home directory)
+sudo useradd -r -s /sbin/nologin -c "Backup Service" svc_backup
+
+# Set passwords for regular users
+sudo passwd asmith
+sudo passwd bwilson
+sudo passwd cjones
+sudo passwd dlee
+
+# Verify users were created
+getent passwd asmith bwilson cjones dlee svc_backup</code></div>
+
+                                <div class="warning-box">
+                                    <strong>⚠️ Service Account:</strong> The <code class="inline-code">svc_backup</code> account should be created as a system account with no login shell for security.
+                                </div>
+
+                                <div class="screenshot-tip">
+                                    <h5>📸 Screenshot Required</h5>
+                                    <p>Capture the output of <code class="inline-code">getent passwd</code> showing all created users.</p>
+                                </div>
+
+                                <ul class="checklist">
+                                    <li>
+                                        <input type="checkbox" id="a2-1" onchange="updateProgress()">
+                                        <label for="a2-1">Created all four regular user accounts</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="a2-2" onchange="updateProgress()">
+                                        <label for="a2-2">Created svc_backup service account</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="a2-3" onchange="updateProgress()">
+                                        <label for="a2-3">Set passwords for regular users</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="a2-4" onchange="updateProgress()">
+                                        <label for="a2-4">Screenshot captured showing all users</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Task A3: Configure Group Memberships (2 points)</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Add users to their appropriate supplementary groups.</p>
+
+                                <div class="code-header linux">Example Commands</div>
+                                <div class="code-block"><code># Add users to supplementary groups
+sudo usermod -aG accounting,allstaff asmith
+sudo usermod -aG engineering,allstaff bwilson
+sudo usermod -aG marketing,allstaff cjones
+sudo usermod -aG engineering,allstaff dlee
+sudo usermod -aG backup svc_backup
+
+# Verify group memberships
+id asmith
+id bwilson
+id cjones
+id dlee
+id svc_backup
+
+# Alternative: view all members of a group
+getent group engineering</code></div>
+
+                                <div class="screenshot-tip">
+                                    <h5>📸 Screenshot Required</h5>
+                                    <p>Capture the output of <code class="inline-code">id</code> command for each user showing their group memberships.</p>
+                                </div>
+
+                                <ul class="checklist">
+                                    <li>
+                                        <input type="checkbox" id="a3-1" onchange="updateProgress()">
+                                        <label for="a3-1">Added users to department groups</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="a3-2" onchange="updateProgress()">
+                                        <label for="a3-2">Added regular users to allstaff group</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="a3-3" onchange="updateProgress()">
+                                        <label for="a3-3">Added svc_backup to backup group</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="a3-4" onchange="updateProgress()">
+                                        <label for="a3-4">Screenshot captured showing all group memberships</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part B -->
+            <section class="section">
+                <div class="part-header">
+                    <h3>Part B: Windows User & Group Management</h3>
+                    <span class="points">9 Points</span>
+                </div>
+
+                <p>In this part, you will create local user accounts and groups on your Windows Server using both the GUI and PowerShell.</p>
+
+                <h4>Users to Create</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Description</th>
+                            <th>Groups</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">egarcia</code></td>
+                            <td>Elena Garcia</td>
+                            <td>HR Department</td>
+                            <td>Users, Remote Desktop Users</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">fthomas</code></td>
+                            <td>Frank Thomas</td>
+                            <td>IT Support</td>
+                            <td>Users, Backup Operators</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">gmartin</code></td>
+                            <td>Grace Martin</td>
+                            <td>Finance</td>
+                            <td>Users</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>Groups to Create</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Group Name</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">HRTeam</code></td>
+                            <td>Human Resources Department</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">FinanceTeam</code></td>
+                            <td>Finance Department</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">ITSupport</code></td>
+                            <td>IT Support Staff</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Task B1: Create Users via GUI (3 points)</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Create user <code class="inline-code">egarcia</code> using Computer Management.</p>
+
+                                <h5>Steps:</h5>
+                                <ol>
+                                    <li>Open Server Manager → Tools → Computer Management</li>
+                                    <li>Navigate to Local Users and Groups → Users</li>
+                                    <li>Right-click → New User</li>
+                                    <li>Fill in:
+                                        <ul>
+                                            <li>User name: <code class="inline-code">egarcia</code></li>
+                                            <li>Full name: Elena Garcia</li>
+                                            <li>Description: HR Department</li>
+                                            <li>Password: (your choice, meet complexity)</li>
+                                        </ul>
+                                    </li>
+                                    <li>Check "User must change password at next logon"</li>
+                                    <li>Click Create</li>
+                                </ol>
+
+                                <div class="screenshot-tip">
+                                    <h5>📸 Screenshots Required</h5>
+                                    <p>1) New User dialog filled in. 2) User properties showing group memberships after adding to Remote Desktop Users.</p>
+                                </div>
+
+                                <ul class="checklist">
+                                    <li>
+                                        <input type="checkbox" id="b1-1" onchange="updateProgress()">
+                                        <label for="b1-1">Created egarcia user via GUI</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="b1-2" onchange="updateProgress()">
+                                        <label for="b1-2">Added to Remote Desktop Users group</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="b1-3" onchange="updateProgress()">
+                                        <label for="b1-3">Screenshots captured</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Task B2: Create Users via PowerShell (3 points)</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Create users <code class="inline-code">fthomas</code> and <code class="inline-code">gmartin</code> using PowerShell.</p>
+
+                                <div class="code-header windows">PowerShell Commands</div>
+                                <div class="code-block"><code># Create secure password
+$Password = Read-Host -AsSecureString "Enter password"
+
+# Create fthomas
+New-LocalUser -Name "fthomas" `
+    -Password $Password `
+    -FullName "Frank Thomas" `
+    -Description "IT Support"
+
+# Create gmartin
+New-LocalUser -Name "gmartin" `
+    -Password $Password `
+    -FullName "Grace Martin" `
+    -Description "Finance"
+
+# Add fthomas to Backup Operators
+Add-LocalGroupMember -Group "Backup Operators" -Member "fthomas"
+
+# Verify users
+Get-LocalUser | Where-Object {$_.Name -in @("egarcia","fthomas","gmartin")} | 
+    Select-Object Name, FullName, Description, Enabled</code></div>
+
+                                <div class="screenshot-tip">
+                                    <h5>📸 Screenshot Required</h5>
+                                    <p>Capture the PowerShell window showing the commands and their output.</p>
+                                </div>
+
+                                <ul class="checklist">
+                                    <li>
+                                        <input type="checkbox" id="b2-1" onchange="updateProgress()">
+                                        <label for="b2-1">Created fthomas via PowerShell</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="b2-2" onchange="updateProgress()">
+                                        <label for="b2-2">Created gmartin via PowerShell</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="b2-3" onchange="updateProgress()">
+                                        <label for="b2-3">Added fthomas to Backup Operators</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="b2-4" onchange="updateProgress()">
+                                        <label for="b2-4">Screenshot captured</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Task B3: Create Groups and Manage Membership (3 points)</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Create the custom groups and add appropriate members.</p>
+
+                                <div class="code-header windows">PowerShell Commands</div>
+                                <div class="code-block"><code># Create groups
+New-LocalGroup -Name "HRTeam" -Description "Human Resources Department"
+New-LocalGroup -Name "FinanceTeam" -Description "Finance Department"
+New-LocalGroup -Name "ITSupport" -Description "IT Support Staff"
+
+# Add members to groups
+Add-LocalGroupMember -Group "HRTeam" -Member "egarcia"
+Add-LocalGroupMember -Group "FinanceTeam" -Member "gmartin"
+Add-LocalGroupMember -Group "ITSupport" -Member "fthomas"
+
+# Verify group memberships
+Get-LocalGroupMember -Group "HRTeam"
+Get-LocalGroupMember -Group "FinanceTeam"
+Get-LocalGroupMember -Group "ITSupport"</code></div>
+
+                                <div class="screenshot-tip">
+                                    <h5>📸 Screenshot Required</h5>
+                                    <p>Capture the output showing all three groups and their members.</p>
+                                </div>
+
+                                <ul class="checklist">
+                                    <li>
+                                        <input type="checkbox" id="b3-1" onchange="updateProgress()">
+                                        <label for="b3-1">Created HRTeam, FinanceTeam, ITSupport groups</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="b3-2" onchange="updateProgress()">
+                                        <label for="b3-2">Added users to appropriate groups</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="b3-3" onchange="updateProgress()">
+                                        <label for="b3-3">Screenshot captured showing group memberships</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part C -->
+            <section class="section">
+                <div class="part-header">
+                    <h3>Part C: sudo Configuration</h3>
+                    <span class="points">5 Points</span>
+                </div>
+
+                <p>Configure granular sudo access for users on your Rocky Linux server, implementing the principle of least privilege.</p>
+
+                <div class="important-box">
+                    <strong>🚨 Critical:</strong> Always use <code class="inline-code">visudo</code> to edit sudoers files. Never edit <code class="inline-code">/etc/sudoers</code> directly with a text editor.
+                </div>
+
+                <h4>sudo Rules to Implement</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User/Group</th>
+                            <th>Allowed Commands</th>
+                            <th>NOPASSWD</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">bwilson</code></td>
+                            <td>systemctl restart nginx, systemctl status nginx</td>
+                            <td>No</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">%engineering</code></td>
+                            <td>cat /var/log/nginx/*, tail /var/log/nginx/*</td>
+                            <td>No</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">svc_backup</code></td>
+                            <td>/usr/local/bin/backup.sh</td>
+                            <td>Yes</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Task C1: Create sudoers.d Configuration Files (5 points)</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Create separate configuration files in <code class="inline-code">/etc/sudoers.d/</code> for each rule.</p>
+
+                                <div class="code-header linux">Create webadmin sudoers file</div>
+                                <div class="code-block"><code># Create file for bwilson (web admin tasks)
+sudo visudo -f /etc/sudoers.d/webadmin
+
+# Add this content:
+# Web administrator - nginx management
+bwilson ALL=(root) /bin/systemctl restart nginx, /bin/systemctl status nginx</code></div>
+
+                                <div class="code-header linux">Create engineering sudoers file</div>
+                                <div class="code-block"><code># Create file for engineering group (log viewing)
+sudo visudo -f /etc/sudoers.d/engineering
+
+# Add this content:
+# Engineering team - view nginx logs
+%engineering ALL=(root) /bin/cat /var/log/nginx/*, /bin/tail /var/log/nginx/*</code></div>
+
+                                <div class="code-header linux">Create backup sudoers file</div>
+                                <div class="code-block"><code># Create file for backup service account
+sudo visudo -f /etc/sudoers.d/backup
+
+# Add this content:
+# Backup service account - run backup script without password
+svc_backup ALL=(root) NOPASSWD: /usr/local/bin/backup.sh</code></div>
+
+                                <div class="code-header linux">Verify Configuration</div>
+                                <div class="code-block"><code># Check syntax of all sudoers files
+sudo visudo -c
+
+# Test bwilson's sudo access
+sudo -l -U bwilson
+
+# Test engineering group access
+sudo -l -U dlee
+
+# List sudoers.d files
+ls -la /etc/sudoers.d/</code></div>
+
+                                <div class="screenshot-tip">
+                                    <h5>📸 Screenshots Required</h5>
+                                    <p>1) Contents of each sudoers.d file. 2) Output of <code class="inline-code">sudo visudo -c</code>. 3) Output of <code class="inline-code">sudo -l</code> for bwilson and dlee.</p>
+                                </div>
+
+                                <ul class="checklist">
+                                    <li>
+                                        <input type="checkbox" id="c1-1" onchange="updateProgress()">
+                                        <label for="c1-1">Created /etc/sudoers.d/webadmin for bwilson</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="c1-2" onchange="updateProgress()">
+                                        <label for="c1-2">Created /etc/sudoers.d/engineering for engineering group</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="c1-3" onchange="updateProgress()">
+                                        <label for="c1-3">Created /etc/sudoers.d/backup for svc_backup</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="c1-4" onchange="updateProgress()">
+                                        <label for="c1-4">Verified syntax with visudo -c</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="c1-5" onchange="updateProgress()">
+                                        <label for="c1-5">Screenshots captured</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part D -->
+            <section class="section">
+                <div class="part-header">
+                    <h3>Part D: Automation Scripts</h3>
+                    <span class="points">4 Points</span>
+                </div>
+
+                <p>Create scripts to automate user management tasks, building on your Week 5 scripting skills.</p>
+
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Task D1: Linux User Creation Script (2 points)</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Create a Bash script that creates a user with specified parameters.</p>
+
+                                <div class="code-header linux">create_user.sh</div>
+                                <div class="code-block"><code>#!/bin/bash
+#===============================================
+# Script: create_user.sh
+# Purpose: Create a new user with specified settings
+# Author: [Your Name]
+# Date: [Date]
+# Usage: ./create_user.sh username "Full Name" department
+#===============================================
+
+# Check if running as root
+if [[ $EUID -ne 0 ]]; then
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+# Check arguments
+if [[ $# -lt 3 ]]; then
+    echo "Usage: $0 username \"Full Name\" department"
+    echo "Example: $0 jdoe \"John Doe\" engineering"
+    exit 1
+fi
+
+USERNAME="$1"
+FULLNAME="$2"
+DEPARTMENT="$3"
+
+# Check if user already exists
+if id "$USERNAME" &>/dev/null; then
+    echo "Error: User $USERNAME already exists"
+    exit 1
+fi
+
+# Check if department group exists
+if ! getent group "$DEPARTMENT" &>/dev/null; then
+    echo "Warning: Group $DEPARTMENT does not exist. Creating it..."
+    groupadd "$DEPARTMENT"
+fi
+
+# Create user
+echo "Creating user: $USERNAME"
+useradd -m -c "$FULLNAME" -G "$DEPARTMENT,allstaff" "$USERNAME"
+
+if [[ $? -eq 0 ]]; then
+    echo "User $USERNAME created successfully"
+    echo "Setting temporary password..."
+    echo "$USERNAME:TempPass123!" | chpasswd
+    chage -d 0 "$USERNAME"  # Force password change at next login
+    
+    echo ""
+    echo "User Details:"
+    echo "============="
+    id "$USERNAME"
+    echo ""
+    echo "Password aging:"
+    chage -l "$USERNAME" | head -5
+else
+    echo "Error: Failed to create user $USERNAME"
+    exit 1
+fi
+
+exit 0</code></div>
+
+                                <div class="code-header linux">Test the Script</div>
+                                <div class="code-block"><code># Make script executable
+chmod +x create_user.sh
+
+# Test with a new user
+sudo ./create_user.sh testuser "Test User" engineering
+
+# Verify user was created
+id testuser
+
+# Clean up test user (optional)
+sudo userdel -r testuser</code></div>
+
+                                <div class="screenshot-tip">
+                                    <h5>📸 Screenshots Required</h5>
+                                    <p>1) The complete script. 2) Script execution output. 3) Verification of created user.</p>
+                                </div>
+
+                                <ul class="checklist">
+                                    <li>
+                                        <input type="checkbox" id="d1-1" onchange="updateProgress()">
+                                        <label for="d1-1">Script includes proper header comments</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="d1-2" onchange="updateProgress()">
+                                        <label for="d1-2">Script validates input arguments</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="d1-3" onchange="updateProgress()">
+                                        <label for="d1-3">Script checks for root privileges</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="d1-4" onchange="updateProgress()">
+                                        <label for="d1-4">Script creates user with proper settings</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="d1-5" onchange="updateProgress()">
+                                        <label for="d1-5">Screenshots captured</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Task D2: PowerShell User Creation Script (2 points)</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <p>Create a PowerShell script that creates a user with specified parameters.</p>
+
+                                <div class="code-header windows">New-CompanyUser.ps1</div>
+                                <div class="code-block"><code>#Requires -RunAsAdministrator
+<#
+.SYNOPSIS
+    Creates a new local user with company standard settings.
+.DESCRIPTION
+    This script creates a new local user account with specified
+    full name, description, and group membership.
+.PARAMETER Username
+    The username for the new account
+.PARAMETER FullName
+    The full name of the user
+.PARAMETER Department
+    The department (used for description and group)
+.EXAMPLE
+    .\New-CompanyUser.ps1 -Username jdoe -FullName "John Doe" -Department "IT"
+.NOTES
+    Author: [Your Name]
+    Date: [Date]
+#>
+
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$Username,
+    
+    [Parameter(Mandatory=$true)]
+    [string]$FullName,
+    
+    [Parameter(Mandatory=$true)]
+    [string]$Department
+)
+
+# Check if user already exists
+if (Get-LocalUser -Name $Username -ErrorAction SilentlyContinue) {
+    Write-Error "User $Username already exists"
+    exit 1
+}
+
+# Generate temporary password
+$TempPassword = ConvertTo-SecureString "TempPass123!" -AsPlainText -Force
+
+try {
+    # Create user
+    Write-Host "Creating user: $Username" -ForegroundColor Cyan
+    
+    New-LocalUser -Name $Username `
+        -Password $TempPassword `
+        -FullName $FullName `
+        -Description "$Department Department" `
+        -PasswordNeverExpires:$false
+    
+    # Check if department group exists, create if not
+    $GroupName = "${Department}Team"
+    if (-not (Get-LocalGroup -Name $GroupName -ErrorAction SilentlyContinue)) {
+        Write-Host "Creating group: $GroupName" -ForegroundColor Yellow
+        New-LocalGroup -Name $GroupName -Description "$Department Department"
+    }
+    
+    # Add to groups
+    Add-LocalGroupMember -Group $GroupName -Member $Username
+    Add-LocalGroupMember -Group "Users" -Member $Username
+    
+    Write-Host ""
+    Write-Host "User created successfully!" -ForegroundColor Green
+    Write-Host "=========================" -ForegroundColor Green
+    Get-LocalUser -Name $Username | Format-List Name, FullName, Description, Enabled
+    
+    Write-Host "Group Memberships:" -ForegroundColor Cyan
+    Get-LocalGroup | Where-Object { 
+        (Get-LocalGroupMember -Group $_.Name -ErrorAction SilentlyContinue).Name -match $Username 
+    } | Select-Object Name
+    
+} catch {
+    Write-Error "Failed to create user: $_"
+    exit 1
+}
+
+Write-Host ""
+Write-Host "Note: User must change password at first login" -ForegroundColor Yellow</code></div>
+
+                                <div class="code-header windows">Test the Script</div>
+                                <div class="code-block"><code># Run the script
+.\New-CompanyUser.ps1 -Username testuser -FullName "Test User" -Department "IT"
+
+# Verify user was created
+Get-LocalUser -Name testuser | Format-List *
+
+# Clean up test user (optional)
+Remove-LocalUser -Name testuser</code></div>
+
+                                <div class="screenshot-tip">
+                                    <h5>📸 Screenshots Required</h5>
+                                    <p>1) The complete script in PowerShell ISE or VS Code. 2) Script execution output. 3) Verification of created user.</p>
+                                </div>
+
+                                <ul class="checklist">
+                                    <li>
+                                        <input type="checkbox" id="d2-1" onchange="updateProgress()">
+                                        <label for="d2-1">Script includes proper comment-based help</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="d2-2" onchange="updateProgress()">
+                                        <label for="d2-2">Script uses parameters with validation</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="d2-3" onchange="updateProgress()">
+                                        <label for="d2-3">Script includes error handling</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="d2-4" onchange="updateProgress()">
+                                        <label for="d2-4">Script creates user and group membership</label>
+                                    </li>
+                                    <li>
+                                        <input type="checkbox" id="d2-5" onchange="updateProgress()">
+                                        <label for="d2-5">Screenshots captured</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Submission Section -->
+            <section class="section">
+                <h2>📤 Submission Requirements</h2>
+
+                <div class="submission-box">
+                    <h3>Submit the Following:</h3>
+                    <ul>
+                        <li><strong>Lab Report (PDF):</strong> Document all tasks with screenshots and explanations</li>
+                        <li><strong>Scripts (separate files):</strong>
+                            <ul>
+                                <li><code class="inline-code">create_user.sh</code> - Bash user creation script</li>
+                                <li><code class="inline-code">New-CompanyUser.ps1</code> - PowerShell user creation script</li>
+                            </ul>
+                        </li>
+                        <li><strong>File naming:</strong> <code class="inline-code">LastName_FirstName_Lab06.pdf</code></li>
+                    </ul>
+                </div>
+
+                <h3>Grading Rubric</h3>
+                <table class="rubric-table">
+                    <thead>
+                        <tr>
+                            <th>Criteria</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Part A:</strong> Linux groups created with correct GIDs</td>
+                            <td>3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part A:</strong> Linux users created with proper settings</td>
+                            <td>4</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part A:</strong> Group memberships configured correctly</td>
+                            <td>2</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part B:</strong> Windows user created via GUI</td>
+                            <td>3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part B:</strong> Windows users created via PowerShell</td>
+                            <td>3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part B:</strong> Windows groups and memberships</td>
+                            <td>3</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part C:</strong> sudo configuration files correct</td>
+                            <td>5</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part D:</strong> Bash script functional with proper structure</td>
+                            <td>2</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Part D:</strong> PowerShell script functional with proper structure</td>
+                            <td>2</td>
+                        </tr>
+                        <tr>
+                            <td colspan="1"><strong>Total</strong></td>
+                            <td><strong>27</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box">
+                    <strong>📅 Submission:</strong> Submit your completed lab report and scripts via the course LMS. Check the assignment page for the specific due date.
+                </div>
+            </section>
+
+            <!-- Tips Section -->
+            <section class="section">
+                <h2>💡 Tips for Success</h2>
+
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Documentation Best Practices</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li>Take screenshots immediately after each command</li>
+                                    <li>Include the command and its output in screenshots</li>
+                                    <li>Use clear, descriptive captions for each screenshot</li>
+                                    <li>Organize your report by lab part (A, B, C, D)</li>
+                                    <li>Explain what each command does, not just show it</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Common Mistakes to Avoid</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li><strong>Forgetting -a with usermod -G:</strong> This replaces all groups instead of adding</li>
+                                    <li><strong>Editing sudoers directly:</strong> Always use <code class="inline-code">visudo</code></li>
+                                    <li><strong>Wrong GIDs:</strong> Double-check the GID assignments in the tables</li>
+                                    <li><strong>Missing screenshots:</strong> Document every step as you go</li>
+                                    <li><strong>Script permissions:</strong> Remember <code class="inline-code">chmod +x</code> for Bash scripts</li>
+                                    <li><strong>PowerShell execution policy:</strong> Ensure it's set to allow script execution (e.g., <code class="inline-code">Set-ExecutionPolicy RemoteSigned</code>)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" aria-expanded="false">Troubleshooting</button>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li><strong>User already exists:</strong> Use <code class="inline-code">userdel username</code> to remove and recreate</li>
+                                    <li><strong>Group not found:</strong> Create groups before adding users to them</li>
+                                    <li><strong>sudo syntax error:</strong> Run <code class="inline-code">sudo visudo -c</code> to check all files</li>
+                                    <li><strong>PowerShell access denied:</strong> Run PowerShell as Administrator</li>
+                                    <li><strong>Script won't run:</strong> Check execution policy with <code class="inline-code">Get-ExecutionPolicy</code> and script path (e.g., <code class="inline-code">.\script.ps1</code>)</li>
+                                    <li><strong>User not in group:</strong> Log out and back in on Linux for new group memberships to take effect.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p><strong>CSC 152</strong> - Network Operating Systems and Administration</p>
+            <p>Mendocino College | Instructor: David Pai</p>
+            <p>Lab 6: User & Group Administration | Week 6</p>
+            <p>&copy; 2026 Mendocino College. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Accordion functionality
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const isActive = header.classList.contains('active');
+                
+                // Close all accordions in the same container
+                const accordion = header.closest('.accordion');
+                accordion.querySelectorAll('.accordion-header').forEach(h => {
+                    h.classList.remove('active');
+                    h.setAttribute('aria-expanded', 'false');
+                });
+                accordion.querySelectorAll('.accordion-content').forEach(c => {
+                    c.classList.remove('show');
+                });
+
+                // Open clicked accordion if it wasn't active
+                if (!isActive) {
+                    header.classList.add('active');
+                    header.setAttribute('aria-expanded', 'true');
+                    header.nextElementSibling.classList.add('show');
+                }
+            });
+        });
+
+        // Progress tracking
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked').length;
+            const total = checkboxes.length;
+            const percentage = Math.round((checked / total) * 100);
+            
+            document.getElementById('progress-fill').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = percentage + '% Complete';
+            document.querySelector('.progress-bar').setAttribute('aria-valuenow', percentage);
+            
+            // Save to session storage
+            checkboxes.forEach(cb => {
+                sessionStorage.setItem('lab6-' + cb.id, cb.checked);
+            });
+        }
+
+        // Load saved progress
+        function loadProgress() {
+            const checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                const saved = sessionStorage.getItem('lab6-' + cb.id);
+                if (saved === 'true') {
+                    cb.checked = true;
+                }
+            });
+            updateProgress();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadProgress);
+    </script>
+</body>
+</html>
