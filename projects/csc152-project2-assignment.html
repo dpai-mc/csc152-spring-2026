@@ -1,0 +1,2622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Project 2: Network Infrastructure and Firewall Implementation - Detailed Specification with Rubric">
+    <meta name="author" content="David Pai">
+    <title>CSC 152 - Project 2: Network Infrastructure &amp; Firewall Implementation</title>
+    <style>
+        /* ===== CSS RESET & BASE ===== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #1a5f7a;
+            --color-primary-dark: #134b61;
+            --color-secondary: #57837b;
+            --color-accent: #c38e70;
+            --color-success: #2e7d32;
+            --color-warning: #f57c00;
+            --color-error: #c62828;
+            --color-info: #0277bd;
+            --color-bg: #fefefe;
+            --color-bg-alt: #f5f5f5;
+            --color-bg-code: #f8f8f8;
+            --color-text: #212121;
+            --color-text-secondary: #555555;
+            --color-border: #dddddd;
+            --color-border-dark: #bbbbbb;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.15);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --font-main: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.7;
+            color: var(--color-text);
+            background-color: var(--color-bg);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ===== ACCESSIBILITY ===== */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            background: var(--color-primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            z-index: 10000;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 0 0 var(--radius-md) 0;
+        }
+
+        .skip-link:focus {
+            top: 0;
+            outline: 3px solid var(--color-accent);
+            outline-offset: 2px;
+        }
+
+        *:focus {
+            outline: 3px solid var(--color-accent);
+            outline-offset: 2px;
+        }
+
+        *:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        *:focus-visible {
+            outline: 3px solid var(--color-accent);
+            outline-offset: 2px;
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* ===== LAYOUT ===== */
+        .page-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ===== NAVIGATION SIDEBAR ===== */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform var(--transition-normal);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.1rem;
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+        }
+
+        .sidebar-header .course-info {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .nav-menu {
+            padding: 1rem 0;
+        }
+
+        .nav-section {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: white;
+            width: 100%;
+            text-align: left;
+            transition: background var(--transition-fast);
+        }
+
+        .nav-section-title:hover,
+        .nav-section-title:focus {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-section-title .icon {
+            transition: transform var(--transition-fast);
+        }
+
+        .nav-section-title[aria-expanded="true"] .icon {
+            transform: rotate(180deg);
+        }
+
+        .nav-items {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height var(--transition-normal);
+        }
+
+        .nav-items.expanded {
+            max-height: 500px;
+        }
+
+        .nav-items a {
+            display: block;
+            padding: 0.5rem 1.5rem 0.5rem 2.5rem;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all var(--transition-fast);
+            border-left: 3px solid transparent;
+        }
+
+        .nav-items a:hover,
+        .nav-items a:focus {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--color-accent);
+        }
+
+        .nav-items a.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left-color: var(--color-accent);
+        }
+
+        /* Progress indicator in sidebar */
+        .progress-section {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: auto;
+        }
+
+        .progress-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-bar-container {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--color-accent);
+            border-radius: 10px;
+            transition: width var(--transition-normal);
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            opacity: 0.9;
+        }
+
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+        }
+
+        .menu-toggle:hover {
+            background: var(--color-primary-dark);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem 3rem;
+            max-width: 1200px;
+        }
+
+        /* ===== HEADER ===== */
+        .page-header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            margin: 0 0 0.5rem 0;
+            font-weight: 700;
+        }
+
+        .page-header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .header-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-meta-item .label {
+            opacity: 0.85;
+        }
+
+        .header-meta-item .value {
+            font-weight: 600;
+        }
+
+        /* ===== SECTIONS ===== */
+        .section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
+        }
+
+        .section h2 {
+            color: var(--color-primary);
+            font-size: 1.4rem;
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--color-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section h3 {
+            color: var(--color-primary-dark);
+            font-size: 1.15rem;
+            margin: 1.5rem 0 1rem 0;
+        }
+
+        .section h4 {
+            color: var(--color-text);
+            font-size: 1rem;
+            margin: 1.25rem 0 0.75rem 0;
+            font-weight: 600;
+        }
+
+        /* ===== COLLAPSIBLE SECTIONS ===== */
+        .collapsible {
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .collapsible-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            background: var(--color-bg-alt);
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--color-text);
+            transition: background var(--transition-fast);
+        }
+
+        .collapsible-header:hover {
+            background: var(--color-border);
+        }
+
+        .collapsible-header .icon {
+            transition: transform var(--transition-fast);
+            font-size: 0.8rem;
+        }
+
+        .collapsible-header[aria-expanded="true"] .icon {
+            transform: rotate(180deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height var(--transition-normal), padding var(--transition-normal);
+        }
+
+        .collapsible-content.expanded {
+            max-height: 3000px;
+            padding: 1.25rem;
+        }
+
+        /* ===== TABLES ===== */
+        .table-container {
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        th {
+            padding: 0.875rem 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        tbody tr:hover {
+            background: var(--color-bg-alt);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        pre {
+            background: var(--color-bg-code);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            white-space: pre;
+            word-wrap: normal;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            border: none;
+            font-family: inherit;
+            font-size: inherit;
+            white-space: pre;
+        }
+
+        code {
+            background: var(--color-bg-code);
+            padding: 0.2rem 0.4rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.875em;
+            color: var(--color-error);
+        }
+
+        /* ===== NETWORK DIAGRAM ===== */
+        .network-diagram {
+            background: var(--color-bg-code);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            white-space: pre;
+        }
+
+        /* ===== ALERTS & CALLOUTS ===== */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            margin: 1rem 0;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .alert-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-left: 4px solid var(--color-info);
+            color: #0d47a1;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-left: 4px solid var(--color-warning);
+            color: #e65100;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid var(--color-success);
+            color: #1b5e20;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            border-left: 4px solid var(--color-error);
+            color: #b71c1c;
+        }
+
+        /* ===== LISTS ===== */
+        ul, ol {
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .checklist input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-top: 0.1rem;
+            cursor: pointer;
+            accent-color: var(--color-primary);
+        }
+
+        .checklist label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .checklist input[type="checkbox"]:checked + label {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        /* ===== BADGES ===== */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .badge-success {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .badge-warning {
+            background: var(--color-warning);
+            color: white;
+        }
+
+        .badge-info {
+            background: var(--color-info);
+            color: white;
+        }
+
+        /* ===== POINTS DISPLAY ===== */
+        .points-badge {
+            background: var(--color-accent);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* ===== RUBRIC STYLING ===== */
+        .rubric-table th {
+            font-size: 0.8rem;
+        }
+
+        .rubric-table td {
+            font-size: 0.8rem;
+            vertical-align: top;
+        }
+
+        .rubric-level {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        /* ===== TABS ===== */
+        .tabs {
+            margin: 1.5rem 0;
+        }
+
+        .tab-list {
+            display: flex;
+            border-bottom: 2px solid var(--color-border);
+            gap: 0.25rem;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all var(--transition-fast);
+        }
+
+        .tab-button:hover {
+            color: var(--color-primary);
+            background: var(--color-bg-alt);
+        }
+
+        .tab-button[aria-selected="true"] {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .tab-panel {
+            display: none;
+            padding: 1.5rem 0;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* ===== FOOTER ===== */
+        .page-footer {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            .sidebar,
+            .menu-toggle,
+            .progress-section,
+            .tab-list {
+                display: none !important;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            .section {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+
+            .collapsible-content {
+                max-height: none !important;
+                padding: 1rem !important;
+            }
+
+            .tab-panel {
+                display: block !important;
+            }
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1024px) {
+            .main-content {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+                padding-top: 4rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.4rem;
+            }
+
+            .header-meta {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .section {
+                padding: 1.25rem;
+            }
+
+            .tab-list {
+                flex-wrap: wrap;
+            }
+
+            .tab-button {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+        }
+
+        /* ===== OVERLAY FOR MOBILE MENU ===== */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+        <span aria-hidden="true">☰</span>
+    </button>
+
+    <div class="page-wrapper">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar" aria-label="Main navigation">
+            <div class="sidebar-header">
+                <h1>Project 2:  Network Infrastructure & Firewall Implementation</h1>
+                <div class="course-info">CSC 152 • Network OS &amp; Admin</div>
+            </div>
+
+            <div class="nav-menu">
+                <!-- Overview Section -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="true" aria-controls="nav-overview">
+                        <span>Overview</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items expanded" id="nav-overview">
+                        <li><a href="#project-overview">Project Overview</a></li>
+                        <li><a href="#learning-objectives">Learning Objectives</a></li>
+                        <li><a href="#cslo-alignment">CSLO Alignment</a></li>
+                        <li><a href="#prerequisites">Prerequisites</a></li>
+                        <li><a href="#scenario">Scenario</a></li>
+                    </ul>
+                </div>
+
+                <!-- Technical Requirements -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="false" aria-controls="nav-technical">
+                        <span>Technical Requirements</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items" id="nav-technical">
+                        <li><a href="#infrastructure-resources">Infrastructure Resources</a></li>
+                        <li><a href="#required-vms">Required VMs</a></li>
+                        <li><a href="#network-architecture">Network Architecture</a></li>
+                        <li><a href="#ip-addressing">IP Addressing</a></li>
+                    </ul>
+                </div>
+
+                <!-- Project Parts -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="false" aria-controls="nav-parts">
+                        <span>Project Deliverables</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items" id="nav-parts">
+                        <li><a href="#part-a">Part A: Virtual Network (20 pts)</a></li>
+                        <li><a href="#part-b">Part B: Network Services (25 pts)</a></li>
+                        <li><a href="#part-c">Part C: Directory Services (25 pts)</a></li>
+                        <li><a href="#part-d">Part D: Firewall Rules (20 pts)</a></li>
+                        <li><a href="#part-e">Part E: Testing &amp; Docs (10 pts)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Grading & Submission -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="false" aria-controls="nav-grading">
+                        <span>Grading &amp; Submission</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items" id="nav-grading">
+                        <li><a href="#grading-rubric">Grading Rubric</a></li>
+                        <li><a href="#submission-requirements">Submission Requirements</a></li>
+                        <li><a href="#timeline">Timeline &amp; Milestones</a></li>
+                    </ul>
+                </div>
+
+                <!-- Resources -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="false" aria-controls="nav-resources">
+                        <span>Resources &amp; Help</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items" id="nav-resources">
+                        <li><a href="#tips-for-success">Tips for Success</a></li>
+                        <li><a href="#common-issues">Common Issues</a></li>
+                        <li><a href="#external-resources">External Resources</a></li>
+                        <li><a href="#academic-integrity">Academic Integrity</a></li>
+                        <li><a href="#getting-help">Getting Help</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Progress Tracker -->
+            <div class="progress-section">
+                <div class="progress-title">Your Progress</div>
+                <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Project completion progress">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-text"><span id="progressPercent">0</span>% Complete (<span id="progressCount">0</span>/20 tasks)</div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+            <!-- Page Header -->
+            <header class="page-header">
+                <h1>Project 2: Network Infrastructure &amp; Firewall Implementation</h1>
+                <p class="subtitle">Design and implement a segmented network infrastructure for TechStart Solutions</p>
+                <div class="header-meta">
+                    <div class="header-meta-item">
+                        <span class="label">Course:</span>
+                        <span class="value">CSC 152</span>
+                    </div>
+                    <div class="header-meta-item">
+                        <span class="label">Project:</span>
+                        <span class="value">2 of 4</span>
+                    </div>
+                    <div class="header-meta-item">
+                        <span class="label">Points:</span>
+                        <span class="value">100</span>
+                    </div>
+                    <div class="header-meta-item">
+                        <span class="label">Institution:</span>
+                        <span class="value">Mendocino College</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Project Overview Section -->
+            <section class="section" id="project-overview" aria-labelledby="overview-heading">
+                <h2 id="overview-heading">
+                    <span aria-hidden="true">📋</span>
+                    Project Overview
+                </h2>
+                <p>Project 2 challenges students to design and implement a segmented network infrastructure for a fictional small business. Building upon the server administration skills developed in Weeks 1-7 and Project 1, you will:</p>
+                <ul>
+                    <li>Deploy a <strong>pfSense 2.7.2</strong> virtual firewall appliance in Proxmox</li>
+                    <li>Create <strong>multiple network segments</strong> (Management, Servers, Clients)</li>
+                    <li>Configure essential <strong>network services</strong> (DHCP, DNS)</li>
+                    <li>Implement <strong>directory services</strong> (Active Directory or OpenLDAP)</li>
+                    <li>Establish <strong>security controls</strong> through firewall rules</li>
+                </ul>
+                <div class="alert alert-info">
+                    <span class="alert-icon" aria-hidden="true">💡</span>
+                    <div class="alert-content">
+                        <div class="alert-title">Real-World Simulation</div>
+                        <p>This project simulates a real-world scenario where a system administrator must design and implement a secure, functional network infrastructure that separates different types of network traffic while enabling necessary communication between systems.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Learning Objectives -->
+            <section class="section" id="learning-objectives" aria-labelledby="objectives-heading">
+                <h2 id="objectives-heading">
+                    <span aria-hidden="true">🎯</span>
+                    Learning Objectives
+                </h2>
+                <p>Upon successful completion of this project, you will be able to:</p>
+                <ol>
+                    <li>Deploy and configure pfSense 2.7.2 as a virtual firewall appliance in Proxmox</li>
+                    <li>Design and implement a multi-subnet network architecture</li>
+                    <li>Configure DHCP services for dynamic IP address assignment</li>
+                    <li>Configure DNS services for internal name resolution</li>
+                    <li>Implement firewall rules to control traffic between network segments</li>
+                    <li>Integrate directory services (Active Directory or OpenLDAP) with network infrastructure</li>
+                    <li>Document network infrastructure using professional standards</li>
+                    <li>Test and verify network connectivity and security controls</li>
+                </ol>
+            </section>
+
+            <!-- CSLO Alignment -->
+            <section class="section" id="cslo-alignment" aria-labelledby="cslo-heading">
+                <h2 id="cslo-heading">
+                    <span aria-hidden="true">🔗</span>
+                    CSLO Alignment
+                </h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">CSLO</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Project Coverage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge badge-primary">CSLO 2</span></td>
+                                <td>Apply physical and network data security techniques</td>
+                                <td>Firewall rules, network segmentation, access controls</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-primary">CSLO 3</span></td>
+                                <td>Configure systems for network connectivity, including physical and logical elements</td>
+                                <td>Subnet design, DHCP, DNS, routing, firewall configuration</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Prerequisites -->
+            <section class="section" id="prerequisites" aria-labelledby="prereq-heading">
+                <h2 id="prereq-heading">
+                    <span aria-hidden="true">✅</span>
+                    Prerequisites
+                </h2>
+                <p>Before beginning this project, you should have completed:</p>
+                <ul>
+                    <li><strong>Project 1:</strong> Multi-User Server Configuration (Linux and Windows servers deployed)</li>
+                    <li><strong>Week 7:</strong> File Systems, Ownership &amp; Permissions</li>
+                    <li><strong>Week 8:</strong> Network Configuration Fundamentals</li>
+                    <li><strong>Week 9:</strong> Network Services &amp; Infrastructure (partial - pfSense introduction)</li>
+                </ul>
+
+                <h3>Required Infrastructure from Project 1</h3>
+                <ul class="checklist" aria-label="Project 1 infrastructure checklist">
+                    <li>
+                        <input type="checkbox" id="prereq-linux" data-progress="true">
+                        <label for="prereq-linux">Linux Server (Ubuntu Server or Rocky Linux) - functional</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="prereq-windows" data-progress="true">
+                        <label for="prereq-windows">Windows Server 2022 - functional</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="prereq-proxmox" data-progress="true">
+                        <label for="prereq-proxmox">Both servers accessible via Proxmox console</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Scenario -->
+            <section class="section" id="scenario" aria-labelledby="scenario-heading">
+                <h2 id="scenario-heading">
+                    <span aria-hidden="true">🏢</span>
+                    Scenario: TechStart Solutions
+                </h2>
+                <div class="alert alert-info">
+                    <span class="alert-icon" aria-hidden="true">🏗️</span>
+                    <div class="alert-content">
+                        <div class="alert-title">TechStart Solutions Network Infrastructure Project</div>
+                        <p>TechStart Solutions is a growing startup with 25 employees. As their new IT administrator, you have been tasked with implementing a secure network infrastructure.</p>
+                    </div>
+                </div>
+
+                <h3>Company Requirements</h3>
+                <ul>
+                    <li>A dedicated <strong>management network</strong> for IT administration</li>
+                    <li>A <strong>server network</strong> for production services</li>
+                    <li>A <strong>client network</strong> for employee workstations</li>
+                    <li>Centralized user authentication through <strong>directory services</strong></li>
+                    <li>Network services (<strong>DHCP, DNS</strong>) for automatic device configuration</li>
+                    <li>Security controls to limit unauthorized access between network segments</li>
+                </ul>
+                <p>Your infrastructure must be documented thoroughly for future administrators and comply with security best practices.</p>
+            </section>
+
+            <!-- Technical Requirements -->
+            <section class="section" id="infrastructure-resources" aria-labelledby="infra-heading">
+                <h2 id="infra-heading">
+                    <span aria-hidden="true">💻</span>
+                    Technical Requirements
+                </h2>
+
+                <h3>Infrastructure Resources (Per Student)</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Resource</th>
+                                <th scope="col">Available</th>
+                                <th scope="col">Project 2 Usage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CPU Cores</td>
+                                <td>8 vCPUs</td>
+                                <td>Up to 7 vCPUs</td>
+                            </tr>
+                            <tr>
+                                <td>RAM</td>
+                                <td>40 GB</td>
+                                <td>Up to 20 GB</td>
+                            </tr>
+                            <tr>
+                                <td>VM Storage</td>
+                                <td>400 GB</td>
+                                <td>Up to 160 GB</td>
+                            </tr>
+                            <tr>
+                                <td>ISO Storage</td>
+                                <td>100 GB</td>
+                                <td>pfSense ISO (~1 GB)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Required VMs -->
+            <section class="section" id="required-vms" aria-labelledby="vms-heading">
+                <h2 id="vms-heading">
+                    <span aria-hidden="true">🖥️</span>
+                    Required Virtual Machines
+                </h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">VM</th>
+                                <th scope="col">Purpose</th>
+                                <th scope="col">vCPUs</th>
+                                <th scope="col">RAM</th>
+                                <th scope="col">Storage</th>
+                                <th scope="col">Network</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>pfSense Firewall</td>
+                                <td>Network gateway/firewall</td>
+                                <td>1</td>
+                                <td>2 GB</td>
+                                <td>20 GB</td>
+                                <td>vmbr0, vmbr1, vmbr2, vmbr3</td>
+                            </tr>
+                            <tr>
+                                <td>Linux Server</td>
+                                <td>DNS/file services (from P1)</td>
+                                <td>2</td>
+                                <td>4 GB</td>
+                                <td>40 GB</td>
+                                <td>vmbr2 (Servers)</td>
+                            </tr>
+                            <tr>
+                                <td>Windows Server</td>
+                                <td>AD DS/DHCP (from P1)</td>
+                                <td>2</td>
+                                <td>8 GB</td>
+                                <td>60 GB</td>
+                                <td>vmbr2 (Servers)</td>
+                            </tr>
+                            <tr>
+                                <td>Linux Client</td>
+                                <td>Testing/verification</td>
+                                <td>1</td>
+                                <td>2 GB</td>
+                                <td>20 GB</td>
+                                <td>vmbr3 (Clients)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total</strong></td>
+                                <td></td>
+                                <td><strong>6</strong></td>
+                                <td><strong>16 GB</strong></td>
+                                <td><strong>140 GB</strong></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Network Architecture -->
+            <section class="section" id="network-architecture" aria-labelledby="network-heading">
+                <h2 id="network-heading">
+                    <span aria-hidden="true">🌐</span>
+                    Network Architecture
+                </h2>
+                <div class="network-diagram" role="img" aria-label="Network topology diagram showing pfSense firewall connecting WAN, Management, Servers, and Clients networks">
+                         INTERNET/CAMPUS
+                               │
+                               │
+                       ┌───────┴───────┐
+                       │      WAN      │
+                       │   (vmbr0)     │
+                       └───────┬───────┘
+                               │
+                   ┌───────────┴───────────┐
+                   │                       │
+                   │    pfSense 2.7.2      │
+                   │    Virtual Firewall   │
+                   │                       │
+                   │    WAN:  vtnet0       │
+                   │    LAN:  vtnet1       │
+                   │    OPT1: vtnet2       │
+                   │    OPT2: vtnet3       │
+                   │                       │
+                   └─┬─────────┬─────────┬─┘
+                     │         │         │
+          ┌──────────┴──┐  ┌───┴───┐  ┌──┴──────────┐
+          │ MANAGEMENT  │  │SERVERS│  │   CLIENTS   │
+          │   (vmbr1)   │  │(vmbr2)│  │   (vmbr3)   │
+          │ 10.0.1.0/24 │  │10.0.2.│  │ 10.0.3.0/24 │
+          └─────────────┘  │ 0/24  │  └──────┬──────┘
+                           └───┬───┘         │
+                               │             │
+                    ┌──────────┼──────────┐  │
+                    │          │          │  │
+               ┌────┴────┐ ┌───┴────┐  ┌──┴──┴──┐
+               │ Linux   │ │Windows │  │ Linux  │
+               │ Server  │ │ Server │  │ Client │
+               │10.0.2.10│ │10.0.2. │  │  DHCP  │
+               └─────────┘ │   11   │  └────────┘
+                           └────────┘</div>
+            </section>
+
+            <!-- IP Addressing -->
+            <section class="section" id="ip-addressing" aria-labelledby="ip-heading">
+                <h2 id="ip-heading">
+                    <span aria-hidden="true">📍</span>
+                    IP Addressing Scheme
+                </h2>
+
+                <h3>Network Segments</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Network Segment</th>
+                                <th scope="col">Bridge</th>
+                                <th scope="col">Subnet</th>
+                                <th scope="col">Gateway</th>
+                                <th scope="col">DHCP Range</th>
+                                <th scope="col">Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>WAN</td>
+                                <td>vmbr0</td>
+                                <td>10.255.254.0/24</td>
+                                <td>10.255.254.1</td>
+                                <td>Campus DHCP</td>
+                                <td>Internet access</td>
+                            </tr>
+                            <tr>
+                                <td>Management</td>
+                                <td>vmbr1</td>
+                                <td>10.0.1.0/24</td>
+                                <td>10.0.1.1</td>
+                                <td>None (static only)</td>
+                                <td>Administrative access</td>
+                            </tr>
+                            <tr>
+                                <td>Servers</td>
+                                <td>vmbr2</td>
+                                <td>10.0.2.0/24</td>
+                                <td>10.0.2.1</td>
+                                <td>None (static only)</td>
+                                <td>Production servers</td>
+                            </tr>
+                            <tr>
+                                <td>Clients</td>
+                                <td>vmbr3</td>
+                                <td>10.0.3.0/24</td>
+                                <td>10.0.3.1</td>
+                                <td>10.0.3.100-200</td>
+                                <td>End-user devices</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Static IP Assignments</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Device</th>
+                                <th scope="col">Network</th>
+                                <th scope="col">IP Address</th>
+                                <th scope="col">Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>pfSense WAN</td>
+                                <td>vmbr0</td>
+                                <td>DHCP (10.255.254.x)</td>
+                                <td>Internet connectivity</td>
+                            </tr>
+                            <tr>
+                                <td>pfSense LAN</td>
+                                <td>vmbr1</td>
+                                <td>10.0.1.1</td>
+                                <td>Management gateway</td>
+                            </tr>
+                            <tr>
+                                <td>pfSense OPT1 (SERVERS)</td>
+                                <td>vmbr2</td>
+                                <td>10.0.2.1</td>
+                                <td>Server gateway</td>
+                            </tr>
+                            <tr>
+                                <td>pfSense OPT2 (CLIENTS)</td>
+                                <td>vmbr3</td>
+                                <td>10.0.3.1</td>
+                                <td>Client gateway</td>
+                            </tr>
+                            <tr>
+                                <td>Linux Server</td>
+                                <td>vmbr2</td>
+                                <td>10.0.2.10</td>
+                                <td>DNS, file services</td>
+                            </tr>
+                            <tr>
+                                <td>Windows Server</td>
+                                <td>vmbr2</td>
+                                <td>10.0.2.11</td>
+                                <td>AD DS, DHCP</td>
+                            </tr>
+                            <tr>
+                                <td>Linux Client</td>
+                                <td>vmbr3</td>
+                                <td>DHCP assigned</td>
+                                <td>Testing</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Part A -->
+            <section class="section" id="part-a" aria-labelledby="part-a-heading">
+                <h2 id="part-a-heading">
+                    <span aria-hidden="true">🅰️</span>
+                    Part A: Virtual Network Infrastructure
+                    <span class="points-badge">20 Points</span>
+                </h2>
+                <p><strong>Objective:</strong> Create the virtual network infrastructure in Proxmox and deploy pfSense 2.7.2.</p>
+
+                <!-- A.1 -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="a1-content">
+                        <span>A.1: Proxmox Network Configuration (8 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="a1-content">
+                        <p>Create three additional Linux bridges in Proxmox:</p>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Create vmbr1</td>
+                                        <td>Management network bridge, no IP on bridge</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Create vmbr2</td>
+                                        <td>Server network bridge, no IP on bridge</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Create vmbr3</td>
+                                        <td>Client network bridge, no IP on bridge</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Documentation</td>
+                                        <td>Screenshots of all bridge configurations</td>
+                                        <td>2</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Deliverables</h4>
+                        <ul class="checklist">
+                            <li>
+                                <input type="checkbox" id="a1-screenshot" data-progress="true">
+                                <label for="a1-screenshot">Screenshot of Proxmox Network configuration showing all bridges (vmbr0, vmbr1, vmbr2, vmbr3)</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="a1-explanation" data-progress="true">
+                                <label for="a1-explanation">Brief explanation of why bridge IPs are left blank (50-100 words)</label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- A.2 -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="a2-content">
+                        <span>A.2: pfSense 2.7.2 Installation (12 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="a2-content">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>VM Creation</td>
+                                        <td>Correct settings per specification</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Installation</td>
+                                        <td>Successful pfSense installation</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Interface Assignment</td>
+                                        <td>WAN, LAN, OPT1, OPT2 correctly assigned</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Initial Configuration</td>
+                                        <td>Web GUI accessible, password changed</td>
+                                        <td>3</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>VM Configuration Requirements</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Setting</th>
+                                        <th scope="col">Required Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>VM ID</td><td>Student choice</td></tr>
+                                    <tr><td>Name</td><td>pfsense-fw (or similar descriptive name)</td></tr>
+                                    <tr><td>OS Type</td><td>Other</td></tr>
+                                    <tr><td>ISO</td><td>pfSense-CE-2.7.2-RELEASE-amd64.iso</td></tr>
+                                    <tr><td>System</td><td>Default (SeaBIOS), SCSI Controller: VirtIO SCSI</td></tr>
+                                    <tr><td>Disk</td><td>20 GB minimum, VirtIO Block</td></tr>
+                                    <tr><td>CPU</td><td>1 socket, 1 core minimum, Type: host</td></tr>
+                                    <tr><td>Memory</td><td>2048 MB (2 GB) minimum</td></tr>
+                                    <tr><td>Network 1</td><td>vmbr0 (WAN), Model: VirtIO</td></tr>
+                                    <tr><td>Network 2</td><td>vmbr1 (Management/LAN), Model: VirtIO</td></tr>
+                                    <tr><td>Network 3</td><td>vmbr2 (Servers/OPT1), Model: VirtIO</td></tr>
+                                    <tr><td>Network 4</td><td>vmbr3 (Clients/OPT2), Model: VirtIO</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Deliverables</h4>
+                        <ul class="checklist">
+                            <li>
+                                <input type="checkbox" id="a2-hardware" data-progress="true">
+                                <label for="a2-hardware">Screenshot of Proxmox VM hardware configuration</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="a2-interfaces" data-progress="true">
+                                <label for="a2-interfaces">Screenshot of pfSense console showing interface assignments</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="a2-ips" data-progress="true">
+                                <label for="a2-ips">Screenshot of pfSense console showing IP configurations</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="a2-webgui" data-progress="true">
+                                <label for="a2-webgui">Screenshot of pfSense web GUI dashboard (after initial setup)</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="a2-password" data-progress="true">
+                                <label for="a2-password">Documentation of admin password change (confirm changed, do not include actual password)</label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part B -->
+            <section class="section" id="part-b" aria-labelledby="part-b-heading">
+                <h2 id="part-b-heading">
+                    <span aria-hidden="true">🅱️</span>
+                    Part B: Network Services Configuration
+                    <span class="points-badge">25 Points</span>
+                </h2>
+                <p><strong>Objective:</strong> Configure DHCP and DNS services to support the network infrastructure.</p>
+
+                <!-- B.1 -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="b1-content">
+                        <span>B.1: DHCP Server Configuration (10 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="b1-content">
+                        <p>Configure DHCP on pfSense for the CLIENTS network:</p>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Enable DHCP</td>
+                                        <td>On CLIENTS (OPT2) interface</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Address Range</td>
+                                        <td>10.0.3.100 - 10.0.3.200</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>DHCP Options</td>
+                                        <td>Gateway, DNS, domain name configured</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Static Mapping</td>
+                                        <td>At least 2 DHCP reservations created</td>
+                                        <td>3</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Required DHCP Settings</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Setting</th>
+                                        <th scope="col">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Interface</td><td>CLIENTS (OPT2)</td></tr>
+                                    <tr><td>Enable</td><td>✓</td></tr>
+                                    <tr><td>Address Pool Range</td><td>10.0.3.100 to 10.0.3.200</td></tr>
+                                    <tr><td>DNS Servers</td><td>10.0.2.10 (Linux server) or 10.0.2.11 (Windows server)</td></tr>
+                                    <tr><td>Gateway</td><td>10.0.3.1</td></tr>
+                                    <tr><td>Domain Name</td><td>techstart.local (or your chosen domain)</td></tr>
+                                    <tr><td>Default Lease Time</td><td>86400 (24 hours)</td></tr>
+                                    <tr><td>Maximum Lease Time</td><td>172800 (48 hours)</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Deliverables</h4>
+                        <ul class="checklist">
+                            <li>
+                                <input type="checkbox" id="b1-dhcp-config" data-progress="true">
+                                <label for="b1-dhcp-config">Screenshot of pfSense DHCP Server configuration for CLIENTS interface</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="b1-dhcp-options" data-progress="true">
+                                <label for="b1-dhcp-options">Screenshot showing DHCP options (DNS, gateway, domain)</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="b1-static-mappings" data-progress="true">
+                                <label for="b1-static-mappings">Screenshot of at least 2 static DHCP mappings</label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- B.2 -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="b2-content">
+                        <span>B.2: DNS Server Configuration (15 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="b2-content">
+                        <p>Configure DNS services on either Windows Server (preferred) or Linux Server:</p>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>DNS Server Installation</td>
+                                        <td>Install DNS role/service</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Forward Lookup Zone</td>
+                                        <td>Create zone for techstart.local</td>
+                                        <td>4</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Host Records</td>
+                                        <td>A records for all servers and firewall</td>
+                                        <td>4</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Reverse Lookup Zone</td>
+                                        <td>Create reverse zone for 10.0.2.0/24</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>PTR Records</td>
+                                        <td>Reverse records for servers</td>
+                                        <td>2</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Required DNS Records</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Record Type</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>A</td><td>pfsense.techstart.local</td><td>10.0.2.1</td></tr>
+                                    <tr><td>A</td><td>linux.techstart.local</td><td>10.0.2.10</td></tr>
+                                    <tr><td>A</td><td>dc01.techstart.local (Windows)</td><td>10.0.2.11</td></tr>
+                                    <tr><td>PTR</td><td>1.2.0.10.in-addr.arpa</td><td>pfsense.techstart.local</td></tr>
+                                    <tr><td>PTR</td><td>10.2.0.10.in-addr.arpa</td><td>linux.techstart.local</td></tr>
+                                    <tr><td>PTR</td><td>11.2.0.10.in-addr.arpa</td><td>dc01.techstart.local</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Tabs for Windows vs Linux DNS -->
+                        <div class="tabs">
+                            <div class="tab-list" role="tablist" aria-label="DNS Configuration Options">
+                                <button class="tab-button" role="tab" aria-selected="true" aria-controls="windows-dns-panel" id="windows-dns-tab">Windows DNS</button>
+                                <button class="tab-button" role="tab" aria-selected="false" aria-controls="linux-dns-panel" id="linux-dns-tab">Linux DNS (BIND)</button>
+                            </div>
+                            <div class="tab-panel active" role="tabpanel" id="windows-dns-panel" aria-labelledby="windows-dns-tab">
+                                <h4>Windows DNS Deliverables</h4>
+                                <ul>
+                                    <li>Screenshot of DNS Manager showing forward lookup zone</li>
+                                    <li>Screenshot showing all A records created</li>
+                                    <li>Screenshot of reverse lookup zone</li>
+                                    <li>Screenshot showing PTR records</li>
+                                    <li>nslookup test results (forward and reverse)</li>
+                                </ul>
+                            </div>
+                            <div class="tab-panel" role="tabpanel" id="linux-dns-panel" aria-labelledby="linux-dns-tab">
+                                <h4>Linux DNS (BIND) Deliverables</h4>
+                                <ul>
+                                    <li>Contents of named.conf.local or zone configuration</li>
+                                    <li>Contents of forward zone file</li>
+                                    <li>Contents of reverse zone file</li>
+                                    <li>dig or nslookup test results</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part C -->
+            <section class="section" id="part-c" aria-labelledby="part-c-heading">
+                <h2 id="part-c-heading">
+                    <span aria-hidden="true">©️</span>
+                    Part C: Directory Services Integration
+                    <span class="points-badge">25 Points</span>
+                </h2>
+                <p><strong>Objective:</strong> Implement centralized directory services and integrate with network infrastructure.</p>
+
+                <!-- Tabs for AD DS vs OpenLDAP -->
+                <div class="tabs">
+                    <div class="tab-list" role="tablist" aria-label="Directory Services Options">
+                        <button class="tab-button" role="tab" aria-selected="true" aria-controls="adds-panel" id="adds-tab">C.1: Active Directory (Recommended)</button>
+                        <button class="tab-button" role="tab" aria-selected="false" aria-controls="openldap-panel" id="openldap-tab">C.2: OpenLDAP (Alternative)</button>
+                    </div>
+
+                    <!-- AD DS Panel -->
+                    <div class="tab-panel active" role="tabpanel" id="adds-panel" aria-labelledby="adds-tab">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>AD DS Installation</td><td>Promote Windows Server to Domain Controller</td><td>5</td></tr>
+                                    <tr><td>Domain Creation</td><td>Create techstart.local domain</td><td>3</td></tr>
+                                    <tr><td>OU Structure</td><td>Create departmental OUs</td><td>4</td></tr>
+                                    <tr><td>User Accounts</td><td>Create minimum 10 domain users</td><td>5</td></tr>
+                                    <tr><td>Security Groups</td><td>Create departmental and role-based groups</td><td>4</td></tr>
+                                    <tr><td>Group Membership</td><td>Assign users to appropriate groups</td><td>2</td></tr>
+                                    <tr><td>Client Join</td><td>Join Linux client to domain (optional +2 bonus)</td><td>2</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Required OU Structure</h4>
+                        <pre><code>techstart.local
+├── TechStart
+│   ├── Users
+│   │   ├── IT
+│   │   ├── Sales
+│   │   └── Engineering
+│   ├── Computers
+│   │   ├── Servers
+│   │   └── Workstations
+│   └── Groups
+│       ├── Security
+│       └── Distribution</code></pre>
+
+                        <h4>Required Users (Minimum 10)</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Username</th>
+                                        <th scope="col">Full Name</th>
+                                        <th scope="col">Department</th>
+                                        <th scope="col">Groups</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>admin.techstart</td><td>TechStart Admin</td><td>IT</td><td>Domain Admins, IT-Staff</td></tr>
+                                    <tr><td>jsmith</td><td>John Smith</td><td>IT</td><td>IT-Staff</td></tr>
+                                    <tr><td>mjones</td><td>Mary Jones</td><td>Sales</td><td>Sales-Staff</td></tr>
+                                    <tr><td colspan="4"><em>(continue for 10+ users)</em></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Required Security Groups</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Group Name</th>
+                                        <th scope="col">Type</th>
+                                        <th scope="col">Purpose</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>IT-Staff</td><td>Security</td><td>IT department members</td></tr>
+                                    <tr><td>Sales-Staff</td><td>Security</td><td>Sales department members</td></tr>
+                                    <tr><td>Engineering-Staff</td><td>Security</td><td>Engineering department members</td></tr>
+                                    <tr><td>Server-Admins</td><td>Security</td><td>Server administrative access</td></tr>
+                                    <tr><td>File-Share-Users</td><td>Security</td><td>Access to shared files</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- OpenLDAP Panel -->
+                    <div class="tab-panel" role="tabpanel" id="openldap-panel" aria-labelledby="openldap-tab">
+                        <div class="alert alert-info">
+                            <span class="alert-icon" aria-hidden="true">ℹ️</span>
+                            <div class="alert-content">
+                                <div class="alert-title">Alternative Path</div>
+                                <p>Students may choose OpenLDAP instead of Active Directory for the same 25 points.</p>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>OpenLDAP Installation</td><td>Install and configure slapd</td><td>5</td></tr>
+                                    <tr><td>Directory Structure</td><td>Create organizational DIT</td><td>5</td></tr>
+                                    <tr><td>User Entries</td><td>Create minimum 10 user entries</td><td>6</td></tr>
+                                    <tr><td>Group Entries</td><td>Create departmental groups</td><td>5</td></tr>
+                                    <tr><td>LDAP Client</td><td>Configure Linux client for LDAP auth</td><td>4</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Deliverables</h4>
+                        <ul>
+                            <li>Screenshot/output of slapd running</li>
+                            <li>LDIF file contents for directory structure</li>
+                            <li>LDIF file contents for users</li>
+                            <li>ldapsearch output showing users and groups</li>
+                            <li>Evidence of LDAP authentication working</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part D -->
+            <section class="section" id="part-d" aria-labelledby="part-d-heading">
+                <h2 id="part-d-heading">
+                    <span aria-hidden="true">🅳</span>
+                    Part D: Firewall Rules Implementation
+                    <span class="points-badge">20 Points</span>
+                </h2>
+                <p><strong>Objective:</strong> Implement firewall rules to control traffic between network segments following security best practices.</p>
+
+                <!-- D.1 -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="d1-content">
+                        <span>D.1: Firewall Rule Design (8 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="d1-content">
+                        <p>Design and document firewall rules before implementation:</p>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Rule Matrix</td><td>Create traffic flow matrix</td><td>4</td></tr>
+                                    <tr><td>Rule Justification</td><td>Explain security rationale</td><td>4</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Required Traffic Flow Matrix</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Source</th>
+                                        <th scope="col">Destination</th>
+                                        <th scope="col">Ports/Services</th>
+                                        <th scope="col">Action</th>
+                                        <th scope="col">Justification</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Management</td><td>Any</td><td>Any</td><td>Allow</td><td>Admin full access</td></tr>
+                                    <tr><td>Servers</td><td>WAN</td><td>80, 443</td><td>Allow</td><td>Web/updates</td></tr>
+                                    <tr><td>Servers</td><td>WAN</td><td>53</td><td>Allow</td><td>DNS queries</td></tr>
+                                    <tr><td>Servers</td><td>Servers</td><td>Any</td><td>Allow</td><td>Inter-server</td></tr>
+                                    <tr><td>Servers</td><td>Management</td><td>Any</td><td>Block</td><td>Security isolation</td></tr>
+                                    <tr><td>Clients</td><td>Servers</td><td>53</td><td>Allow</td><td>DNS</td></tr>
+                                    <tr><td>Clients</td><td>Servers</td><td>80, 443</td><td>Allow</td><td>Web services</td></tr>
+                                    <tr><td>Clients</td><td>Servers</td><td>445</td><td>Allow</td><td>File sharing</td></tr>
+                                    <tr><td>Clients</td><td>Servers</td><td>3389</td><td>Allow</td><td>RDP (if needed)</td></tr>
+                                    <tr><td>Clients</td><td>Servers</td><td>22</td><td>Block</td><td>No direct SSH</td></tr>
+                                    <tr><td>Clients</td><td>WAN</td><td>80, 443</td><td>Allow</td><td>Web browsing</td></tr>
+                                    <tr><td>Clients</td><td>WAN</td><td>53</td><td>Allow</td><td>External DNS</td></tr>
+                                    <tr><td>Clients</td><td>Management</td><td>Any</td><td>Block</td><td>Security isolation</td></tr>
+                                    <tr><td>Any</td><td>Any</td><td>Any</td><td>Block</td><td>Default deny</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- D.2 -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="d2-content">
+                        <span>D.2: Firewall Rule Implementation (12 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="d2-content">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Management Rules</td><td>LAN interface rules</td><td>2</td></tr>
+                                    <tr><td>Server Rules</td><td>SERVERS interface rules</td><td>4</td></tr>
+                                    <tr><td>Client Rules</td><td>CLIENTS interface rules</td><td>4</td></tr>
+                                    <tr><td>Logging</td><td>Enable logging on block rules</td><td>2</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Deliverables</h4>
+                        <ul class="checklist">
+                            <li>
+                                <input type="checkbox" id="d2-matrix" data-progress="true">
+                                <label for="d2-matrix">Completed traffic flow matrix with justifications</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="d2-screenshots" data-progress="true">
+                                <label for="d2-screenshots">Screenshots of all firewall rules on each interface (LAN, SERVERS, CLIENTS)</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="d2-logs" data-progress="true">
+                                <label for="d2-logs">Screenshot of firewall logs showing blocked traffic</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="d2-explanation" data-progress="true">
+                                <label for="d2-explanation">Explanation of rule order and why it matters (150-200 words)</label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part E -->
+            <section class="section" id="part-e" aria-labelledby="part-e-heading">
+                <h2 id="part-e-heading">
+                    <span aria-hidden="true">🅴</span>
+                    Part E: Testing and Documentation
+                    <span class="points-badge">10 Points</span>
+                </h2>
+                <p><strong>Objective:</strong> Verify all configurations work correctly and create professional documentation.</p>
+
+                <!-- E.1 -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="e1-content">
+                        <span>E.1: Connectivity Testing (5 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="e1-content">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Test</th>
+                                        <th scope="col">Expected Result</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Client DHCP</td><td>Receives IP from 10.0.3.100-200 range</td><td>1</td></tr>
+                                    <tr><td>Client DNS</td><td>Can resolve internal names</td><td>1</td></tr>
+                                    <tr><td>Client Internet</td><td>Can reach external websites</td><td>1</td></tr>
+                                    <tr><td>Firewall Blocks</td><td>Blocked traffic logged correctly</td><td>1</td></tr>
+                                    <tr><td>Server Communication</td><td>Servers can communicate</td><td>1</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Required Test Evidence</h4>
+
+                        <h5>1. DHCP Test</h5>
+                        <ul>
+                            <li>Screenshot of <code>ipconfig /all</code> or <code>ip addr</code> on Linux client showing DHCP-assigned address</li>
+                            <li>Screenshot of pfSense DHCP Leases showing client</li>
+                        </ul>
+
+                        <h5>2. DNS Test</h5>
+                        <ul>
+                            <li>Output of <code>nslookup linux.techstart.local</code> from client</li>
+                            <li>Output of <code>nslookup dc01.techstart.local</code> from client</li>
+                            <li>Output of <code>nslookup google.com</code> from client</li>
+                        </ul>
+
+                        <h5>3. Connectivity Test</h5>
+                        <ul>
+                            <li>Output of <code>ping 10.0.2.10</code> (Linux server) from client</li>
+                            <li>Output of <code>ping 10.0.2.11</code> (Windows server) from client</li>
+                            <li>Output of <code>ping 8.8.8.8</code> from client</li>
+                            <li>Screenshot of web browser accessing external site from client</li>
+                        </ul>
+
+                        <h5>4. Firewall Test</h5>
+                        <ul>
+                            <li>Attempt SSH from client to server (should fail)</li>
+                            <li>Screenshot of pfSense firewall log showing blocked connection</li>
+                            <li>Attempt ping from client to management network (should fail)</li>
+                            <li>Screenshot of firewall log showing blocked connection</li>
+                        </ul>
+
+                        <h5>5. Server Communication</h5>
+                        <ul>
+                            <li>Ping between Linux and Windows servers</li>
+                            <li>DNS query from one server to another</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- E.2 -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="e2-content">
+                        <span>E.2: Network Documentation (5 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="e2-content">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Deliverable</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Network Diagram</td><td>Complete topology diagram</td><td>2</td></tr>
+                                    <tr><td>IP Address Table</td><td>All addresses documented</td><td>1</td></tr>
+                                    <tr><td>Configuration Summary</td><td>Key settings documented</td><td>2</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Network Diagram Requirements</h4>
+                        <ul>
+                            <li>Show all network segments (WAN, Management, Servers, Clients)</li>
+                            <li>Include all VMs with hostnames and IP addresses</li>
+                            <li>Show pfSense with all interfaces labeled</li>
+                            <li>Include subnet information for each segment</li>
+                            <li>Use professional diagramming tool (draw.io, Visio, Lucidchart)</li>
+                        </ul>
+
+                        <h4>IP Address Table Template</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Hostname</th>
+                                        <th scope="col">Interface</th>
+                                        <th scope="col">IP Address</th>
+                                        <th scope="col">Subnet</th>
+                                        <th scope="col">Gateway</th>
+                                        <th scope="col">DNS</th>
+                                        <th scope="col">Purpose</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>pfsense-fw</td><td>WAN (vtnet0)</td><td>DHCP</td><td>/24</td><td>Campus</td><td>Campus</td><td>Internet</td></tr>
+                                    <tr><td>pfsense-fw</td><td>LAN (vtnet1)</td><td>10.0.1.1</td><td>/24</td><td>-</td><td>-</td><td>Management GW</td></tr>
+                                    <tr><td>pfsense-fw</td><td>OPT1 (vtnet2)</td><td>10.0.2.1</td><td>/24</td><td>-</td><td>-</td><td>Server GW</td></tr>
+                                    <tr><td>pfsense-fw</td><td>OPT2 (vtnet3)</td><td>10.0.3.1</td><td>/24</td><td>-</td><td>-</td><td>Client GW</td></tr>
+                                    <tr><td>linux-server</td><td>eth0</td><td>10.0.2.10</td><td>/24</td><td>10.0.2.1</td><td>127.0.0.1</td><td>DNS/Files</td></tr>
+                                    <tr><td>dc01</td><td>Ethernet</td><td>10.0.2.11</td><td>/24</td><td>10.0.2.1</td><td>127.0.0.1</td><td>AD DS/DHCP</td></tr>
+                                    <tr><td>client01</td><td>eth0</td><td>DHCP</td><td>/24</td><td>10.0.3.1</td><td>10.0.2.11</td><td>Testing</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Grading Rubric -->
+            <section class="section" id="grading-rubric" aria-labelledby="rubric-heading">
+                <h2 id="rubric-heading">
+                    <span aria-hidden="true">📊</span>
+                    Grading Rubric
+                </h2>
+
+                <h3>Points Summary</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Part</th>
+                                <th scope="col">Component</th>
+                                <th scope="col">Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>A</td><td>Virtual Network Infrastructure</td><td>20</td></tr>
+                            <tr><td></td><td>A.1 Proxmox Network Configuration</td><td>8</td></tr>
+                            <tr><td></td><td>A.2 pfSense Installation &amp; Configuration</td><td>12</td></tr>
+                            <tr><td>B</td><td>Network Services Configuration</td><td>25</td></tr>
+                            <tr><td></td><td>B.1 DHCP Server Configuration</td><td>10</td></tr>
+                            <tr><td></td><td>B.2 DNS Server Configuration</td><td>15</td></tr>
+                            <tr><td>C</td><td>Directory Services Integration</td><td>25</td></tr>
+                            <tr><td></td><td>C.1 AD DS or OpenLDAP Implementation</td><td>25</td></tr>
+                            <tr><td>D</td><td>Firewall Rules Implementation</td><td>20</td></tr>
+                            <tr><td></td><td>D.1 Firewall Rule Design</td><td>8</td></tr>
+                            <tr><td></td><td>D.2 Firewall Rule Implementation</td><td>12</td></tr>
+                            <tr><td>E</td><td>Testing and Documentation</td><td>10</td></tr>
+                            <tr><td></td><td>E.1 Connectivity Testing</td><td>5</td></tr>
+                            <tr><td></td><td>E.2 Network Documentation</td><td>5</td></tr>
+                            <tr><td colspan="2"><strong>TOTAL</strong></td><td><strong>100</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Submission Requirements -->
+            <section class="section" id="submission-requirements" aria-labelledby="submission-heading">
+                <h2 id="submission-heading">
+                    <span aria-hidden="true">📤</span>
+                    Submission Requirements
+                </h2>
+
+                <h3>Format</h3>
+                <ul>
+                    <li>Single PDF document containing all deliverables</li>
+                    <li>File naming: <code>LastName_FirstName_Project2.pdf</code></li>
+                    <li>Maximum file size: 50 MB</li>
+                </ul>
+
+                <h3>Document Structure</h3>
+                <pre><code>Project 2: Network Infrastructure &amp; Firewall Implementation
+Student Name: [Your Name]
+Date: [Submission Date]
+
+Table of Contents
+1. Executive Summary
+2. Part A: Virtual Network Infrastructure
+   2.1 Proxmox Network Configuration
+   2.2 pfSense Installation and Configuration
+3. Part B: Network Services Configuration
+   3.1 DHCP Server Configuration
+   3.2 DNS Server Configuration
+4. Part C: Directory Services Integration
+5. Part D: Firewall Rules Implementation
+   5.1 Firewall Rule Design
+   5.2 Firewall Rule Implementation
+6. Part E: Testing and Documentation
+   6.1 Connectivity Testing
+   6.2 Network Documentation
+7. Appendices
+   A. Complete IP Address Table
+   B. Firewall Rule Reference
+   C. User and Group Reference</code></pre>
+
+                <h3>Required Screenshots</h3>
+                <div class="alert alert-warning">
+                    <span class="alert-icon" aria-hidden="true">⚠️</span>
+                    <div class="alert-content">
+                        <div class="alert-title">Screenshot Requirements</div>
+                        <p>All screenshots must:</p>
+                        <ul>
+                            <li>Be clearly visible and readable</li>
+                            <li>Include descriptive captions</li>
+                            <li>Show relevant information (crop unnecessary areas)</li>
+                            <li>Include timestamp or date where applicable</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Submission Location</h3>
+                <ul>
+                    <li><strong>Canvas Assignment:</strong> "Project 2: Network Infrastructure &amp; Firewall Implementation"</li>
+                </ul>
+            </section>
+
+            <!-- Timeline -->
+            <section class="section" id="timeline" aria-labelledby="timeline-heading">
+                <h2 id="timeline-heading">
+                    <span aria-hidden="true">📅</span>
+                    Timeline and Milestones
+                </h2>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Week</th>
+                                <th scope="col">Milestone</th>
+                                <th scope="col">Recommended Tasks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>8</td><td>Project Assigned</td><td>Review requirements, plan network design</td></tr>
+                            <tr><td>9</td><td>Infrastructure Setup</td><td>Create bridges, install pfSense, configure interfaces</td></tr>
+                            <tr><td>10</td><td>Services &amp; Testing</td><td>Configure DHCP, DNS, directory services, firewall rules</td></tr>
+                            <tr><td>11</td><td>Due Date</td><td>Final testing, documentation, submission</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Suggested Daily Schedule</h3>
+
+                <h4>Week 9</h4>
+                <ul>
+                    <li><strong>Monday (in-class):</strong> Proxmox bridge creation, pfSense installation</li>
+                    <li><strong>Tuesday-Wednesday:</strong> pfSense interface configuration, DHCP setup</li>
+                    <li><strong>Thursday-Friday:</strong> DNS server installation and configuration</li>
+                    <li><strong>Weekend:</strong> Testing DHCP and DNS, documentation</li>
+                </ul>
+
+                <h4>Week 10</h4>
+                <ul>
+                    <li><strong>Monday (in-class):</strong> Directory services setup (AD DS or OpenLDAP)</li>
+                    <li><strong>Tuesday-Wednesday:</strong> User and group creation, OU structure</li>
+                    <li><strong>Thursday-Friday:</strong> Firewall rule design and implementation</li>
+                    <li><strong>Weekend:</strong> Testing firewall rules, documentation</li>
+                </ul>
+
+                <h4>Week 11</h4>
+                <ul>
+                    <li><strong>Monday-Thursday:</strong> Final testing, troubleshooting, documentation</li>
+                    <li><strong>Friday:</strong> Final review and polish</li>
+                    <li><strong>Sunday 11:59 PM:</strong> Submission deadline</li>
+                </ul>
+            </section>
+
+            <!-- Tips for Success -->
+            <section class="section" id="tips-for-success" aria-labelledby="tips-heading">
+                <h2 id="tips-heading">
+                    <span aria-hidden="true">💡</span>
+                    Tips for Success
+                </h2>
+
+                <h3>Planning</h3>
+                <ol>
+                    <li>Read the entire specification before starting</li>
+                    <li>Plan your network design on paper first</li>
+                    <li>Create a checklist of all deliverables</li>
+                    <li>Take snapshots of VMs before major changes</li>
+                </ol>
+
+                <h3>Implementation</h3>
+                <ol>
+                    <li>Test incrementally - verify each component before moving to the next</li>
+                    <li>Document as you go - don't leave documentation until the end</li>
+                    <li>Use meaningful names for VMs, users, and groups</li>
+                    <li>Follow the IP addressing scheme exactly as specified</li>
+                </ol>
+
+                <h3>Troubleshooting</h3>
+                <ol>
+                    <li>Check interface assignments if network connectivity fails</li>
+                    <li>Verify firewall rules order - first match wins</li>
+                    <li>Review pfSense logs for blocked connections</li>
+                    <li>Test from multiple locations (client, server, management)</li>
+                </ol>
+
+                <h3>Documentation</h3>
+                <ol>
+                    <li>Use professional formatting - headers, tables, captions</li>
+                    <li>Include all required screenshots with clear labels</li>
+                    <li>Explain your decisions - don't just show configurations</li>
+                    <li>Proofread before submission</li>
+                </ol>
+            </section>
+
+            <!-- Common Issues -->
+            <section class="section" id="common-issues" aria-labelledby="issues-heading">
+                <h2 id="issues-heading">
+                    <span aria-hidden="true">🔧</span>
+                    Common Issues and Solutions
+                </h2>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Issue</th>
+                                <th scope="col">Possible Cause</th>
+                                <th scope="col">Solution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>pfSense web GUI inaccessible</td>
+                                <td>Wrong interface, firewall blocking</td>
+                                <td>Verify LAN IP, check from management network</td>
+                            </tr>
+                            <tr>
+                                <td>DHCP not assigning addresses</td>
+                                <td>Service not enabled, wrong interface</td>
+                                <td>Check DHCP service status, verify interface selection</td>
+                            </tr>
+                            <tr>
+                                <td>DNS not resolving</td>
+                                <td>Wrong DNS server in DHCP, zone issues</td>
+                                <td>Verify DHCP options, check zone configuration</td>
+                            </tr>
+                            <tr>
+                                <td>Firewall blocking legitimate traffic</td>
+                                <td>Rule order, missing rules</td>
+                                <td>Review rule order, add specific allow rules</td>
+                            </tr>
+                            <tr>
+                                <td>VMs can't reach internet</td>
+                                <td>WAN configuration, NAT issues</td>
+                                <td>Check pfSense WAN IP, verify NAT is enabled</td>
+                            </tr>
+                            <tr>
+                                <td>Inter-VLAN routing not working</td>
+                                <td>Missing firewall rules</td>
+                                <td>Add rules to allow traffic between segments</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- External Resources -->
+            <section class="section" id="external-resources" aria-labelledby="resources-heading">
+                <h2 id="resources-heading">
+                    <span aria-hidden="true">📚</span>
+                    External Resources
+                </h2>
+
+                <h3>pfSense Documentation</h3>
+                <ul>
+                    <li><a href="https://docs.netgate.com/pfsense/en/latest/install/" target="_blank" rel="noopener noreferrer">Installation Guide</a></li>
+                    <li><a href="https://docs.netgate.com/pfsense/en/latest/firewall/" target="_blank" rel="noopener noreferrer">Firewall Rules</a></li>
+                    <li><a href="https://docs.netgate.com/pfsense/en/latest/services/dhcp/" target="_blank" rel="noopener noreferrer">DHCP Server</a></li>
+                </ul>
+
+                <h3>Windows Server Documentation</h3>
+                <ul>
+                    <li><a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/" target="_blank" rel="noopener noreferrer">AD DS Installation</a></li>
+                    <li><a href="https://learn.microsoft.com/en-us/windows-server/networking/dns/" target="_blank" rel="noopener noreferrer">DNS Server</a></li>
+                </ul>
+
+                <h3>Linux Documentation</h3>
+                <ul>
+                    <li><a href="https://bind9.readthedocs.io/" target="_blank" rel="noopener noreferrer">BIND DNS</a></li>
+                    <li><a href="https://www.openldap.org/doc/" target="_blank" rel="noopener noreferrer">OpenLDAP</a></li>
+                </ul>
+
+                <h3>Diagramming Tools</h3>
+                <ul>
+                    <li><a href="https://app.diagrams.net/" target="_blank" rel="noopener noreferrer">draw.io (free)</a></li>
+                    <li><a href="https://www.lucidchart.com/" target="_blank" rel="noopener noreferrer">Lucidchart (free tier)</a></li>
+                    <li>Microsoft Visio (if available)</li>
+                </ul>
+            </section>
+
+            <!-- Academic Integrity -->
+            <section class="section" id="academic-integrity" aria-labelledby="integrity-heading">
+                <h2 id="integrity-heading">
+                    <span aria-hidden="true">⚖️</span>
+                    Academic Integrity
+                </h2>
+
+                <p>This is an individual project. While you may discuss concepts with classmates, all work submitted must be your own.</p>
+
+                <h3>Allowed</h3>
+                <ul>
+                    <li>Discussing general concepts and approaches</li>
+                    <li>Helping classmates troubleshoot (without sharing configurations)</li>
+                    <li>Using course materials, documentation, and online resources</li>
+                    <li>Asking questions in discussion forums or office hours</li>
+                </ul>
+
+                <h3>Not Allowed</h3>
+                <ul>
+                    <li>Sharing configuration files or screenshots</li>
+                    <li>Copying another student's documentation</li>
+                    <li>Using another student's network design</li>
+                    <li>Submitting work that is not your own</li>
+                </ul>
+
+                <div class="alert alert-error">
+                    <span class="alert-icon" aria-hidden="true">🚫</span>
+                    <div class="alert-content">
+                        <div class="alert-title">Warning</div>
+                        <p>Violations will result in a zero on the project and potential additional academic consequences per college policy.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Getting Help -->
+            <section class="section" id="getting-help" aria-labelledby="help-heading">
+                <h2 id="help-heading">
+                    <span aria-hidden="true">🆘</span>
+                    Getting Help
+                </h2>
+
+                <ul>
+                    <li><strong>Discussion Forum:</strong> Post questions in "Project 2 Questions" forum</li>
+                    <li><strong>Office Hours:</strong> Tuesday 2-4 PM (in person), Thursday 2-4 PM (Zoom)</li>
+                    <li><strong>Email:</strong> For private matters only</li>
+                    <li><strong>Lab Time:</strong> Monday in-class lab sessions</li>
+                </ul>
+
+                <h3>When Asking for Help, Include:</h3>
+                <ul>
+                    <li>Specific error messages or symptoms</li>
+                    <li>Screenshots of relevant configurations</li>
+                    <li>Steps you've already tried</li>
+                    <li>Which part of the project you're working on</li>
+                </ul>
+            </section>
+
+            <!-- Footer -->
+            <footer class="page-footer">
+                <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+                <p>Project 2: Network Infrastructure &amp; Firewall Implementation</p>
+                <p>Author: David Pai • Mendocino College</p>
+                <p>Version 1.0</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // ===== NAVIGATION FUNCTIONALITY =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile menu toggle
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+
+            menuToggle.addEventListener('click', function() {
+                const isOpen = sidebar.classList.toggle('open');
+                overlay.classList.toggle('active', isOpen);
+                menuToggle.setAttribute('aria-expanded', isOpen);
+            });
+
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+                menuToggle.setAttribute('aria-expanded', 'false');
+            });
+
+            // Navigation section toggles
+            const navSectionTitles = document.querySelectorAll('.nav-section-title');
+            navSectionTitles.forEach(function(title) {
+                title.addEventListener('click', function() {
+                    const expanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !expanded);
+                    const navItems = this.nextElementSibling;
+                    navItems.classList.toggle('expanded', !expanded);
+                });
+
+                // Keyboard support
+                title.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+
+            // Collapsible sections
+            const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
+            collapsibleHeaders.forEach(function(header) {
+                header.addEventListener('click', function() {
+                    const expanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !expanded);
+                    const content = this.nextElementSibling;
+                    content.classList.toggle('expanded', !expanded);
+                });
+
+                // Keyboard support
+                header.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+
+            // Tab functionality
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const tabList = this.closest('.tab-list');
+                    const tabsContainer = this.closest('.tabs');
+                    const targetPanelId = this.getAttribute('aria-controls');
+
+                    // Deselect all tabs in this group
+                    tabList.querySelectorAll('.tab-button').forEach(function(btn) {
+                        btn.setAttribute('aria-selected', 'false');
+                    });
+
+                    // Hide all panels in this group
+                    tabsContainer.querySelectorAll('.tab-panel').forEach(function(panel) {
+                        panel.classList.remove('active');
+                    });
+
+                    // Select this tab
+                    this.setAttribute('aria-selected', 'true');
+
+                    // Show target panel
+                    const targetPanel = document.getElementById(targetPanelId);
+                    if (targetPanel) {
+                        targetPanel.classList.add('active');
+                    }
+                });
+
+                // Keyboard navigation for tabs
+                button.addEventListener('keydown', function(e) {
+                    const tabList = this.closest('.tab-list');
+                    const tabs = Array.from(tabList.querySelectorAll('.tab-button'));
+                    const currentIndex = tabs.indexOf(this);
+
+                    let newIndex;
+                    if (e.key === 'ArrowRight') {
+                        newIndex = (currentIndex + 1) % tabs.length;
+                    } else if (e.key === 'ArrowLeft') {
+                        newIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+                    } else if (e.key === 'Home') {
+                        newIndex = 0;
+                    } else if (e.key === 'End') {
+                        newIndex = tabs.length - 1;
+                    }
+
+                    if (newIndex !== undefined) {
+                        e.preventDefault();
+                        tabs[newIndex].focus();
+                        tabs[newIndex].click();
+                    }
+                });
+            });
+
+            // Progress tracking with session storage
+            const progressCheckboxes = document.querySelectorAll('input[data-progress="true"]');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressCount = document.getElementById('progressCount');
+            const totalTasks = progressCheckboxes.length;
+
+            // Load saved progress from session storage
+            function loadProgress() {
+                progressCheckboxes.forEach(function(checkbox) {
+                    const saved = sessionStorage.getItem('project2_' + checkbox.id);
+                    if (saved === 'true') {
+                        checkbox.checked = true;
+                    }
+                });
+                updateProgressDisplay();
+            }
+
+            // Save progress to session storage
+            function saveProgress(checkbox) {
+                sessionStorage.setItem('project2_' + checkbox.id, checkbox.checked);
+            }
+
+            // Update progress display
+            function updateProgressDisplay() {
+                let completed = 0;
+                progressCheckboxes.forEach(function(checkbox) {
+                    if (checkbox.checked) {
+                        completed++;
+                    }
+                });
+
+                const percent = Math.round((completed / totalTasks) * 100);
+                progressBar.style.width = percent + '%';
+                progressPercent.textContent = percent;
+                progressCount.textContent = completed;
+
+                // Update ARIA
+                const progressContainer = progressBar.parentElement;
+                progressContainer.setAttribute('aria-valuenow', percent);
+            }
+
+            // Add event listeners to checkboxes
+            progressCheckboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    saveProgress(this);
+                    updateProgressDisplay();
+                });
+            });
+
+            // Load progress on page load
+            loadProgress();
+
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+
+                        // Set focus for accessibility
+                        targetElement.setAttribute('tabindex', '-1');
+                        targetElement.focus();
+
+                        // Close mobile menu if open
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.remove('open');
+                            overlay.classList.remove('active');
+                            menuToggle.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                });
+            });
+
+            // Active navigation highlighting on scroll
+            const sections = document.querySelectorAll('.section[id]');
+            const navLinks = document.querySelectorAll('.nav-items a');
+
+            function highlightNavOnScroll() {
+                const scrollPosition = window.scrollY + 100;
+
+                sections.forEach(function(section) {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    const sectionId = section.getAttribute('id');
+
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        navLinks.forEach(function(link) {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === '#' + sectionId) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', highlightNavOnScroll);
+            highlightNavOnScroll(); // Run on load
+
+            // Escape key closes mobile menu
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                    menuToggle.focus();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

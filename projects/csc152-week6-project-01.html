@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project 1: Multi-User Server Configuration | CSC 152</title>
+    <style>
+        /* CSS Reset and Base Styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #1a5f7a;
+            --color-primary-dark: #134b61;
+            --color-secondary: #57837b;
+            --color-accent: #c38e70;
+            --color-background: #ffffff;
+            --color-surface: #f8f9fa;
+            --color-surface-alt: #e9ecef;
+            --color-text: #212529;
+            --color-text-secondary: #495057;
+            --color-text-muted: #6c757d;
+            --color-border: #dee2e6;
+            --color-success: #198754;
+            --color-warning: #ffc107;
+            --color-danger: #dc3545;
+            --color-info: #0dcaf0;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --transition-fast: 150ms ease;
+            --transition-normal: 250ms ease;
+            --max-width: 1000px;
+            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--color-text);
+            background-color: var(--color-background);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Skip Link for Accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--color-primary);
+            color: #ffffff;
+            padding: 8px 16px;
+            z-index: 1000;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header Styles */
+        .page-header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: #ffffff;
+            padding: 32px 24px;
+            margin-bottom: 32px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .page-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.875rem;
+            font-weight: 700;
+        }
+
+        .course-info {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .project-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+        }
+
+        .meta-item strong {
+            font-weight: 600;
+        }
+
+        /* Section Styles */
+        .section {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: var(--color-background);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--color-border);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color var(--transition-fast);
+        }
+
+        .section-header:hover {
+            background: var(--color-surface-alt);
+        }
+
+        .section-header:focus {
+            outline: 3px solid var(--color-primary);
+            outline-offset: -3px;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .toggle-icon {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--color-primary);
+            transition: transform var(--transition-normal);
+            user-select: none;
+        }
+
+        .section-header[aria-expanded="true"] .toggle-icon {
+            transform: rotate(45deg);
+        }
+
+        .section-content {
+            padding: 20px;
+            display: none;
+        }
+
+        .section-content.expanded {
+            display: block;
+        }
+
+        /* Typography */
+        h3 {
+            color: var(--color-primary-dark);
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 24px 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--color-surface-alt);
+        }
+
+        h3:first-child {
+            margin-top: 0;
+        }
+
+        h4 {
+            color: var(--color-text);
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 16px 0 8px 0;
+        }
+
+        p {
+            margin: 0 0 16px 0;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 0 0 16px 0;
+            padding-left: 24px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        li::marker {
+            color: var(--color-primary);
+        }
+
+        /* Nested Lists */
+        ul ul, ol ul, ul ol, ol ol {
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* Info Boxes */
+        .info-box {
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            margin: 16px 0;
+            border-left: 4px solid;
+        }
+
+        .info-box.objective {
+            background: #e7f3ff;
+            border-color: #0066cc;
+        }
+
+        .info-box.warning {
+            background: #fff3cd;
+            border-color: var(--color-warning);
+        }
+
+        .info-box.success {
+            background: #d1e7dd;
+            border-color: var(--color-success);
+        }
+
+        .info-box.info {
+            background: #cff4fc;
+            border-color: var(--color-info);
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* CSLO Tags */
+        .cslo-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .cslo-tag {
+            display: inline-block;
+            background: var(--color-primary);
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            margin: 16px 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        th {
+            background: var(--color-primary);
+            color: #ffffff;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        tr:nth-child(even) {
+            background: var(--color-surface-alt);
+        }
+
+        tr:hover {
+            background: #e3f2fd;
+        }
+
+        td:first-child {
+            font-weight: 500;
+        }
+
+        /* Code Blocks */
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            margin: 16px 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            white-space: pre;
+            tab-size: 4;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+        }
+
+        /* Inline code */
+        p code, li code, td code {
+            background: var(--color-surface-alt);
+            color: var(--color-primary-dark);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85em;
+        }
+
+        /* Code syntax highlighting */
+        .code-comment {
+            color: #6a9955;
+        }
+
+        .code-keyword {
+            color: #569cd6;
+        }
+
+        .code-string {
+            color: #ce9178;
+        }
+
+        .code-variable {
+            color: #9cdcfe;
+        }
+
+        .code-command {
+            color: #dcdcaa;
+        }
+
+        /* Rubric Styles */
+        .rubric-table th {
+            text-align: center;
+        }
+
+        .rubric-table td:not(:first-child) {
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .rubric-table td:first-child {
+            min-width: 200px;
+        }
+
+        .points-cell {
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        /* Checklist Styles */
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--color-border);
+        }
+
+        .checklist li:last-child {
+            border-bottom: none;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border: 2px solid var(--color-primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            margin-top: 2px;
+        }
+
+        .checkbox:hover {
+            background: var(--color-surface-alt);
+        }
+
+        .checkbox.checked {
+            background: var(--color-success);
+            border-color: var(--color-success);
+        }
+
+        .checkbox.checked::after {
+            content: "✓";
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .checklist-text {
+            flex: 1;
+        }
+
+        /* Deliverables Grid */
+        .deliverables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .deliverable-card {
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            transition: box-shadow var(--transition-fast);
+        }
+
+        .deliverable-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .deliverable-card h4 {
+            margin-top: 0;
+            color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .deliverable-card ul {
+            margin-bottom: 0;
+            font-size: 0.95rem;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 32px;
+            margin: 16px 0;
+        }
+
+        .timeline::before {
+            content: "";
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--color-primary);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -28px;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            background: var(--color-primary);
+            border: 3px solid var(--color-background);
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px var(--color-primary);
+        }
+
+        .timeline-date {
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 4px;
+        }
+
+        .timeline-content {
+            background: var(--color-background);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--color-text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--color-border);
+            margin-top: 32px;
+        }
+
+        /* Accessibility Focus Styles */
+        a:focus,
+        button:focus,
+        [tabindex]:focus {
+            outline: 3px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+
+        /* Print Styles */
+        @media print {
+            .section-content {
+                display: block !important;
+            }
+            .toggle-icon {
+                display: none;
+            }
+            .page-header {
+                background: var(--color-primary) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .page-header {
+                padding: 24px 16px;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .project-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .meta-item {
+                width: 100%;
+            }
+
+            .section-header h2 {
+                font-size: 1.1rem;
+            }
+
+            .deliverables-grid {
+                grid-template-columns: 1fr;
+            }
+
+            th, td {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+
+            pre {
+                font-size: 0.8rem;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="container">
+        <header class="page-header">
+            <div class="course-info">CSC 152 − Network Operating Systems and Administration</div>
+            <h1>Project 1: Multi-User Server Configuration</h1>
+            <div class="project-meta">
+                <div class="meta-item">
+                    <span aria-hidden="true">📅</span>
+                    <span><strong>Due:</strong> Sunday, March 15, 2026, 11:59 PM</span>
+                </div>
+                <div class="meta-item">
+                    <span aria-hidden="true">📊</span>
+                    <span><strong>Points:</strong> 50 points (5% of course grade)</span>
+                </div>
+                <div class="meta-item">
+                    <span aria-hidden="true">📚</span>
+                    <span><strong>Covers:</strong> Weeks 1−6 Content</span>
+                </div>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <!-- Overview Section -->
+            <section class="section">
+                <div class="section-header" role="button" tabindex="0" aria-expanded="true" aria-controls="overview-content">
+                    <h2>Project Overview</h2>
+                    <span class="toggle-icon" aria-hidden="true">+</span>
+                </div>
+                <div id="overview-content" class="section-content expanded">
+                    <div class="info-box objective">
+                        <div class="info-box-title">
+                            <span aria-hidden="true">🎯</span>
+                            Project Objective
+                        </div>
+                        <p style="margin-bottom: 0;">Configure a complete multi-user server environment demonstrating mastery of server fundamentals, operating system installation, command-line administration, and user/group management concepts covered in Weeks 1−6.</p>
+                    </div>
+
+                    <h3>Project Description</h3>
+                    <p>In this project, you will design and implement a multi-user server environment for a fictional small business. You will apply the skills learned throughout the first six weeks of the course to create a functional server infrastructure with proper user organization, group-based access control, and documented administrative procedures.</p>
+                    
+                    <p>This project simulates a real-world scenario where a system administrator must set up a new server to support multiple departments within an organization. You will make decisions about server configuration, user organization, security policies, and administrative procedures—all essential skills for IT professionals.</p>
+
+                    <h3>CSLO Alignment</h3>
+                    <div class="cslo-container">
+                        <span class="cslo-tag">CSLO 1: Server Management & OS Configuration</span>
+                        <span class="cslo-tag">CSLO 2: Security & Access Control</span>
+                    </div>
+
+                    <h3>Skills Demonstrated</h3>
+                    <ul>
+                        <li>Server operating system installation and initial configuration</li>
+                        <li>Hardware resource allocation and planning</li>
+                        <li>Command-line navigation and administration</li>
+                        <li>User account creation and management</li>
+                        <li>Group-based organizational structure design</li>
+                        <li>Password policy implementation</li>
+                        <li>Privilege management (sudo/administrative access)</li>
+                        <li>Administrative scripting and automation</li>
+                        <li>Technical documentation practices</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Scenario Section -->
+            <section class="section">
+                <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="scenario-content">
+                    <h2>Project Scenario</h2>
+                    <span class="toggle-icon" aria-hidden="true">+</span>
+                </div>
+                <div id="scenario-content" class="section-content">
+                    <div class="info-box info">
+                        <div class="info-box-title">
+                            <span aria-hidden="true">🏢</span>
+                            Business Scenario
+                        </div>
+                        <p style="margin-bottom: 0;">You have been hired as the IT administrator for <strong>TechStart Solutions</strong>, a growing technology consulting firm with 15 employees across four departments.</p>
+                    </div>
+
+                    <h3>Company Background</h3>
+                    <p><strong>TechStart Solutions</strong> is a small technology consulting firm that provides IT services to local businesses. The company has recently outgrown their informal IT setup and needs a proper server infrastructure to manage employee access, file sharing, and administrative tasks.</p>
+
+                    <h3>Organizational Structure</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Employees</th>
+                                    <th>Access Requirements</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Executive</td>
+                                    <td>2 (CEO, CFO)</td>
+                                    <td>Full system access, all department files</td>
+                                </tr>
+                                <tr>
+                                    <td>Engineering</td>
+                                    <td>5</td>
+                                    <td>Development tools, project files, limited admin access</td>
+                                </tr>
+                                <tr>
+                                    <td>Sales</td>
+                                    <td>4</td>
+                                    <td>CRM data, client files, marketing materials</td>
+                                </tr>
+                                <tr>
+                                    <td>Operations</td>
+                                    <td>4</td>
+                                    <td>HR files, financial records, company policies</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Your Assignment</h3>
+                    <p>As the new IT administrator, you must:</p>
+                    <ol>
+                        <li>Set up a server (Linux or Windows Server) to serve as the primary file and authentication server</li>
+                        <li>Create user accounts for all 15 employees with appropriate naming conventions</li>
+                        <li>Organize users into groups that reflect the organizational structure</li>
+                        <li>Implement security policies including password requirements and access controls</li>
+                        <li>Configure administrative access following the principle of least privilege</li>
+                        <li>Create at least one automation script to assist with administrative tasks</li>
+                        <li>Document the entire configuration for future reference and onboarding</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Requirements Section -->
+            <section class="section">
+                <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="requirements-content">
+                    <h2>Project Requirements</h2>
+                    <span class="toggle-icon" aria-hidden="true">+</span>
+                </div>
+                <div id="requirements-content" class="section-content">
+                    <h3>1. Server Installation and Configuration</h3>
+                    <p>Install and configure your choice of server operating system:</p>
+                    
+                    <h4>Option A: Linux Server (Ubuntu Server 24.04 LTS or Rocky Linux 9)</h4>
+                    <ul>
+                        <li>Perform minimal server installation</li>
+                        <li>Configure hostname: <code>techstart-srv01</code></li>
+                        <li>Configure static IP address (document your choice)</li>
+                        <li>Update all packages to latest versions</li>
+                        <li>Configure SSH for remote administration</li>
+                        <li>Disable root login via SSH</li>
+                    </ul>
+
+                    <h4>Option B: Windows Server (Windows Server 2022)</h4>
+                    <ul>
+                        <li>Perform Server Core or Desktop Experience installation</li>
+                        <li>Configure hostname: <code>TECHSTART-SRV01</code></li>
+                        <li>Configure static IP address (document your choice)</li>
+                        <li>Install all Windows Updates</li>
+                        <li>Enable Remote Desktop for administration</li>
+                        <li>Configure Windows Firewall appropriately</li>
+                    </ul>
+
+                    <div class="info-box warning">
+                        <div class="info-box-title">
+                            <span aria-hidden="true">⚠️</span>
+                            Hardware Allocation
+                        </div>
+                        <p style="margin-bottom: 0;">Document your virtual machine hardware allocation decisions (CPU, RAM, disk space) and provide justification for your choices based on the server's intended purpose.</p>
+                    </div>
+
+                    <h3>2. Organizational User Structure</h3>
+                    <p>Create a minimum of 10 user accounts representing the company's employees:</p>
+
+                    <h4>Required Users (minimum 10)</h4>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Minimum Users</th>
+                                    <th>Example Usernames</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Executive</td>
+                                    <td>2</td>
+                                    <td>jsmith.exec, mjohnson.exec</td>
+                                </tr>
+                                <tr>
+                                    <td>Engineering</td>
+                                    <td>3</td>
+                                    <td>alee.eng, bwilson.eng, cgarcia.eng</td>
+                                </tr>
+                                <tr>
+                                    <td>Sales</td>
+                                    <td>3</td>
+                                    <td>dthompson.sales, ewilliams.sales, fmartinez.sales</td>
+                                </tr>
+                                <tr>
+                                    <td>Operations</td>
+                                    <td>2</td>
+                                    <td>ganderson.ops, htaylor.ops</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4>Username Convention Requirements</h4>
+                    <ul>
+                        <li>Establish and document a consistent naming convention</li>
+                        <li>Names should indicate department affiliation</li>
+                        <li>Names should be professional and appropriate</li>
+                        <li>You may create fictional employee names</li>
+                    </ul>
+
+                    <h3>3. Group Structure Implementation</h3>
+                    <p>Create a logical group structure that supports the organization:</p>
+
+                    <h4>Required Groups</h4>
+                    <ul>
+                        <li><strong>Departmental Groups:</strong> One group per department (executive, engineering, sales, operations)</li>
+                        <li><strong>Role-Based Groups:</strong> At least one cross-departmental group (e.g., managers, project-team)</li>
+                        <li><strong>Administrative Group:</strong> For users requiring elevated privileges</li>
+                    </ul>
+
+                    <h4>Linux Example Structure</h4>
+<pre><code><span class="code-comment"># Primary Groups (Departmental)</span>
+grp_executive
+grp_engineering
+grp_sales
+grp_operations
+
+<span class="code-comment"># Secondary Groups (Role-based)</span>
+grp_managers        <span class="code-comment"># Cross-departmental management</span>
+grp_itadmin         <span class="code-comment"># IT administrative access</span>
+grp_allstaff        <span class="code-comment"># All employees</span></code></pre>
+
+                    <h4>Windows Example Structure</h4>
+<pre><code><span class="code-comment"># Global Security Groups</span>
+GRP_Executive
+GRP_Engineering
+GRP_Sales
+GRP_Operations
+
+<span class="code-comment"># Role-Based Groups</span>
+GRP_Managers
+GRP_ITAdmins
+GRP_AllStaff</code></pre>
+
+                    <h3>4. Password Policy Configuration</h3>
+                    <p>Implement password policies appropriate for a business environment:</p>
+
+                    <h4>Minimum Requirements</h4>
+                    <ul>
+                        <li>Minimum password length: 12 characters</li>
+                        <li>Password complexity: Must include uppercase, lowercase, numbers, and special characters</li>
+                        <li>Password expiration: 90 days</li>
+                        <li>Password history: Remember last 5 passwords</li>
+                        <li>Account lockout: After 5 failed attempts</li>
+                    </ul>
+
+                    <h4>Linux Implementation (PAM)</h4>
+<pre><code><span class="code-comment"># /etc/security/pwquality.conf</span>
+minlen = 12
+dcredit = -1
+ucredit = -1
+lcredit = -1
+ocredit = -1
+</code></pre>
+
+                    <h4>Windows Implementation (Group Policy or secpol.msc)</h4>
+<pre><code><span class="code-comment"># Local Security Policy Settings</span>
+Minimum password length: 12 characters
+Password must meet complexity requirements: Enabled
+Maximum password age: 90 days
+Enforce password history: 5 passwords
+Account lockout threshold: 5 invalid attempts</code></pre>
+
+                    <h3>5. Access Control Implementation</h3>
+                    <p>Implement the principle of least privilege:</p>
+
+                    <h4>Linux (sudo configuration)</h4>
+                    <ul>
+                        <li>Only IT administrators should have full sudo access</li>
+                        <li>Engineering users may need specific sudo commands for development tools</li>
+                        <li>Document all sudo configurations in <code>/etc/sudoers.d/</code></li>
+                    </ul>
+
+<pre><code><span class="code-comment"># /etc/sudoers.d/techstart</span>
+
+<span class="code-comment"># IT Administrators - full access</span>
+%grp_itadmin    ALL=(ALL:ALL) ALL
+
+<span class="code-comment"># Engineering - limited commands</span>
+%grp_engineering    ALL=(ALL) /usr/bin/systemctl status *
+%grp_engineering    ALL=(ALL) /usr/bin/journalctl</code></pre>
+
+                    <h4>Windows (Local Groups/Policies)</h4>
+                    <ul>
+                        <li>Only IT administrators should be in the Administrators group</li>
+                        <li>Use built-in groups (Remote Desktop Users, Backup Operators) appropriately</li>
+                        <li>Document group membership and access rights</li>
+                    </ul>
+
+                    <h3>6. Administrative Automation Script</h3>
+                    <p>Create at least one script that automates an administrative task:</p>
+
+                    <h4>Script Options (choose one or more)</h4>
+                    <ul>
+                        <li><strong>User Creation Script:</strong> Automate new user account creation with proper group membership</li>
+                        <li><strong>Account Audit Script:</strong> List all users with their group memberships and last login</li>
+                        <li><strong>Password Expiry Report:</strong> Identify accounts with passwords expiring soon</li>
+                        <li><strong>System Information Script:</strong> Gather and report system configuration details</li>
+                    </ul>
+
+                    <h4>Script Requirements</h4>
+                    <ul>
+                        <li>Include comments explaining the script's purpose and usage</li>
+                        <li>Include error handling for common issues</li>
+                        <li>Follow scripting best practices covered in Week 5</li>
+                        <li>Test the script and document the results</li>
+                    </ul>
+
+                    <h4>Example: Linux User Audit Script</h4>
+<pre><code><span class="code-comment">#!/bin/bash</span>
+<span class="code-comment"># user_audit.sh - Generate user account audit report</span>
+<span class="code-comment"># Author: [Your Name]</span>
+<span class="code-comment"># Date: [Date]</span>
+<span class="code-comment"># Usage: sudo ./user_audit.sh</span>
+
+<span class="code-keyword">echo</span> <span class="code-string">"=========================================="</span>
+<span class="code-keyword">echo</span> <span class="code-string">"TechStart Solutions - User Audit Report"</span>
+<span class="code-keyword">echo</span> <span class="code-string">"Generated: $(date)"</span>
+<span class="code-keyword">echo</span> <span class="code-string">"=========================================="</span>
+<span class="code-keyword">echo</span> <span class="code-string">""</span>
+
+<span class="code-comment"># List all human users (UID >= 1000)</span>
+<span class="code-keyword">echo</span> <span class="code-string">"=== User Accounts ==="</span>
+<span class="code-keyword">awk</span> -F: <span class="code-string">'$3 >= 1000 && $3 < 65534 {print $1}'</span> /etc/passwd | <span class="code-keyword">while read</span> user; <span class="code-keyword">do</span>
+    groups=$(groups "$user" 2>/dev/null | cut -d: -f2)
+    lastlog=$(lastlog -u "$user" 2>/dev/null | tail -1 | awk '{print $4, $5, $6, $7}')
+    <span class="code-keyword">echo</span> <span class="code-string">"User: $user"</span>
+    <span class="code-keyword">echo</span> <span class="code-string">"  Groups: $groups"</span>
+    <span class="code-keyword">echo</span> <span class="code-string">"  Last Login: $lastlog"</span>
+    <span class="code-keyword">echo</span> <span class="code-string">""</span>
+<span class="code-keyword">done</span></code></pre>
+
+                    <h4>Example: PowerShell User Audit Script</h4>
+<pre><code><span class="code-comment"># User_Audit.ps1 - Generate user account audit report</span>
+<span class="code-comment"># Author: [Your Name]</span>
+<span class="code-comment"># Date: [Date]</span>
+<span class="code-comment"># Usage: .\User_Audit.ps1</span>
+
+<span class="code-keyword">Write-Host</span> <span class="code-string">"=========================================="</span>
+<span class="code-keyword">Write-Host</span> <span class="code-string">"TechStart Solutions - User Audit Report"</span>
+<span class="code-keyword">Write-Host</span> <span class="code-string">"Generated: $(Get-Date)"</span>
+<span class="code-keyword">Write-Host</span> <span class="code-string">"=========================================="</span>
+<span class="code-keyword">Write-Host</span> <span class="code-string">""</span>
+
+<span class="code-comment"># Get all local users</span>
+<span class="code-variable">$users</span> = <span class="code-keyword">Get-LocalUser</span> | <span class="code-keyword">Where-Object</span> { $_.Enabled -eq $true }
+
+<span class="code-keyword">foreach</span> (<span class="code-variable">$user</span> <span class="code-keyword">in</span> <span class="code-variable">$users</span>) {
+    <span class="code-keyword">Write-Host</span> <span class="code-string">"User: $($user.Name)"</span>
+    
+    <span class="code-comment"># Get group memberships</span>
+    <span class="code-variable">$groups</span> = <span class="code-keyword">Get-LocalGroup</span> | <span class="code-keyword">Where-Object</span> { 
+        (<span class="code-keyword">Get-LocalGroupMember</span> $_.Name -ErrorAction SilentlyContinue).Name -contains <span class="code-string">"$env:COMPUTERNAME\$($user.Name)"</span>
+    }
+    <span class="code-keyword">Write-Host</span> <span class="code-string">"  Groups: $($groups.Name -join ', ')"</span>
+    <span class="code-keyword">Write-Host</span> <span class="code-string">"  Last Logon: $($user.LastLogon)"</span>
+    <span class="code-keyword">Write-Host</span> <span class="code-string">""</span>
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- Deliverables Section -->
+            <section class="section">
+                <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="deliverables-content">
+                    <h2>Deliverables</h2>
+                    <span class="toggle-icon" aria-hidden="true">+</span>
+                </div>
+                <div id="deliverables-content" class="section-content">
+                    <p>Submit all deliverables as a single ZIP file named <code>Project1_LastName_FirstName.zip</code></p>
+
+                    <div class="deliverables-grid">
+                        <div class="deliverable-card">
+                            <h4><span aria-hidden="true">📄</span> Documentation Package</h4>
+                            <ul>
+                                <li>Executive Summary (1 page)</li>
+                                <li>System Architecture Diagram</li>
+                                <li>User & Group Structure Document</li>
+                                <li>Password Policy Documentation</li>
+                                <li>Access Control Matrix</li>
+                                <li>Administrative Procedures Guide</li>
+                            </ul>
+                        </div>
+                        <div class="deliverable-card">
+                            <h4><span aria-hidden="true">📸</span> Evidence Screenshots</h4>
+                            <ul>
+                                <li>Server installation completion</li>
+                                <li>Hostname and IP configuration</li>
+                                <li>User account listing</li>
+                                <li>Group membership verification</li>
+                                <li>Password policy settings</li>
+                                <li>Sudo/admin configuration</li>
+                                <li>Script execution output</li>
+                            </ul>
+                        </div>
+                        <div class="deliverable-card">
+                            <h4><span aria-hidden="true">💻</span> Technical Files</h4>
+                            <ul>
+                                <li>Administrative script(s)</li>
+                                <li>Configuration file exports</li>
+                                <li>Any custom configuration files</li>
+                            </ul>
+                        </div>
+                        <div class="deliverable-card">
+                            <h4><span aria-hidden="true">🎬</span> Video Demonstration</h4>
+                            <ul>
+                                <li>5−10 minute walkthrough</li>
+                                <li>Demonstrate user login</li>
+                                <li>Show group-based access</li>
+                                <li>Execute your script</li>
+                                <li>Explain key decisions</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3>Documentation Requirements</h3>
+                    
+                    <h4>Executive Summary (1 page)</h4>
+                    <ul>
+                        <li>Brief overview of the project</li>
+                        <li>Key decisions made and rationale</li>
+                        <li>Summary of implemented features</li>
+                        <li>Challenges encountered and solutions</li>
+                    </ul>
+
+                    <h4>System Architecture Diagram</h4>
+                    <ul>
+                        <li>Visual representation of the server configuration</li>
+                        <li>Include hostname, IP address, OS version</li>
+                        <li>Show hardware allocation</li>
+                        <li>Can be created with any diagramming tool (draw.io, Visio, Lucidchart, or hand-drawn)</li>
+                    </ul>
+
+                    <h4>User & Group Structure Document</h4>
+                    <ul>
+                        <li>Complete list of all users created</li>
+                        <li>Complete list of all groups created</li>
+                        <li>Matrix showing user-to-group memberships</li>
+                        <li>Explanation of naming conventions used</li>
+                    </ul>
+
+                    <h4>Access Control Matrix</h4>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User/Group</th>
+                                    <th>System Access</th>
+                                    <th>Sudo/Admin Rights</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>grp_itadmin</td>
+                                    <td>Full</td>
+                                    <td>ALL commands</td>
+                                    <td>IT staff only</td>
+                                </tr>
+                                <tr>
+                                    <td>grp_engineering</td>
+                                    <td>Standard</td>
+                                    <td>Limited (systemctl, journalctl)</td>
+                                    <td>Development needs</td>
+                                </tr>
+                                <tr>
+                                    <td>grp_sales</td>
+                                    <td>Standard</td>
+                                    <td>None</td>
+                                    <td>Standard users</td>
+                                </tr>
+                                <tr>
+                                    <td>grp_operations</td>
+                                    <td>Standard</td>
+                                    <td>None</td>
+                                    <td>Standard users</td>
+                                </tr>
+                                <tr>
+                                    <td>grp_executive</td>
+                                    <td>Standard</td>
+                                    <td>None</td>
+                                    <td>Standard users</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Rubric Section -->
+            <section class="section">
+                <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="rubric-content">
+                    <h2>Grading Rubric</h2>
+                    <span class="toggle-icon" aria-hidden="true">+</span>
+                </div>
+                <div id="rubric-content" class="section-content">
+                    <div class="table-container">
+                        <table class="rubric-table">
+                            <thead>
+                                <tr>
+                                    <th>Criteria</th>
+                                    <th>Excellent (90−100%)</th>
+                                    <th>Good (80−89%)</th>
+                                    <th>Satisfactory (70−79%)</th>
+                                    <th>Needs Work (&lt;70%)</th>
+                                    <th>Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Server Installation & Configuration</strong></td>
+                                    <td>Complete installation with all hardening steps, well-documented decisions</td>
+                                    <td>Complete installation with most hardening, adequate documentation</td>
+                                    <td>Basic installation complete, minimal hardening</td>
+                                    <td>Incomplete installation or major configuration errors</td>
+                                    <td class="points-cell">10</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>User Account Structure</strong></td>
+                                    <td>10+ users with consistent naming, logical organization, complete documentation</td>
+                                    <td>10 users with naming convention, good organization</td>
+                                    <td>Minimum users created, basic naming convention</td>
+                                    <td>Fewer than 10 users or inconsistent naming</td>
+                                    <td class="points-cell">10</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Group Structure & Membership</strong></td>
+                                    <td>Comprehensive group structure with departmental and role-based groups, clear rationale</td>
+                                    <td>Required groups with appropriate memberships</td>
+                                    <td>Basic group structure implemented</td>
+                                    <td>Missing required groups or incorrect memberships</td>
+                                    <td class="points-cell">8</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Password Policy</strong></td>
+                                    <td>All requirements met, properly configured and documented</td>
+                                    <td>Most requirements met with documentation</td>
+                                    <td>Basic policy implemented</td>
+                                    <td>Policy not implemented or incorrectly configured</td>
+                                    <td class="points-cell">5</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Access Control (sudo/admin)</strong></td>
+                                    <td>Least privilege fully implemented, granular controls, well-documented</td>
+                                    <td>Appropriate access controls with documentation</td>
+                                    <td>Basic access control implemented</td>
+                                    <td>Overly permissive or missing access controls</td>
+                                    <td class="points-cell">7</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Administrative Script</strong></td>
+                                    <td>Functional script with comments, error handling, demonstrates automation skill</td>
+                                    <td>Working script with comments</td>
+                                    <td>Basic script that functions</td>
+                                    <td>Script missing or non-functional</td>
+                                    <td class="points-cell">5</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Documentation Quality</strong></td>
+                                    <td>Professional, comprehensive, well-organized, suitable for handoff</td>
+                                    <td>Complete documentation with good organization</td>
+                                    <td>Basic documentation present</td>
+                                    <td>Missing or incomplete documentation</td>
+                                    <td class="points-cell">5</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" style="text-align: right;"><strong>Total Points</strong></td>
+                                    <td class="points-cell"><strong>50</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="info-box success">
+                        <div class="info-box-title">
+                            <span aria-hidden="true">💡</span>
+                            Tips for Success
+                        </div>
+                        <ul style="margin-bottom: 0;">
+                            <li>Start early — don't wait until the weekend before the due date</li>
+                            <li>Test everything before documenting — verify users can log in, groups work correctly</li>
+                            <li>Take screenshots as you work — it's easier than recreating them later</li>
+                            <li>Document your troubleshooting — challenges and solutions demonstrate learning</li>
+                            <li>Review the rubric before submitting — ensure you've addressed all criteria</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Timeline Section -->
+            <section class="section">
+                <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="timeline-content">
+                    <h2>Suggested Timeline</h2>
+                    <span class="toggle-icon" aria-hidden="true">+</span>
+                </div>
+                <div id="timeline-content" class="section-content">
+                    <div class="info-box info">
+                        <div class="info-box-title">
+                            <span aria-hidden="true">⏰</span>
+                            Time Estimate
+                        </div>
+                        <p style="margin-bottom: 0;">This project is designed to take approximately <strong>8−12 hours</strong> of work spread across several weeks. Starting early will allow time for troubleshooting and revision.</p>
+                    </div>
+
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-date">Step 1: Planning</div>
+                            <div class="timeline-content">
+                                <strong>Planning & Installation (2−3 hours)</strong>
+                                <ul>
+                                    <li>Review project requirements thoroughly</li>
+                                    <li>Choose Linux or Windows Server</li>
+                                    <li>Plan your user and group structure on paper</li>
+                                    <li>Begin server installation</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">Step 2: Server Configuration</div>
+                            <div class="timeline-content">
+                                <strong>Server Configuration (2−3 hours)</strong>
+                                <ul>
+                                    <li>Complete server installation</li>
+                                    <li>Configure hostname and networking</li>
+                                    <li>Apply updates and basic hardening</li>
+                                    <li>Take configuration screenshots</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">Step 3: User & Group Setup</div>
+                            <div class="timeline-content">
+                                <strong>User & Group Setup (2−3 hours)</strong>
+                                <ul>
+                                    <li>Create all user accounts</li>
+                                    <li>Create group structure</li>
+                                    <li>Configure password policies</li>
+                                    <li>Set up sudo/admin access</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">Step 4: Scripting & Testing</div>
+                            <div class="timeline-content">
+                                <strong>Scripting & Testing (2−3 hours)</strong>
+                                <ul>
+                                    <li>Write administrative script</li>
+                                    <li>Test all configurations</li>
+                                    <li>Verify user logins work</li>
+                                    <li>Test group-based access</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">Step 5: Documentation & Video</div>
+                            <div class="timeline-content">
+                                <strong>Documentation & Video (2−3 hours)</strong>
+                                <ul>
+                                    <li>Complete all documentation</li>
+                                    <li>Organize screenshots</li>
+                                    <li>Record demonstration video</li>
+                                    <li>Review against rubric</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">Step 6: Final Review & Submission</div>
+                            <div class="timeline-content">
+                                <strong>Final Review & Submission</strong>
+                                <ul>
+                                    <li>Final review of all deliverables</li>
+                                    <li>Package files into ZIP</li>
+                                    <li>Submit by 11:59 PM</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Checklist Section -->
+            <section class="section">
+                <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="checklist-content">
+                    <h2>Submission Checklist</h2>
+                    <span class="toggle-icon" aria-hidden="true">+</span>
+                </div>
+                <div id="checklist-content" class="section-content">
+                    <p>Use this interactive checklist to ensure you've completed all requirements before submitting:</p>
+
+                    <h3>Server Configuration</h3>
+                    <ul class="checklist" role="list">
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Server OS installed and updated"></div>
+                            <span class="checklist-text">Server OS installed and fully updated</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Hostname configured correctly"></div>
+                            <span class="checklist-text">Hostname configured (techstart-srv01 or TECHSTART-SRV01)</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Static IP address configured"></div>
+                            <span class="checklist-text">Static IP address configured and documented</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Remote access configured"></div>
+                            <span class="checklist-text">Remote access configured (SSH or RDP)</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Basic hardening applied"></div>
+                            <span class="checklist-text">Basic hardening steps applied</span>
+                        </li>
+                    </ul>
+
+                    <h3>Users & Groups</h3>
+                    <ul class="checklist" role="list">
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Minimum 10 user accounts created"></div>
+                            <span class="checklist-text">Minimum 10 user accounts created</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Consistent naming convention used"></div>
+                            <span class="checklist-text">Consistent naming convention applied</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Departmental groups created"></div>
+                            <span class="checklist-text">Departmental groups created (4 minimum)</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Role-based groups created"></div>
+                            <span class="checklist-text">At least one role-based group created</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Users assigned to appropriate groups"></div>
+                            <span class="checklist-text">Users assigned to appropriate groups</span>
+                        </li>
+                    </ul>
+
+                    <h3>Security Configuration</h3>
+                    <ul class="checklist" role="list">
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Password policy configured"></div>
+                            <span class="checklist-text">Password policy configured (length, complexity, expiration)</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Account lockout configured"></div>
+                            <span class="checklist-text">Account lockout policy configured</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Sudo or admin access configured"></div>
+                            <span class="checklist-text">Sudo/administrative access configured with least privilege</span>
+                        </li>
+                    </ul>
+
+                    <h3>Automation</h3>
+                    <ul class="checklist" role="list">
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Administrative script created"></div>
+                            <span class="checklist-text">Administrative script created</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Script includes comments"></div>
+                            <span class="checklist-text">Script includes comments and documentation</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Script tested and functional"></div>
+                            <span class="checklist-text">Script tested and functional</span>
+                        </li>
+                    </ul>
+
+                    <h3>Documentation</h3>
+                    <ul class="checklist" role="list">
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Executive summary written"></div>
+                            <span class="checklist-text">Executive summary written (1 page)</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="System architecture diagram created"></div>
+                            <span class="checklist-text">System architecture diagram created</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="User and group structure documented"></div>
+                            <span class="checklist-text">User & group structure documented</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Password policy documented"></div>
+                            <span class="checklist-text">Password policy documented</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Access control matrix completed"></div>
+                            <span class="checklist-text">Access control matrix completed</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Screenshots included"></div>
+                            <span class="checklist-text">All required screenshots included</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Video demonstration recorded"></div>
+                            <span class="checklist-text">Video demonstration recorded (5−10 minutes)</span>
+                        </li>
+                    </ul>
+
+                    <h3>Final Submission</h3>
+                    <ul class="checklist" role="list">
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="All files packaged in ZIP"></div>
+                            <span class="checklist-text">All files packaged in ZIP file</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="ZIP file named correctly"></div>
+                            <span class="checklist-text">ZIP file named: Project1_LastName_FirstName.zip</span>
+                        </li>
+                        <li>
+                            <div class="checkbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Submitted before deadline"></div>
+                            <span class="checklist-text">Submitted to Canvas before Sunday 11:59 PM</span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Resources Section -->
+            <section class="section">
+                <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="resources-content">
+                    <h2>Helpful Resources</h2>
+                    <span class="toggle-icon" aria-hidden="true">+</span>
+                </div>
+                <div id="resources-content" class="section-content">
+                    <h3>Course Materials</h3>
+                    <ul>
+                        <li>Week 3: Linux Server Installation & Basic Administration</li>
+                        <li>Week 4: Windows Server Installation & Server Manager</li>
+                        <li>Week 5: Command Line Administration & Scripting</li>
+                        <li>Week 6: User & Group Administration</li>
+                        <li>Lab 5: Command Line Administration & Scripting</li>
+                        <li>Lab 6: User & Group Administration</li>
+                    </ul>
+
+                    <h3>Linux References</h3>
+                    <ul>
+                        <li><code>man useradd</code> − User creation manual</li>
+                        <li><code>man groupadd</code> − Group creation manual</li>
+                        <li><code>man sudoers</code> − Sudo configuration manual</li>
+                        <li><code>man passwd</code> − Password management manual</li>
+                        <li><code>man chage</code> − Password aging manual</li>
+                    </ul>
+
+                    <h3>Windows References</h3>
+                    <ul>
+                        <li><code>Get-Help New-LocalUser</code> − PowerShell user creation</li>
+                        <li><code>Get-Help New-LocalGroup</code> − PowerShell group creation</li>
+                        <li><code>Get-Help Add-LocalGroupMember</code> − Group membership</li>
+                        <li>Local Security Policy (secpol.msc) − Password policies</li>
+                        <li>Computer Management (compmgmt.msc) − User management GUI</li>
+                    </ul>
+
+                    <h3>Getting Help</h3>
+                    <ul>
+                        <li><strong>Office Hours:</strong> Check Canvas for instructor office hours</li>
+                        <li><strong>Discussion Forum:</strong> Post questions in the Week 6 Q&A forum</li>
+                        <li><strong>Email:</strong> Contact your instructor for private questions</li>
+                        <li><strong>Tutoring:</strong> Visit the college tutoring center for additional help</li>
+                    </ul>
+
+                    <div class="info-box warning">
+                        <div class="info-box-title">
+                            <span aria-hidden="true">⚠️</span>
+                            Academic Integrity Reminder
+                        </div>
+                        <p style="margin-bottom: 0;">This is an individual project. While you may discuss concepts with classmates and seek help with troubleshooting, all submitted work must be your own. Do not share configuration files, scripts, or documentation with other students.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="page-footer">
+            <p>CSC 152 − Network Operating Systems and Administration</p>
+            <p>Mendocino College | Spring 2026 | Instructor: David Pai</p>
+            <p>Last Updated: February 2026</p>
+        </footer>
+    </div>
+
+    <script>
+        // Section Toggle Functionality
+        document.querySelectorAll('.section-header').forEach(header => {
+            header.addEventListener('click', toggleSection);
+            header.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleSection.call(header, e);
+                }
+            });
+        });
+
+        function toggleSection(e) {
+            const content = this.nextElementSibling;
+            const isExpanded = this.getAttribute('aria-expanded') === 'true';
+            
+            this.setAttribute('aria-expanded', !isExpanded);
+            content.classList.toggle('expanded', !isExpanded);
+        }
+
+        // Checklist Functionality
+        document.querySelectorAll('.checkbox').forEach(checkbox => {
+            checkbox.addEventListener('click', toggleCheckbox);
+            checkbox.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleCheckbox.call(checkbox, e);
+                }
+            });
+        });
+
+        function toggleCheckbox(e) {
+            const isChecked = this.classList.toggle('checked');
+            this.setAttribute('aria-checked', isChecked);
+            
+            // Save state to localStorage
+            saveChecklistState();
+        }
+
+        // Save and Load Checklist State
+        function saveChecklistState() {
+            const checkboxes = document.querySelectorAll('.checkbox');
+            const state = Array.from(checkboxes).map(cb => cb.classList.contains('checked'));
+            localStorage.setItem('project1-checklist', JSON.stringify(state));
+        }
+
+        function loadChecklistState() {
+            const saved = localStorage.getItem('project1-checklist');
+            if (saved) {
+                const state = JSON.parse(saved);
+                const checkboxes = document.querySelectorAll('.checkbox');
+                checkboxes.forEach((cb, index) => {
+                    if (state[index]) {
+                        cb.classList.add('checked');
+                        cb.setAttribute('aria-checked', 'true');
+                    }
+                });
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadChecklistState();
+            
+            // Expand first section by default (already set in HTML)
+            // Additional initialization can go here
+        });
+
+        // Keyboard navigation for sections
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.activeElement.blur();
+            }
+        });
+    </script>
+</body>
+</html>
