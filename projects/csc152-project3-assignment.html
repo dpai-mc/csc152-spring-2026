@@ -1,0 +1,2914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC 152 Project 3: Security Hardening and Monitoring with Splunk - Detailed Specification with Rubric">
+    <meta name="author" content="David Pai">
+    <title>CSC 152 - Project 3: Security Hardening &amp; Monitoring with Splunk</title>
+    <style>
+        /* ===== CSS RESET & BASE ===== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #1a5f7a;
+            --color-primary-dark: #134b61;
+            --color-secondary: #57837b;
+            --color-accent: #c38e70;
+            --color-success: #2e7d32;
+            --color-warning: #f57c00;
+            --color-error: #c62828;
+            --color-info: #0277bd;
+            --color-bg: #fefefe;
+            --color-bg-alt: #f5f5f5;
+            --color-bg-code: #f8f8f8;
+            --color-text: #212121;
+            --color-text-secondary: #555555;
+            --color-border: #dddddd;
+            --color-border-dark: #bbbbbb;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 20px rgba(0,0,0,0.15);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --font-main: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.7;
+            color: var(--color-text);
+            background-color: var(--color-bg);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ===== ACCESSIBILITY ===== */
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            background: var(--color-primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            z-index: 10000;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 0 0 var(--radius-md) 0;
+        }
+
+        .skip-link:focus {
+            top: 0;
+            outline: 3px solid var(--color-accent);
+            outline-offset: 2px;
+        }
+
+        *:focus {
+            outline: 3px solid var(--color-accent);
+            outline-offset: 2px;
+        }
+
+        *:focus:not(:focus-visible) {
+            outline: none;
+        }
+
+        *:focus-visible {
+            outline: 3px solid var(--color-accent);
+            outline-offset: 2px;
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* ===== LAYOUT ===== */
+        .page-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ===== NAVIGATION SIDEBAR ===== */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #2d5016 0%, #1a3009 100%);
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform var(--transition-normal);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.1rem;
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+        }
+
+        .sidebar-header .course-info {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .nav-menu {
+            padding: 1rem 0;
+        }
+
+        .nav-section {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            color: white;
+            width: 100%;
+            text-align: left;
+            transition: background var(--transition-fast);
+        }
+
+        .nav-section-title:hover,
+        .nav-section-title:focus {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-section-title .icon {
+            transition: transform var(--transition-fast);
+        }
+
+        .nav-section-title[aria-expanded="true"] .icon {
+            transform: rotate(180deg);
+        }
+
+        .nav-items {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height var(--transition-normal);
+        }
+
+        .nav-items.expanded {
+            max-height: 500px;
+        }
+
+        .nav-items a {
+            display: block;
+            padding: 0.5rem 1.5rem 0.5rem 2.5rem;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all var(--transition-fast);
+            border-left: 3px solid transparent;
+        }
+
+        .nav-items a:hover,
+        .nav-items a:focus {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--color-accent);
+        }
+
+        .nav-items a.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left-color: var(--color-accent);
+        }
+
+        /* Progress indicator in sidebar */
+        .progress-section {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: auto;
+        }
+
+        .progress-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-bar-container {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--color-accent);
+            border-radius: 10px;
+            transition: width var(--transition-normal);
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            opacity: 0.9;
+        }
+
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: #2d5016;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+        }
+
+        .menu-toggle:hover {
+            background: #1a3009;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem 3rem;
+            max-width: 1200px;
+        }
+
+        /* ===== HEADER ===== */
+        .page-header {
+            background: linear-gradient(135deg, #2d5016 0%, #57837b 100%);
+            color: white;
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            margin: 0 0 0.5rem 0;
+            font-weight: 700;
+        }
+
+        .page-header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .header-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-meta-item .label {
+            opacity: 0.85;
+        }
+
+        .header-meta-item .value {
+            font-weight: 600;
+        }
+
+        /* ===== SECTIONS ===== */
+        .section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--color-border);
+        }
+
+        .section h2 {
+            color: #2d5016;
+            font-size: 1.4rem;
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #2d5016;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section h3 {
+            color: #1a3009;
+            font-size: 1.15rem;
+            margin: 1.5rem 0 1rem 0;
+        }
+
+        .section h4 {
+            color: var(--color-text);
+            font-size: 1rem;
+            margin: 1.25rem 0 0.75rem 0;
+            font-weight: 600;
+        }
+
+        /* ===== COLLAPSIBLE SECTIONS ===== */
+        .collapsible {
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .collapsible-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            background: var(--color-bg-alt);
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--color-text);
+            transition: background var(--transition-fast);
+        }
+
+        .collapsible-header:hover {
+            background: var(--color-border);
+        }
+
+        .collapsible-header .icon {
+            transition: transform var(--transition-fast);
+            font-size: 0.8rem;
+        }
+
+        .collapsible-header[aria-expanded="true"] .icon {
+            transform: rotate(180deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height var(--transition-normal), padding var(--transition-normal);
+        }
+
+        .collapsible-content.expanded {
+            max-height: 5000px;
+            padding: 1.25rem;
+        }
+
+        /* ===== TABLES ===== */
+        .table-container {
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: #2d5016;
+            color: white;
+        }
+
+        th {
+            padding: 0.875rem 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        tbody tr:hover {
+            background: var(--color-bg-alt);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ===== CODE BLOCKS ===== */
+        pre {
+            background: var(--color-bg-code);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            white-space: pre;
+            word-wrap: normal;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            border: none;
+            font-family: inherit;
+            font-size: inherit;
+            white-space: pre;
+        }
+
+        code {
+            background: var(--color-bg-code);
+            padding: 0.2rem 0.4rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.875em;
+            color: var(--color-error);
+        }
+
+        /* ===== ARCHITECTURE DIAGRAM ===== */
+        .architecture-diagram {
+            background: var(--color-bg-code);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            white-space: pre;
+        }
+
+        /* ===== ALERTS & CALLOUTS ===== */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            margin: 1rem 0;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .alert-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-left: 4px solid var(--color-info);
+            color: #0d47a1;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-left: 4px solid var(--color-warning);
+            color: #e65100;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid var(--color-success);
+            color: #1b5e20;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            border-left: 4px solid var(--color-error);
+            color: #b71c1c;
+        }
+
+        .alert-security {
+            background: #fce4ec;
+            border-left: 4px solid #c2185b;
+            color: #880e4f;
+        }
+
+        /* ===== LISTS ===== */
+        ul, ol {
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .checklist input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-top: 0.1rem;
+            cursor: pointer;
+            accent-color: #2d5016;
+        }
+
+        .checklist label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .checklist input[type="checkbox"]:checked + label {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        /* ===== BADGES ===== */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-primary {
+            background: #2d5016;
+            color: white;
+        }
+
+        .badge-success {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .badge-warning {
+            background: var(--color-warning);
+            color: white;
+        }
+
+        .badge-info {
+            background: var(--color-info);
+            color: white;
+        }
+
+        .badge-security {
+            background: #c2185b;
+            color: white;
+        }
+
+        /* ===== POINTS DISPLAY ===== */
+        .points-badge {
+            background: var(--color-accent);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* ===== TABS ===== */
+        .tabs {
+            margin: 1.5rem 0;
+        }
+
+        .tab-list {
+            display: flex;
+            border-bottom: 2px solid var(--color-border);
+            gap: 0.25rem;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all var(--transition-fast);
+        }
+
+        .tab-button:hover {
+            color: #2d5016;
+            background: var(--color-bg-alt);
+        }
+
+        .tab-button[aria-selected="true"] {
+            color: #2d5016;
+            border-bottom-color: #2d5016;
+            font-weight: 600;
+        }
+
+        .tab-panel {
+            display: none;
+            padding: 1.5rem 0;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* ===== SECURITY HIGHLIGHT ===== */
+        .security-highlight {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+            border: 1px solid #f48fb1;
+            border-radius: var(--radius-md);
+            padding: 1rem 1.25rem;
+            margin: 1rem 0;
+        }
+
+        .security-highlight h4 {
+            color: #880e4f;
+            margin-top: 0;
+        }
+
+        /* ===== FOOTER ===== */
+        .page-footer {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            .sidebar,
+            .menu-toggle,
+            .progress-section,
+            .tab-list {
+                display: none !important;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            .section {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+
+            .collapsible-content {
+                max-height: none !important;
+                padding: 1rem !important;
+            }
+
+            .tab-panel {
+                display: block !important;
+            }
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1024px) {
+            .main-content {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+                padding-top: 4rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.4rem;
+            }
+
+            .header-meta {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .section {
+                padding: 1.25rem;
+            }
+
+            .tab-list {
+                flex-wrap: wrap;
+            }
+
+            .tab-button {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+        }
+
+        /* ===== OVERLAY FOR MOBILE MENU ===== */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* ===== SPLUNK SPECIFIC STYLING ===== */
+        .splunk-query {
+            background: #1a1a1a;
+            color: #00ff00;
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin: 0.75rem 0;
+        }
+
+        .splunk-query code {
+            background: none;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+        <span aria-hidden="true">☰</span>
+    </button>
+
+    <div class="page-wrapper">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar" aria-label="Main navigation">
+            <div class="sidebar-header">
+                <h1>Project 3</h1>
+                <div class="course-info">CSC 152 • Security &amp; Monitoring</div>
+            </div>
+
+            <div class="nav-menu">
+                <!-- Overview Section -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="true" aria-controls="nav-overview">
+                        <span>Overview</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items expanded" id="nav-overview">
+                        <li><a href="#project-overview">Project Overview</a></li>
+                        <li><a href="#learning-objectives">Learning Objectives</a></li>
+                        <li><a href="#cslo-alignment">CSLO Alignment</a></li>
+                        <li><a href="#prerequisites">Prerequisites</a></li>
+                        <li><a href="#scenario">Scenario</a></li>
+                    </ul>
+                </div>
+
+                <!-- Technical Requirements -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="false" aria-controls="nav-technical">
+                        <span>Technical Requirements</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items" id="nav-technical">
+                        <li><a href="#infrastructure-resources">Infrastructure Resources</a></li>
+                        <li><a href="#required-software">Required Software</a></li>
+                        <li><a href="#security-architecture">Security Architecture</a></li>
+                    </ul>
+                </div>
+
+                <!-- Project Parts -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="false" aria-controls="nav-parts">
+                        <span>Project Deliverables</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items" id="nav-parts">
+                        <li><a href="#part-a">Part A: Server Hardening (25 pts)</a></li>
+                        <li><a href="#part-b">Part B: Splunk Deployment (20 pts)</a></li>
+                        <li><a href="#part-c">Part C: Log Forwarding (15 pts)</a></li>
+                        <li><a href="#part-d">Part D: Backup Strategy (15 pts)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Grading & Submission -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="false" aria-controls="nav-grading">
+                        <span>Grading &amp; Submission</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items" id="nav-grading">
+                        <li><a href="#grading-rubric">Grading Rubric</a></li>
+                        <li><a href="#submission-requirements">Submission Requirements</a></li>
+                        <li><a href="#timeline">Timeline &amp; Milestones</a></li>
+                    </ul>
+                </div>
+
+                <!-- Resources -->
+                <div class="nav-section">
+                    <button class="nav-section-title" aria-expanded="false" aria-controls="nav-resources">
+                        <span>Resources &amp; Help</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <ul class="nav-items" id="nav-resources">
+                        <li><a href="#tips-for-success">Tips for Success</a></li>
+                        <li><a href="#common-issues">Common Issues</a></li>
+                        <li><a href="#external-resources">External Resources</a></li>
+                        <li><a href="#academic-integrity">Academic Integrity</a></li>
+                        <li><a href="#getting-help">Getting Help</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Progress Tracker -->
+            <div class="progress-section">
+                <div class="progress-title">Your Progress</div>
+                <div class="progress-bar-container" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Project completion progress">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-text"><span id="progressPercent">0</span>% Complete (<span id="progressCount">0</span>/24 tasks)</div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+            <!-- Page Header -->
+            <header class="page-header">
+                <h1>Project 3: Security Hardening &amp; Monitoring with Splunk</h1>
+                <p class="subtitle">Implement security controls and deploy centralized log monitoring for TechStart Solutions</p>
+                <div class="header-meta">
+                    <div class="header-meta-item">
+                        <span class="label">Course:</span>
+                        <span class="value">CSC 152</span>
+                    </div>
+                    <div class="header-meta-item">
+                        <span class="label">Project:</span>
+                        <span class="value">3 of 4</span>
+                    </div>
+                    <div class="header-meta-item">
+                        <span class="label">Points:</span>
+                        <span class="value">75</span>
+                    </div>
+                    <div class="header-meta-item">
+                        <span class="label">Institution:</span>
+                        <span class="value">Mendocino College</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Project Overview Section -->
+            <section class="section" id="project-overview" aria-labelledby="overview-heading">
+                <h2 id="overview-heading">
+                    <span aria-hidden="true">🔒</span>
+                    Project Overview
+                </h2>
+                <p>Project 3 focuses on implementing security hardening measures and deploying centralized log monitoring using Splunk Free. Building upon the network infrastructure established in Projects 1 and 2, you will:</p>
+                <ul>
+                    <li>Apply <strong>industry-standard security controls</strong> to Linux and Windows servers</li>
+                    <li>Deploy <strong>Splunk Free</strong> as a Security Information and Event Management (SIEM) solution</li>
+                    <li>Configure <strong>log forwarding</strong> from multiple sources</li>
+                    <li>Create <strong>meaningful security dashboards</strong> for monitoring</li>
+                    <li>Implement a <strong>backup strategy</strong> for disaster recovery</li>
+                </ul>
+                <div class="alert alert-security">
+                    <span class="alert-icon" aria-hidden="true">🛡️</span>
+                    <div class="alert-content">
+                        <div class="alert-title">Security Focus</div>
+                        <p>This project emphasizes the principle of "defense in depth" - implementing multiple layers of security controls to protect systems and data. You will learn to think like a security professional while maintaining system functionality.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Learning Objectives -->
+            <section class="section" id="learning-objectives" aria-labelledby="objectives-heading">
+                <h2 id="objectives-heading">
+                    <span aria-hidden="true">🎯</span>
+                    Learning Objectives
+                </h2>
+                <p>Upon successful completion of this project, you will be able to:</p>
+                <ol>
+                    <li>Apply security hardening best practices to Linux server systems</li>
+                    <li>Apply security hardening best practices to Windows Server systems</li>
+                    <li>Deploy and configure Splunk Free for log aggregation and analysis</li>
+                    <li>Configure log forwarding from Linux systems using Splunk Universal Forwarder</li>
+                    <li>Configure Windows Event Log forwarding to Splunk</li>
+                    <li>Create Splunk dashboards for security monitoring</li>
+                    <li>Implement basic Splunk searches and alerts</li>
+                    <li>Design and implement a backup strategy for critical data</li>
+                    <li>Document security configurations and monitoring procedures</li>
+                </ol>
+            </section>
+
+            <!-- CSLO Alignment -->
+            <section class="section" id="cslo-alignment" aria-labelledby="cslo-heading">
+                <h2 id="cslo-heading">
+                    <span aria-hidden="true">🔗</span>
+                    CSLO Alignment
+                </h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">CSLO</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Project Coverage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge badge-security">CSLO 2</span></td>
+                                <td>Apply physical and network data security techniques</td>
+                                <td>Server hardening, firewall rules, audit policies, access controls</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge badge-primary">CSLO 4</span></td>
+                                <td>Perform data backup and recovery operations</td>
+                                <td>Backup strategy design, implementation, and verification</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Prerequisites -->
+            <section class="section" id="prerequisites" aria-labelledby="prereq-heading">
+                <h2 id="prereq-heading">
+                    <span aria-hidden="true">✅</span>
+                    Prerequisites
+                </h2>
+                <p>Before beginning this project, you should have completed:</p>
+                <ul>
+                    <li><strong>Project 1:</strong> Multi-User Server Configuration</li>
+                    <li><strong>Project 2:</strong> Network Infrastructure &amp; Firewall Implementation</li>
+                    <li><strong>Week 11:</strong> Active Directory &amp; Identity Management</li>
+                    <li><strong>Week 12:</strong> Security Fundamentals &amp; Hardening</li>
+                </ul>
+
+                <h3>Required Infrastructure from Previous Projects</h3>
+                <ul class="checklist" aria-label="Previous project infrastructure checklist">
+                    <li>
+                        <input type="checkbox" id="prereq-linux" data-progress="true">
+                        <label for="prereq-linux">Linux Server (Ubuntu Server or Rocky Linux) - functional with static IP 10.0.2.10</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="prereq-windows" data-progress="true">
+                        <label for="prereq-windows">Windows Server 2022 with AD DS - functional with static IP 10.0.2.11</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="prereq-pfsense" data-progress="true">
+                        <label for="prereq-pfsense">pfSense firewall - functional with all network segments configured</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="prereq-network" data-progress="true">
+                        <label for="prereq-network">Network connectivity between all segments verified</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Scenario -->
+            <section class="section" id="scenario" aria-labelledby="scenario-heading">
+                <h2 id="scenario-heading">
+                    <span aria-hidden="true">🏢</span>
+                    Scenario: TechStart Solutions Security Initiative
+                </h2>
+                <div class="alert alert-info">
+                    <span class="alert-icon" aria-hidden="true">📋</span>
+                    <div class="alert-content">
+                        <div class="alert-title">Security Compliance Project</div>
+                        <p>TechStart Solutions has received a security audit recommendation to improve their security posture. As the IT administrator, you have been tasked with implementing security hardening measures and deploying a centralized logging solution.</p>
+                    </div>
+                </div>
+
+                <h3>Business Requirements</h3>
+                <ul>
+                    <li><strong>Compliance:</strong> Implement security controls aligned with CIS Benchmarks</li>
+                    <li><strong>Visibility:</strong> Centralized logging for security event monitoring</li>
+                    <li><strong>Alerting:</strong> Automated notification of security-relevant events</li>
+                    <li><strong>Recovery:</strong> Backup strategy to ensure business continuity</li>
+                    <li><strong>Documentation:</strong> Security procedures for audit compliance</li>
+                </ul>
+
+                <h3>Technical Constraints</h3>
+                <ul>
+                    <li>Use <strong>Splunk Free</strong> (500 MB/day indexing limit)</li>
+                    <li>Maintain <strong>existing functionality</strong> - hardening must not break services</li>
+                    <li>Work within <strong>existing resource allocation</strong></li>
+                </ul>
+            </section>
+
+            <!-- Technical Requirements -->
+            <section class="section" id="infrastructure-resources" aria-labelledby="infra-heading">
+                <h2 id="infra-heading">
+                    <span aria-hidden="true">💻</span>
+                    Technical Requirements
+                </h2>
+
+                <h3>Infrastructure Resources (Per Student)</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Resource</th>
+                                <th scope="col">Available</th>
+                                <th scope="col">Project 3 Additional Usage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CPU Cores</td>
+                                <td>8 vCPUs</td>
+                                <td>+1 vCPU (Splunk)</td>
+                            </tr>
+                            <tr>
+                                <td>RAM</td>
+                                <td>40 GB</td>
+                                <td>+4 GB (Splunk)</td>
+                            </tr>
+                            <tr>
+                                <td>VM Storage</td>
+                                <td>400 GB</td>
+                                <td>+50 GB (Splunk + Backups)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Required Software -->
+            <section class="section" id="required-software" aria-labelledby="software-heading">
+                <h2 id="software-heading">
+                    <span aria-hidden="true">📦</span>
+                    Required Software
+                </h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Software</th>
+                                <th scope="col">Version</th>
+                                <th scope="col">Purpose</th>
+                                <th scope="col">Installation Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Splunk Enterprise (Free)</td>
+                                <td>9.x</td>
+                                <td>SIEM / Log aggregation</td>
+                                <td>Linux Server OR dedicated VM</td>
+                            </tr>
+                            <tr>
+                                <td>Splunk Universal Forwarder</td>
+                                <td>9.x</td>
+                                <td>Log forwarding agent</td>
+                                <td>Linux Server, Windows Server</td>
+                            </tr>
+                            <tr>
+                                <td>Splunk Add-on for Windows</td>
+                                <td>Latest</td>
+                                <td>Windows event collection</td>
+                                <td>Splunk server</td>
+                            </tr>
+                            <tr>
+                                <td>Splunk Add-on for Unix</td>
+                                <td>Latest</td>
+                                <td>Linux log collection</td>
+                                <td>Splunk server</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-warning">
+                    <span class="alert-icon" aria-hidden="true">⚠️</span>
+                    <div class="alert-content">
+                        <div class="alert-title">Splunk Free Limitations</div>
+                        <p>Splunk Free allows 500 MB of data indexing per day. This is sufficient for our lab environment but requires careful selection of which logs to forward. Plan your log sources accordingly.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security Architecture -->
+            <section class="section" id="security-architecture" aria-labelledby="arch-heading">
+                <h2 id="arch-heading">
+                    <span aria-hidden="true">🏗️</span>
+                    Security Architecture
+                </h2>
+                <div class="architecture-diagram" role="img" aria-label="Security monitoring architecture diagram showing log flow from servers to Splunk">
+┌─────────────────────────────────────────────────────────────────────┐
+│                        SECURITY MONITORING                          │
+└─────────────────────────────────────────────────────────────────────┘
+
+    ┌─────────────────┐         ┌─────────────────┐
+    │  Linux Server   │         │ Windows Server  │
+    │   10.0.2.10     │         │   10.0.2.11     │
+    │                 │         │                 │
+    │ ┌─────────────┐ │         │ ┌─────────────┐ │
+    │ │  Hardened   │ │         │ │  Hardened   │ │
+    │ │  Services   │ │         │ │  Services   │ │
+    │ └─────────────┘ │         │ └─────────────┘ │
+    │                 │         │                 │
+    │ ┌─────────────┐ │         │ ┌─────────────┐ │
+    │ │  Universal  │ │         │ │  Universal  │ │
+    │ │  Forwarder  │ │         │ │  Forwarder  │ │
+    │ └──────┬──────┘ │         │ └──────┬──────┘ │
+    └────────┼────────┘         └────────┼────────┘
+             │                           │
+             │    Syslog / Auth Logs     │    Windows Events
+             │    /var/log/*             │    Security, System
+             │                           │    Application
+             └───────────┬───────────────┘
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │   SPLUNK SERVER     │
+              │    10.0.2.10:8000   │
+              │    (or dedicated)   │
+              │                     │
+              │  ┌───────────────┐  │
+              │  │  Indexer      │  │
+              │  │  (500MB/day)  │  │
+              │  └───────────────┘  │
+              │                     │
+              │  ┌───────────────┐  │
+              │  │  Dashboards   │  │
+              │  │  • Security   │  │
+              │  │  • Auth       │  │
+              │  │  • System     │  │
+              │  └───────────────┘  │
+              │                     │
+              │  ┌───────────────┐  │
+              │  │  Alerts       │  │
+              │  │  • Failed     │  │
+              │  │    Logins     │  │
+              │  │  • Sudo Use   │  │
+              │  └───────────────┘  │
+              └─────────────────────┘</div>
+            </section>
+
+            <!-- Part A: Server Security Hardening -->
+            <section class="section" id="part-a" aria-labelledby="part-a-heading">
+                <h2 id="part-a-heading">
+                    <span aria-hidden="true">🅰️</span>
+                    Part A: Server Security Hardening
+                    <span class="points-badge">25 Points</span>
+                </h2>
+                <p><strong>Objective:</strong> Apply security hardening measures to both Linux and Windows servers following industry best practices.</p>
+
+                <!-- Tabs for Linux vs Windows -->
+                <div class="tabs">
+                    <div class="tab-list" role="tablist" aria-label="Server Hardening Options">
+                        <button class="tab-button" role="tab" aria-selected="true" aria-controls="linux-hardening-panel" id="linux-hardening-tab">A.1: Linux Hardening (12 pts)</button>
+                        <button class="tab-button" role="tab" aria-selected="false" aria-controls="windows-hardening-panel" id="windows-hardening-tab">A.2: Windows Hardening (13 pts)</button>
+                    </div>
+
+                    <!-- Linux Hardening Panel -->
+                    <div class="tab-panel active" role="tabpanel" id="linux-hardening-panel" aria-labelledby="linux-hardening-tab">
+                        <h3>A.1: Linux Server Hardening (12 points)</h3>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Service Hardening</td>
+                                        <td>Disable unnecessary services</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>SSH Hardening</td>
+                                        <td>Secure SSH configuration</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Firewall Configuration</td>
+                                        <td>Host-based firewall rules</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Audit Configuration</td>
+                                        <td>Enable auditd logging</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>File Permissions</td>
+                                        <td>Secure critical file permissions</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Automatic Updates</td>
+                                        <td>Configure unattended-upgrades</td>
+                                        <td>1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Service Hardening -->
+                        <div class="collapsible">
+                            <button class="collapsible-header" aria-expanded="false" aria-controls="linux-services-content">
+                                <span>Service Hardening Details</span>
+                                <span class="icon" aria-hidden="true">▼</span>
+                            </button>
+                            <div class="collapsible-content" id="linux-services-content">
+                                <h4>Required Actions</h4>
+                                <ol>
+                                    <li>List all running services: <code>systemctl list-units --type=service --state=running</code></li>
+                                    <li>Identify unnecessary services for your use case</li>
+                                    <li>Disable services not needed (examples below)</li>
+                                </ol>
+
+                                <h4>Services to Consider Disabling</h4>
+                                <pre><code># Check if services are running and disable if not needed
+sudo systemctl disable --now cups.service        # Print service (if no printing needed)
+sudo systemctl disable --now avahi-daemon.service # mDNS (if not needed)
+sudo systemctl disable --now bluetooth.service   # Bluetooth (servers rarely need this)
+sudo systemctl disable --now ModemManager.service # Modem support
+
+# Verify disabled services
+systemctl list-unit-files --state=disabled</code></pre>
+
+                                <h4>Deliverables</h4>
+                                <ul>
+                                    <li>Before/after list of running services</li>
+                                    <li>Justification for each disabled service</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- SSH Hardening -->
+                        <div class="collapsible">
+                            <button class="collapsible-header" aria-expanded="false" aria-controls="ssh-content">
+                                <span>SSH Hardening Details</span>
+                                <span class="icon" aria-hidden="true">▼</span>
+                            </button>
+                            <div class="collapsible-content" id="ssh-content">
+                                <h4>Required SSH Configuration Changes</h4>
+                                <p>Edit <code>/etc/ssh/sshd_config</code>:</p>
+                                <pre><code># Disable root login
+PermitRootLogin no
+
+# Use SSH Protocol 2 only (default in modern versions)
+Protocol 2
+
+# Disable password authentication (after setting up key-based auth)
+# PasswordAuthentication no  # Only after keys are configured!
+
+# Limit authentication attempts
+MaxAuthTries 3
+
+# Set idle timeout (5 minutes)
+ClientAliveInterval 300
+ClientAliveCountMax 0
+
+# Disable empty passwords
+PermitEmptyPasswords no
+
+# Disable X11 forwarding (if not needed)
+X11Forwarding no
+
+# Limit users who can SSH (replace with actual usernames)
+AllowUsers admin sysadmin
+
+# Use strong ciphers
+Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+
+# Use strong MACs
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
+
+# Use strong key exchange algorithms
+KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256</code></pre>
+
+                                <h4>Apply Changes</h4>
+                                <pre><code># Validate configuration
+sudo sshd -t
+
+# Restart SSH service
+sudo systemctl restart sshd
+
+# Verify SSH is still accessible (test from another terminal before closing current session!)</code></pre>
+
+                                <div class="alert alert-warning">
+                                    <span class="alert-icon" aria-hidden="true">⚠️</span>
+                                    <div class="alert-content">
+                                        <div class="alert-title">Warning</div>
+                                        <p>Always test SSH access from a new terminal before closing your current session. Incorrect SSH configuration can lock you out of the server!</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Firewall Configuration -->
+                        <div class="collapsible">
+                            <button class="collapsible-header" aria-expanded="false" aria-controls="linux-fw-content">
+                                <span>Host Firewall Configuration</span>
+                                <span class="icon" aria-hidden="true">▼</span>
+                            </button>
+                            <div class="collapsible-content" id="linux-fw-content">
+                                <h4>UFW Configuration (Ubuntu)</h4>
+                                <pre><code># Enable UFW
+sudo ufw enable
+
+# Set default policies
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# Allow SSH
+sudo ufw allow 22/tcp comment 'SSH'
+
+# Allow DNS (if DNS server)
+sudo ufw allow 53/tcp comment 'DNS TCP'
+sudo ufw allow 53/udp comment 'DNS UDP'
+
+# Allow Splunk forwarder (receiving)
+sudo ufw allow 9997/tcp comment 'Splunk Forwarder'
+
+# Allow Splunk web (if Splunk server)
+sudo ufw allow 8000/tcp comment 'Splunk Web'
+
+# Check status
+sudo ufw status verbose</code></pre>
+
+                                <h4>firewalld Configuration (Rocky Linux)</h4>
+                                <pre><code># Start and enable firewalld
+sudo systemctl enable --now firewalld
+
+# Set default zone
+sudo firewall-cmd --set-default-zone=drop
+
+# Add allowed services
+sudo firewall-cmd --permanent --add-service=ssh
+sudo firewall-cmd --permanent --add-service=dns  # if DNS server
+
+# Add Splunk ports
+sudo firewall-cmd --permanent --add-port=9997/tcp  # Forwarder
+sudo firewall-cmd --permanent --add-port=8000/tcp  # Web UI
+
+# Reload and verify
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Audit Configuration -->
+                        <div class="collapsible">
+                            <button class="collapsible-header" aria-expanded="false" aria-controls="audit-content">
+                                <span>Audit Configuration (auditd)</span>
+                                <span class="icon" aria-hidden="true">▼</span>
+                            </button>
+                            <div class="collapsible-content" id="audit-content">
+                                <h4>Install and Configure auditd</h4>
+                                <pre><code># Install auditd
+sudo apt install auditd audispd-plugins  # Ubuntu
+# OR
+sudo dnf install audit                    # Rocky Linux
+
+# Enable and start
+sudo systemctl enable --now auditd</code></pre>
+
+                                <h4>Add Security Audit Rules</h4>
+                                <p>Create <code>/etc/audit/rules.d/security.rules</code>:</p>
+                                <pre><code># Monitor authentication files
+-w /etc/passwd -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+
+# Monitor sudoers
+-w /etc/sudoers -p wa -k sudoers
+-w /etc/sudoers.d/ -p wa -k sudoers
+
+# Monitor SSH configuration
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+
+# Monitor login/logout
+-w /var/log/lastlog -p wa -k logins
+-w /var/log/faillog -p wa -k logins
+
+# Monitor cron
+-w /etc/crontab -p wa -k cron
+-w /etc/cron.d/ -p wa -k cron
+
+# Monitor user/group modifications
+-w /usr/sbin/useradd -p x -k user_modification
+-w /usr/sbin/usermod -p x -k user_modification
+-w /usr/sbin/userdel -p x -k user_modification
+-w /usr/sbin/groupadd -p x -k group_modification
+-w /usr/sbin/groupmod -p x -k group_modification
+-w /usr/sbin/groupdel -p x -k group_modification</code></pre>
+
+                                <h4>Apply Rules</h4>
+                                <pre><code># Load new rules
+sudo augenrules --load
+
+# Verify rules are loaded
+sudo auditctl -l
+
+# Test by viewing audit log
+sudo ausearch -k identity</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Linux Hardening Checklist -->
+                        <h4>Linux Hardening Checklist</h4>
+                        <ul class="checklist">
+                            <li>
+                                <input type="checkbox" id="linux-services" data-progress="true">
+                                <label for="linux-services">Unnecessary services identified and disabled</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="linux-ssh" data-progress="true">
+                                <label for="linux-ssh">SSH hardening applied and tested</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="linux-fw" data-progress="true">
+                                <label for="linux-fw">Host firewall configured</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="linux-audit" data-progress="true">
+                                <label for="linux-audit">Audit rules configured</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="linux-perms" data-progress="true">
+                                <label for="linux-perms">Critical file permissions secured</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="linux-updates" data-progress="true">
+                                <label for="linux-updates">Automatic updates configured</label>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Windows Hardening Panel -->
+                    <div class="tab-panel" role="tabpanel" id="windows-hardening-panel" aria-labelledby="windows-hardening-tab">
+                        <h3>A.2: Windows Server Hardening (13 points)</h3>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Service Hardening</td>
+                                        <td>Disable unnecessary services</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Firewall Configuration</td>
+                                        <td>Windows Defender Firewall rules</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Account Policies</td>
+                                        <td>Password and lockout policies</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Audit Policies</td>
+                                        <td>Security event auditing</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Security Options</td>
+                                        <td>Local security policy settings</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Windows Update</td>
+                                        <td>Configure automatic updates</td>
+                                        <td>1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Account Policies -->
+                        <div class="collapsible">
+                            <button class="collapsible-header" aria-expanded="false" aria-controls="win-account-content">
+                                <span>Account Policies Configuration</span>
+                                <span class="icon" aria-hidden="true">▼</span>
+                            </button>
+                            <div class="collapsible-content" id="win-account-content">
+                                <h4>Password Policy (Group Policy)</h4>
+                                <p>Navigate to: <code>Computer Configuration → Policies → Windows Settings → Security Settings → Account Policies → Password Policy</code></p>
+
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Setting</th>
+                                                <th scope="col">Recommended Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>Enforce password history</td><td>24 passwords remembered</td></tr>
+                                            <tr><td>Maximum password age</td><td>60 days</td></tr>
+                                            <tr><td>Minimum password age</td><td>1 day</td></tr>
+                                            <tr><td>Minimum password length</td><td>14 characters</td></tr>
+                                            <tr><td>Password must meet complexity</td><td>Enabled</td></tr>
+                                            <tr><td>Store passwords using reversible encryption</td><td>Disabled</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <h4>Account Lockout Policy</h4>
+                                <p>Navigate to: <code>Account Policies → Account Lockout Policy</code></p>
+
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Setting</th>
+                                                <th scope="col">Recommended Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>Account lockout duration</td><td>30 minutes</td></tr>
+                                            <tr><td>Account lockout threshold</td><td>5 invalid attempts</td></tr>
+                                            <tr><td>Reset account lockout counter after</td><td>30 minutes</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <h4>PowerShell Commands</h4>
+                                <pre><code># View current password policy
+Get-ADDefaultDomainPasswordPolicy
+
+# Set password policy
+Set-ADDefaultDomainPasswordPolicy -Identity techstart.local `
+    -MinPasswordLength 14 `
+    -PasswordHistoryCount 24 `
+    -MaxPasswordAge 60.00:00:00 `
+    -MinPasswordAge 1.00:00:00 `
+    -ComplexityEnabled $true `
+    -LockoutThreshold 5 `
+    -LockoutDuration 00:30:00 `
+    -LockoutObservationWindow 00:30:00</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Audit Policies -->
+                        <div class="collapsible">
+                            <button class="collapsible-header" aria-expanded="false" aria-controls="win-audit-content">
+                                <span>Audit Policies Configuration</span>
+                                <span class="icon" aria-hidden="true">▼</span>
+                            </button>
+                            <div class="collapsible-content" id="win-audit-content">
+                                <h4>Advanced Audit Policy Configuration</h4>
+                                <p>Navigate to: <code>Computer Configuration → Policies → Windows Settings → Security Settings → Advanced Audit Policy Configuration</code></p>
+
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Category</th>
+                                                <th scope="col">Subcategory</th>
+                                                <th scope="col">Setting</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>Account Logon</td><td>Credential Validation</td><td>Success, Failure</td></tr>
+                                            <tr><td>Account Management</td><td>User Account Management</td><td>Success, Failure</td></tr>
+                                            <tr><td>Account Management</td><td>Security Group Management</td><td>Success, Failure</td></tr>
+                                            <tr><td>Logon/Logoff</td><td>Logon</td><td>Success, Failure</td></tr>
+                                            <tr><td>Logon/Logoff</td><td>Logoff</td><td>Success</td></tr>
+                                            <tr><td>Logon/Logoff</td><td>Special Logon</td><td>Success</td></tr>
+                                            <tr><td>Object Access</td><td>File System</td><td>Success, Failure</td></tr>
+                                            <tr><td>Policy Change</td><td>Audit Policy Change</td><td>Success, Failure</td></tr>
+                                            <tr><td>Privilege Use</td><td>Sensitive Privilege Use</td><td>Success, Failure</td></tr>
+                                            <tr><td>System</td><td>Security State Change</td><td>Success, Failure</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <h4>PowerShell Commands</h4>
+                                <pre><code># Enable auditing via PowerShell
+auditpol /set /subcategory:"Logon" /success:enable /failure:enable
+auditpol /set /subcategory:"Logoff" /success:enable
+auditpol /set /subcategory:"Account Lockout" /success:enable /failure:enable
+auditpol /set /subcategory:"User Account Management" /success:enable /failure:enable
+auditpol /set /subcategory:"Security Group Management" /success:enable /failure:enable
+auditpol /set /subcategory:"Credential Validation" /success:enable /failure:enable
+
+# Verify audit policies
+auditpol /get /category:*</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Windows Firewall -->
+                        <div class="collapsible">
+                            <button class="collapsible-header" aria-expanded="false" aria-controls="win-fw-content">
+                                <span>Windows Defender Firewall Configuration</span>
+                                <span class="icon" aria-hidden="true">▼</span>
+                            </button>
+                            <div class="collapsible-content" id="win-fw-content">
+                                <h4>Required Firewall Rules</h4>
+                                <pre><code># Enable firewall for all profiles
+Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
+
+# Set default actions
+Set-NetFirewallProfile -DefaultInboundAction Block -DefaultOutboundAction Allow
+
+# Allow AD DS traffic (Domain Controller)
+New-NetFirewallRule -DisplayName "AD DS - LDAP" -Direction Inbound -Protocol TCP -LocalPort 389 -Action Allow
+New-NetFirewallRule -DisplayName "AD DS - LDAPS" -Direction Inbound -Protocol TCP -LocalPort 636 -Action Allow
+New-NetFirewallRule -DisplayName "AD DS - Kerberos" -Direction Inbound -Protocol TCP -LocalPort 88 -Action Allow
+New-NetFirewallRule -DisplayName "AD DS - Kerberos UDP" -Direction Inbound -Protocol UDP -LocalPort 88 -Action Allow
+New-NetFirewallRule -DisplayName "AD DS - DNS" -Direction Inbound -Protocol TCP -LocalPort 53 -Action Allow
+New-NetFirewallRule -DisplayName "AD DS - DNS UDP" -Direction Inbound -Protocol UDP -LocalPort 53 -Action Allow
+
+# Allow RDP (restrict to management network if possible)
+New-NetFirewallRule -DisplayName "RDP" -Direction Inbound -Protocol TCP -LocalPort 3389 -Action Allow
+
+# Allow Splunk forwarder
+New-NetFirewallRule -DisplayName "Splunk Forwarder" -Direction Outbound -Protocol TCP -RemotePort 9997 -Action Allow
+
+# View all rules
+Get-NetFirewallRule | Where-Object {$_.Enabled -eq 'True'} | Format-Table Name, DisplayName, Direction, Action</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Windows Hardening Checklist -->
+                        <h4>Windows Hardening Checklist</h4>
+                        <ul class="checklist">
+                            <li>
+                                <input type="checkbox" id="win-services" data-progress="true">
+                                <label for="win-services">Unnecessary services identified and disabled</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="win-fw" data-progress="true">
+                                <label for="win-fw">Windows Defender Firewall configured</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="win-password" data-progress="true">
+                                <label for="win-password">Password policies configured</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="win-lockout" data-progress="true">
+                                <label for="win-lockout">Account lockout policies configured</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="win-audit" data-progress="true">
+                                <label for="win-audit">Audit policies enabled</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="win-updates" data-progress="true">
+                                <label for="win-updates">Windows Update configured</label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part B: Splunk Deployment -->
+            <section class="section" id="part-b" aria-labelledby="part-b-heading">
+                <h2 id="part-b-heading">
+                    <span aria-hidden="true">🅱️</span>
+                    Part B: Splunk Deployment
+                    <span class="points-badge">20 Points</span>
+                </h2>
+                <p><strong>Objective:</strong> Deploy Splunk Free as a centralized log management and SIEM solution.</p>
+
+                <!-- B.1 Splunk Installation -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="b1-content">
+                        <span>B.1: Splunk Server Installation (8 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="b1-content">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Download &amp; Install</td>
+                                        <td>Install Splunk Enterprise on Linux server</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Initial Configuration</td>
+                                        <td>Complete setup wizard, set admin password</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Receiving Configuration</td>
+                                        <td>Configure to receive data on port 9997</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Add-ons Installation</td>
+                                        <td>Install Unix and Windows add-ons</td>
+                                        <td>1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Installation Steps (Linux)</h4>
+                        <pre><code># Download Splunk (get latest from splunk.com)
+wget -O splunk-9.x.x-linux-2.6-amd64.deb 'https://download.splunk.com/...'
+
+# Install (Ubuntu/Debian)
+sudo dpkg -i splunk-9.x.x-linux-2.6-amd64.deb
+
+# OR for Rocky Linux/RHEL
+sudo rpm -i splunk-9.x.x-linux-2.6-x86_64.rpm
+
+# Start Splunk and accept license
+sudo /opt/splunk/bin/splunk start --accept-license
+
+# Enable boot start
+sudo /opt/splunk/bin/splunk enable boot-start
+
+# Access web interface
+# http://10.0.2.10:8000</code></pre>
+
+                        <h4>Configure Receiving</h4>
+                        <pre><code># Via CLI
+sudo /opt/splunk/bin/splunk enable listen 9997
+
+# OR via Web UI:
+# Settings → Forwarding and receiving → Configure receiving → New Receiving Port → 9997</code></pre>
+
+                        <h4>Deliverables</h4>
+                        <ul class="checklist">
+                            <li>
+                                <input type="checkbox" id="b1-install" data-progress="true">
+                                <label for="b1-install">Screenshot of Splunk web interface dashboard</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="b1-receiving" data-progress="true">
+                                <label for="b1-receiving">Screenshot of receiving port configuration</label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- B.2 Dashboard Creation -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="b2-content">
+                        <span>B.2: Security Dashboard Creation (12 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="b2-content">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Authentication Dashboard</td>
+                                        <td>Failed logins, successful logins by user</td>
+                                        <td>4</td>
+                                    </tr>
+                                    <tr>
+                                        <td>System Events Dashboard</td>
+                                        <td>Service starts/stops, system errors</td>
+                                        <td>4</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Security Alerts</td>
+                                        <td>Configure at least 2 security alerts</td>
+                                        <td>4</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Sample Splunk Searches</h4>
+
+                        <h5>Failed Login Attempts (Linux)</h5>
+                        <div class="splunk-query">
+                            <code>index=main sourcetype=linux_secure "Failed password" | stats count by src_ip, user | sort -count</code>
+                        </div>
+
+                        <h5>Failed Login Attempts (Windows)</h5>
+                        <div class="splunk-query">
+                            <code>index=main sourcetype=WinEventLog:Security EventCode=4625 | stats count by Account_Name, Source_Network_Address | sort -count</code>
+                        </div>
+
+                        <h5>Successful Logins (Windows)</h5>
+                        <div class="splunk-query">
+                            <code>index=main sourcetype=WinEventLog:Security EventCode=4624 Logon_Type=2 OR Logon_Type=10 | stats count by Account_Name | sort -count</code>
+                        </div>
+
+                        <h5>Sudo Usage (Linux)</h5>
+                        <div class="splunk-query">
+                            <code>index=main sourcetype=linux_secure sudo | stats count by user, command | sort -count</code>
+                        </div>
+
+                        <h5>Service Changes (Windows)</h5>
+                        <div class="splunk-query">
+                            <code>index=main sourcetype=WinEventLog:System EventCode=7045 OR EventCode=7040 | table _time, Service_Name, Service_Type, Message</code>
+                        </div>
+
+                        <h4>Required Alerts</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Alert Name</th>
+                                        <th scope="col">Trigger Condition</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Multiple Failed Logins</td>
+                                        <td>&gt;5 failed logins in 5 minutes from same IP</td>
+                                        <td>Log event, email (optional)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>After-Hours Login</td>
+                                        <td>Successful login outside business hours (6PM-6AM)</td>
+                                        <td>Log event</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Deliverables</h4>
+                        <ul class="checklist">
+                            <li>
+                                <input type="checkbox" id="b2-auth-dash" data-progress="true">
+                                <label for="b2-auth-dash">Screenshot of authentication dashboard</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="b2-sys-dash" data-progress="true">
+                                <label for="b2-sys-dash">Screenshot of system events dashboard</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="b2-alerts" data-progress="true">
+                                <label for="b2-alerts">Screenshot of configured alerts</label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Part C: Log Forwarding -->
+            <section class="section" id="part-c" aria-labelledby="part-c-heading">
+                <h2 id="part-c-heading">
+                    <span aria-hidden="true">©️</span>
+                    Part C: Log Forwarding Configuration
+                    <span class="points-badge">15 Points</span>
+                </h2>
+                <p><strong>Objective:</strong> Configure log forwarding from Linux and Windows servers to the Splunk server.</p>
+
+                <!-- Tabs for Linux vs Windows Forwarder -->
+                <div class="tabs">
+                    <div class="tab-list" role="tablist" aria-label="Log Forwarding Options">
+                        <button class="tab-button" role="tab" aria-selected="true" aria-controls="linux-fwd-panel" id="linux-fwd-tab">C.1: Linux Forwarder (7 pts)</button>
+                        <button class="tab-button" role="tab" aria-selected="false" aria-controls="windows-fwd-panel" id="windows-fwd-tab">C.2: Windows Forwarder (8 pts)</button>
+                    </div>
+
+                    <!-- Linux Forwarder Panel -->
+                    <div class="tab-panel active" role="tabpanel" id="linux-fwd-panel" aria-labelledby="linux-fwd-tab">
+                        <h3>C.1: Linux Universal Forwarder (7 points)</h3>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Install Forwarder</td>
+                                        <td>Install Splunk Universal Forwarder</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Configure Outputs</td>
+                                        <td>Point to Splunk server</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Configure Inputs</td>
+                                        <td>Monitor auth, syslog, audit logs</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Verify Forwarding</td>
+                                        <td>Confirm data appearing in Splunk</td>
+                                        <td>1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Installation</h4>
+                        <pre><code># Download Universal Forwarder from splunk.com
+wget -O splunkforwarder-9.x.x-linux-2.6-amd64.deb 'https://download.splunk.com/...'
+
+# Install
+sudo dpkg -i splunkforwarder-9.x.x-linux-2.6-amd64.deb
+
+# Start and accept license
+sudo /opt/splunkforwarder/bin/splunk start --accept-license
+
+# Enable boot start
+sudo /opt/splunkforwarder/bin/splunk enable boot-start</code></pre>
+
+                        <h4>Configure outputs.conf</h4>
+                        <p>Create <code>/opt/splunkforwarder/etc/system/local/outputs.conf</code>:</p>
+                        <pre><code>[tcpout]
+defaultGroup = splunk-indexers
+
+[tcpout:splunk-indexers]
+server = 10.0.2.10:9997
+
+[tcpout-server://10.0.2.10:9997]</code></pre>
+
+                        <h4>Configure inputs.conf</h4>
+                        <p>Create <code>/opt/splunkforwarder/etc/system/local/inputs.conf</code>:</p>
+                        <pre><code>[monitor:///var/log/auth.log]
+disabled = false
+sourcetype = linux_secure
+index = main
+
+[monitor:///var/log/syslog]
+disabled = false
+sourcetype = syslog
+index = main
+
+[monitor:///var/log/audit/audit.log]
+disabled = false
+sourcetype = linux_audit
+index = main
+
+[monitor:///var/log/ufw.log]
+disabled = false
+sourcetype = ufw
+index = main</code></pre>
+
+                        <h4>Restart Forwarder</h4>
+                        <pre><code>sudo /opt/splunkforwarder/bin/splunk restart</code></pre>
+                    </div>
+
+                    <!-- Windows Forwarder Panel -->
+                    <div class="tab-panel" role="tabpanel" id="windows-fwd-panel" aria-labelledby="windows-fwd-tab">
+                        <h3>C.2: Windows Universal Forwarder (8 points)</h3>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Install Forwarder</td>
+                                        <td>Install Splunk Universal Forwarder</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Configure Outputs</td>
+                                        <td>Point to Splunk server</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Configure Inputs</td>
+                                        <td>Forward Security, System, Application logs</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Verify Forwarding</td>
+                                        <td>Confirm data appearing in Splunk</td>
+                                        <td>1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Installation</h4>
+                        <ol>
+                            <li>Download Splunk Universal Forwarder (Windows MSI) from splunk.com</li>
+                            <li>Run the installer</li>
+                            <li>During installation:
+                                <ul>
+                                    <li>Accept license agreement</li>
+                                    <li>Set deployment server (optional): leave blank</li>
+                                    <li>Set receiving indexer: <code>10.0.2.10:9997</code></li>
+                                    <li>Create admin credentials</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <h4>Configure inputs.conf</h4>
+                        <p>Create <code>C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf</code>:</p>
+                        <pre><code>[WinEventLog://Security]
+disabled = 0
+index = main
+
+[WinEventLog://System]
+disabled = 0
+index = main
+
+[WinEventLog://Application]
+disabled = 0
+index = main
+
+[WinEventLog://Microsoft-Windows-Sysmon/Operational]
+disabled = 0
+index = main
+renderXml = true</code></pre>
+
+                        <h4>Restart Forwarder Service</h4>
+                        <pre><code># PowerShell
+Restart-Service SplunkForwarder</code></pre>
+                    </div>
+                </div>
+
+                <h4>Log Forwarding Checklist</h4>
+                <ul class="checklist">
+                    <li>
+                        <input type="checkbox" id="c-linux-fwd" data-progress="true">
+                        <label for="c-linux-fwd">Linux Universal Forwarder installed and configured</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="c-windows-fwd" data-progress="true">
+                        <label for="c-windows-fwd">Windows Universal Forwarder installed and configured</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="c-verify" data-progress="true">
+                        <label for="c-verify">Verified logs appearing in Splunk from both sources</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Part D: Backup Strategy -->
+            <section class="section" id="part-d" aria-labelledby="part-d-heading">
+                <h2 id="part-d-heading">
+                    <span aria-hidden="true">🅳</span>
+                    Part D: Backup Strategy Implementation
+                    <span class="points-badge">15 Points</span>
+                </h2>
+                <p><strong>Objective:</strong> Design and implement a backup strategy for critical data and configurations.</p>
+
+                <!-- D.1 Backup Strategy Design -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="d1-content">
+                        <span>D.1: Backup Strategy Design (5 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="d1-content">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Identify Critical Data</td>
+                                        <td>Document what needs to be backed up</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Backup Schedule</td>
+                                        <td>Define backup frequency and retention</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Recovery Objectives</td>
+                                        <td>Define RTO and RPO</td>
+                                        <td>1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Critical Data Identification</h4>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Server</th>
+                                        <th scope="col">Data/Configuration</th>
+                                        <th scope="col">Location</th>
+                                        <th scope="col">Priority</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Linux Server</td><td>System configuration</td><td>/etc/</td><td>High</td></tr>
+                                    <tr><td>Linux Server</td><td>User home directories</td><td>/home/</td><td>High</td></tr>
+                                    <tr><td>Linux Server</td><td>DNS zone files</td><td>/var/named/ or /etc/bind/</td><td>High</td></tr>
+                                    <tr><td>Linux Server</td><td>Splunk configuration</td><td>/opt/splunk/etc/</td><td>Medium</td></tr>
+                                    <tr><td>Windows Server</td><td>Active Directory</td><td>System State</td><td>Critical</td></tr>
+                                    <tr><td>Windows Server</td><td>Group Policy Objects</td><td>SYSVOL</td><td>High</td></tr>
+                                    <tr><td>Windows Server</td><td>DNS zones</td><td>AD-integrated</td><td>High</td></tr>
+                                    <tr><td>pfSense</td><td>Firewall configuration</td><td>config.xml</td><td>High</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Recovery Objectives</h4>
+                        <ul>
+                            <li><strong>RTO (Recovery Time Objective):</strong> Maximum acceptable time to restore service (e.g., 4 hours)</li>
+                            <li><strong>RPO (Recovery Point Objective):</strong> Maximum acceptable data loss (e.g., 24 hours)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- D.2 Backup Implementation -->
+                <div class="collapsible">
+                    <button class="collapsible-header" aria-expanded="false" aria-controls="d2-content">
+                        <span>D.2: Backup Implementation (10 points)</span>
+                        <span class="icon" aria-hidden="true">▼</span>
+                    </button>
+                    <div class="collapsible-content" id="d2-content">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Task</th>
+                                        <th scope="col">Details</th>
+                                        <th scope="col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Linux Backup Script</td>
+                                        <td>Create automated backup script</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Windows Backup</td>
+                                        <td>Configure Windows Server Backup</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>pfSense Backup</td>
+                                        <td>Export configuration backup</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Backup Verification</td>
+                                        <td>Test restore procedure</td>
+                                        <td>2</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4>Linux Backup Script</h4>
+                        <pre><code>#!/bin/bash
+# backup.sh - Automated backup script for Linux server
+
+# Configuration
+BACKUP_DIR="/backup"
+DATE=$(date +%Y%m%d_%H%M%S)
+RETENTION_DAYS=7
+
+# Create backup directory if it doesn't exist
+mkdir -p ${BACKUP_DIR}
+
+# Backup /etc
+tar -czf ${BACKUP_DIR}/etc_${DATE}.tar.gz /etc 2>/dev/null
+
+# Backup /home
+tar -czf ${BACKUP_DIR}/home_${DATE}.tar.gz /home 2>/dev/null
+
+# Backup Splunk configuration (if installed)
+if [ -d "/opt/splunk/etc" ]; then
+    tar -czf ${BACKUP_DIR}/splunk_etc_${DATE}.tar.gz /opt/splunk/etc 2>/dev/null
+fi
+
+# Backup DNS zone files (adjust path as needed)
+if [ -d "/etc/bind" ]; then
+    tar -czf ${BACKUP_DIR}/bind_${DATE}.tar.gz /etc/bind 2>/dev/null
+fi
+
+# Remove backups older than retention period
+find ${BACKUP_DIR} -name "*.tar.gz" -mtime +${RETENTION_DAYS} -delete
+
+# Log backup completion
+echo "${DATE}: Backup completed" >> ${BACKUP_DIR}/backup.log
+
+# List backup files
+ls -la ${BACKUP_DIR}/*.tar.gz</code></pre>
+
+                        <h4>Schedule with Cron</h4>
+                        <pre><code># Edit crontab
+sudo crontab -e
+
+# Add daily backup at 2 AM
+0 2 * * * /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1</code></pre>
+
+                        <h4>Windows Server Backup</h4>
+                        <pre><code># Install Windows Server Backup feature
+Install-WindowsFeature Windows-Server-Backup
+
+# Create backup policy
+$policy = New-WBPolicy
+$volume = Get-WBVolume -AllVolumes | Where-Object {$_.MountPath -eq "C:"}
+Add-WBVolume -Policy $policy -Volume $volume
+Add-WBSystemState -Policy $policy
+
+# Set backup target (adjust path)
+$backupTarget = New-WBBackupTarget -VolumePath "D:"
+Add-WBBackupTarget -Policy $policy -Target $backupTarget
+
+# Set schedule (daily at 3 AM)
+Set-WBSchedule -Policy $policy -Schedule 03:00
+
+# Save policy
+Set-WBPolicy -Policy $policy</code></pre>
+
+                        <h4>pfSense Backup</h4>
+                        <ol>
+                            <li>Navigate to <strong>Diagnostics → Backup &amp; Restore</strong></li>
+                            <li>Select <strong>Backup area: ALL</strong></li>
+                            <li>Click <strong>Download configuration as XML</strong></li>
+                            <li>Store backup securely off-system</li>
+                        </ol>
+
+                        <h4>Deliverables</h4>
+                        <ul class="checklist">
+                            <li>
+                                <input type="checkbox" id="d-linux-backup" data-progress="true">
+                                <label for="d-linux-backup">Linux backup script created and scheduled</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="d-windows-backup" data-progress="true">
+                                <label for="d-windows-backup">Windows Server Backup configured</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="d-pfsense-backup" data-progress="true">
+                                <label for="d-pfsense-backup">pfSense configuration exported</label>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="d-verify" data-progress="true">
+                                <label for="d-verify">Backup verification documented</label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Grading Rubric -->
+            <section class="section" id="grading-rubric" aria-labelledby="rubric-heading">
+                <h2 id="rubric-heading">
+                    <span aria-hidden="true">📊</span>
+                    Grading Rubric
+                </h2>
+
+                <h3>Points Summary</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Part</th>
+                                <th scope="col">Component</th>
+                                <th scope="col">Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>A</td><td>Server Security Hardening</td><td>25</td></tr>
+                            <tr><td></td><td>A.1 Linux Server Hardening</td><td>12</td></tr>
+                            <tr><td></td><td>A.2 Windows Server Hardening</td><td>13</td></tr>
+                            <tr><td>B</td><td>Splunk Deployment</td><td>20</td></tr>
+                            <tr><td></td><td>B.1 Splunk Server Installation</td><td>8</td></tr>
+                            <tr><td></td><td>B.2 Security Dashboard Creation</td><td>12</td></tr>
+                            <tr><td>C</td><td>Log Forwarding Configuration</td><td>15</td></tr>
+                            <tr><td></td><td>C.1 Linux Universal Forwarder</td><td>7</td></tr>
+                            <tr><td></td><td>C.2 Windows Universal Forwarder</td><td>8</td></tr>
+                            <tr><td>D</td><td>Backup Strategy Implementation</td><td>15</td></tr>
+                            <tr><td></td><td>D.1 Backup Strategy Design</td><td>5</td></tr>
+                            <tr><td></td><td>D.2 Backup Implementation</td><td>10</td></tr>
+                            <tr><td colspan="2"><strong>TOTAL</strong></td><td><strong>75</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Submission Requirements -->
+            <section class="section" id="submission-requirements" aria-labelledby="submission-heading">
+                <h2 id="submission-heading">
+                    <span aria-hidden="true">📤</span>
+                    Submission Requirements
+                </h2>
+
+                <h3>Format</h3>
+                <ul>
+                    <li>Single PDF document containing all deliverables</li>
+                    <li>File naming: <code>LastName_FirstName_Project3.pdf</code></li>
+                    <li>Maximum file size: 75 MB</li>
+                </ul>
+
+                <h3>Document Structure</h3>
+                <pre><code>Project 3: Security Hardening &amp; Monitoring with Splunk
+Student Name: [Your Name]
+Date: [Submission Date]
+
+Table of Contents
+1. Executive Summary
+2. Part A: Server Security Hardening
+   2.1 Linux Server Hardening
+       2.1.1 Service Hardening
+       2.1.2 SSH Hardening
+       2.1.3 Firewall Configuration
+       2.1.4 Audit Configuration
+       2.1.5 File Permissions
+       2.1.6 Automatic Updates
+       2.1.7 Hardening Checklist
+   2.2 Windows Server Hardening
+       2.2.1 Service Hardening
+       2.2.2 Firewall Configuration
+       2.2.3 Account Policies
+       2.2.4 Audit Policies
+       2.2.5 Security Options
+       2.2.6 Windows Update
+       2.2.7 Hardening Checklist
+3. Part B: Splunk Deployment
+   3.1 Splunk Server Installation
+   3.2 Security Dashboard Creation
+4. Part C: Log Forwarding Configuration
+   4.1 Linux Universal Forwarder
+   4.2 Windows Universal Forwarder
+5. Part D: Backup Strategy Implementation
+   5.1 Backup Strategy Design
+   5.2 Backup Implementation
+6. Appendices
+   A. Complete Hardening Checklist
+   B. Splunk Search Queries
+   C. Backup Scripts</code></pre>
+
+                <h3>Submission Location</h3>
+                <ul>
+                    <li><strong>Canvas Assignment:</strong> "Project 3: Security Hardening &amp; Monitoring with Splunk"</li>
+                </ul>
+            </section>
+
+            <!-- Timeline -->
+            <section class="section" id="timeline" aria-labelledby="timeline-heading">
+                <h2 id="timeline-heading">
+                    <span aria-hidden="true">📅</span>
+                    Timeline and Milestones
+                </h2>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Week</th>
+                                <th scope="col">Milestone</th>
+                                <th scope="col">Recommended Tasks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>13</td><td>Project Assigned</td><td>Review requirements, plan hardening approach</td></tr>
+                            <tr><td>14</td><td>Implementation</td><td>Server hardening, Splunk deployment, log forwarding</td></tr>
+                            <tr><td>15</td><td>Due Date</td><td>Backup implementation, testing, documentation</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Suggested Daily Schedule</h3>
+
+                <h4>Week 13</h4>
+                <ul>
+                    <li><strong>Monday (in-class):</strong> Begin Linux hardening</li>
+                    <li><strong>Tuesday-Wednesday:</strong> Complete Linux hardening, start Windows hardening</li>
+                    <li><strong>Thursday-Friday:</strong> Complete Windows hardening</li>
+                    <li><strong>Weekend:</strong> Documentation of hardening</li>
+                </ul>
+
+                <h4>Week 14</h4>
+                <ul>
+                    <li><strong>Monday (in-class):</strong> Splunk installation</li>
+                    <li><strong>Tuesday-Wednesday:</strong> Configure forwarders, create dashboards</li>
+                    <li><strong>Thursday-Friday:</strong> Backup strategy design and implementation</li>
+                    <li><strong>Weekend:</strong> Testing and documentation</li>
+                </ul>
+
+                <h4>Week 15</h4>
+                <ul>
+                    <li><strong>Monday-Thursday:</strong> Final testing, verification, documentation</li>
+                    <li><strong>Friday:</strong> Final review</li>
+                    <li><strong>Sunday 11:59 PM:</strong> Submission deadline</li>
+                </ul>
+            </section>
+
+            <!-- Tips for Success -->
+            <section class="section" id="tips-for-success" aria-labelledby="tips-heading">
+                <h2 id="tips-heading">
+                    <span aria-hidden="true">💡</span>
+                    Tips for Success
+                </h2>
+
+                <h3>Security Hardening</h3>
+                <ol>
+                    <li><strong>Take snapshots</strong> before making any hardening changes</li>
+                    <li><strong>Test incrementally</strong> - verify services still work after each change</li>
+                    <li><strong>Document everything</strong> - record what you changed and why</li>
+                    <li><strong>Don't lock yourself out</strong> - always test SSH from a new session before closing the current one</li>
+                </ol>
+
+                <h3>Splunk</h3>
+                <ol>
+                    <li><strong>Start simple</strong> - get basic forwarding working before creating complex dashboards</li>
+                    <li><strong>Use the Search &amp; Reporting app</strong> to test queries before adding to dashboards</li>
+                    <li><strong>Monitor your data volume</strong> - stay under the 500 MB/day limit</li>
+                    <li><strong>Check forwarder connectivity</strong> - use <code>splunk list forward-server</code></li>
+                </ol>
+
+                <h3>Backups</h3>
+                <ol>
+                    <li><strong>Test your backups</strong> - a backup that can't be restored is worthless</li>
+                    <li><strong>Document the restore process</strong> - you'll need this in an emergency</li>
+                    <li><strong>Store backups off-system</strong> - a backup on the same disk as the data isn't safe</li>
+                </ol>
+            </section>
+
+            <!-- Common Issues -->
+            <section class="section" id="common-issues" aria-labelledby="issues-heading">
+                <h2 id="issues-heading">
+                    <span aria-hidden="true">🔧</span>
+                    Common Issues and Solutions
+                </h2>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Issue</th>
+                                <th scope="col">Possible Cause</th>
+                                <th scope="col">Solution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Locked out of SSH</td>
+                                <td>Incorrect sshd_config</td>
+                                <td>Use Proxmox console to fix configuration</td>
+                            </tr>
+                            <tr>
+                                <td>Splunk web UI not accessible</td>
+                                <td>Firewall blocking port 8000</td>
+                                <td>Add firewall rule for port 8000</td>
+                            </tr>
+                            <tr>
+                                <td>No data in Splunk</td>
+                                <td>Forwarder not connected</td>
+                                <td>Check outputs.conf, verify port 9997 open</td>
+                            </tr>
+                            <tr>
+                                <td>Forwarder connection refused</td>
+                                <td>Receiving not enabled on Splunk</td>
+                                <td>Enable receiving on port 9997</td>
+                            </tr>
+                            <tr>
+                                <td>Windows events not forwarding</td>
+                                <td>Incorrect inputs.conf</td>
+                                <td>Verify WinEventLog syntax, restart forwarder</td>
+                            </tr>
+                            <tr>
+                                <td>Services broken after hardening</td>
+                                <td>Disabled required service</td>
+                                <td>Restore from snapshot, re-enable service</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- External Resources -->
+            <section class="section" id="external-resources" aria-labelledby="resources-heading">
+                <h2 id="resources-heading">
+                    <span aria-hidden="true">📚</span>
+                    External Resources
+                </h2>
+
+                <h3>Security Hardening</h3>
+                <ul>
+                    <li><a href="https://www.cisecurity.org/cis-benchmarks" target="_blank" rel="noopener noreferrer">CIS Benchmarks</a> - Industry-standard hardening guides</li>
+                    <li><a href="https://static.open-scap.org/" target="_blank" rel="noopener noreferrer">OpenSCAP</a> - Security compliance scanning</li>
+                    <li><a href="https://learn.microsoft.com/en-us/windows/security/threat-protection/windows-security-baselines" target="_blank" rel="noopener noreferrer">Microsoft Security Baselines</a></li>
+                </ul>
+
+                <h3>Splunk Documentation</h3>
+                <ul>
+                    <li><a href="https://docs.splunk.com/Documentation/Splunk" target="_blank" rel="noopener noreferrer">Splunk Enterprise Documentation</a></li>
+                    <li><a href="https://docs.splunk.com/Documentation/Forwarder" target="_blank" rel="noopener noreferrer">Universal Forwarder Documentation</a></li>
+                    <li><a href="https://docs.splunk.com/Documentation/Splunk/latest/SearchReference" target="_blank" rel="noopener noreferrer">Search Reference</a></li>
+                </ul>
+
+                <h3>Backup Resources</h3>
+                <ul>
+                    <li><a href="https://learn.microsoft.com/en-us/windows-server/administration/windows-server-backup/windows-server-backup-overview" target="_blank" rel="noopener noreferrer">Windows Server Backup</a></li>
+                    <li><a href="https://docs.netgate.com/pfsense/en/latest/backup/index.html" target="_blank" rel="noopener noreferrer">pfSense Backup and Recovery</a></li>
+                </ul>
+            </section>
+
+            <!-- Academic Integrity -->
+            <section class="section" id="academic-integrity" aria-labelledby="integrity-heading">
+                <h2 id="integrity-heading">
+                    <span aria-hidden="true">⚖️</span>
+                    Academic Integrity
+                </h2>
+
+                <p>This is an individual project. While you may discuss concepts with classmates, all work submitted must be your own.</p>
+
+                <h3>Allowed</h3>
+                <ul>
+                    <li>Discussing general security concepts and approaches</li>
+                    <li>Helping classmates troubleshoot (without sharing configurations)</li>
+                    <li>Using course materials, documentation, and online resources</li>
+                    <li>Asking questions in discussion forums or office hours</li>
+                </ul>
+
+                <h3>Not Allowed</h3>
+                <ul>
+                    <li>Sharing configuration files or scripts</li>
+                    <li>Copying another student's Splunk dashboards</li>
+                    <li>Using another student's backup scripts</li>
+                    <li>Submitting work that is not your own</li>
+                </ul>
+
+                <div class="alert alert-error">
+                    <span class="alert-icon" aria-hidden="true">🚫</span>
+                    <div class="alert-content">
+                        <div class="alert-title">Warning</div>
+                        <p>Violations will result in a zero on the project and potential additional academic consequences per college policy.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Getting Help -->
+            <section class="section" id="getting-help" aria-labelledby="help-heading">
+                <h2 id="help-heading">
+                    <span aria-hidden="true">🆘</span>
+                    Getting Help
+                </h2>
+
+                <ul>
+                    <li><strong>Discussion Forum:</strong> Post questions in "Project 3 Questions" forum</li>
+                    <li><strong>Office Hours:</strong> Tuesday 2-4 PM (in person), Thursday 2-4 PM (Zoom)</li>
+                    <li><strong>Email:</strong> For private matters only</li>
+                    <li><strong>Lab Time:</strong> Monday in-class lab sessions</li>
+                </ul>
+
+                <h3>When Asking for Help, Include:</h3>
+                <ul>
+                    <li>Specific error messages or symptoms</li>
+                    <li>Screenshots of relevant configurations</li>
+                    <li>Steps you've already tried</li>
+                    <li>Which part of the project you're working on</li>
+                </ul>
+            </section>
+
+            <!-- Footer -->
+            <footer class="page-footer">
+                <p><strong>CSC 152 - Network Operating Systems and Administration</strong></p>
+                <p>Project 3: Security Hardening &amp; Monitoring with Splunk</p>
+                <p>Author: David Pai • Mendocino College</p>
+                <p>Version 1.0</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // ===== NAVIGATION FUNCTIONALITY =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile menu toggle
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+
+            menuToggle.addEventListener('click', function() {
+                const isOpen = sidebar.classList.toggle('open');
+                overlay.classList.toggle('active', isOpen);
+                menuToggle.setAttribute('aria-expanded', isOpen);
+            });
+
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+                menuToggle.setAttribute('aria-expanded', 'false');
+            });
+
+            // Navigation section toggles
+            const navSectionTitles = document.querySelectorAll('.nav-section-title');
+            navSectionTitles.forEach(function(title) {
+                title.addEventListener('click', function() {
+                    const expanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !expanded);
+                    const navItems = this.nextElementSibling;
+                    navItems.classList.toggle('expanded', !expanded);
+                });
+
+                // Keyboard support
+                title.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+
+            // Collapsible sections
+            const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
+            collapsibleHeaders.forEach(function(header) {
+                header.addEventListener('click', function() {
+                    const expanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !expanded);
+                    const content = this.nextElementSibling;
+                    content.classList.toggle('expanded', !expanded);
+                });
+
+                // Keyboard support
+                header.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+
+            // Tab functionality
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const tabList = this.closest('.tab-list');
+                    const tabsContainer = this.closest('.tabs');
+                    const targetPanelId = this.getAttribute('aria-controls');
+
+                    // Deselect all tabs in this group
+                    tabList.querySelectorAll('.tab-button').forEach(function(btn) {
+                        btn.setAttribute('aria-selected', 'false');
+                    });
+
+                    // Hide all panels in this group
+                    tabsContainer.querySelectorAll('.tab-panel').forEach(function(panel) {
+                        panel.classList.remove('active');
+                    });
+
+                    // Select this tab
+                    this.setAttribute('aria-selected', 'true');
+
+                    // Show target panel
+                    const targetPanel = document.getElementById(targetPanelId);
+                    if (targetPanel) {
+                        targetPanel.classList.add('active');
+                    }
+                });
+
+                // Keyboard navigation for tabs
+                button.addEventListener('keydown', function(e) {
+                    const tabList = this.closest('.tab-list');
+                    const tabs = Array.from(tabList.querySelectorAll('.tab-button'));
+                    const currentIndex = tabs.indexOf(this);
+
+                    let newIndex;
+                    if (e.key === 'ArrowRight') {
+                        newIndex = (currentIndex + 1) % tabs.length;
+                    } else if (e.key === 'ArrowLeft') {
+                        newIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+                    } else if (e.key === 'Home') {
+                        newIndex = 0;
+                    } else if (e.key === 'End') {
+                        newIndex = tabs.length - 1;
+                    }
+
+                    if (newIndex !== undefined) {
+                        e.preventDefault();
+                        tabs[newIndex].focus();
+                        tabs[newIndex].click();
+                    }
+                });
+            });
+
+            // Progress tracking with session storage
+            const progressCheckboxes = document.querySelectorAll('input[data-progress="true"]');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressCount = document.getElementById('progressCount');
+            const totalTasks = progressCheckboxes.length;
+
+            // Load saved progress from session storage
+            function loadProgress() {
+                progressCheckboxes.forEach(function(checkbox) {
+                    const saved = sessionStorage.getItem('project3_' + checkbox.id);
+                    if (saved === 'true') {
+                        checkbox.checked = true;
+                    }
+                });
+                updateProgressDisplay();
+            }
+
+            // Save progress to session storage
+            function saveProgress(checkbox) {
+                sessionStorage.setItem('project3_' + checkbox.id, checkbox.checked);
+            }
+
+            // Update progress display
+            function updateProgressDisplay() {
+                let completed = 0;
+                progressCheckboxes.forEach(function(checkbox) {
+                    if (checkbox.checked) {
+                        completed++;
+                    }
+                });
+
+                const percent = Math.round((completed / totalTasks) * 100);
+                progressBar.style.width = percent + '%';
+                progressPercent.textContent = percent;
+                progressCount.textContent = completed;
+
+                // Update ARIA
+                const progressContainer = progressBar.parentElement;
+                progressContainer.setAttribute('aria-valuenow', percent);
+            }
+
+            // Add event listeners to checkboxes
+            progressCheckboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    saveProgress(this);
+                    updateProgressDisplay();
+                });
+            });
+
+            // Load progress on page load
+            loadProgress();
+
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+
+                        // Set focus for accessibility
+                        targetElement.setAttribute('tabindex', '-1');
+                        targetElement.focus();
+
+                        // Close mobile menu if open
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.remove('open');
+                            overlay.classList.remove('active');
+                            menuToggle.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                });
+            });
+
+            // Active navigation highlighting on scroll
+            const sections = document.querySelectorAll('.section[id]');
+            const navLinks = document.querySelectorAll('.nav-items a');
+
+            function highlightNavOnScroll() {
+                const scrollPosition = window.scrollY + 100;
+
+                sections.forEach(function(section) {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    const sectionId = section.getAttribute('id');
+
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        navLinks.forEach(function(link) {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === '#' + sectionId) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', highlightNavOnScroll);
+            highlightNavOnScroll(); // Run on load
+
+            // Escape key closes mobile menu
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                    menuToggle.focus();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
