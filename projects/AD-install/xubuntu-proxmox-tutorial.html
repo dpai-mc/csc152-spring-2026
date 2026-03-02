@@ -1,0 +1,2378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xubuntu Minimal on Proxmox – CSC 152 Project 2 Linux Client</title>
+<style>
+/* ============================================================
+   FONTS & RESET
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=DM+Sans:wght@400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ============================================================
+   COLOR SYSTEM  (Light mode, WCAG AA compliant ≥ 4.5:1)
+   Body text #1a1a2e on #ffffff       → 15.3:1 ✓
+   Accent #1a6b3a on #ffffff          → 7.1:1  ✓
+   Hero text #ffffff on #1a6b3a       → 7.1:1  ✓
+   step-num-text #ffffff on #1a6b3a   → 7.1:1  ✓
+   accent-light text #0c3a20 on #d8f3e3 → 7.8:1 ✓
+   warn-text #5c3317 on #fff3cd      → 5.8:1  ✓
+   info-text #0c4a6e on #e0f2fe      → 5.2:1  ✓
+   success-text #1a4731 on #d1f5e0   → 8.1:1  ✓
+   tip-text #3b1f6e on #f5f0ff       → 7.4:1  ✓
+   code text #1e293b on #f1f5f9      → 11:1   ✓
+   nav link #1a1a2e on #edf7f1       → 13.8:1 ✓
+   ============================================================ */
+:root {
+  --bg:           #ffffff;
+  --bg-alt:       #f6fbf8;
+  --bg-code:      #f1f5f9;
+  --border:       #cbd5e1;
+  --border-light: #e2e8f0;
+
+  --text-primary:   #1a1a2e;
+  --text-secondary: #374151;
+  --text-muted:     #4b5563;
+
+  /* Xubuntu-flavored green accent — distinct from pfSense blue */
+  --accent:       #1a6b3a;
+  --accent-dark:  #0f4525;
+  --accent-light: #d8f3e3;
+  --accent-mid:   #2d9155;
+
+  --nav-bg:       #edf7f1;
+  --nav-border:   #b6e0c8;
+
+  --warn-bg:    #fff3cd;
+  --warn-text:  #5c3317;
+  --warn-border:#d97706;
+
+  --info-bg:    #e0f2fe;
+  --info-text:  #0c4a6e;
+  --info-border:#0284c7;
+
+  --success-bg:   #d1f5e0;
+  --success-text: #1a4731;
+  --success-border:#16a34a;
+
+  --tip-bg:    #f5f0ff;
+  --tip-text:  #3b1f6e;
+  --tip-border:#7c3aed;
+
+  --step-num-bg:   #1a6b3a;
+  --step-num-text: #ffffff;
+
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 12px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow:    0 2px 8px rgba(0,0,0,.10);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.12);
+
+  --font-body: 'DM Sans', sans-serif;
+  --font-head: 'Source Serif 4', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  --nav-w: 280px;
+  --content-max: 860px;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg);
+  line-height: 1.65;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   SKIP NAV
+   ============================================================ */
+.skip-nav {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 16px;
+  font-weight: 600;
+  z-index: 1000;
+  border-radius: 0 0 var(--radius) 0;
+  text-decoration: none;
+  transition: top .2s;
+}
+.skip-nav:focus { top: 0; }
+
+/* ============================================================
+   STICKY SIDEBAR
+   ============================================================ */
+#sidebar {
+  width: var(--nav-w);
+  min-width: var(--nav-w);
+  background: var(--nav-bg);
+  border-right: 2px solid var(--nav-border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--nav-border);
+  background: var(--accent);
+  color: #fff;
+}
+.sidebar-header .course-tag {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  opacity: .88;
+  display: block;
+  margin-bottom: 4px;
+}
+.sidebar-header h2 {
+  font-family: var(--font-head);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #ffffff;
+}
+
+.sidebar-progress {
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--nav-border);
+  background: var(--accent-light);
+}
+.progress-label {
+  font-size: .75rem;
+  color: var(--accent-dark);
+  font-weight: 600;
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+}
+.progress-bar-wrap {
+  height: 6px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  width: 0%;
+  transition: width .4s ease;
+}
+
+nav#main-nav {
+  padding: 10px 0 20px;
+  flex: 1;
+}
+nav#main-nav ul { list-style: none; }
+nav#main-nav > ul > li { margin-bottom: 2px; }
+
+.nav-section-title {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 12px 18px 4px;
+  display: block;
+}
+
+nav#main-nav a {
+  display: block;
+  padding: 7px 18px 7px 22px;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: all .15s;
+  line-height: 1.3;
+}
+nav#main-nav a:hover {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  border-left-color: var(--accent);
+}
+nav#main-nav a.active {
+  background: var(--accent-light);
+  color: var(--accent-dark);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+nav#main-nav .sub-link {
+  padding-left: 34px;
+  font-size: .82rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+nav#main-nav .sub-link:hover,
+nav#main-nav .sub-link.active {
+  color: var(--accent-dark);
+  font-weight: 500;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+#main-content {
+  flex: 1;
+  min-width: 0;
+  padding: 0 0 80px;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.page-hero {
+  background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 55%, #2d9155 100%);
+  color: #fff;
+  padding: 48px 48px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.page-hero::before {
+  content: '';
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  pointer-events: none;
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  right: 60px;
+  bottom: -80px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.04);
+  pointer-events: none;
+}
+.page-hero .badge {
+  display: inline-block;
+  background: rgba(255,255,255,.2);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  padding: 4px 10px;
+  border-radius: 99px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.page-hero h1 {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 12px;
+  color: #ffffff;
+  position: relative;
+}
+.page-hero .subtitle {
+  font-size: 1.05rem;
+  opacity: .9;
+  max-width: 680px;
+  line-height: 1.5;
+  position: relative;
+}
+.hero-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+  position: relative;
+}
+.meta-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,.15);
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: .82rem;
+  font-weight: 500;
+  color: #fff;
+}
+.meta-chip .chip-icon { font-size: 1rem; }
+
+/* ============================================================
+   TUTORIAL SECTIONS
+   ============================================================ */
+.tutorial-section {
+  padding: 40px 48px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+.tutorial-section:last-child { border-bottom: none; }
+
+/* ============================================================
+   COLLAPSIBLE SECTION TOGGLE
+   ============================================================ */
+.section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 16px 20px;
+  margin: 0 0 0 -20px;
+  border-radius: var(--radius);
+  transition: background .15s;
+  gap: 16px;
+}
+.section-toggle:hover { background: var(--accent-light); }
+.section-toggle:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.section-toggle-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+.section-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--step-num-bg);
+  color: var(--step-num-text);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.section-toggle h2 {
+  font-family: var(--font-head);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+.section-toggle .toggle-icon {
+  font-size: 1.4rem;
+  color: var(--accent);
+  transition: transform .25s;
+  font-weight: 300;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+.section-toggle[aria-expanded="true"] .toggle-icon { transform: rotate(45deg); }
+
+.section-body {
+  overflow: hidden;
+  transition: max-height .35s ease;
+}
+.section-body.collapsed { max-height: 0 !important; }
+
+/* ============================================================
+   STEP CARDS WITH CONNECTOR LINE
+   ============================================================ */
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 24px 0;
+  position: relative;
+}
+.step-list::before {
+  content: '';
+  position: absolute;
+  left: 19px;
+  top: 36px;
+  bottom: 36px;
+  width: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.step-card {
+  display: flex;
+  gap: 16px;
+  padding: 0 0 28px;
+  position: relative;
+  z-index: 1;
+}
+.step-card:last-child { padding-bottom: 0; }
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--step-num-bg);
+  color: var(--step-num-text);
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 3px solid var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.step-content { flex: 1; min-width: 0; padding-top: 8px; }
+.step-content h4 {
+  font-family: var(--font-head);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.step-content p {
+  font-size: .925rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.step-content p:last-child { margin-bottom: 0; }
+
+/* ============================================================
+   CODE BLOCKS
+   ============================================================ */
+.code-block {
+  position: relative;
+  margin: 14px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.code-label {
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  padding: 4px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.copy-btn {
+  background: rgba(255,255,255,.2);
+  border: none;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.copy-btn:hover { background: rgba(255,255,255,.35); }
+.copy-btn:focus { outline: 2px solid #fff; outline-offset: 2px; }
+
+pre {
+  background: var(--bg-code);
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 0;
+}
+pre code {
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  color: #1e293b;
+  white-space: pre;
+  line-height: 1.6;
+}
+
+code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: .85em;
+  background: var(--bg-code);
+  color: #1e293b;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border-light);
+}
+
+/* ============================================================
+   CALLOUT BOXES
+   ============================================================ */
+.callout {
+  border-left: 4px solid;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 16px;
+  margin: 16px 0;
+  display: flex;
+  gap: 10px;
+}
+.callout-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
+.callout-body { flex: 1; min-width: 0; }
+.callout-body strong { font-size: .9rem; display: block; margin-bottom: 4px; }
+.callout-body p, .callout-body ul { font-size: .885rem; }
+.callout-body ul { padding-left: 18px; margin-top: 4px; }
+.callout-body li { margin-bottom: 3px; }
+
+.callout-warn  { background: var(--warn-bg);    border-color: var(--warn-border);    color: var(--warn-text); }
+.callout-info  { background: var(--info-bg);    border-color: var(--info-border);    color: var(--info-text); }
+.callout-success{background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
+.callout-tip   { background: var(--tip-bg);     border-color: var(--tip-border);     color: var(--tip-text); }
+
+/* ============================================================
+   CONFIG TABLES
+   ============================================================ */
+.config-table-wrap { overflow-x: auto; margin: 16px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+}
+th {
+  background: var(--accent);
+  color: #fff;
+  padding: 9px 14px;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--bg-alt); }
+td code { font-size: .8rem; }
+td strong { color: var(--text-primary); }
+
+/* ============================================================
+   SECTION INTRO BAND
+   ============================================================ */
+.section-intro {
+  background: var(--accent-light);
+  border-left: 4px solid var(--accent);
+  padding: 14px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin-bottom: 24px;
+  font-size: .9rem;
+  color: #0c3a20;
+}
+.section-intro strong { font-weight: 600; }
+
+/* ============================================================
+   COMPARISON TABLE (ISO comparison)
+   ============================================================ */
+.compare-table th { text-align: center; }
+.compare-table td { text-align: center; }
+.compare-table td:first-child { text-align: left; font-weight: 500; }
+.highlight-row td { background: var(--accent-light) !important; font-weight: 600; color: var(--accent-dark); }
+
+/* ============================================================
+   PROGRESS TRACKER
+   ============================================================ */
+#progress-section {
+  background: var(--bg-alt);
+  padding: 32px 48px;
+  border-bottom: 1px solid var(--border-light);
+}
+#progress-section h2 {
+  font-family: var(--font-head);
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+#progress-section .section-desc {
+  font-size: .875rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.progress-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.progress-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: .85rem;
+}
+.progress-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.progress-item label { cursor: pointer; line-height: 1.35; }
+
+/* ============================================================
+   TYPOGRAPHY INSIDE SECTION BODIES
+   ============================================================ */
+.section-body h3 {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 28px 0 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-light);
+}
+.section-body h3:first-child { margin-top: 16px; }
+
+.section-body p {
+  font-size: .925rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  max-width: 72ch;
+}
+.section-body ul, .section-body ol {
+  padding-left: 22px;
+  margin-bottom: 14px;
+}
+.section-body li {
+  font-size: .9rem;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   COMPLETION CHECKLIST  (styled differently from progress tracker)
+   ============================================================ */
+.checklist {
+  list-style: none;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: .9rem;
+  color: var(--text-secondary);
+}
+.checklist li::before {
+  content: '☐';
+  color: var(--accent);
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ============================================================
+   KEYBOARD KEY STYLE
+   ============================================================ */
+kbd {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: .78em;
+  background: #f0f0f0;
+  color: #1a1a2e;
+  border: 1px solid #c0c0c0;
+  border-bottom: 2px solid #a0a0a0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   INSTALLER SCREEN VISUAL INDICATOR
+   ============================================================ */
+.installer-step {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin: 10px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.installer-step-label {
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+.installer-step-body { flex: 1; min-width: 0; }
+.installer-step-body p { font-size: .875rem; color: var(--text-secondary); margin: 0; }
+.installer-step-body strong { color: var(--text-primary); }
+
+/* ============================================================
+   NEXT STEPS CARDS
+   ============================================================ */
+.next-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.next-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: box-shadow .15s, border-color .15s;
+}
+.next-card:hover {
+  box-shadow: var(--shadow);
+  border-top-color: var(--accent-mid);
+}
+.next-card:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.next-card .card-icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+.next-card h4 {
+  font-family: var(--font-head);
+  font-size: .95rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.next-card p { font-size: .82rem; color: var(--text-muted); }
+
+/* ============================================================
+   MOBILE SIDEBAR TOGGLE
+   ============================================================ */
+#sidebar-toggle {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 300;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  #sidebar {
+    position: fixed;
+    left: -300px;
+    transition: left .3s;
+    box-shadow: var(--shadow-lg);
+  }
+  #sidebar.open { left: 0; }
+  #sidebar-toggle { display: flex; }
+  .page-hero { padding: 32px 24px 28px; }
+  .page-hero h1 { font-size: 1.5rem; }
+  .tutorial-section { padding: 28px 24px 16px; }
+  #progress-section { padding: 24px; }
+}
+
+@media (max-width: 600px) {
+  .hero-meta { gap: 8px; }
+  .meta-chip { font-size: .75rem; padding: 5px 10px; }
+  .next-steps-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@media print {
+  #sidebar, #sidebar-toggle { display: none; }
+  .section-body.collapsed { max-height: none !important; }
+  body { display: block; }
+  .tutorial-section { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-nav">Skip to main content</a>
+
+<!-- ============================================================
+     SIDEBAR
+     ============================================================ -->
+<aside id="sidebar" role="navigation" aria-label="Tutorial navigation">
+  <div class="sidebar-header">
+    <span class="course-tag">CSC 152 · PROJECT 2 CLIENT VM</span>
+    <h2>Xubuntu Minimal on Proxmox</h2>
+  </div>
+
+  <div class="sidebar-progress">
+    <div class="progress-label">
+      <span>Reading Progress</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Reading progress">
+      <div class="progress-bar-fill" id="prog-bar"></div>
+    </div>
+  </div>
+
+  <nav id="main-nav" aria-label="Page sections">
+    <ul>
+      <li><span class="nav-section-title">Overview</span></li>
+      <li><a href="#overview">Introduction &amp; Role</a></li>
+      <li><a href="#progress-section">Progress Tracker</a></li>
+
+      <li><span class="nav-section-title">Step 1 – Prepare</span></li>
+      <li><a href="#step1">Get the Xubuntu ISO</a></li>
+
+      <li><span class="nav-section-title">Step 2 – Create VM</span></li>
+      <li><a href="#step2">Create the Proxmox VM</a></li>
+      <li><a href="#step2a" class="sub-link">General &amp; OS settings</a></li>
+      <li><a href="#step2b" class="sub-link">System &amp; Disk</a></li>
+      <li><a href="#step2c" class="sub-link">CPU, Memory &amp; Network</a></li>
+
+      <li><span class="nav-section-title">Step 3 – Install</span></li>
+      <li><a href="#step3">Install Xubuntu</a></li>
+      <li><a href="#step3a" class="sub-link">Boot &amp; installer screens</a></li>
+      <li><a href="#step3b" class="sub-link">Disk setup &amp; user account</a></li>
+
+      <li><span class="nav-section-title">Step 4 – Configure</span></li>
+      <li><a href="#step4">First Boot &amp; Updates</a></li>
+      <li><a href="#step5">Install QEMU Guest Agent</a></li>
+      <li><a href="#step6">Network Configuration</a></li>
+
+      <li><span class="nav-section-title">Step 5 – Verify</span></li>
+      <li><a href="#step7">Verify Project 2 Readiness</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#next-steps">Next Steps</a></li>
+    </ul>
+  </nav>
+</aside>
+
+<button id="sidebar-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main id="main-content">
+
+  <!-- HERO -->
+  <header class="page-hero">
+    <span class="badge">CSC 152 · Network OS and Administration</span>
+    <h1>Installing Xubuntu Minimal on Proxmox</h1>
+    <p class="subtitle">Create and configure your Project 2 Linux Client VM — a lightweight Xubuntu desktop on Proxmox connected to the CLIENTS network segment for testing and verification.</p>
+    <div class="hero-meta">
+      <span class="meta-chip"><span class="chip-icon">📋</span> Project 2 – Linux Client VM</span>
+      <span class="meta-chip"><span class="chip-icon">⏱️</span> Est. 30–45 minutes</span>
+      <span class="meta-chip"><span class="chip-icon">🐧</span> Xubuntu 25.10 Minimal</span>
+      <span class="meta-chip"><span class="chip-icon">🖥️</span> Proxmox Environment</span>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       OVERVIEW
+       ============================================================ -->
+  <section class="tutorial-section" id="overview">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="true" aria-controls="overview-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">★</div>
+        <h2>Introduction &amp; Role in Project 2</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body" id="overview-body">
+      <div class="section-intro">
+        <strong>What this tutorial builds:</strong> A Xubuntu Minimal virtual machine connected to the <strong>CLIENTS network (vmbr3 / 10.0.3.0/24)</strong> in your Project 2 lab. This VM serves as your test workstation for verifying DHCP assignment, DNS resolution, firewall rules, internet access, and directory service connectivity through pfSense.
+      </div>
+
+      <h3>Why Xubuntu Minimal?</h3>
+      <p>Xubuntu Minimal uses the lightweight XFCE desktop environment with the minimum set of pre-installed applications. This makes it ideal for a VM that needs a desktop for browser testing but should consume minimal resources alongside pfSense and your server VMs.</p>
+
+      <div class="config-table-wrap">
+        <table class="compare-table">
+          <caption style="text-align:left;padding:0 0 8px;font-size:.8rem;color:var(--text-muted);">Table 1: Desktop Linux ISO Comparison</caption>
+          <thead>
+            <tr><th>ISO</th><th>Approx. Size</th><th>Desktop</th><th>RAM Usage (idle)</th><th>Suitable for this VM?</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Ubuntu 24.04 Desktop</td><td>~6.5 GB</td><td>GNOME (full)</td><td>~1.2 GB</td><td>Possible, but heavy</td></tr>
+            <tr class="highlight-row"><td>Xubuntu 25.10 Minimal ✓</td><td>~3 GB</td><td>XFCE (lightweight)</td><td>~450 MB</td><td><strong>Recommended</strong></td></tr>
+            <tr><td>Lubuntu 24.04</td><td>~3 GB</td><td>LXQt (minimal)</td><td>~380 MB</td><td>Also acceptable</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>What This VM Will Do in Project 2</h3>
+      <ul>
+        <li>Receive a DHCP address from pfSense in the <code>10.0.3.100–10.0.3.200</code> range</li>
+        <li>Use pfSense DHCP options to configure DNS server and default gateway automatically</li>
+        <li>Test DNS resolution of internal names (<code>techstart.local</code> zone records)</li>
+        <li>Test internet access through pfSense NAT</li>
+        <li>Test firewall rule enforcement — SSH to servers should be blocked, web access to servers should work</li>
+        <li>Optionally join the <code>techstart.local</code> Active Directory domain (Part C bonus)</li>
+      </ul>
+
+      <h3>Prerequisites</h3>
+      <ul class="checklist">
+        <li>pfSense is installed and fully configured with vmbr3 (CLIENTS) interface active at <code>10.0.3.1</code></li>
+        <li>DHCP server is enabled on the CLIENTS interface in pfSense with range <code>10.0.3.100–200</code></li>
+        <li>Firewall rules for the CLIENTS interface are entered in pfSense</li>
+        <li>You have access to the Xubuntu 25.10 Minimal ISO in Proxmox ISO storage</li>
+        <li>Your Proxmox server has sufficient resources: at least <strong>1 free vCPU</strong> and <strong>2 GB free RAM</strong></li>
+      </ul>
+
+      <h3>VM Specifications Summary</h3>
+      <div class="config-table-wrap">
+        <table>
+          <caption style="text-align:left;padding:0 0 8px;font-size:.8rem;color:var(--text-muted);">Table 2: Linux Client VM Specification for Project 2</caption>
+          <thead>
+            <tr><th>Resource</th><th>Value</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>VM Name</strong></td><td><code>client01</code></td><td>Or similar descriptive name</td></tr>
+            <tr><td><strong>OS</strong></td><td>Xubuntu 25.10 Minimal</td><td>Linux / Ubuntu (64-bit) in Proxmox</td></tr>
+            <tr><td><strong>vCPU</strong></td><td>1 socket, 1 core</td><td>Sufficient for a test client</td></tr>
+            <tr><td><strong>RAM</strong></td><td>2048 MB (2 GB)</td><td>Minimum; 4 GB if resources allow</td></tr>
+            <tr><td><strong>Disk</strong></td><td>20 GB</td><td>VirtIO on your storage pool</td></tr>
+            <tr><td><strong>Network</strong></td><td>vmbr3 (CLIENTS)</td><td>VirtIO model; DHCP from pfSense</td></tr>
+            <tr><td><strong>IP Address</strong></td><td>DHCP (10.0.3.100–200)</td><td>Static reservation recommended</td></tr>
+            <tr><td><strong>BIOS</strong></td><td>SeaBIOS</td><td>Default; no UEFI needed</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRESS TRACKER -->
+  <section id="progress-section">
+    <h2>📋 Linux Client VM Progress Tracker</h2>
+    <p class="section-desc">Check off each step as you complete it. Progress is saved for your browser session.</p>
+    <div class="progress-grid" role="group" aria-label="Task completion checklist">
+      <div class="progress-item"><input type="checkbox" id="t1" onchange="updateChecks()"><label for="t1">Confirm Xubuntu ISO in Proxmox storage</label></div>
+      <div class="progress-item"><input type="checkbox" id="t2" onchange="updateChecks()"><label for="t2">Create VM in Proxmox (General / OS tabs)</label></div>
+      <div class="progress-item"><input type="checkbox" id="t3" onchange="updateChecks()"><label for="t3">Configure System settings (SeaBIOS, VirtIO SCSI)</label></div>
+      <div class="progress-item"><input type="checkbox" id="t4" onchange="updateChecks()"><label for="t4">Create 20 GB VirtIO disk</label></div>
+      <div class="progress-item"><input type="checkbox" id="t5" onchange="updateChecks()"><label for="t5">Configure CPU (1 socket, 1 core, host type)</label></div>
+      <div class="progress-item"><input type="checkbox" id="t6" onchange="updateChecks()"><label for="t6">Configure 2 GB RAM</label></div>
+      <div class="progress-item"><input type="checkbox" id="t7" onchange="updateChecks()"><label for="t7">Network adapter set to vmbr3, VirtIO</label></div>
+      <div class="progress-item"><input type="checkbox" id="t8" onchange="updateChecks()"><label for="t8">Boot from ISO &amp; start installer</label></div>
+      <div class="progress-item"><input type="checkbox" id="t9" onchange="updateChecks()"><label for="t9">Language, keyboard, &amp; timezone set</label></div>
+      <div class="progress-item"><input type="checkbox" id="t10" onchange="updateChecks()"><label for="t10">Minimal install selected</label></div>
+      <div class="progress-item"><input type="checkbox" id="t11" onchange="updateChecks()"><label for="t11">Disk erased and partitioned</label></div>
+      <div class="progress-item"><input type="checkbox" id="t12" onchange="updateChecks()"><label for="t12">User account created</label></div>
+      <div class="progress-item"><input type="checkbox" id="t13" onchange="updateChecks()"><label for="t13">Installation complete &amp; VM rebooted</label></div>
+      <div class="progress-item"><input type="checkbox" id="t14" onchange="updateChecks()"><label for="t14">ISO removed from VM drive</label></div>
+      <div class="progress-item"><input type="checkbox" id="t15" onchange="updateChecks()"><label for="t15">sudo apt update &amp;&amp; apt upgrade complete</label></div>
+      <div class="progress-item"><input type="checkbox" id="t16" onchange="updateChecks()"><label for="t16">QEMU Guest Agent installed</label></div>
+      <div class="progress-item"><input type="checkbox" id="t17" onchange="updateChecks()"><label for="t17">Hostname set to client01</label></div>
+      <div class="progress-item"><input type="checkbox" id="t18" onchange="updateChecks()"><label for="t18">DHCP address received (10.0.3.x range)</label></div>
+      <div class="progress-item"><input type="checkbox" id="t19" onchange="updateChecks()"><label for="t19">Static DHCP reservation created in pfSense</label></div>
+      <div class="progress-item"><input type="checkbox" id="t20" onchange="updateChecks()"><label for="t20">DNS resolution tests passing</label></div>
+      <div class="progress-item"><input type="checkbox" id="t21" onchange="updateChecks()"><label for="t21">Internet access confirmed</label></div>
+      <div class="progress-item"><input type="checkbox" id="t22" onchange="updateChecks()"><label for="t22">Firewall blocks verified</label></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 1 – GET THE ISO
+       ============================================================ -->
+  <section class="tutorial-section" id="step1">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="step1-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">1</div>
+        <h2>Get the Xubuntu Minimal ISO</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="step1-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Ensure the Xubuntu 25.10 Minimal ISO is available in your Proxmox ISO storage. Unlike VirtualBox where you download to your laptop, Proxmox stores ISOs centrally on the server.
+      </div>
+
+      <h3>Check Existing ISO Storage</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Check if the ISO is Already Available</h4>
+            <p>In Proxmox, navigate to: <strong>Datacenter</strong> → your node → <strong>local (storage)</strong> → <strong>ISO Images</strong>. Look for a file named <code>xubuntu-25.10-minimal-amd64.iso</code> or similar. If it's listed, skip to <a href="#step2">Step 2</a>.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Upload or Download the ISO</h3>
+      <p>If the ISO is not already in Proxmox storage, you have three options listed below in recommended order.</p>
+
+      <div class="callout callout-info">
+        <span class="callout-icon" aria-hidden="true">ℹ️</span>
+        <div class="callout-body">
+          <strong>Proxmox vs. VirtualBox ISO Handling</strong>
+          <p>In VirtualBox, you download the ISO to your laptop and point the VM at your local file. In Proxmox, ISOs are stored on the server in a central ISO library. All VMs on the Proxmox node share access to this library — so the instructor may have already placed the ISO there for you.</p>
+        </div>
+      </div>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Option A: Download Directly from Proxmox via URL (Fastest)</h4>
+            <p>In Proxmox, go to <strong>local (storage)</strong> → <strong>ISO Images</strong> → click <strong>Download from URL</strong>. Paste the direct download URL below, click <strong>Query URL</strong>, then <strong>Download</strong>. Proxmox fetches the file directly from the internet at server speed — nothing is transferred from your laptop.</p>
+            <div class="code-block">
+              <div class="code-label">URL – Xubuntu 25.10 Minimal ISO (LeasWeb mirror)
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>https://mirror.us.leaseweb.net/ubuntu-cdimage/xubuntu/releases/25.10/release/xubuntu-25.10-minimal-amd64.iso</code></pre>
+            </div>
+            <div class="callout callout-tip">
+              <span class="callout-icon" aria-hidden="true">💡</span>
+              <div class="callout-body">
+                <strong>If the URL doesn't resolve</strong>
+                <p>Mirror availability can change. Visit <strong>xubuntu.org/download</strong> to get a fresh direct-download link for the current release. Select <strong>Minimal</strong> and <strong>amd64</strong> architecture, then copy a mirror URL and paste it into the Proxmox Download from URL dialog.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Option B: Download from the Class OneDrive Folder, Then Upload</h4>
+            <p>Your instructor has placed the Xubuntu 25.10 Minimal ISO in the class OneDrive folder alongside other course software. This is the best fallback if the direct Proxmox download fails.</p>
+            <div class="code-block">
+              <div class="code-label">Class OneDrive Folder URL
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>https://1drv.ms/f/c/447200bab10d3ac2/IgCIryhJjYgjRK1-jObONZrfAQg8RcWM3BzbHnf4QfzKXvk?e=a9Othg</code></pre>
+            </div>
+            <ol style="margin: 10px 0 10px 18px; font-size: .9rem; color: var(--text-secondary);">
+              <li style="margin-bottom:6px;">Open the OneDrive link above and download the file named <code>xubuntu-25.10-minimal-amd64.iso</code> to your computer.</li>
+              <li style="margin-bottom:6px;">In Proxmox, go to <strong>local (storage)</strong> → <strong>ISO Images</strong> → click <strong>Upload</strong>.</li>
+              <li style="margin-bottom:6px;">Browse to the downloaded <code>.iso</code> file and click <strong>Upload</strong>. Progress is shown in the Proxmox task log.</li>
+            </ol>
+            <div class="callout callout-warn">
+              <span class="callout-icon" aria-hidden="true">⚠️</span>
+              <div class="callout-body">
+                <strong>Upload Time</strong>
+                <p>The ISO is approximately 2.9–3.1 GB. Uploading from your computer over a campus or home network can take 10–20 minutes. Option A (direct Proxmox download) is significantly faster when it works.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Option C: Download Directly from the Official Xubuntu Site, Then Upload</h4>
+            <p>If neither option above works, download the ISO directly from the Xubuntu project website. Select the <strong>Minimal</strong> ISO for <strong>amd64</strong> architecture, then upload it to Proxmox as described in Option B.</p>
+            <div class="code-block">
+              <div class="code-label">Official Xubuntu Download Page
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>https://xubuntu.org/download/</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">5</div>
+          <div class="step-content">
+            <h4>Verify the ISO Appears in Storage</h4>
+            <p>After downloading or uploading, refresh the ISO Images list. You should see the Xubuntu ISO listed with a file size around 2.9–3.1 GB. Proceed to Step 2.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 2 – CREATE THE VM
+       ============================================================ -->
+  <section class="tutorial-section" id="step2">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="step2-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">2</div>
+        <h2>Create the VM in Proxmox</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="step2-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Use the Proxmox "Create VM" wizard to configure a new VM with appropriate hardware settings for Xubuntu Minimal. Work through each wizard tab carefully — these settings affect performance and compatibility.
+      </div>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon" aria-hidden="true">⚠️</span>
+        <div class="callout-body">
+          <strong>Do Not Use Unattended Installation</strong>
+          <p>Proxmox offers an "Unattended installation" feature that auto-configures Debian-based VMs. <strong>Do not enable this.</strong> We need to walk through the Xubuntu graphical installer manually to control the user account setup, hostname, and disk partitioning. Leave all unattended install fields blank.</p>
+        </div>
+      </div>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Start the Create VM Wizard</h4>
+            <p>In the Proxmox web interface, click the blue <strong>Create VM</strong> button in the top right. The wizard opens with multiple tabs. Work through each one in order.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 id="step2a">Tab 1: General</h3>
+      <div class="config-table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Node</strong></td><td>Your assigned node</td><td>Auto-selected</td></tr>
+            <tr><td><strong>VM ID</strong></td><td>Your choice (e.g., 102)</td><td>Must be unique; check existing VMs</td></tr>
+            <tr><td><strong>Name</strong></td><td><code>client01</code></td><td>Descriptive name for the test client</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Next</strong>.</p>
+
+      <h3>Tab 2: OS</h3>
+      <div class="config-table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>ISO Image</strong></td><td>Select the Xubuntu ISO</td><td>From the dropdown — your ISO storage</td></tr>
+            <tr><td><strong>Guest OS Type</strong></td><td><code>Linux</code></td><td>Correct type for Xubuntu</td></tr>
+            <tr><td><strong>Version</strong></td><td><code>6.x - 2.6 Kernel</code></td><td>Select the latest available Linux version</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-icon" aria-hidden="true">💡</span>
+        <div class="callout-body">
+          <strong>Linux Type vs. Other Type</strong>
+          <p>Unlike pfSense (which uses FreeBSD and requires "Other"), Xubuntu is Linux-based. Selecting the correct guest OS type allows Proxmox to optimize default settings like balloon memory driver and the SCSI controller selection.</p>
+        </div>
+      </div>
+      <p>Click <strong>Next</strong>.</p>
+
+      <h3 id="step2b">Tab 3: System</h3>
+      <div class="config-table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Machine Type</strong></td><td>Default (i440fx)</td><td>Standard machine; compatible with Xubuntu</td></tr>
+            <tr><td><strong>BIOS</strong></td><td>SeaBIOS</td><td>Standard BIOS — no UEFI needed for this VM</td></tr>
+            <tr><td><strong>SCSI Controller</strong></td><td>VirtIO SCSI single</td><td>Best performance for Linux guests</td></tr>
+            <tr><td><strong>Qemu Agent</strong></td><td>☑ Check this box</td><td>Enables better Proxmox integration — we will install the agent after setup</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout-info">
+        <span class="callout-icon" aria-hidden="true">ℹ️</span>
+        <div class="callout-body">
+          <strong>What is the QEMU Agent?</strong>
+          <p>The QEMU Guest Agent is a service that runs inside the VM and allows Proxmox to communicate with it — for example, to get the VM's IP address, perform clean shutdowns from the Proxmox UI, and take consistent snapshots. Checking this box here tells Proxmox to expect the agent; we install it inside the VM later.</p>
+        </div>
+      </div>
+      <p>Click <strong>Next</strong>.</p>
+
+      <h3>Tab 4: Disks</h3>
+      <div class="config-table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Bus/Device</strong></td><td>VirtIO Block (virtio0)</td><td>High-performance virtual disk for Linux</td></tr>
+            <tr><td><strong>Storage</strong></td><td>Your assigned storage pool</td><td>Select from the dropdown</td></tr>
+            <tr><td><strong>Disk Size (GiB)</strong></td><td><code>20</code></td><td>Sufficient for Xubuntu Minimal + updates</td></tr>
+            <tr><td><strong>Cache</strong></td><td>Default (No cache)</td><td>Leave at default</td></tr>
+            <tr><td><strong>SSD emulation</strong></td><td>Optional</td><td>Check if your storage is SSD-backed</td></tr>
+            <tr><td><strong>Discard</strong></td><td>Optional</td><td>Enable for thin-provisioned storage</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Next</strong>.</p>
+
+      <h3 id="step2c">Tab 5: CPU</h3>
+      <div class="config-table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Sockets</strong></td><td>1</td><td>Single processor socket</td></tr>
+            <tr><td><strong>Cores</strong></td><td>1</td><td>1 core is sufficient for a test client; use 2 if resources allow</td></tr>
+            <tr><td><strong>Type</strong></td><td>host</td><td>Passes through host CPU features for best performance</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Next</strong>.</p>
+
+      <h3>Tab 6: Memory</h3>
+      <div class="config-table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Memory (MiB)</strong></td><td><code>2048</code></td><td>2 GB minimum; 4096 if your Proxmox server has plenty of RAM available</td></tr>
+            <tr><td><strong>Ballooning Device</strong></td><td>☑ Enabled</td><td>Allows Proxmox to dynamically allocate memory — leave enabled for Linux guests</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Next</strong>.</p>
+
+      <h3>Tab 7: Network</h3>
+      <div class="config-table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Bridge</strong></td><td><code>vmbr3</code></td><td>The CLIENTS network — this is critical for Project 2</td></tr>
+            <tr><td><strong>Model</strong></td><td>VirtIO (paravirtualized)</td><td>Best performance and DHCP compatibility</td></tr>
+            <tr><td><strong>Firewall</strong></td><td>Unchecked</td><td>pfSense handles the firewall, not Proxmox</td></tr>
+            <tr><td><strong>MAC Address</strong></td><td>Auto-generated</td><td>Note this MAC for pfSense DHCP reservation later</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout-warn">
+        <span class="callout-icon" aria-hidden="true">⚠️</span>
+        <div class="callout-body">
+          <strong>vmbr3 is Required</strong>
+          <p>This VM must be on <code>vmbr3</code> — the CLIENTS network bridge. Placing it on <code>vmbr0</code> would bypass pfSense entirely and give it uncontrolled internet access. Placing it on <code>vmbr2</code> would put it on the server network, defeating the purpose of network segmentation.</p>
+        </div>
+      </div>
+      <p>Click <strong>Next</strong>.</p>
+
+      <h3>Tab 8: Confirm &amp; Finish</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Review the Summary</h4>
+            <p>The Confirm tab shows a summary of all your selections. Verify:</p>
+            <ul>
+              <li>Name: <code>client01</code></li>
+              <li>ISO: Xubuntu Minimal</li>
+              <li>Disk: 20 GiB VirtIO</li>
+              <li>CPU: 1 core, host type</li>
+              <li>Memory: 2048 MiB</li>
+              <li>Network: <code>vmbr3</code>, VirtIO</li>
+            </ul>
+            <p><strong>Do not check "Start after created."</strong> We want to verify settings before first boot.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Click Finish</h4>
+            <p>The VM will be created. You will see it appear in the left panel as <code>client01</code>.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Add Display Hardware (Optional but Recommended)</h4>
+            <p>For a better graphical experience, select your VM → <strong>Hardware</strong> → double-click <strong>Display</strong>. Change from <strong>Default</strong> to <strong>VirtIO-GPU</strong>. This provides better resolution scaling inside the Proxmox console viewer. Click <strong>OK</strong>.</p>
+            <div class="callout callout-tip">
+              <span class="callout-icon" aria-hidden="true">💡</span>
+              <div class="callout-body">
+                <strong>VirtIO-GPU vs. VirtualBox Guest Additions</strong>
+                <p>In VirtualBox, you install "Guest Additions" to get proper screen resolution and mouse integration. In Proxmox, the <strong>VirtIO-GPU</strong> display type and the <strong>QEMU Guest Agent</strong> together provide equivalent functionality — no separate installer needed.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-success">
+        <span class="callout-icon" aria-hidden="true">✅</span>
+        <div class="callout-body">
+          <strong>📸 Screenshot Tip</strong>
+          <p>Take a screenshot of the VM Hardware tab showing all components (disk, CPU, memory, network on vmbr3) for your project documentation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 3 – INSTALL XUBUNTU
+       ============================================================ -->
+  <section class="tutorial-section" id="step3">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="step3-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">3</div>
+        <h2>Install Xubuntu</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="step3-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Boot the VM from the Xubuntu ISO and complete the graphical installer. The Xubuntu installer is the same Ubiquity/Calamares installer used by Ubuntu — friendly and straightforward.
+      </div>
+
+      <h3 id="step3a">Boot and Open the Console</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Start the VM</h4>
+            <p>Select <code>client01</code> in Proxmox → click <strong>Start</strong>. Then immediately click <strong>Console</strong> (or the <strong>&gt;_ Console</strong> button) to open the VM's display in a new browser tab or window.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Xubuntu Boot Menu Appears</h4>
+            <p>A purple/blue GNU GRUB boot menu will appear with options. The first option <strong>"Try or Install Xubuntu"</strong> will be highlighted. Press <kbd>Enter</kbd> to select it, or wait a few seconds for it to auto-start.</p>
+            <div class="callout callout-info">
+              <span class="callout-icon" aria-hidden="true">ℹ️</span>
+              <div class="callout-body">
+                <strong>If the screen goes black or nothing happens</strong>
+                <p>Click inside the console window first to capture keyboard input (Proxmox console may need a click before it captures keyboard events). Then press <kbd>Enter</kbd> or a key to wake the display.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Xubuntu Live Environment Loads</h4>
+            <p>Xubuntu loads a live desktop first. After a minute, the installer dialog appears automatically. If it doesn't appear automatically, double-click the <strong>"Install Xubuntu"</strong> icon on the desktop.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Installer Screens — Walk Through in Order</h3>
+      <p>The Xubuntu installer is sequential. Complete each screen and click <strong>Next</strong> (or <strong>Continue</strong>) to advance.</p>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 1</span>
+        <div class="installer-step-body">
+          <p><strong>Language</strong> — Select <strong>English</strong>. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 2</span>
+        <div class="installer-step-body">
+          <p><strong>Accessibility</strong> — Leave defaults. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 3</span>
+        <div class="installer-step-body">
+          <p><strong>Keyboard Layout</strong> — Select <strong>English (US)</strong>. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 4</span>
+        <div class="installer-step-body">
+          <p><strong>Internet Connection</strong> — Select <strong>"Use wired connection"</strong> or <strong>"Connect to the internet"</strong> if prompted. Xubuntu may not be able to reach the internet at this stage (since pfSense must be running and DHCP must be active). If the connection fails, select <strong>"I don't want to connect to the internet right now"</strong> — you can update after installation.</p>
+        </div>
+      </div>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 5</span>
+        <div class="installer-step-body">
+          <p><strong>What would you like to install?</strong> — Select <strong>Interactive installation</strong>. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 6</span>
+        <div class="installer-step-body">
+          <p><strong>Application selection</strong> — Select <strong>Minimal installation</strong>. <strong>Do not</strong> check the boxes for NVIDIA drivers or media codecs — these are not needed for a test client VM. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <h3 id="step3b">Disk Setup &amp; User Account</h3>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 7</span>
+        <div class="installer-step-body">
+          <p><strong>Disk Setup</strong> — Choose <strong>"Erase disk and install Xubuntu."</strong> This erases only the virtual 20 GB disk assigned to this VM — your physical computer and other VMs are not affected. <strong>Do not enable encryption</strong> — leave that toggle off. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon" aria-hidden="true">💡</span>
+        <div class="callout-body">
+          <strong>Why No Encryption?</strong>
+          <p>Full disk encryption on a VM adds overhead and complicates snapshots and automated recovery. For a lab test client, the security benefit is minimal — the real security comes from pfSense's network segmentation, not disk encryption on the client.</p>
+        </div>
+      </div>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 8</span>
+        <div class="installer-step-body">
+          <p><strong>User Account Setup</strong> — Enter your credentials. Suggested values:</p>
+        </div>
+      </div>
+
+      <div class="config-table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Suggested Value</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Your name</strong></td><td><code>Student User</code></td><td>Display name; your choice</td></tr>
+            <tr><td><strong>Computer's name / hostname</strong></td><td><code>client01</code></td><td>Must match your project documentation</td></tr>
+            <tr><td><strong>Username</strong></td><td><code>student</code></td><td>Lowercase, no spaces</td></tr>
+            <tr><td><strong>Password</strong></td><td>Your choice</td><td>Use something memorable; document it</td></tr>
+            <tr><td><strong>Log in automatically</strong></td><td>Select this option</td><td>Convenient for a lab test VM — no login prompt on boot</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Click <strong>Next</strong>.</p>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 9</span>
+        <div class="installer-step-body">
+          <p><strong>Time Zone</strong> — Select your region. For California: search for <strong>Los Angeles</strong> or select <strong>America/Los_Angeles</strong>. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="installer-step">
+        <span class="installer-step-label">Screen 10</span>
+        <div class="installer-step-body">
+          <p><strong>Review</strong> — The installer shows a summary including disk partitions (<code>sda1</code> for EFI or boot, <code>sda2</code> for the root partition or swap). Confirm the settings look correct, then click <strong>Install</strong>.</p>
+        </div>
+      </div>
+
+      <h3>Wait for Installation to Complete</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Monitor Installation Progress</h4>
+            <p>Installation takes approximately <strong>6–15 minutes</strong> depending on your Proxmox storage speed. A progress bar is shown. Files are being copied from the ISO to the virtual disk.</p>
+            <div class="callout callout-warn">
+              <span class="callout-icon" aria-hidden="true">⚠️</span>
+              <div class="callout-body">
+                <strong>If progress appears frozen</strong>
+                <p>In Proxmox, check the VM's <strong>Summary</strong> tab — if CPU and disk I/O are non-zero, the install is still working even if the installer progress bar seems stuck. Wait up to 15 minutes before assuming it has frozen. Do not forcibly power off during installation.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">5</div>
+          <div class="step-content">
+            <h4>Installation Complete — Restart</h4>
+            <p>When finished, the installer shows a completion screen. Click <strong>Restart Now</strong>. The VM will reboot.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">6</div>
+          <div class="step-content">
+            <h4>Remove the ISO After Reboot Prompt</h4>
+            <p>The installer may show a message: <em>"Please remove the installation medium and press Enter."</em> Before pressing Enter, go to Proxmox → <code>client01</code> → <strong>Hardware</strong> → double-click the <strong>CD/DVD Drive</strong> → change to <strong>"Do not use any media"</strong> → click <strong>OK</strong>. Then press <kbd>Enter</kbd> in the console to complete the reboot.</p>
+            <div class="callout callout-info">
+              <span class="callout-icon" aria-hidden="true">ℹ️</span>
+              <div class="callout-body">
+                <strong>Why remove the ISO?</strong>
+                <p>If the ISO is still attached when the VM reboots, it may boot from the installer again instead of the installed system. Removing it ensures the VM always boots from the hard disk going forward.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 4 – FIRST BOOT & UPDATES
+       ============================================================ -->
+  <section class="tutorial-section" id="step4">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="step4-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">4</div>
+        <h2>First Boot &amp; System Updates</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="step4-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> After first boot, update all packages to the latest versions, set the correct hostname, and verify the system is functioning before installing additional software.
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon" aria-hidden="true">ℹ️</span>
+        <div class="callout-body">
+          <strong>Internet Access During First Boot</strong>
+          <p>For this step, you need the VM to reach the internet for updates. This will work once pfSense is running and the CLIENTS firewall rules allow outbound HTTP/HTTPS traffic. If pfSense isn't running yet, start pfSense first, then boot this VM.</p>
+        </div>
+      </div>
+
+      <h3>Open a Terminal</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Log In and Find the Terminal</h4>
+            <p>If you set "Log in automatically," you will be at the XFCE desktop. Right-click anywhere on the desktop and select <strong>"Open Terminal Here"</strong>. Alternatively, click the terminal icon in the taskbar, or use the XFCE application menu (top-left): <strong>Applications → System → Terminal Emulator</strong>.</p>
+            <div class="callout callout-tip">
+              <span class="callout-icon" aria-hidden="true">💡</span>
+              <div class="callout-body">
+                <strong>Terminal Font Too Small?</strong>
+                <p>If text is hard to read in the Proxmox console, open the terminal and go to <strong>Edit → Preferences → Appearance</strong>. Change the font to size 14 or larger. This only affects the terminal display — system settings are unchanged.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Set the Hostname (if not set during install)</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Verify and Set Hostname to client01</h4>
+            <p>Confirm the current hostname matches your project requirement:</p>
+            <div class="code-block">
+              <div class="code-label">BASH – Verify hostname
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>hostname</code></pre>
+            </div>
+            <p>If it doesn't say <code>client01</code>, set it now:</p>
+            <div class="code-block">
+              <div class="code-label">BASH – Set hostname
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo hostnamectl set-hostname client01</code></pre>
+            </div>
+            <p>Verify it was applied:</p>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>hostnamectl status</code></pre>
+            </div>
+            <p>Also update <code>/etc/hosts</code> to reflect the new hostname:</p>
+            <div class="code-block">
+              <div class="code-label">BASH – Edit hosts file
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo nano /etc/hosts</code></pre>
+            </div>
+            <p>Find the line with <code>127.0.1.1</code> and make sure it reads:</p>
+            <div class="code-block">
+              <div class="code-label">FILE – /etc/hosts entry
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>127.0.1.1    client01</code></pre>
+            </div>
+            <p>Save with <kbd>Ctrl</kbd>+<kbd>O</kbd>, then exit with <kbd>Ctrl</kbd>+<kbd>X</kbd>.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Update All Packages</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Update Package Database</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo apt update</code></pre>
+            </div>
+            <p>Enter your password when prompted. You will see a list of package sources being updated. This should complete without errors — successful completion confirms your internet access through pfSense is working.</p>
+            <div class="callout callout-warn">
+              <span class="callout-icon" aria-hidden="true">⚠️</span>
+              <div class="callout-body">
+                <strong>If apt update fails with "Unable to connect"</strong>
+                <p>Check that pfSense is running, the CLIENTS interface (vmbr3) has the DHCP server enabled, and the CLIENTS firewall rules include a "Pass CLIENTS net to !RFC1918 on ports 80, 443" rule. Also verify the VM got a DHCP address with <code>ip addr show</code>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Upgrade All Installed Packages</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo apt upgrade -y</code></pre>
+            </div>
+            <p>This downloads and installs all available updates. It may take 3–10 minutes. When complete, the terminal returns to the prompt.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">5</div>
+          <div class="step-content">
+            <h4>Reboot to Apply Kernel Updates</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo reboot</code></pre>
+            </div>
+            <p>The VM restarts. Log back in and open a terminal to continue.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 5 – QEMU GUEST AGENT
+       ============================================================ -->
+  <section class="tutorial-section" id="step5">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="step5-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">5</div>
+        <h2>Install QEMU Guest Agent</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="step5-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Install the QEMU Guest Agent inside the VM. This is the Proxmox equivalent of VirtualBox Guest Additions — it enables better integration between the VM and Proxmox: proper IP address reporting, clean shutdowns from the Proxmox UI, and consistent snapshots.
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon" aria-hidden="true">💡</span>
+        <div class="callout-body">
+          <strong>Proxmox vs. VirtualBox: No Compilation Required</strong>
+          <p>In VirtualBox, Guest Additions must be compiled against your kernel — requiring <code>build-essential</code>, <code>dkms</code>, and kernel headers. The Proxmox QEMU Guest Agent is a pre-compiled package from the Ubuntu repositories. Installation is a single apt command with no compilation step.</p>
+        </div>
+      </div>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Install the QEMU Guest Agent Package</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo apt install qemu-guest-agent -y</code></pre>
+            </div>
+            <p>This installs the agent service. It's a small package and installs quickly.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Enable and Start the Agent Service</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo systemctl enable qemu-guest-agent
+sudo systemctl start qemu-guest-agent</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Verify the Agent is Running</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo systemctl status qemu-guest-agent</code></pre>
+            </div>
+            <p>You should see <code>active (running)</code> in green. Press <kbd>q</kbd> to exit the status view.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Reboot to Fully Activate</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo reboot</code></pre>
+            </div>
+            <p>After rebooting, the Proxmox <strong>Summary</strong> tab for your VM should now display the VM's IP address — confirming the Guest Agent is communicating with Proxmox. Previously it would have shown "Guest Agent not running."</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Install Useful Network Tools</h3>
+      <p>Install several network utilities that are essential for Project 2 testing:</p>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">5</div>
+          <div class="step-content">
+            <h4>Install Network Testing Packages</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo apt install -y \
+  curl \
+  wget \
+  net-tools \
+  dnsutils \
+  nmap \
+  traceroute \
+  openssh-client</code></pre>
+            </div>
+            <div class="config-table-wrap">
+              <table>
+                <thead><tr><th>Package</th><th>Command(s)</th><th>Used For</th></tr></thead>
+                <tbody>
+                  <tr><td><code>curl</code></td><td><code>curl</code></td><td>Testing HTTP/HTTPS access to servers</td></tr>
+                  <tr><td><code>wget</code></td><td><code>wget</code></td><td>Downloading files to test internet access</td></tr>
+                  <tr><td><code>net-tools</code></td><td><code>ifconfig</code>, <code>netstat</code></td><td>Legacy network commands (still commonly used)</td></tr>
+                  <tr><td><code>dnsutils</code></td><td><code>nslookup</code>, <code>dig</code></td><td>DNS resolution testing — essential for Part B.2</td></tr>
+                  <tr><td><code>nmap</code></td><td><code>nmap</code></td><td>Port scanning to verify firewall rules</td></tr>
+                  <tr><td><code>traceroute</code></td><td><code>traceroute</code></td><td>Tracing network path through pfSense</td></tr>
+                  <tr><td><code>openssh-client</code></td><td><code>ssh</code></td><td>Testing SSH block rule (attempt should be blocked)</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 6 – NETWORK CONFIGURATION
+       ============================================================ -->
+  <section class="tutorial-section" id="step6">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="step6-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">6</div>
+        <h2>Network Configuration &amp; DHCP Reservation</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="step6-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Verify that the VM is getting a DHCP address from pfSense on the correct network, then create a static DHCP reservation in pfSense so this client always gets the same IP address.
+      </div>
+
+      <h3>Verify DHCP Address Assignment</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Check Network Interface Configuration</h4>
+            <div class="code-block">
+              <div class="code-label">BASH – Check IP and network config
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>ip addr show</code></pre>
+            </div>
+            <p>Look for your network interface (likely <code>ens18</code>, <code>eth0</code>, or <code>enp6s18</code>). The <code>inet</code> line should show an address in the range <code>10.0.3.100</code> to <code>10.0.3.200</code>.</p>
+            <p><strong>Expected output example:</strong></p>
+            <div class="code-block">
+              <div class="code-label">Expected Output</div>
+              <pre><code>2: ens18: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; ...
+    link/ether aa:bb:cc:dd:ee:ff brd ff:ff:ff:ff:ff:ff
+    inet 10.0.3.101/24 brd 10.0.3.255 scope global dynamic ens18</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Check Default Gateway</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>ip route show</code></pre>
+            </div>
+            <p><strong>Expected:</strong> The default route should go through <code>10.0.3.1</code> (pfSense CLIENTS interface):</p>
+            <div class="code-block">
+              <div class="code-label">Expected Output</div>
+              <pre><code>default via 10.0.3.1 dev ens18 proto dhcp src 10.0.3.101 ...</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Check DNS Configuration</h4>
+            <div class="code-block">
+              <div class="code-label">BASH
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>resolvectl status
+# or
+cat /etc/resolv.conf</code></pre>
+            </div>
+            <p><strong>Expected:</strong> DNS server should be <code>10.0.2.10</code> or <code>10.0.2.11</code> (the DNS server you configured in pfSense DHCP options).</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Test Basic Connectivity</h4>
+            <div class="code-block">
+              <div class="code-label">BASH – Quick connectivity tests
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code># Ping pfSense CLIENTS gateway
+ping -c3 10.0.3.1
+
+# Ping a server
+ping -c3 10.0.2.10
+
+# Ping internet
+ping -c3 8.8.8.8</code></pre>
+            </div>
+            <p>All three should succeed if pfSense and the firewall rules are correctly configured.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Troubleshoot: No DHCP Address</h3>
+      <p>If you don't get a DHCP address (no <code>10.0.3.x</code> address shown), try requesting one manually:</p>
+      <div class="code-block">
+        <div class="code-label">BASH – Request DHCP manually
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Replace ens18 with your actual interface name
+sudo dhclient -v ens18</code></pre>
+      </div>
+      <p>If DHCP still fails, verify pfSense is running, the CLIENTS DHCP server is enabled, and the VM is connected to vmbr3 (check in Proxmox Hardware settings).</p>
+
+      <h3>Get the MAC Address for pfSense Reservation</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">5</div>
+          <div class="step-content">
+            <h4>Find the VM's MAC Address</h4>
+            <div class="code-block">
+              <div class="code-label">BASH – Get MAC address
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>ip link show ens18
+# Look for: link/ether aa:bb:cc:dd:ee:ff</code></pre>
+            </div>
+            <p>Note the MAC address (the <code>link/ether</code> value). You will use this in pfSense to create a static DHCP reservation. Alternatively, in Proxmox, select the VM → <strong>Hardware</strong> → the Network Device shows the MAC address.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Create a Static DHCP Reservation in pfSense</h3>
+      <p>A static DHCP reservation (also called DHCP reservation or static mapping) ensures this client always gets the same IP address — even though it's technically using DHCP.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">6</div>
+          <div class="step-content">
+            <h4>Navigate to pfSense DHCP Leases</h4>
+            <p>In pfSense web GUI: <strong>Status</strong> → <strong>DHCP Leases</strong>. Find your client01 in the leases list. Click the <strong>+</strong> icon next to it to quickly create a static mapping from the current lease.</p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">7</div>
+          <div class="step-content">
+            <h4>Set the Reservation Details</h4>
+            <div class="config-table-wrap">
+              <table>
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>MAC Address</strong></td><td>Auto-filled from the lease</td></tr>
+                  <tr><td><strong>IP Address</strong></td><td><code>10.0.3.101</code></td></tr>
+                  <tr><td><strong>Hostname</strong></td><td><code>client01</code></td></tr>
+                  <tr><td><strong>Description</strong></td><td><code>Linux Test Client – Project 2</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Click <strong>Save</strong> → <strong>Apply Changes</strong>. For the new IP to take effect, release and renew the DHCP lease on the client:</p>
+            <div class="code-block">
+              <div class="code-label">BASH – Renew DHCP lease
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo dhclient -r ens18 &amp;&amp; sudo dhclient ens18
+ip addr show ens18</code></pre>
+            </div>
+            <p>The IP should now be <code>10.0.3.101</code> (or whichever address you reserved).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-success">
+        <span class="callout-icon" aria-hidden="true">✅</span>
+        <div class="callout-body">
+          <strong>📸 Screenshots Required for Project 2</strong>
+          <ul>
+            <li><code>ip addr show</code> output showing the DHCP-assigned address in 10.0.3.x range</li>
+            <li>pfSense DHCP Leases page showing <code>client01</code></li>
+            <li>pfSense static DHCP mapping showing the reservation for client01</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 7 – VERIFY PROJECT 2 READINESS
+       ============================================================ -->
+  <section class="tutorial-section" id="step7">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="step7-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">7</div>
+        <h2>Verify Project 2 Readiness</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="step7-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Run through the complete Project 2 verification test suite from the Linux Client. Document all results with screenshots for your Part E.1 submission.
+      </div>
+
+      <h3>Test 1: DHCP and Network Configuration</h3>
+      <div class="code-block">
+        <div class="code-label">BASH – DHCP verification commands
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Show IP address — should be 10.0.3.x
+ip addr show
+
+# Show routing table — default via 10.0.3.1
+ip route show
+
+# Show DNS configuration — should point to 10.0.2.10 or .11
+resolvectl status | grep -A5 "DNS Servers"</code></pre>
+      </div>
+
+      <h3>Test 2: DNS Resolution</h3>
+      <div class="code-block">
+        <div class="code-label">BASH – DNS tests
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Internal forward lookups
+nslookup linux.techstart.local
+nslookup dc01.techstart.local
+nslookup pfsense.techstart.local
+
+# Alternative with dig (more detail)
+dig linux.techstart.local
+dig dc01.techstart.local
+
+# External resolution
+nslookup google.com</code></pre>
+      </div>
+      <p><strong>Expected:</strong> Internal names resolve to their correct IPs (10.0.2.10, .11, .1). External name resolves to a Google IP.</p>
+
+      <h3>Test 3: Internet Connectivity</h3>
+      <div class="code-block">
+        <div class="code-label">BASH – Internet access tests
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Ping internet IP
+ping -c4 8.8.8.8
+
+# Ping internet hostname
+ping -c4 google.com
+
+# HTTP test
+curl -I https://www.google.com</code></pre>
+      </div>
+      <p><strong>Expected:</strong> All succeed. Open the Firefox browser (from the XFCE menu) and navigate to any website to capture a browser screenshot.</p>
+
+      <h3>Test 4: Server Connectivity (Allowed Traffic)</h3>
+      <div class="code-block">
+        <div class="code-label">BASH – Server access tests
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Ping Linux server (should succeed — ICMP is allowed)
+ping -c3 10.0.2.10
+
+# Ping Windows server
+ping -c3 10.0.2.11
+
+# Test DNS port to servers
+nmap -p 53 10.0.2.10
+
+# Test HTTP/HTTPS to servers
+nmap -p 80,443 10.0.2.11</code></pre>
+      </div>
+
+      <h3>Test 5: Firewall Block Tests (Should FAIL)</h3>
+      <div class="code-block">
+        <div class="code-label">BASH – Tests that should be BLOCKED
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># SSH to servers — should be BLOCKED/REFUSED
+ssh 10.0.2.10
+# Expected: Connection refused, Connection timed out, or Permission denied
+# NOT expected: ssh prompt appearing
+
+# Ping management network — should be BLOCKED
+ping -c3 10.0.1.1
+# Expected: 100% packet loss
+
+# Nmap SSH port — should show filtered or closed
+nmap -p 22 10.0.2.10</code></pre>
+      </div>
+
+      <div class="callout callout-success">
+        <span class="callout-icon" aria-hidden="true">✅</span>
+        <div class="callout-body">
+          <strong>After blocked tests: Check pfSense Logs</strong>
+          <p>In pfSense web GUI: <strong>Status</strong> → <strong>System Logs</strong> → <strong>Firewall</strong> tab. You should see entries for the blocked SSH attempt and the blocked ping to management. Take a screenshot of these log entries — they are required evidence for Part D.2 of your project.</p>
+        </div>
+      </div>
+
+      <h3>Test 6: Traceroute Through pfSense</h3>
+      <div class="code-block">
+        <div class="code-label">BASH – Traceroute to verify routing path
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code>traceroute 8.8.8.8</code></pre>
+      </div>
+      <p><strong>Expected first hop:</strong> <code>10.0.3.1</code> (pfSense CLIENTS interface). Traffic passes through pfSense before reaching the internet. This confirms your client is properly routed through the firewall.</p>
+
+      <h3>Project 2 Readiness Checklist</h3>
+      <ul class="checklist">
+        <li>IP address in range 10.0.3.100–10.0.3.200 confirmed with <code>ip addr show</code></li>
+        <li>Default gateway is 10.0.3.1 (pfSense)</li>
+        <li>DNS server is 10.0.2.10 or 10.0.2.11</li>
+        <li>Internal name resolution works: <code>nslookup linux.techstart.local</code> returns 10.0.2.10</li>
+        <li>External name resolution works: <code>nslookup google.com</code> returns an IP</li>
+        <li>Internet is accessible: <code>ping -c3 8.8.8.8</code> shows 0% loss</li>
+        <li>Web browsing works in Firefox browser</li>
+        <li>SSH to servers is blocked (connection refused or timeout)</li>
+        <li>Ping to management (10.0.1.1) is blocked (100% packet loss)</li>
+        <li>Blocked connections appear in pfSense firewall log</li>
+        <li>pfSense DHCP Leases shows client01 entry</li>
+        <li>Static DHCP reservation created for client01</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TROUBLESHOOTING
+       ============================================================ -->
+  <section class="tutorial-section" id="troubleshooting">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="ts-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">🔧</div>
+        <h2>Troubleshooting Guide</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="ts-body">
+
+      <div class="config-table-wrap">
+        <table>
+          <caption style="text-align:left;padding:0 0 8px;font-size:.8rem;color:var(--text-muted);">Table 3: Common Issues and Solutions</caption>
+          <thead>
+            <tr><th>Symptom</th><th>Likely Cause</th><th>Steps to Fix</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>VM boots to installer again after install</strong></td>
+              <td>ISO not removed from CD drive</td>
+              <td>In Proxmox, Hardware → CD/DVD Drive → set to "Do not use any media" → reboot</td>
+            </tr>
+            <tr>
+              <td><strong>No DHCP address assigned</strong></td>
+              <td>pfSense not running, DHCP not enabled, wrong bridge</td>
+              <td>Verify pfSense is started; check DHCP is enabled on CLIENTS tab in pfSense; verify VM hardware shows vmbr3; try <code>sudo dhclient ens18</code></td>
+            </tr>
+            <tr>
+              <td><strong>Can ping 10.0.3.1 but not internet</strong></td>
+              <td>Missing CLIENTS firewall rules or NAT</td>
+              <td>In pfSense, verify CLIENTS rules allow outbound to !RFC1918; check Firewall → NAT → Outbound is set to Automatic</td>
+            </tr>
+            <tr>
+              <td><strong>DNS not resolving internal names</strong></td>
+              <td>DNS server not installed, DHCP pointing to wrong IP</td>
+              <td>Verify DNS server is installed on Windows/Linux Server; check DHCP options in pfSense show the correct DNS server IP</td>
+            </tr>
+            <tr>
+              <td><strong>apt update fails with "Temporary failure resolving"</strong></td>
+              <td>DNS not configured</td>
+              <td>Check <code>/etc/resolv.conf</code> — if empty, run <code>sudo dhclient ens18</code> to get a new DHCP lease with DNS settings</td>
+            </tr>
+            <tr>
+              <td><strong>SSH to server succeeds (should be blocked)</strong></td>
+              <td>Firewall rules not applied, wrong rule order</td>
+              <td>In pfSense, go to Firewall → Rules → CLIENTS; verify the SSH block rule is above any allow-all rules; click Apply Changes</td>
+            </tr>
+            <tr>
+              <td><strong>Proxmox console resolution very low</strong></td>
+              <td>Display not set to VirtIO-GPU</td>
+              <td>Shut down VM; Hardware → Display → change to VirtIO-GPU; restart VM</td>
+            </tr>
+            <tr>
+              <td><strong>QEMU Guest Agent not showing IP in Proxmox</strong></td>
+              <td>Agent not installed or not running</td>
+              <td>Install: <code>sudo apt install qemu-guest-agent -y</code>; enable: <code>sudo systemctl enable --now qemu-guest-agent</code>; reboot VM</td>
+            </tr>
+            <tr>
+              <td><strong>Interface name is not ens18</strong></td>
+              <td>Proxmox assigns different interface names</td>
+              <td>Run <code>ip link show</code> to list all interfaces; find the one that isn't <code>lo</code> (loopback) — use that name in all commands</td>
+            </tr>
+            <tr>
+              <td><strong>Can reach servers but can't reach internet</strong></td>
+              <td>pfSense NAT or firewall rule issue</td>
+              <td>Confirm CLIENTS rules include "Pass to !RFC1918 on 80, 443"; verify pfSense WAN has a valid IP (<code>10.255.254.x</code>)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Useful Diagnostic Commands</h3>
+      <div class="code-block">
+        <div class="code-label">BASH – Diagnostic reference
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Show all network interfaces and IPs
+ip addr show
+
+# Show routing table
+ip route show
+
+# Show current DNS servers
+resolvectl status
+
+# Test specific port reachability
+nc -zv 10.0.2.10 53      # Test DNS port
+nc -zv 10.0.2.11 443     # Test HTTPS port
+
+# Show DHCP lease info
+cat /var/lib/dhcp/dhclient.leases
+
+# Check network interface name
+ip link show | grep -v lo
+
+# Test traceroute to confirm pfSense is first hop
+traceroute 8.8.8.8</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       NEXT STEPS
+       ============================================================ -->
+  <section class="tutorial-section" id="next-steps">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="nextsteps-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">→</div>
+        <h2>Next Steps</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="nextsteps-body">
+      <p>With your Linux Client VM running and verified, you can proceed with the remaining Project 2 deliverables. This client VM will be your primary testing tool for all remaining sections.</p>
+
+      <div class="next-steps-grid">
+        <div class="next-card">
+          <span class="card-icon" aria-hidden="true">🖥️</span>
+          <h4>Part B.2 – DNS Server</h4>
+          <p>Use this client to test your DNS server configuration with <code>nslookup</code> and <code>dig</code> commands against the techstart.local zone.</p>
+        </div>
+        <div class="next-card">
+          <span class="card-icon" aria-hidden="true">🔐</span>
+          <h4>Part C – Directory Services</h4>
+          <p>Test LDAP/AD connectivity from this client. Optionally join the client to the techstart.local domain for bonus points.</p>
+        </div>
+        <div class="next-card">
+          <span class="card-icon" aria-hidden="true">🛡️</span>
+          <h4>Part D – Firewall Verification</h4>
+          <p>All firewall rule tests (allow and block) should be run from this VM and documented with screenshots for Part D.2 deliverables.</p>
+        </div>
+        <div class="next-card">
+          <span class="card-icon" aria-hidden="true">📄</span>
+          <h4>Part E – Documentation</h4>
+          <p>Run the complete test suite from this VM and capture all required screenshots. Consult the pfSense tutorial's Testing section for the full test list.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-tip" style="margin-top: 24px;">
+        <span class="callout-icon" aria-hidden="true">💡</span>
+        <div class="callout-body">
+          <strong>Take a Snapshot Now</strong>
+          <p>With the client VM fully configured and verified, this is a great time to take a Proxmox snapshot. In Proxmox, select <code>client01</code> → <strong>Snapshots</strong> → <strong>Take Snapshot</strong>. Name it <code>project2-baseline</code>. This lets you roll back to a known-good state if something breaks during testing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main><!-- end #main-content -->
+
+<script>
+/* ============================================================
+   SECTION TOGGLE
+   ============================================================ */
+function toggleSection(btn) {
+  const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+  const bodyId = btn.getAttribute('aria-controls');
+  const body = document.getElementById(bodyId);
+  if (!body) return;
+
+  if (isExpanded) {
+    btn.setAttribute('aria-expanded', 'false');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => {
+      body.style.maxHeight = body.scrollHeight + 'px';
+      requestAnimationFrame(() => {
+        body.classList.add('collapsed');
+        body.style.maxHeight = '';
+      });
+    });
+  } else {
+    btn.setAttribute('aria-expanded', 'true');
+    body.classList.remove('collapsed');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.addEventListener('transitionend', () => {
+      body.style.maxHeight = '';
+    }, { once: true });
+  }
+}
+
+function keyToggle(e, btn) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    toggleSection(btn);
+  }
+}
+
+/* ============================================================
+   READING PROGRESS BAR
+   ============================================================ */
+function updateProgress() {
+  const docH = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docH > 0 ? Math.round((window.scrollY / docH) * 100) : 0;
+  const bar = document.getElementById('prog-bar');
+  const lbl = document.getElementById('prog-pct');
+  const wrap = bar?.parentElement;
+  if (bar) bar.style.width = pct + '%';
+  if (lbl) lbl.textContent = pct + '%';
+  if (wrap) wrap.setAttribute('aria-valuenow', pct);
+}
+window.addEventListener('scroll', updateProgress, { passive: true });
+updateProgress();
+
+/* ============================================================
+   SCROLL SPY — ACTIVE NAV LINK
+   ============================================================ */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav#main-nav a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+/* ============================================================
+   PROGRESS CHECKLIST
+   ============================================================ */
+function updateChecks() {
+  const all = document.querySelectorAll('.progress-grid input[type="checkbox"]');
+  const done = document.querySelectorAll('.progress-grid input[type="checkbox"]:checked');
+  const pct = all.length ? Math.round((done.length / all.length) * 100) : 0;
+  document.body.style.setProperty('--check-pct', pct + '%');
+}
+
+/* ============================================================
+   COPY CODE BUTTON
+   ============================================================ */
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  if (!pre) return;
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNode(pre);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+}
+
+/* ============================================================
+   MOBILE SIDEBAR TOGGLE
+   ============================================================ */
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebar = document.getElementById('sidebar');
+
+sidebarToggle.addEventListener('click', () => {
+  const isOpen = sidebar.classList.toggle('open');
+  sidebarToggle.setAttribute('aria-expanded', isOpen);
+  sidebarToggle.textContent = isOpen ? '✕' : '☰';
+});
+
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      sidebar.classList.remove('open');
+      sidebarToggle.setAttribute('aria-expanded', 'false');
+      sidebarToggle.textContent = '☰';
+    }
+  });
+});
+
+document.addEventListener('click', (e) => {
+  if (window.innerWidth <= 900 && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
+    sidebar.classList.remove('open');
+    sidebarToggle.setAttribute('aria-expanded', 'false');
+    sidebarToggle.textContent = '☰';
+  }
+});
+</script>
+
+</body>
+</html>
