@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows Server: Active Directory, DNS &amp; DHCP – CSC 152 Project 2</title>
+<style>
+/* ============================================================
+   FONTS & RESET
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=DM+Sans:wght@400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ============================================================
+   COLOR SYSTEM – Windows Server Purple (WCAG AA ≥ 4.5:1)
+   Body text #1a1a2e on #ffffff         → 15.3:1 ✓
+   Accent #3b1f8c on #ffffff            → 11.9:1 ✓
+   Hero/step-num white on #3b1f8c       → 11.9:1 ✓
+   accent-light text #2a1566 on #ede9fe → 12.7:1 ✓
+   nav link #1a1a2e on #f0edfd          → 14.2:1 ✓
+   warn-text #5c3317 on #fff3cd         → 5.8:1  ✓
+   info-text #0c4a6e on #e0f2fe         → 5.2:1  ✓
+   success-text #1a4731 on #d1f5e0      → 8.1:1  ✓
+   tip-text #3b1f6e on #f5f0ff          → 7.4:1  ✓
+   code text #1e293b on #f1f5f9         → 11.0:1 ✓
+   ============================================================ */
+:root {
+  --bg:           #ffffff;
+  --bg-alt:       #f8f7fd;
+  --bg-code:      #f1f5f9;
+  --border:       #cbd5e1;
+  --border-light: #e2e8f0;
+
+  --text-primary:   #1a1a2e;
+  --text-secondary: #374151;
+  --text-muted:     #4b5563;
+
+  --accent:       #3b1f8c;
+  --accent-dark:  #2a1566;
+  --accent-light: #ede9fe;
+  --accent-mid:   #5b3fb5;
+
+  --nav-bg:       #f0edfd;
+  --nav-border:   #c4b5fd;
+
+  --warn-bg:    #fff3cd;
+  --warn-text:  #5c3317;
+  --warn-border:#d97706;
+
+  --info-bg:    #e0f2fe;
+  --info-text:  #0c4a6e;
+  --info-border:#0284c7;
+
+  --success-bg:   #d1f5e0;
+  --success-text: #1a4731;
+  --success-border:#16a34a;
+
+  --tip-bg:    #f5f0ff;
+  --tip-text:  #3b1f6e;
+  --tip-border:#7c3aed;
+
+  --step-num-bg:   #3b1f8c;
+  --step-num-text: #ffffff;
+
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 12px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow:    0 2px 8px rgba(0,0,0,.10);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.12);
+
+  --font-body: 'DM Sans', sans-serif;
+  --font-head: 'Source Serif 4', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  --nav-w: 280px;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg);
+  line-height: 1.65;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   SKIP NAV
+   ============================================================ */
+.skip-nav {
+  position: absolute; top: -100px; left: 0;
+  background: var(--accent); color: #fff;
+  padding: 8px 16px; font-weight: 600; z-index: 1000;
+  border-radius: 0 0 var(--radius) 0;
+  text-decoration: none; transition: top .2s;
+}
+.skip-nav:focus { top: 0; }
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+#sidebar {
+  width: var(--nav-w); min-width: var(--nav-w);
+  background: var(--nav-bg);
+  border-right: 2px solid var(--nav-border);
+  position: sticky; top: 0; height: 100vh;
+  overflow-y: auto; display: flex;
+  flex-direction: column; z-index: 200; flex-shrink: 0;
+}
+
+.sidebar-header {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--nav-border);
+  background: var(--accent); color: #fff;
+}
+.sidebar-header .course-tag {
+  font-family: var(--font-mono); font-size: .72rem;
+  font-weight: 600; letter-spacing: .08em;
+  opacity: .88; display: block; margin-bottom: 4px;
+}
+.sidebar-header h2 {
+  font-family: var(--font-head); font-size: 1rem;
+  font-weight: 700; line-height: 1.3; color: #fff;
+}
+
+.sidebar-progress {
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--nav-border);
+  background: var(--accent-light);
+}
+.progress-label {
+  font-size: .75rem; color: var(--accent-dark);
+  font-weight: 600; margin-bottom: 5px;
+  display: flex; justify-content: space-between;
+}
+.progress-bar-wrap {
+  height: 6px; background: var(--border);
+  border-radius: 99px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; background: var(--accent);
+  border-radius: 99px; width: 0%;
+  transition: width .4s ease;
+}
+
+nav#main-nav { padding: 10px 0 20px; flex: 1; }
+nav#main-nav ul { list-style: none; }
+nav#main-nav > ul > li { margin-bottom: 2px; }
+
+.nav-section-title {
+  font-family: var(--font-mono); font-size: .68rem;
+  font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-muted); padding: 12px 18px 4px; display: block;
+}
+nav#main-nav a {
+  display: block; padding: 7px 18px 7px 22px;
+  font-size: .875rem; font-weight: 500; color: var(--text-primary);
+  text-decoration: none; border-left: 3px solid transparent;
+  transition: all .15s; line-height: 1.3;
+}
+nav#main-nav a:hover {
+  background: var(--accent-light); color: var(--accent-dark);
+  border-left-color: var(--accent);
+}
+nav#main-nav a.active {
+  background: var(--accent-light); color: var(--accent-dark);
+  border-left-color: var(--accent); font-weight: 600;
+}
+nav#main-nav .sub-link {
+  padding-left: 34px; font-size: .82rem;
+  font-weight: 400; color: var(--text-secondary);
+}
+nav#main-nav .sub-link:hover,
+nav#main-nav .sub-link.active {
+  color: var(--accent-dark); font-weight: 500;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+#main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.page-hero {
+  background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 55%, var(--accent-mid) 100%);
+  color: #fff; padding: 48px 48px 40px;
+  position: relative; overflow: hidden;
+}
+.page-hero::before {
+  content: ''; position: absolute; right: -60px; top: -60px;
+  width: 280px; height: 280px; border-radius: 50%;
+  background: rgba(255,255,255,.05); pointer-events: none;
+}
+.page-hero::after {
+  content: ''; position: absolute; right: 60px; bottom: -80px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: rgba(255,255,255,.04); pointer-events: none;
+}
+.page-hero .badge {
+  display: inline-block; background: rgba(255,255,255,.2);
+  color: #fff; font-family: var(--font-mono); font-size: .72rem;
+  font-weight: 600; letter-spacing: .1em;
+  padding: 4px 10px; border-radius: 99px;
+  margin-bottom: 14px; position: relative;
+}
+.page-hero h1 {
+  font-family: var(--font-head); font-size: 2rem;
+  font-weight: 700; line-height: 1.2;
+  margin-bottom: 12px; color: #fff; position: relative;
+}
+.page-hero .subtitle {
+  font-size: 1.05rem; opacity: .9;
+  max-width: 680px; line-height: 1.5; position: relative;
+}
+.hero-meta {
+  display: flex; gap: 12px; margin-top: 24px;
+  flex-wrap: wrap; position: relative;
+}
+.meta-chip {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,.15); padding: 6px 14px;
+  border-radius: 99px; font-size: .82rem;
+  font-weight: 500; color: #fff;
+}
+.meta-chip .chip-icon { font-size: 1rem; }
+
+/* ============================================================
+   TUTORIAL SECTIONS
+   ============================================================ */
+.tutorial-section {
+  padding: 40px 48px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+.tutorial-section:last-child { border-bottom: none; }
+
+/* ============================================================
+   COLLAPSIBLE TOGGLE
+   ============================================================ */
+.section-toggle {
+  display: flex; align-items: center;
+  justify-content: space-between; cursor: pointer;
+  user-select: none; padding: 16px 20px;
+  margin: 0 0 0 -20px; border-radius: var(--radius);
+  transition: background .15s; gap: 16px;
+}
+.section-toggle:hover { background: var(--accent-light); }
+.section-toggle:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
+.section-toggle-inner { display: flex; align-items: center; gap: 14px; flex: 1; }
+.section-num {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--step-num-bg); color: var(--step-num-text);
+  font-family: var(--font-mono); font-size: .78rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.section-toggle h2 {
+  font-family: var(--font-head); font-size: 1.35rem;
+  font-weight: 700; color: var(--text-primary); line-height: 1.2;
+}
+.section-toggle .toggle-icon {
+  font-size: 1.4rem; color: var(--accent);
+  transition: transform .25s; font-weight: 300;
+  flex-shrink: 0; width: 24px; text-align: center;
+}
+.section-toggle[aria-expanded="true"] .toggle-icon { transform: rotate(45deg); }
+.section-body { overflow: hidden; transition: max-height .35s ease; }
+.section-body.collapsed { max-height: 0 !important; }
+
+/* ============================================================
+   STEP CARDS WITH CONNECTOR LINE
+   ============================================================ */
+.step-list {
+  display: flex; flex-direction: column; gap: 0;
+  margin: 24px 0; position: relative;
+}
+.step-list::before {
+  content: ''; position: absolute;
+  left: 19px; top: 36px; bottom: 36px;
+  width: 2px; background: var(--border); z-index: 0;
+}
+.step-card { display: flex; gap: 16px; padding: 0 0 28px; position: relative; z-index: 1; }
+.step-card:last-child { padding-bottom: 0; }
+.step-number {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--step-num-bg); color: var(--step-num-text);
+  font-family: var(--font-mono); font-size: .85rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; border: 3px solid var(--bg); box-shadow: var(--shadow);
+}
+.step-content { flex: 1; min-width: 0; padding-top: 8px; }
+.step-content h4 {
+  font-family: var(--font-head); font-size: 1.05rem;
+  font-weight: 600; color: var(--text-primary); margin-bottom: 8px;
+}
+.step-content p { font-size: .925rem; color: var(--text-secondary); margin-bottom: 8px; }
+.step-content p:last-child { margin-bottom: 0; }
+
+/* ============================================================
+   CODE BLOCKS
+   ============================================================ */
+.code-block {
+  position: relative; margin: 14px 0;
+  border-radius: var(--radius); overflow: hidden;
+  border: 1px solid var(--border);
+}
+.code-label {
+  background: var(--accent); color: #fff;
+  font-family: var(--font-mono); font-size: .7rem;
+  font-weight: 600; letter-spacing: .08em;
+  padding: 4px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.copy-btn {
+  background: rgba(255,255,255,.2); border: none; color: #fff;
+  font-family: var(--font-mono); font-size: .68rem;
+  padding: 2px 8px; border-radius: 3px;
+  cursor: pointer; transition: background .15s;
+}
+.copy-btn:hover { background: rgba(255,255,255,.35); }
+.copy-btn:focus { outline: 2px solid #fff; outline-offset: 2px; }
+pre { background: var(--bg-code); padding: 14px 16px; overflow-x: auto; margin: 0; }
+pre code {
+  font-family: var(--font-mono); font-size: .85rem;
+  color: #1e293b; white-space: pre; line-height: 1.6;
+}
+code:not(pre code) {
+  font-family: var(--font-mono); font-size: .85em;
+  background: var(--bg-code); color: #1e293b;
+  padding: 1px 5px; border-radius: 3px;
+  border: 1px solid var(--border-light);
+}
+
+/* ============================================================
+   CALLOUT BOXES
+   ============================================================ */
+.callout {
+  border-left: 4px solid; border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 16px; margin: 16px 0;
+  display: flex; gap: 10px;
+}
+.callout-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
+.callout-body { flex: 1; min-width: 0; }
+.callout-body strong { font-size: .9rem; display: block; margin-bottom: 4px; }
+.callout-body p, .callout-body ul { font-size: .885rem; }
+.callout-body ul { padding-left: 18px; margin-top: 4px; }
+.callout-body li { margin-bottom: 3px; }
+.callout-warn  { background: var(--warn-bg);    border-color: var(--warn-border);    color: var(--warn-text); }
+.callout-info  { background: var(--info-bg);    border-color: var(--info-border);    color: var(--info-text); }
+.callout-success{background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
+.callout-tip   { background: var(--tip-bg);     border-color: var(--tip-border);     color: var(--tip-text); }
+
+/* ============================================================
+   CONFIG TABLES
+   ============================================================ */
+.config-table-wrap { overflow-x: auto; margin: 16px 0; }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+th {
+  background: var(--accent); color: #fff;
+  padding: 9px 14px; text-align: left;
+  font-family: var(--font-mono); font-size: .78rem;
+  font-weight: 600; letter-spacing: .04em; white-space: nowrap;
+}
+td {
+  padding: 8px 14px; border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary); vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--bg-alt); }
+td code { font-size: .8rem; }
+td strong { color: var(--text-primary); }
+
+/* ============================================================
+   SECTION INTRO BAND
+   ============================================================ */
+.section-intro {
+  background: var(--accent-light);
+  border-left: 4px solid var(--accent);
+  padding: 14px 18px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin-bottom: 24px; font-size: .9rem;
+  color: var(--accent-dark);
+}
+.section-intro strong { font-weight: 600; }
+
+/* ============================================================
+   SECTION BODY TYPOGRAPHY
+   ============================================================ */
+.section-body h3 {
+  font-family: var(--font-head); font-size: 1.1rem;
+  font-weight: 600; color: var(--text-primary);
+  margin: 28px 0 10px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-light);
+}
+.section-body h3:first-child { margin-top: 16px; }
+.section-body p {
+  font-size: .925rem; color: var(--text-secondary);
+  margin-bottom: 12px; max-width: 72ch;
+}
+.section-body ul, .section-body ol { padding-left: 22px; margin-bottom: 14px; }
+.section-body li { font-size: .9rem; color: var(--text-secondary); margin-bottom: 5px; line-height: 1.5; }
+
+/* ============================================================
+   PROGRESS TRACKER
+   ============================================================ */
+#progress-section {
+  background: var(--bg-alt); padding: 32px 48px;
+  border-bottom: 1px solid var(--border-light);
+}
+#progress-section h2 {
+  font-family: var(--font-head); font-size: 1.2rem;
+  margin-bottom: 8px; color: var(--text-primary);
+}
+#progress-section .section-desc {
+  font-size: .875rem; color: var(--text-muted); margin-bottom: 16px;
+}
+.progress-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px;
+}
+.progress-item {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 14px;
+  display: flex; align-items: flex-start; gap: 10px; font-size: .85rem;
+}
+.progress-item input[type="checkbox"] {
+  width: 18px; height: 18px; accent-color: var(--accent);
+  flex-shrink: 0; margin-top: 1px;
+}
+.progress-item label { cursor: pointer; line-height: 1.35; }
+
+/* ============================================================
+   WIZARD STEP VISUAL
+   ============================================================ */
+.wizard-step {
+  background: var(--bg-alt); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 16px;
+  margin: 10px 0; display: flex; align-items: flex-start; gap: 12px;
+}
+.wizard-step-label {
+  font-family: var(--font-mono); font-size: .75rem; font-weight: 600;
+  background: var(--accent); color: #fff;
+  padding: 2px 8px; border-radius: 3px;
+  flex-shrink: 0; margin-top: 2px; white-space: nowrap;
+}
+.wizard-step-body { flex: 1; min-width: 0; }
+.wizard-step-body p { font-size: .875rem; color: var(--text-secondary); margin: 0; }
+.wizard-step-body strong { color: var(--text-primary); }
+
+/* ============================================================
+   CHECKLIST
+   ============================================================ */
+.checklist { list-style: none; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+.checklist li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: .9rem; color: var(--text-secondary);
+}
+.checklist li::before { content: '☐'; color: var(--accent); font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ============================================================
+   KEYBOARD KEY
+   ============================================================ */
+kbd {
+  display: inline-block; font-family: var(--font-mono); font-size: .78em;
+  background: #f0f0f0; color: #1a1a2e;
+  border: 1px solid #c0c0c0; border-bottom: 2px solid #a0a0a0;
+  border-radius: 4px; padding: 1px 6px; white-space: nowrap;
+}
+
+/* ============================================================
+   ARCHITECTURE DIAGRAM
+   ============================================================ */
+.diagram-block {
+  background: var(--bg-code); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px;
+  margin: 16px 0; overflow-x: auto;
+}
+.diagram-block pre {
+  background: transparent; padding: 0; margin: 0;
+  font-family: var(--font-mono); font-size: .8rem;
+  color: var(--text-secondary); white-space: pre; line-height: 1.6;
+}
+
+/* ============================================================
+   NEXT STEPS
+   ============================================================ */
+.next-steps-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px; margin-top: 20px;
+}
+.next-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius); padding: 16px 18px;
+  text-decoration: none; color: var(--text-primary);
+  transition: box-shadow .15s, border-color .15s;
+}
+.next-card:hover { box-shadow: var(--shadow); border-top-color: var(--accent-mid); }
+.next-card:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
+.next-card .card-icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+.next-card h4 { font-family: var(--font-head); font-size: .95rem; font-weight: 600; margin-bottom: 5px; }
+.next-card p { font-size: .82rem; color: var(--text-muted); }
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+#sidebar-toggle {
+  display: none; position: fixed; bottom: 24px; right: 24px;
+  z-index: 300; background: var(--accent); color: #fff;
+  border: none; border-radius: 50%; width: 52px; height: 52px;
+  font-size: 1.4rem; cursor: pointer; box-shadow: var(--shadow-lg);
+  align-items: center; justify-content: center;
+}
+
+@media (max-width: 900px) {
+  #sidebar { position: fixed; left: -300px; transition: left .3s; box-shadow: var(--shadow-lg); }
+  #sidebar.open { left: 0; }
+  #sidebar-toggle { display: flex; }
+  .page-hero { padding: 32px 24px 28px; }
+  .page-hero h1 { font-size: 1.5rem; }
+  .tutorial-section { padding: 28px 24px 16px; }
+  #progress-section { padding: 24px; }
+}
+@media (max-width: 600px) {
+  .hero-meta { gap: 8px; }
+  .meta-chip { font-size: .75rem; padding: 5px 10px; }
+  .next-steps-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  #sidebar, #sidebar-toggle { display: none; }
+  .section-body.collapsed { max-height: none !important; }
+  body { display: block; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-nav">Skip to main content</a>
+
+<!-- ============================================================
+     SIDEBAR
+     ============================================================ -->
+<aside id="sidebar" role="navigation" aria-label="Tutorial navigation">
+  <div class="sidebar-header">
+    <span class="course-tag">CSC 152 · PROJECT 2 – PART B &amp; C</span>
+    <h2>Windows Server: AD, DNS &amp; DHCP</h2>
+  </div>
+
+  <div class="sidebar-progress">
+    <div class="progress-label">
+      <span>Reading Progress</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Reading progress">
+      <div class="progress-bar-fill" id="prog-bar"></div>
+    </div>
+  </div>
+
+  <nav id="main-nav" aria-label="Page sections">
+    <ul>
+      <li><span class="nav-section-title">Overview</span></li>
+      <li><a href="#overview">Introduction &amp; Role</a></li>
+      <li><a href="#progress-section">Progress Tracker</a></li>
+
+      <li><span class="nav-section-title">Part 1 – Prep</span></li>
+      <li><a href="#step-prep">Prepare Windows Server</a></li>
+      <li><a href="#step-prep" class="sub-link">Rename the server</a></li>
+
+      <li><span class="nav-section-title">Part 2 – AD DS</span></li>
+      <li><a href="#step-adds">Install AD DS Role</a></li>
+      <li><a href="#step-promote">Promote to Domain Controller</a></li>
+      <li><a href="#step-promote" class="sub-link">Create techstart.local forest</a></li>
+
+      <li><span class="nav-section-title">Part 3 – DNS</span></li>
+      <li><a href="#step-dns">Configure DNS Server</a></li>
+      <li><a href="#step-dns" class="sub-link">Verify forward lookup zones</a></li>
+      <li><a href="#step-dns" class="sub-link">Add A records</a></li>
+      <li><a href="#step-dns" class="sub-link">Configure DNS forwarder</a></li>
+
+      <li><span class="nav-section-title">Part 4 – DHCP</span></li>
+      <li><a href="#step-dhcp-note">DHCP: pfSense vs Windows</a></li>
+
+      <li><span class="nav-section-title">Part 5 – Users &amp; OUs</span></li>
+      <li><a href="#step-users">Create OUs and Users</a></li>
+      <li><a href="#step-users" class="sub-link">Organizational Units</a></li>
+      <li><a href="#step-users" class="sub-link">Domain user accounts</a></li>
+      <li><a href="#step-users" class="sub-link">Security groups</a></li>
+
+      <li><span class="nav-section-title">Part 6 – Verify</span></li>
+      <li><a href="#step-verify">Verification &amp; Screenshots</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#next-steps">Next Steps</a></li>
+    </ul>
+  </nav>
+</aside>
+
+<button id="sidebar-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main id="main-content">
+
+  <!-- HERO -->
+  <header class="page-hero">
+    <span class="badge">CSC 152 · Network OS and Administration</span>
+    <h1>Windows Server: Active Directory, DNS &amp; DHCP</h1>
+    <p class="subtitle">Configure Windows Server 2022 as the TechStart Solutions domain controller — providing Active Directory authentication, internal DNS for techstart.local, and coordinated DHCP with pfSense.</p>
+    <div class="hero-meta">
+      <span class="meta-chip"><span class="chip-icon">📋</span> Project 2 – Parts B &amp; C</span>
+      <span class="meta-chip"><span class="chip-icon">⏱️</span> Est. 60–90 minutes</span>
+      <span class="meta-chip"><span class="chip-icon">🪟</span> Windows Server 2022</span>
+      <span class="meta-chip"><span class="chip-icon">🌐</span> techstart.local domain</span>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       OVERVIEW
+       ============================================================ -->
+  <section class="tutorial-section" id="overview">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="true" aria-controls="overview-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">★</div>
+        <h2>Introduction &amp; Role in Project 2</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body" id="overview-body">
+      <div class="section-intro">
+        <strong>What this tutorial builds:</strong> Windows Server 2022 is promoted to the domain controller for <strong>techstart.local</strong>. It hosts Active Directory Domain Services (AD DS), the authoritative DNS server for the internal zone, and a coordinated DHCP setup with pfSense. Your Linux client VM will be able to resolve internal hostnames and optionally join the domain.
+      </div>
+
+      <h3>How the Services Fit Together</h3>
+      <p>The three services configured in this tutorial work together as a chain. Understanding the flow before you begin will help you troubleshoot if something doesn't work.</p>
+
+      <div class="diagram-block" role="img" aria-label="Service chain showing pfSense forwarding to Windows DNS which manages techstart.local zone">
+<pre>  CLIENT VM (10.0.3.x)
+       │
+       │  DNS query: "linux.techstart.local?"
+       ▼
+  pfSense CLIENTS interface (10.0.3.1)
+       │  DHCP option: DNS server = 10.0.2.11
+       │  Routes DNS queries to Windows Server
+       ▼
+  Windows Server DC01 (10.0.2.11)
+  ┌────────────────────────────────────────┐
+  │  Active Directory Domain Services       │
+  │  Domain: techstart.local               │
+  │                                        │
+  │  DNS Server (role)                     │
+  │  ├─ Zone: techstart.local (primary)    │
+  │  │   ├─ dc01.techstart.local → .11     │
+  │  │   ├─ linux.techstart.local → .10    │
+  │  │   └─ pfsense.techstart.local → .1   │
+  │  └─ Forwarder: 8.8.8.8 / 1.1.1.1      │
+  │     (for external names like google.com)│
+  └────────────────────────────────────────┘
+       │
+       │  External query: "google.com?" → forwards to 8.8.8.8</pre>
+      </div>
+
+      <h3>What Project 2 Requires from Windows Server</h3>
+      <div class="config-table-wrap">
+        <table>
+          <caption style="text-align:left;padding:0 0 8px;font-size:.8rem;color:var(--text-muted);">Table 1: Windows Server Project 2 Deliverables</caption>
+          <thead>
+            <tr><th>Project Part</th><th>Deliverable</th><th>What to Configure</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Part B.2</strong></td><td>DNS Server</td><td>Install DNS role (via AD DS), create techstart.local zone, add A records for all servers, configure forwarder to pfSense</td></tr>
+            <tr><td><strong>Part C</strong></td><td>Active Directory</td><td>Promote server to domain controller, create forest techstart.local, create OUs, create domain user accounts</td></tr>
+            <tr><td><strong>Part B.1 (coordination)</strong></td><td>DHCP handoff</td><td>pfSense handles DHCP for the CLIENTS network; Windows Server DHCP role is <em>not</em> needed — see the DHCP section below</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Prerequisites</h3>
+      <ul class="checklist">
+        <li>Windows Server 2022 VM is running on <code>vmbr2</code> (SERVERS network) with static IP <code>10.0.2.11</code> — completed in pfSense tutorial Part B.3</li>
+        <li>pfSense is fully configured and operational — CLIENTS DHCP range active, firewall rules in place</li>
+        <li>Windows Server can reach the internet: open PowerShell and run <code>ping 8.8.8.8</code> — should succeed</li>
+        <li>You can access the Proxmox console for the Windows Server VM</li>
+        <li>Hostname is currently set to something other than <code>DC01</code> — we will rename it in Step 1</li>
+      </ul>
+
+      <h3>Server Addressing Reference</h3>
+      <div class="config-table-wrap">
+        <table>
+          <caption style="text-align:left;padding:0 0 8px;font-size:.8rem;color:var(--text-muted);">Table 2: Project 2 Windows Server Network Settings</caption>
+          <thead>
+            <tr><th>Setting</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>IP Address</strong></td><td><code>10.0.2.11</code></td></tr>
+            <tr><td><strong>Subnet Mask</strong></td><td><code>255.255.255.0</code> (/24)</td></tr>
+            <tr><td><strong>Default Gateway</strong></td><td><code>10.0.2.1</code> (pfSense SERVERS interface)</td></tr>
+            <tr><td><strong>DNS Server (own)</strong></td><td><code>127.0.0.1</code> — points to itself after DNS role is installed</td></tr>
+            <tr><td><strong>Hostname</strong></td><td><code>DC01</code></td></tr>
+            <tr><td><strong>Domain</strong></td><td><code>techstart.local</code></td></tr>
+            <tr><td><strong>FQDN</strong></td><td><code>dc01.techstart.local</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRESS TRACKER -->
+  <section id="progress-section">
+    <h2>📋 Windows Server Configuration Progress Tracker</h2>
+    <p class="section-desc">Check off each step as you complete it. Progress is saved for your browser session.</p>
+    <div class="progress-grid" role="group" aria-label="Task completion checklist">
+      <div class="progress-item"><input type="checkbox" id="t1" onchange="updateChecks()"><label for="t1">Verify static IP 10.0.2.11 is set</label></div>
+      <div class="progress-item"><input type="checkbox" id="t2" onchange="updateChecks()"><label for="t2">Rename server to DC01</label></div>
+      <div class="progress-item"><input type="checkbox" id="t3" onchange="updateChecks()"><label for="t3">Reboot after rename</label></div>
+      <div class="progress-item"><input type="checkbox" id="t4" onchange="updateChecks()"><label for="t4">Install AD DS role via Server Manager</label></div>
+      <div class="progress-item"><input type="checkbox" id="t5" onchange="updateChecks()"><label for="t5">Install DNS Server role (included with AD DS)</label></div>
+      <div class="progress-item"><input type="checkbox" id="t6" onchange="updateChecks()"><label for="t6">Promote server: Add a new Forest</label></div>
+      <div class="progress-item"><input type="checkbox" id="t7" onchange="updateChecks()"><label for="t7">Forest root domain: techstart.local</label></div>
+      <div class="progress-item"><input type="checkbox" id="t8" onchange="updateChecks()"><label for="t8">Set DSRM password</label></div>
+      <div class="progress-item"><input type="checkbox" id="t9" onchange="updateChecks()"><label for="t9">Promotion complete – server rebooted</label></div>
+      <div class="progress-item"><input type="checkbox" id="t10" onchange="updateChecks()"><label for="t10">Logged in as TECHSTART\Administrator</label></div>
+      <div class="progress-item"><input type="checkbox" id="t11" onchange="updateChecks()"><label for="t11">DNS zone techstart.local confirmed</label></div>
+      <div class="progress-item"><input type="checkbox" id="t12" onchange="updateChecks()"><label for="t12">A record: linux.techstart.local → 10.0.2.10</label></div>
+      <div class="progress-item"><input type="checkbox" id="t13" onchange="updateChecks()"><label for="t13">A record: pfsense.techstart.local → 10.0.2.1</label></div>
+      <div class="progress-item"><input type="checkbox" id="t14" onchange="updateChecks()"><label for="t14">DNS forwarder set to 8.8.8.8 / 1.1.1.1</label></div>
+      <div class="progress-item"><input type="checkbox" id="t15" onchange="updateChecks()"><label for="t15">pfSense DHCP DNS option updated to 10.0.2.11</label></div>
+      <div class="progress-item"><input type="checkbox" id="t16" onchange="updateChecks()"><label for="t16">OU: TechStart created</label></div>
+      <div class="progress-item"><input type="checkbox" id="t17" onchange="updateChecks()"><label for="t17">OU: IT_Admins created under TechStart</label></div>
+      <div class="progress-item"><input type="checkbox" id="t18" onchange="updateChecks()"><label for="t18">OU: Employees created under TechStart</label></div>
+      <div class="progress-item"><input type="checkbox" id="t19" onchange="updateChecks()"><label for="t19">Domain admin user created</label></div>
+      <div class="progress-item"><input type="checkbox" id="t20" onchange="updateChecks()"><label for="t20">Standard user accounts created (min. 3)</label></div>
+      <div class="progress-item"><input type="checkbox" id="t21" onchange="updateChecks()"><label for="t21">nslookup dc01.techstart.local resolves from client</label></div>
+      <div class="progress-item"><input type="checkbox" id="t22" onchange="updateChecks()"><label for="t22">nslookup linux.techstart.local resolves from client</label></div>
+      <div class="progress-item"><input type="checkbox" id="t23" onchange="updateChecks()"><label for="t23">External name resolution working (google.com)</label></div>
+      <div class="progress-item"><input type="checkbox" id="t24" onchange="updateChecks()"><label for="t24">All required screenshots captured</label></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 1 – PREPARE WINDOWS SERVER
+       ============================================================ -->
+  <section class="tutorial-section" id="step-prep">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="prep-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">1</div>
+        <h2>Prepare Windows Server</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="prep-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Before installing Active Directory, verify the server has a static IP address and rename the computer to <strong>DC01</strong>. Active Directory is very particular about the server name — it gets embedded into the domain metadata and is difficult to change afterward.
+      </div>
+
+      <h3>Verify Static IP Address</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Confirm IP Configuration in PowerShell</h4>
+            <p>Open <strong>PowerShell</strong> (right-click the Start button → <strong>Windows PowerShell</strong>) and run:</p>
+            <div class="code-block">
+              <div class="code-label">PowerShell – Verify IP configuration
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>Get-NetIPConfiguration</code></pre>
+            </div>
+            <p>Confirm the output shows:</p>
+            <ul>
+              <li>IPv4 Address: <code>10.0.2.11</code></li>
+              <li>IPv4 Default Gateway: <code>10.0.2.1</code></li>
+            </ul>
+            <p>If these were set in the pfSense tutorial Part B.3, you are ready. If not, set them now via <strong>Network and Sharing Center</strong> → adapter settings → IPv4 properties before continuing.</p>
+            <div class="callout callout-warn">
+              <span class="callout-icon" aria-hidden="true">⚠️</span>
+              <div class="callout-body">
+                <strong>Do NOT proceed with DHCP enabled on this adapter</strong>
+                <p>Active Directory domain controllers must have a static IP address. A DHCP-assigned address can change on reboot, breaking DNS and authentication for all domain members. Verify the IP is static before continuing.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Set DNS to Point to Itself (127.0.0.1)</h4>
+            <p>After AD DS is installed, this server will be its own DNS server. Set that up now so DNS works correctly during and after promotion.</p>
+            <div class="code-block">
+              <div class="code-label">PowerShell – Set DNS server to loopback
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code># Find your network adapter name first
+Get-NetAdapter
+
+# Set DNS (replace "Ethernet0" with your adapter name)
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" `
+    -ServerAddresses ("127.0.0.1","8.8.8.8")</code></pre>
+            </div>
+            <div class="callout callout-tip">
+              <span class="callout-icon" aria-hidden="true">💡</span>
+              <div class="callout-body">
+                <strong>Why 127.0.0.1 first?</strong>
+                <p>Setting the DNS server to its own loopback address tells Windows to use the DNS Server role running locally. The secondary <code>8.8.8.8</code> provides a fallback for external resolution during the brief window before the DNS forwarder is configured.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Rename the Server to DC01</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Rename Using PowerShell (Fastest Method)</h4>
+            <div class="code-block">
+              <div class="code-label">PowerShell – Rename computer
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>Rename-Computer -NewName "DC01" -Restart</code></pre>
+            </div>
+            <p>The server will reboot automatically to apply the new name. Wait for it to restart and log back in as <strong>Administrator</strong> before continuing.</p>
+            <p>Alternatively, via GUI: right-click <strong>Start</strong> → <strong>System</strong> → <strong>Rename this PC</strong> → enter <code>DC01</code> → <strong>Restart Now</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Verify the New Name After Reboot</h4>
+            <div class="code-block">
+              <div class="code-label">PowerShell – Confirm hostname
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>hostname</code></pre>
+            </div>
+            <p>Output should be <code>DC01</code>. Server Manager also shows the hostname in the top-left header.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-success">
+        <span class="callout-icon" aria-hidden="true">✅</span>
+        <div class="callout-body">
+          <strong>📸 Screenshot Required (Part B.3 verification)</strong>
+          <p>Take a screenshot of <code>Get-NetIPConfiguration</code> output confirming IP <code>10.0.2.11</code>, gateway <code>10.0.2.1</code>, and hostname <code>DC01</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 2 – INSTALL AD DS ROLE
+       ============================================================ -->
+  <section class="tutorial-section" id="step-adds">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="adds-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">2</div>
+        <h2>Install Active Directory Domain Services Role</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="adds-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Install the <strong>Active Directory Domain Services</strong> and <strong>DNS Server</strong> roles using Server Manager's Add Roles and Features wizard. Installing the role does <em>not</em> yet make this server a domain controller — that happens in the next step (promotion).
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon" aria-hidden="true">ℹ️</span>
+        <div class="callout-body">
+          <strong>Proxmox Console Note</strong>
+          <p>You are working inside the VM through the Proxmox web console. The <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Delete</kbd> shortcut is intercepted by your browser. To send it to the VM, use the <strong>Send Key</strong> button in the Proxmox console toolbar, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>End</kbd> as a substitute.</p>
+        </div>
+      </div>
+
+      <h3>Install via Server Manager GUI</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Open Add Roles and Features</h4>
+            <p>In <strong>Server Manager</strong>, click <strong>Manage</strong> (top-right) → <strong>Add Roles and Features</strong>. The wizard opens.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Before You Begin</h4>
+            <p>Click <strong>Next</strong> past the informational page.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Installation Type</h4>
+            <p>Select <strong>Role-based or feature-based installation</strong>. Click <strong>Next</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Server Selection</h4>
+            <p>Your server <strong>DC01</strong> should be selected from the pool. Click <strong>Next</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">5</div>
+          <div class="step-content">
+            <h4>Server Roles — Select AD DS</h4>
+            <p>In the <strong>Server Roles</strong> list, check:</p>
+            <ul>
+              <li><strong>Active Directory Domain Services</strong></li>
+            </ul>
+            <p>When prompted, click <strong>Add Features</strong> to include the required management tools. DNS Server is <em>automatically</em> offered when you promote the server — you do not need to check it separately here.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">6</div>
+          <div class="step-content">
+            <h4>Features</h4>
+            <p>Leave default selections. Click <strong>Next</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">7</div>
+          <div class="step-content">
+            <h4>AD DS Information Page</h4>
+            <p>Read the informational notes about AD DS. Click <strong>Next</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">8</div>
+          <div class="step-content">
+            <h4>Confirmation — Install</h4>
+            <p>Review the summary and click <strong>Install</strong>. Installation takes 3–5 minutes. <strong>Do not close the wizard</strong> — or click <strong>Close</strong> after install starts; the process continues in the background.</p>
+            <div class="callout callout-tip">
+              <span class="callout-icon" aria-hidden="true">💡</span>
+              <div class="callout-body">
+                <strong>Do not restart yet</strong>
+                <p>The wizard will show a "Promote this server to a domain controller" link when the role install completes. Click that link directly to proceed to Step 3 — no reboot is needed between role installation and promotion.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Alternative: Install via PowerShell</h3>
+      <p>If you prefer the command line, the following single command installs AD DS and all management tools:</p>
+      <div class="code-block">
+        <div class="code-label">PowerShell – Install AD DS role
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code>Install-WindowsFeature -Name AD-Domain-Services `
+    -IncludeManagementTools</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 3 – PROMOTE TO DOMAIN CONTROLLER
+       ============================================================ -->
+  <section class="tutorial-section" id="step-promote">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="promote-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">3</div>
+        <h2>Promote Server to Domain Controller</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="promote-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Run the AD Domain Services Configuration Wizard to create the <strong>techstart.local</strong> Active Directory forest and promote this server to Domain Controller. This also installs and configures the DNS Server role automatically for the new domain.
+      </div>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon" aria-hidden="true">⚠️</span>
+        <div class="callout-body">
+          <strong>The domain name cannot easily be changed after this step</strong>
+          <p>Enter <code>techstart.local</code> exactly as shown. The domain name is embedded throughout Active Directory and DNS. Changing it later requires rebuilding the domain from scratch.</p>
+        </div>
+      </div>
+
+      <h3>Launch the Promotion Wizard</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Open the Post-Deployment Notification</h4>
+            <p>In Server Manager, click the <strong>flag icon</strong> (⚑) in the top-right toolbar. A notification appears: <em>"Configuration required for Active Directory Domain Services at DC01."</em> Click <strong>Promote this server to a domain controller</strong>.</p>
+            <div class="callout callout-info">
+              <span class="callout-icon" aria-hidden="true">ℹ️</span>
+              <div class="callout-body">
+                <strong>Can't see the flag notification?</strong>
+                <p>If you closed the wizard, open PowerShell and run: <code>dcpromo.exe</code> — or go to <strong>Server Manager → Tools → Active Directory Domain Services Configuration Wizard</strong>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Wizard Steps</h3>
+      <p>The wizard has 7 screens. Work through each carefully.</p>
+
+      <div class="wizard-step">
+        <span class="wizard-step-label">Screen 1</span>
+        <div class="wizard-step-body">
+          <p><strong>Deployment Configuration</strong> — Select <strong>Add a new forest</strong>. In the <strong>Root domain name</strong> field enter exactly: <code>techstart.local</code>. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="wizard-step">
+        <span class="wizard-step-label">Screen 2</span>
+        <div class="wizard-step-body">
+          <p><strong>Domain Controller Options</strong> — Leave defaults (Windows Server 2016 functional level, DNS Server ☑ checked, Global Catalog ☑ checked). Set a <strong>Directory Services Restore Mode (DSRM) password</strong> — document this somewhere safe; it is used for AD recovery. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="wizard-step">
+        <span class="wizard-step-label">Screen 3</span>
+        <div class="wizard-step-body">
+          <p><strong>DNS Options</strong> — You will see a warning: <em>"A delegation for this DNS server cannot be created because the authoritative parent zone cannot be found."</em> This is expected and normal for an internal-only domain. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="wizard-step">
+        <span class="wizard-step-label">Screen 4</span>
+        <div class="wizard-step-body">
+          <p><strong>Additional Options</strong> — The <strong>NetBIOS domain name</strong> is automatically populated as <code>TECHSTART</code>. Leave it as-is. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="wizard-step">
+        <span class="wizard-step-label">Screen 5</span>
+        <div class="wizard-step-body">
+          <p><strong>Paths</strong> — Leave all default storage paths (AD database, log files, SYSVOL). Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="wizard-step">
+        <span class="wizard-step-label">Screen 6</span>
+        <div class="wizard-step-body">
+          <p><strong>Review Options</strong> — Review the summary. You can optionally click <strong>View Script</strong> to see the equivalent PowerShell command. Click <strong>Next</strong>.</p>
+        </div>
+      </div>
+
+      <div class="wizard-step">
+        <span class="wizard-step-label">Screen 7</span>
+        <div class="wizard-step-body">
+          <p><strong>Prerequisites Check</strong> — The wizard runs a pre-flight check. You will see one or more warnings (these are normal for a lab environment). As long as there are no red <em>errors</em>, click <strong>Install</strong>.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon" aria-hidden="true">ℹ️</span>
+        <div class="callout-body">
+          <strong>The server will reboot automatically when promotion completes</strong>
+          <p>This is expected. The promotion process takes 3–8 minutes. After the reboot, the login screen will show <strong>TECHSTART\Administrator</strong> — confirming the server is now a domain controller.</p>
+        </div>
+      </div>
+
+      <h3>After Reboot — Verify Promotion</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Log In as TECHSTART\Administrator</h4>
+            <p>At the login screen you will see the domain prefix. Log in with the same Administrator password you set during Windows Server installation. The username format is now <code>TECHSTART\Administrator</code> or <code>administrator@techstart.local</code>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Verify Domain Controller Status</h4>
+            <div class="code-block">
+              <div class="code-label">PowerShell – Verify domain controller
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code># Confirm this server is a domain controller
+Get-ADDomainController
+
+# Confirm the domain name
+Get-ADDomain | Select-Object DNSRoot, NetBIOSName, DomainMode</code></pre>
+            </div>
+            <p>Expected output: <code>DNSRoot: techstart.local</code>, <code>NetBIOSName: TECHSTART</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-success">
+        <span class="callout-icon" aria-hidden="true">✅</span>
+        <div class="callout-body">
+          <strong>📸 Screenshots Required (Part C)</strong>
+          <ul>
+            <li>Login screen showing <strong>TECHSTART\Administrator</strong> domain prefix</li>
+            <li>Server Manager Dashboard showing AD DS and DNS in the left panel</li>
+            <li>PowerShell output of <code>Get-ADDomain</code> showing <code>techstart.local</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 4 – DNS SERVER
+       ============================================================ -->
+  <section class="tutorial-section" id="step-dns">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="dns-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">4</div>
+        <h2>Configure DNS Server</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="dns-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Configure the DNS Server role (installed automatically with AD DS) to serve the <strong>techstart.local</strong> forward lookup zone, add A records for all Project 2 servers, and set up a forwarder to 8.8.8.8 so that external names resolve properly.
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon" aria-hidden="true">💡</span>
+        <div class="callout-body">
+          <strong>The zone already exists — AD DS created it</strong>
+          <p>When you promoted the server, the DNS role was installed and a primary zone for <code>techstart.local</code> was automatically created. You will also see an A record for <code>dc01.techstart.local</code> already present. Your task is to add the remaining records and configure the forwarder.</p>
+        </div>
+      </div>
+
+      <h3>Open DNS Manager</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Open DNS Manager</h4>
+            <p>In Server Manager, click <strong>Tools</strong> (top-right menu) → <strong>DNS</strong>. The DNS Manager console opens.</p>
+            <p>In the left panel you will see: <strong>DC01</strong> → <strong>Forward Lookup Zones</strong> → <strong>techstart.local</strong>. Click on <code>techstart.local</code> to see existing records on the right.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Verify Auto-Created Records</h3>
+      <p>AD DS automatically created several records. Confirm these exist in the <code>techstart.local</code> zone:</p>
+      <div class="config-table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Created By</th></tr></thead>
+          <tbody>
+            <tr><td><code>dc01</code></td><td>A</td><td><code>10.0.2.11</code></td><td>AD DS (automatic)</td></tr>
+            <tr><td><code>_msdcs</code></td><td>NS / SRV</td><td>Various service records</td><td>AD DS (automatic)</td></tr>
+            <tr><td>(same as parent)</td><td>NS</td><td><code>dc01.techstart.local</code></td><td>AD DS (automatic)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Add A Records for Project 2 Servers</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Add A Record for Linux Server</h4>
+            <p>Right-click on <strong>techstart.local</strong> in DNS Manager → <strong>New Host (A or AAAA)…</strong>. Fill in:</p>
+            <div class="config-table-wrap">
+              <table>
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Name</strong></td><td><code>linux</code></td></tr>
+                  <tr><td><strong>IP Address</strong></td><td><code>10.0.2.10</code></td></tr>
+                  <tr><td><strong>Create PTR record</strong></td><td>☑ Check if desired</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Click <strong>Add Host</strong> → <strong>OK</strong>. You should see a success message and the new record appears: <code>linux.techstart.local → 10.0.2.10</code>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Add A Record for pfSense Gateway</h4>
+            <p>Right-click <strong>techstart.local</strong> → <strong>New Host (A or AAAA)…</strong>.</p>
+            <div class="config-table-wrap">
+              <table>
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Name</strong></td><td><code>pfsense</code></td></tr>
+                  <tr><td><strong>IP Address</strong></td><td><code>10.0.2.1</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Click <strong>Add Host</strong> → <strong>OK</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Add A Record for Windows Server (if not present)</h4>
+            <p>Verify <code>dc01.techstart.local → 10.0.2.11</code> already exists from AD promotion. If it shows a different IP or is missing, add it the same way.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Add Records via PowerShell (Alternative)</h3>
+      <div class="code-block">
+        <div class="code-label">PowerShell – Add all DNS A records at once
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Add Linux Server record
+Add-DnsServerResourceRecordA -ZoneName "techstart.local" `
+    -Name "linux" -IPv4Address "10.0.2.10"
+
+# Add pfSense record
+Add-DnsServerResourceRecordA -ZoneName "techstart.local" `
+    -Name "pfsense" -IPv4Address "10.0.2.1"
+
+# Verify all records in the zone
+Get-DnsServerResourceRecord -ZoneName "techstart.local" -RRType A</code></pre>
+      </div>
+
+      <h3>Configure DNS Forwarder</h3>
+      <p>The forwarder tells this DNS server where to send queries for names it cannot resolve from its own zones (i.e., anything outside <code>techstart.local</code>, like <code>google.com</code>).</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">5</div>
+          <div class="step-content">
+            <h4>Add Forwarders in DNS Manager</h4>
+            <p>In DNS Manager, right-click <strong>DC01</strong> (the server root, not the zone) → <strong>Properties</strong>. Click the <strong>Forwarders</strong> tab → <strong>Edit</strong>.</p>
+            <p>Add each of the following IP addresses, pressing <kbd>Enter</kbd> after each:</p>
+            <div class="config-table-wrap">
+              <table>
+                <thead><tr><th>Forwarder IP</th><th>Provider</th><th>Purpose</th></tr></thead>
+                <tbody>
+                  <tr><td><code>8.8.8.8</code></td><td>Google</td><td>Primary external DNS</td></tr>
+                  <tr><td><code>1.1.1.1</code></td><td>Cloudflare</td><td>Secondary external DNS</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Click <strong>OK</strong> → <strong>Apply</strong> → <strong>OK</strong>.</p>
+            <div class="callout callout-info">
+              <span class="callout-icon" aria-hidden="true">ℹ️</span>
+              <div class="callout-body">
+                <strong>Why not forward to pfSense (10.0.2.1)?</strong>
+                <p>You could forward to pfSense instead of directly to 8.8.8.8. Either works. Forwarding directly to a public resolver is simpler and slightly faster for a lab. If you want to route all DNS through pfSense for logging/filtering, use <code>10.0.2.1</code> as your forwarder instead.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Update pfSense DHCP to Use This DNS Server</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">6</div>
+          <div class="step-content">
+            <h4>Update pfSense DHCP DNS Option</h4>
+            <p>Now that the Windows Server DNS is configured, update pfSense to hand out <code>10.0.2.11</code> (Windows Server) as the DNS server to CLIENTS via DHCP.</p>
+            <p>In pfSense web GUI: <strong>Services</strong> → <strong>DHCP Server</strong> → <strong>CLIENTS</strong> tab. In the <strong>DNS Servers</strong> field change the value to <code>10.0.2.11</code>. Click <strong>Save</strong> → <strong>Apply Changes</strong>.</p>
+            <p>On the Linux Client VM, renew the DHCP lease to pick up the new DNS server:</p>
+            <div class="code-block">
+              <div class="code-label">Bash (Linux Client) – Renew DHCP lease
+                <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+              </div>
+              <pre><code>sudo dhclient -r ens18 && sudo dhclient ens18
+resolvectl status | grep "DNS Servers"</code></pre>
+            </div>
+            <p>The DNS Server should now show <code>10.0.2.11</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Verify DNS from the Linux Client</h3>
+      <div class="code-block">
+        <div class="code-label">Bash (Linux Client) – DNS verification tests
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Resolve Windows Server (DC01)
+nslookup dc01.techstart.local
+
+# Resolve Linux Server
+nslookup linux.techstart.local
+
+# Resolve pfSense
+nslookup pfsense.techstart.local
+
+# External resolution (uses forwarder)
+nslookup google.com
+
+# Detailed resolution showing which server answered
+dig dc01.techstart.local</code></pre>
+      </div>
+      <p><strong>Expected:</strong> All internal names resolve to their correct <code>10.0.2.x</code> addresses. <code>google.com</code> resolves to a public IP. The <code>dig</code> output should show the answer came from <code>10.0.2.11</code>.</p>
+
+      <div class="callout callout-success">
+        <span class="callout-icon" aria-hidden="true">✅</span>
+        <div class="callout-body">
+          <strong>📸 Screenshots Required (Part B.2)</strong>
+          <ul>
+            <li>DNS Manager showing techstart.local zone with all A records</li>
+            <li>Forwarders tab showing 8.8.8.8 and 1.1.1.1</li>
+            <li><code>nslookup dc01.techstart.local</code> output from Linux client showing <code>10.0.2.11</code></li>
+            <li><code>nslookup linux.techstart.local</code> output showing <code>10.0.2.10</code></li>
+            <li><code>nslookup google.com</code> resolving successfully (forwarder works)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 5 – DHCP NOTE
+       ============================================================ -->
+  <section class="tutorial-section" id="step-dhcp-note">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="dhcp-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">5</div>
+        <h2>DHCP: pfSense vs. Windows Server</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="dhcp-body">
+      <div class="section-intro">
+        <strong>Decision point:</strong> Project 2 uses pfSense to provide DHCP for the CLIENTS network. This section explains that design choice and what Windows Server's DHCP role would look like — for reference and for understanding how AD-integrated DHCP works in production.
+      </div>
+
+      <h3>Why pfSense Handles DHCP in This Project</h3>
+      <p>In a real enterprise, either the domain controller or a dedicated DHCP server typically provides DHCP. In Project 2, <strong>pfSense handles DHCP for the CLIENTS network (10.0.3.0/24)</strong> for several reasons:</p>
+      <ul>
+        <li>pfSense's DHCP server is already configured and functional from Part B.1</li>
+        <li>It avoids a DHCP conflict between two servers on the same segment</li>
+        <li>It demonstrates network-layer DHCP (router-based) vs. server-based DHCP — both are common in real networks</li>
+        <li>The SERVERS network (10.0.2.0/24) where Windows Server lives uses static IPs, so no DHCP is needed there</li>
+      </ul>
+
+      <div class="callout callout-info">
+        <span class="callout-icon" aria-hidden="true">ℹ️</span>
+        <div class="callout-body">
+          <strong>You do NOT need to install Windows Server DHCP for Project 2</strong>
+          <p>The DHCP role on Windows Server is not required to satisfy any Project 2 deliverable. pfSense is already handling DHCP for the CLIENTS network. Installing a second DHCP server on the same network segment would create IP address conflicts.</p>
+        </div>
+      </div>
+
+      <h3>How Windows Server DHCP Would Integrate with AD (Reference)</h3>
+      <p>In production environments, Windows Server DHCP integrates tightly with Active Directory through <strong>DHCP Failover</strong>, <strong>Dynamic DNS Updates</strong>, and <strong>DHCP Authorization</strong>. Key concepts:</p>
+
+      <div class="config-table-wrap">
+        <table>
+          <caption style="text-align:left;padding:0 0 8px;font-size:.8rem;color:var(--text-muted);">Table 3: Windows DHCP + AD Integration Features (Reference)</caption>
+          <thead><tr><th>Feature</th><th>What It Does</th><th>Relevance to Project 2</th></tr></thead>
+          <tbody>
+            <tr><td><strong>DHCP Authorization</strong></td><td>AD requires DHCP servers to be authorized before they can hand out leases — prevents rogue DHCP servers</td><td>Not needed; pfSense is the DHCP server and is not AD-aware</td></tr>
+            <tr><td><strong>Dynamic DNS Update</strong></td><td>Windows DHCP automatically adds/removes A records in DNS when leases are assigned</td><td>Not used; you manually create DNS A records in this project</td></tr>
+            <tr><td><strong>DHCP Failover</strong></td><td>Two Windows DHCP servers share a scope for redundancy</td><td>Not needed in a single-server lab</td></tr>
+            <tr><td><strong>DHCP Scope Options</strong></td><td>Like pfSense, can distribute DNS server, gateway, domain name via DHCP</td><td>pfSense handles this for CLIENTS network</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon" aria-hidden="true">💡</span>
+        <div class="callout-body">
+          <strong>Want to explore Windows DHCP?</strong>
+          <p>If you'd like to see how Windows Server DHCP works, you can install the role on your Windows Server and configure a scope for a different subnet — just make sure it doesn't overlap with pfSense's CLIENTS range (10.0.3.100–200). This won't conflict as long as the Windows DHCP scope is for a range not served by pfSense.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 6 – USERS AND OUs
+       ============================================================ -->
+  <section class="tutorial-section" id="step-users">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="users-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">6</div>
+        <h2>Create Organizational Units and Domain Users</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="users-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Organize the TechStart Solutions domain by creating <strong>Organizational Units (OUs)</strong> that mirror the company structure, then create <strong>domain user accounts</strong> and place them in the appropriate OUs. This satisfies Part C of Project 2.
+      </div>
+
+      <h3>Open Active Directory Users and Computers</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">1</div>
+          <div class="step-content">
+            <h4>Open ADUC Console</h4>
+            <p>In Server Manager: <strong>Tools</strong> → <strong>Active Directory Users and Computers</strong>. The ADUC console opens. In the left panel expand <strong>techstart.local</strong> to see the default containers.</p>
+            <div class="callout callout-tip">
+              <span class="callout-icon" aria-hidden="true">💡</span>
+              <div class="callout-body">
+                <strong>Shortcut</strong>
+                <p>Press <kbd>Win</kbd>+<kbd>R</kbd> → type <code>dsa.msc</code> → press <kbd>Enter</kbd> to open Active Directory Users and Computers directly.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Create Organizational Units</h3>
+      <p>OUs allow you to organize AD objects (users, computers, groups) into a logical hierarchy that mirrors your organization and can have Group Policy applied to them.</p>
+
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">2</div>
+          <div class="step-content">
+            <h4>Create the Top-Level TechStart OU</h4>
+            <p>Right-click <strong>techstart.local</strong> (the domain root) → <strong>New</strong> → <strong>Organizational Unit</strong>. Enter name: <code>TechStart</code>. Leave <em>"Protect container from accidental deletion"</em> checked. Click <strong>OK</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">3</div>
+          <div class="step-content">
+            <h4>Create Sub-OUs Inside TechStart</h4>
+            <p>Right-click the <strong>TechStart</strong> OU → <strong>New</strong> → <strong>Organizational Unit</strong>. Create the following sub-OUs:</p>
+            <div class="config-table-wrap">
+              <table>
+                <thead><tr><th>OU Name</th><th>Purpose</th></tr></thead>
+                <tbody>
+                  <tr><td><code>IT_Admins</code></td><td>IT administration accounts with elevated privileges</td></tr>
+                  <tr><td><code>Employees</code></td><td>Standard employee user accounts</td></tr>
+                  <tr><td><code>Computers</code></td><td>Domain-joined computer accounts (optional)</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Create a Domain Admin Account</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">4</div>
+          <div class="step-content">
+            <h4>Create the IT Admin User</h4>
+            <p>Right-click the <strong>IT_Admins</strong> OU → <strong>New</strong> → <strong>User</strong>. Fill in:</p>
+            <div class="config-table-wrap">
+              <table>
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>First Name</strong></td><td><code>TechStart</code></td></tr>
+                  <tr><td><strong>Last Name</strong></td><td><code>Admin</code></td></tr>
+                  <tr><td><strong>User logon name</strong></td><td><code>ts.admin</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Click <strong>Next</strong>. Set a password. Uncheck <em>"User must change password at next logon"</em>, check <em>"Password never expires"</em>. Click <strong>Next</strong> → <strong>Finish</strong>.</p>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">5</div>
+          <div class="step-content">
+            <h4>Add ts.admin to Domain Admins Group</h4>
+            <p>In ADUC, navigate to <strong>techstart.local</strong> → <strong>Users</strong> built-in container. Double-click <strong>Domain Admins</strong>. On the <strong>Members</strong> tab, click <strong>Add</strong>. Type <code>ts.admin</code>, click <strong>Check Names</strong> → <strong>OK</strong>. Click <strong>Apply</strong> → <strong>OK</strong>.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Create Standard Employee Users</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">6</div>
+          <div class="step-content">
+            <h4>Create Users in the Employees OU</h4>
+            <p>Create at least three employee accounts representing TechStart Solutions staff. Right-click <strong>Employees</strong> OU → <strong>New</strong> → <strong>User</strong> for each. Suggested accounts:</p>
+            <div class="config-table-wrap">
+              <table>
+                <thead><tr><th>First Name</th><th>Last Name</th><th>Logon Name</th><th>Role</th></tr></thead>
+                <tbody>
+                  <tr><td>John</td><td>Smith</td><td><code>john.smith</code></td><td>Developer</td></tr>
+                  <tr><td>Maria</td><td>Garcia</td><td><code>maria.garcia</code></td><td>Operations</td></tr>
+                  <tr><td>David</td><td>Lee</td><td><code>david.lee</code></td><td>Finance</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>For each user: set a password, check <strong>"User cannot change password"</strong> and <strong>"Password never expires"</strong>. Click <strong>Next</strong> → <strong>Finish</strong>.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Create Security Groups</h3>
+      <div class="step-list">
+        <div class="step-card">
+          <div class="step-number" aria-hidden="true">7</div>
+          <div class="step-content">
+            <h4>Create an IT_Admins Security Group</h4>
+            <p>Right-click the <strong>IT_Admins</strong> OU → <strong>New</strong> → <strong>Group</strong>. Set:</p>
+            <div class="config-table-wrap">
+              <table>
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Group name</strong></td><td><code>IT_Admins</code></td></tr>
+                  <tr><td><strong>Group scope</strong></td><td>Global</td></tr>
+                  <tr><td><strong>Group type</strong></td><td>Security</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Click <strong>OK</strong>. Then double-click the new group → <strong>Members</strong> tab → <strong>Add</strong> → add <code>ts.admin</code> → <strong>OK</strong>.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Verify via PowerShell</h3>
+      <div class="code-block">
+        <div class="code-label">PowerShell – Verify OUs and users
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># List all OUs
+Get-ADOrganizationalUnit -Filter * | Select-Object Name, DistinguishedName
+
+# List all domain users (non-system)
+Get-ADUser -Filter * -SearchBase "OU=TechStart,DC=techstart,DC=local" |
+    Select-Object Name, SamAccountName, Enabled
+
+# Verify ts.admin is in Domain Admins
+Get-ADGroupMember -Identity "Domain Admins" |
+    Select-Object Name, SamAccountName</code></pre>
+      </div>
+
+      <div class="callout callout-success">
+        <span class="callout-icon" aria-hidden="true">✅</span>
+        <div class="callout-body">
+          <strong>📸 Screenshots Required (Part C)</strong>
+          <ul>
+            <li>ADUC tree expanded showing TechStart OU with sub-OUs (IT_Admins, Employees)</li>
+            <li>Employees OU open showing all user accounts</li>
+            <li>Domain Admins group Members tab showing ts.admin</li>
+            <li>PowerShell output of <code>Get-ADUser</code> listing users</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STEP 7 – VERIFY
+       ============================================================ -->
+  <section class="tutorial-section" id="step-verify">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="verify-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">7</div>
+        <h2>Verification &amp; Required Screenshots</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="verify-body">
+      <div class="section-intro">
+        <strong>Goal:</strong> Run the complete verification test suite for Parts B.2 and C, capturing all required screenshots. Most tests are run from both the Windows Server itself and the Linux Client VM.
+      </div>
+
+      <h3>Verify from Windows Server (DC01)</h3>
+      <div class="code-block">
+        <div class="code-label">PowerShell (DC01) – Full verification suite
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># --- DOMAIN CONTROLLER STATUS ---
+Get-ADDomainController | Select-Object HostName, Domain, IsGlobalCatalog, IsReadOnly
+
+# --- DNS ZONE RECORDS ---
+Get-DnsServerResourceRecord -ZoneName "techstart.local" -RRType A |
+    Select-Object HostName, RecordData
+
+# --- FORWARDERS ---
+Get-DnsServerForwarder
+
+# --- AD USERS ---
+Get-ADUser -Filter * -SearchBase "OU=TechStart,DC=techstart,DC=local" |
+    Select-Object Name, SamAccountName, DistinguishedName
+
+# --- AD GROUPS ---
+Get-ADGroup -Filter * -SearchBase "OU=TechStart,DC=techstart,DC=local" |
+    Select-Object Name, GroupScope, GroupCategory
+
+# --- TEST DNS LOCALLY ---
+Resolve-DnsName dc01.techstart.local
+Resolve-DnsName linux.techstart.local
+Resolve-DnsName google.com</code></pre>
+      </div>
+
+      <h3>Verify from Linux Client (client01)</h3>
+      <div class="code-block">
+        <div class="code-label">Bash (client01) – DNS verification from client perspective
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Confirm DNS server is 10.0.2.11 (Windows Server)
+resolvectl status | grep -A5 "DNS Servers"
+
+# Internal name resolution
+nslookup dc01.techstart.local
+nslookup linux.techstart.local
+nslookup pfsense.techstart.local
+
+# External resolution through forwarder
+nslookup google.com
+
+# Detailed query showing which DNS server answered
+dig dc01.techstart.local +short
+dig @10.0.2.11 google.com</code></pre>
+      </div>
+
+      <h3>Complete Project 2 Screenshot Checklist</h3>
+      <ul class="checklist">
+        <li><strong>Part B.2 – DNS:</strong> DNS Manager zone view showing all A records</li>
+        <li><strong>Part B.2 – DNS:</strong> DC01 Forwarders tab with 8.8.8.8 and 1.1.1.1</li>
+        <li><strong>Part B.2 – DNS:</strong> <code>nslookup dc01.techstart.local</code> from Linux Client returning 10.0.2.11</li>
+        <li><strong>Part B.2 – DNS:</strong> <code>nslookup linux.techstart.local</code> returning 10.0.2.10</li>
+        <li><strong>Part B.2 – DNS:</strong> <code>nslookup google.com</code> returning a public IP (forwarder working)</li>
+        <li><strong>Part C – AD:</strong> Login screen showing TECHSTART\Administrator</li>
+        <li><strong>Part C – AD:</strong> Server Manager Dashboard with AD DS and DNS roles listed</li>
+        <li><strong>Part C – AD:</strong> ADUC tree with TechStart OU structure visible</li>
+        <li><strong>Part C – AD:</strong> Employees OU expanded showing all user accounts</li>
+        <li><strong>Part C – AD:</strong> Domain Admins group Members tab showing ts.admin</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TROUBLESHOOTING
+       ============================================================ -->
+  <section class="tutorial-section" id="troubleshooting">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="ts-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">🔧</div>
+        <h2>Troubleshooting Guide</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="ts-body">
+      <div class="config-table-wrap">
+        <table>
+          <caption style="text-align:left;padding:0 0 8px;font-size:.8rem;color:var(--text-muted);">Table 4: Common Issues and Solutions</caption>
+          <thead>
+            <tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Promotion fails at prerequisites check</strong></td>
+              <td>Static IP not set, DNS not pointed to self</td>
+              <td>Confirm <code>10.0.2.11</code> is static; confirm DNS is <code>127.0.0.1</code>; re-run prerequisites check</td>
+            </tr>
+            <tr>
+              <td><strong>After reboot, login shows local account not TECHSTART\</strong></td>
+              <td>Promotion may not have completed fully</td>
+              <td>Check Event Viewer → Windows Logs → System for errors. Verify <code>Get-ADDomainController</code> in PowerShell</td>
+            </tr>
+            <tr>
+              <td><strong>nslookup dc01.techstart.local times out from Linux client</strong></td>
+              <td>pfSense DHCP DNS option still pointing to old IP, or firewall blocking DNS</td>
+              <td>Update pfSense DHCP DNS option to <code>10.0.2.11</code>; renew lease on client; verify CLIENTS firewall rules allow port 53 to SERVERS</td>
+            </tr>
+            <tr>
+              <td><strong>Internal names resolve but google.com doesn't</strong></td>
+              <td>Forwarder not configured or unreachable</td>
+              <td>In DNS Manager → DC01 Properties → Forwarders: confirm 8.8.8.8 and 1.1.1.1 are listed; verify Windows Server can ping 8.8.8.8</td>
+            </tr>
+            <tr>
+              <td><strong>google.com resolves but techstart.local names don't</strong></td>
+              <td>DNS zone missing or A record not created</td>
+              <td>In DNS Manager → Forward Lookup Zones: confirm techstart.local zone exists and A records are present</td>
+            </tr>
+            <tr>
+              <td><strong>DNS Manager shows zone but linux.techstart.local A record missing</strong></td>
+              <td>A record was not created</td>
+              <td>Right-click techstart.local zone → New Host (A) → add <code>linux</code> → <code>10.0.2.10</code></td>
+            </tr>
+            <tr>
+              <td><strong>AD Users and Computers: access denied creating OUs</strong></td>
+              <td>Not logged in as domain admin</td>
+              <td>Log out; log back in as <code>TECHSTART\Administrator</code> (not local Administrator)</td>
+            </tr>
+            <tr>
+              <td><strong>Windows Server cannot ping pfSense (10.0.2.1)</strong></td>
+              <td>pfSense SERVERS interface firewall or wrong gateway</td>
+              <td>Verify Windows Server default gateway is <code>10.0.2.1</code>; check pfSense SERVERS firewall rules allow ICMP</td>
+            </tr>
+            <tr>
+              <td><strong>Server Manager shows "DNS" with a yellow warning</strong></td>
+              <td>DNS service configuration warning — often benign</td>
+              <td>Click the warning for detail. If it says "Best practices" warnings about root hints, these can be ignored in a lab environment</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Useful Diagnostic Commands</h3>
+      <div class="code-block">
+        <div class="code-label">PowerShell (DC01) – Diagnostics
+          <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        </div>
+        <pre><code># Test DNS server is listening
+Test-NetConnection -ComputerName 127.0.0.1 -Port 53
+
+# Test DNS resolution locally
+Resolve-DnsName dc01.techstart.local -Server 127.0.0.1
+
+# Check AD DS service status
+Get-Service -Name ADWS, DNS, KDC, Netlogon | Select-Object Name, Status
+
+# Check event log for AD errors (last 20)
+Get-EventLog -LogName "Directory Service" -Newest 20 |
+    Where-Object {$_.EntryType -eq "Error"} |
+    Select-Object TimeGenerated, Message
+
+# Check network connectivity to pfSense
+Test-NetConnection -ComputerName 10.0.2.1 -Port 443</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       NEXT STEPS
+       ============================================================ -->
+  <section class="tutorial-section" id="next-steps">
+    <div class="section-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="nextsteps-body" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <div class="section-toggle-inner">
+        <div class="section-num" aria-hidden="true">→</div>
+        <h2>Next Steps</h2>
+      </div>
+      <span class="toggle-icon" aria-hidden="true">+</span>
+    </div>
+
+    <div class="section-body collapsed" id="nextsteps-body">
+      <p>With Active Directory and DNS configured, your Project 2 network has a fully functional directory service. Here's what comes next:</p>
+
+      <div class="next-steps-grid">
+        <div class="next-card">
+          <span class="card-icon" aria-hidden="true">🛡️</span>
+          <h4>Part D – Firewall Rules</h4>
+          <p>Verify pfSense CLIENTS rules allow LDAP (389), Kerberos (88), and DNS (53) to SERVERS — required for domain join and authentication.</p>
+        </div>
+        <div class="next-card">
+          <span class="card-icon" aria-hidden="true">🖥️</span>
+          <h4>Domain Join (Bonus)</h4>
+          <p>Join the Linux Client or a Windows VM to techstart.local. Requires LDAP and Kerberos traffic allowed through pfSense to the SERVERS network.</p>
+        </div>
+        <div class="next-card">
+          <span class="card-icon" aria-hidden="true">🐧</span>
+          <h4>Linux Server – File Services</h4>
+          <p>Configure Samba on the Linux Server for SMB file sharing integrated with Active Directory credentials.</p>
+        </div>
+        <div class="next-card">
+          <span class="card-icon" aria-hidden="true">📄</span>
+          <h4>Part E – Final Verification</h4>
+          <p>Run the complete test suite from the Linux Client. Capture all screenshots for Parts B.2 and C. Confirm DNS resolution, internet access, and firewall blocking.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-tip" style="margin-top: 24px;">
+        <span class="callout-icon" aria-hidden="true">💡</span>
+        <div class="callout-body">
+          <strong>Take a Proxmox Snapshot Now</strong>
+          <p>With AD DS, DNS, and users fully configured, this is an ideal snapshot point. In Proxmox, select your Windows Server VM → <strong>Snapshots</strong> → <strong>Take Snapshot</strong>. Name it <code>project2-ad-dns-complete</code>. This lets you roll back cleanly if something breaks during subsequent firewall testing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   SECTION TOGGLE
+   ============================================================ */
+function toggleSection(btn) {
+  const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+  const body = document.getElementById(btn.getAttribute('aria-controls'));
+  if (!body) return;
+  if (isExpanded) {
+    btn.setAttribute('aria-expanded', 'false');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        body.classList.add('collapsed');
+        body.style.maxHeight = '';
+      });
+    });
+  } else {
+    btn.setAttribute('aria-expanded', 'true');
+    body.classList.remove('collapsed');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.addEventListener('transitionend', () => { body.style.maxHeight = ''; }, { once: true });
+  }
+}
+function keyToggle(e, btn) {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(btn); }
+}
+
+/* ============================================================
+   READING PROGRESS BAR
+   ============================================================ */
+function updateProgress() {
+  const docH = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docH > 0 ? Math.round((window.scrollY / docH) * 100) : 0;
+  const bar = document.getElementById('prog-bar');
+  const lbl = document.getElementById('prog-pct');
+  if (bar) bar.style.width = pct + '%';
+  if (lbl) lbl.textContent = pct + '%';
+  const wrap = bar?.parentElement;
+  if (wrap) wrap.setAttribute('aria-valuenow', pct);
+}
+window.addEventListener('scroll', updateProgress, { passive: true });
+updateProgress();
+
+/* ============================================================
+   SCROLL SPY
+   ============================================================ */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav#main-nav a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+sections.forEach(s => observer.observe(s));
+
+/* ============================================================
+   PROGRESS CHECKLIST
+   ============================================================ */
+function updateChecks() {}
+
+/* ============================================================
+   COPY CODE BUTTON
+   ============================================================ */
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNode(pre);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+}
+
+/* ============================================================
+   MOBILE SIDEBAR TOGGLE
+   ============================================================ */
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebar = document.getElementById('sidebar');
+sidebarToggle.addEventListener('click', () => {
+  const isOpen = sidebar.classList.toggle('open');
+  sidebarToggle.setAttribute('aria-expanded', isOpen);
+  sidebarToggle.textContent = isOpen ? '✕' : '☰';
+});
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      sidebar.classList.remove('open');
+      sidebarToggle.setAttribute('aria-expanded', 'false');
+      sidebarToggle.textContent = '☰';
+    }
+  });
+});
+document.addEventListener('click', (e) => {
+  if (window.innerWidth <= 900 && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
+    sidebar.classList.remove('open');
+    sidebarToggle.setAttribute('aria-expanded', 'false');
+    sidebarToggle.textContent = '☰';
+  }
+});
+</script>
+</body>
+</html>
