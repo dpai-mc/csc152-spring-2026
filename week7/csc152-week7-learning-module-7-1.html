@@ -130,9 +130,6 @@ body {
   border-radius: 12px;
   padding: 20px 24px;
   margin-bottom: 28px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
@@ -233,6 +230,7 @@ body {
   padding: 28px 24px;
   margin-bottom: 28px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  scroll-margin-top: 60px;
 }
 
 .content-section h2 {
@@ -779,15 +777,131 @@ details .details-content {
 }
 
 @media print {
-  .progress-container, .skip-link { display: none; }
+  .progress-container, .skip-link, .sticky-module-nav { display: none; }
   .content-section { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
   body { background: #fff; color: #000; }
 }
+
+/* ============================================================
+   STICKY MODULE NAV
+   ============================================================ */
+.sticky-module-nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: #ffffff;
+  border-bottom: 3px solid #2563eb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.sticky-nav-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.sticky-nav-inner::-webkit-scrollbar { display: none; }
+
+.sticky-nav-title {
+  font-weight: 700;
+  color: #2563eb;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.sticky-nav-title:hover { text-decoration: underline; }
+
+.sticky-nav-divider {
+  color: #d1d5db;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.sticky-nav-sections {
+  list-style: none;
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+.sticky-nav-sections a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.sticky-nav-sections a:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.sticky-nav-sections a[aria-current="true"] {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.sticky-nav-top {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.sticky-nav-top:hover { color: #2563eb; text-decoration: underline; }
 </style>
 </head>
 <body>
 
 <a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ============================================================
+     STICKY MODULE NAV
+     ============================================================ -->
+<nav class="sticky-module-nav" aria-label="Module sections">
+  <div class="sticky-nav-inner">
+    <a class="sticky-nav-title" href="#main-content">Module 7.1</a>
+    <span class="sticky-nav-divider" aria-hidden="true">|</span>
+    <ol class="sticky-nav-sections">
+      <li><a href="#section-objectives" aria-label="Section 0: Learning Objectives">§0</a></li>
+      <li><a href="#section-1" aria-label="Section 1: Introduction — Why Permissions Matter">§1</a></li>
+      <li><a href="#section-2" aria-label="Section 2: The Linux Permission Model">§2</a></li>
+      <li><a href="#section-3" aria-label="Section 3: Reading ls -l Output">§3</a></li>
+      <li><a href="#section-4" aria-label="Section 4: Symbolic and Numeric Notation">§4</a></li>
+      <li><a href="#section-5" aria-label="Section 5: The chmod Command">§5</a></li>
+      <li><a href="#section-6" aria-label="Section 6: File vs. Directory Permissions">§6</a></li>
+      <li><a href="#section-7" aria-label="Section 7: Default Permissions and umask">§7</a></li>
+      <li><a href="#section-8" aria-label="Section 8: Interactive Activities and Knowledge Checks">§8</a></li>
+    </ol>
+    <a class="sticky-nav-top" href="#main-content" aria-label="Back to top of module">↑ Top</a>
+  </div>
+</nav>
 
 <!-- ============================================================
      HEADER
@@ -2127,6 +2241,36 @@ details .details-content {
   };
 
   /* ============================================================
+     STICKY NAV — active section tracking
+     ============================================================ */
+  function setupStickyNav() {
+    if (!('IntersectionObserver' in window)) return;
+    var links = document.querySelectorAll('.sticky-nav-sections a');
+    if (!links.length) return;
+    var intersecting = {};
+    var navObs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        intersecting[e.target.id] = e.isIntersecting;
+      });
+      var secs = document.querySelectorAll('.content-section[id^="section-"]');
+      var activeId = null;
+      for (var i = 0; i < secs.length; i++) {
+        if (intersecting[secs[i].id]) { activeId = secs[i].id; break; }
+      }
+      links.forEach(function(l) {
+        if (activeId && l.getAttribute('href') === '#' + activeId) {
+          l.setAttribute('aria-current', 'true');
+        } else {
+          l.removeAttribute('aria-current');
+        }
+      });
+    }, { rootMargin: '-48px 0px -55% 0px', threshold: 0 });
+    document.querySelectorAll('.content-section[id^="section-"]').forEach(function(sec) {
+      navObs.observe(sec);
+    });
+  }
+
+  /* ============================================================
      INITIALIZATION
      ============================================================ */
   function init() {
@@ -2136,6 +2280,7 @@ details .details-content {
     setupPermCalc();
     restoreQuiz();
     buildMatch();
+    setupStickyNav();
     /* Auto-calculate umask on load */
     calcUmask();
   }
