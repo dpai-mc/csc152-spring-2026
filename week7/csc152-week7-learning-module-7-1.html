@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CSC 152 Module 7.1: Linux Permission Model and Basic Commands - Interactive Learning Experience">
+<meta name="author" content="David Pai - Mendocino College">
+<title>Module 7.1: Linux Permission Model &amp; Basic Commands — CSC 152</title>
+<style>
+/* ============================================================
+   CSS RESET & BASE
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  color-scheme: light only;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.7;
+  color: #1a1a2e;
+  background-color: #f5f5fa;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   FOCUS & ACCESSIBILITY
+   ============================================================ */
+*:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: #1a1a2e;
+  color: #ffffff;
+  padding: 12px 24px;
+  z-index: 10000;
+  font-size: 1rem;
+  text-decoration: none;
+  border-radius: 0 0 6px 0;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.page-wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.course-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #ffffff;
+  padding: 32px 24px;
+  border-radius: 0 0 16px 16px;
+  margin-bottom: 32px;
+}
+
+.course-header .breadcrumb {
+  font-size: 0.85rem;
+  color: #a8b4ce;
+  margin-bottom: 8px;
+}
+
+.course-header h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.course-header .subtitle {
+  font-size: 1.05rem;
+  color: #c5cee0;
+  margin-bottom: 16px;
+}
+
+.header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: #a8b4ce;
+}
+
+.header-meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+.progress-container {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.progress-container h2 {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 14px;
+  background: #e5e7eb;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #06b6d4);
+  border-radius: 7px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.progress-text {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 6px;
+  text-align: right;
+}
+
+/* ============================================================
+   TABLE OF CONTENTS
+   ============================================================ */
+.toc-container {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.toc-container h2 {
+  font-size: 1.15rem;
+  color: #1a1a2e;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.toc-list {
+  list-style: none;
+}
+
+.toc-list li {
+  margin-bottom: 6px;
+}
+
+.toc-list a {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.95rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.toc-list a:hover,
+.toc-list a:focus {
+  background: #eff6ff;
+  text-decoration: underline;
+}
+
+.toc-section-num {
+  display: inline-block;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  min-width: 28px;
+  text-align: center;
+}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+.content-section {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 28px 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.content-section h2 {
+  font-size: 1.4rem;
+  color: #1a1a2e;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.section-number {
+  background: #1a1a2e;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+
+.section-intro {
+  color: #4b5563;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  margin-top: 6px;
+  border-left: 3px solid #2563eb;
+  padding-left: 14px;
+}
+
+.content-section h3 {
+  font-size: 1.15rem;
+  color: #1e293b;
+  margin-top: 24px;
+  margin-bottom: 10px;
+}
+
+.content-section h4 {
+  font-size: 1.0rem;
+  color: #334155;
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+
+.content-section p {
+  margin-bottom: 12px;
+  color: #1a1a2e;
+}
+
+.content-section ul,
+.content-section ol {
+  margin-left: 24px;
+  margin-bottom: 14px;
+}
+
+.content-section li {
+  margin-bottom: 6px;
+  color: #1a1a2e;
+}
+
+/* ============================================================
+   DEFINITION BOXES
+   ============================================================ */
+.def-box {
+  background: #f0f4ff;
+  border: 1px solid #bfdbfe;
+  border-left: 5px solid #2563eb;
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 16px 0;
+}
+
+.def-box .def-term {
+  font-weight: 700;
+  color: #1e3a5f;
+  font-size: 1.0rem;
+  margin-bottom: 4px;
+}
+
+.def-box .def-desc {
+  color: #1e293b;
+  font-size: 0.93rem;
+}
+
+/* ============================================================
+   CALLOUTS
+   ============================================================ */
+.callout {
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin: 18px 0;
+  font-size: 0.93rem;
+}
+
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.callout.info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-left: 5px solid #2563eb;
+  color: #1e3a5f;
+}
+
+.callout.warning {
+  background: #fef9e7;
+  border: 1px solid #fde68a;
+  border-left: 5px solid #f59e0b;
+  color: #78350f;
+}
+
+.callout.tip {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-left: 5px solid #10b981;
+  color: #064e3b;
+}
+
+.callout.danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-left: 5px solid #ef4444;
+  color: #7f1d1d;
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+.table-wrapper {
+  overflow-x: auto;
+  margin: 16px 0;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+thead {
+  background: #1a1a2e;
+  color: #ffffff;
+}
+
+th {
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+td {
+  padding: 10px 14px;
+  border-top: 1px solid #e5e7eb;
+  color: #1a1a2e;
+}
+
+tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+tbody tr:hover {
+  background: #eff6ff;
+}
+
+/* ============================================================
+   CODE BLOCKS
+   ============================================================ */
+pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: 8px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  margin: 14px 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  white-space: pre;
+  border: 1px solid #313244;
+}
+
+pre code {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  white-space: pre;
+}
+
+code {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  background: #e8e8f0;
+  color: #d6336c;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.88rem;
+}
+
+.code-label {
+  display: inline-block;
+  background: #313244;
+  color: #a6adc8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px 6px 0 0;
+  margin-bottom: -1px;
+  position: relative;
+  top: 1px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.code-comment { color: #6c7086; }
+.code-cmd { color: #89b4fa; }
+.code-flag { color: #a6e3a1; }
+.code-string { color: #f9e2af; }
+.code-perm-r { color: #f9e2af; }
+.code-perm-w { color: #f38ba8; }
+.code-perm-x { color: #a6e3a1; }
+.code-perm-d { color: #89b4fa; }
+.code-perm-dash { color: #6c7086; }
+
+/* ============================================================
+   COLLAPSIBLE SECTIONS
+   ============================================================ */
+details {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  margin: 14px 0;
+  background: #ffffff;
+}
+
+details[open] {
+  border-color: #93c5fd;
+}
+
+summary {
+  padding: 14px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #1e293b;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+summary::-webkit-details-marker { display: none; }
+
+summary::before {
+  content: '▶';
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+  display: inline-block;
+  color: #2563eb;
+}
+
+details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+summary:hover {
+  background: #f0f4ff;
+}
+
+details .details-content {
+  padding: 4px 18px 18px;
+}
+
+/* ============================================================
+   ACTIVITIES & QUIZZES
+   ============================================================ */
+.activity-container {
+  background: #f8fafc;
+  border: 2px solid #93c5fd;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px 0;
+}
+
+.activity-container h3 {
+  color: #1e3a5f;
+  margin-top: 0;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activity-container .activity-instructions {
+  color: #334155;
+  font-size: 0.93rem;
+  margin-bottom: 16px;
+}
+
+.quiz-question {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.quiz-question p.q-text {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+
+.quiz-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.quiz-options li {
+  margin-bottom: 6px;
+}
+
+.quiz-options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  color: #1a1a2e;
+  font-size: 0.93rem;
+}
+
+.quiz-options label:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.quiz-options input[type="radio"] {
+  accent-color: #2563eb;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.quiz-feedback {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  display: none;
+}
+
+.quiz-feedback.correct {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #064e3b;
+  display: block;
+}
+
+.quiz-feedback.incorrect {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #7f1d1d;
+  display: block;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: #2563eb; color: #ffffff; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-secondary { background: #e5e7eb; color: #1e293b; }
+.btn-secondary:hover { background: #d1d5db; }
+.btn-reset { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.btn-reset:hover { background: #fee2e2; }
+
+/* ============================================================
+   PERMISSION CALCULATOR
+   ============================================================ */
+.perm-calc {
+  background: #ffffff;
+  border: 2px solid #93c5fd;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+}
+
+.perm-calc h4 {
+  margin-top: 0;
+  color: #1e3a5f;
+}
+
+.perm-grid {
+  display: grid;
+  grid-template-columns: auto repeat(3, 1fr);
+  gap: 2px;
+  margin: 14px 0;
+  font-size: 0.9rem;
+}
+
+.perm-grid-header {
+  background: #1a1a2e;
+  color: #ffffff;
+  padding: 10px 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.perm-grid-label {
+  background: #e0e7ff;
+  color: #1e3a5f;
+  padding: 10px 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.perm-checkbox-cell {
+  background: #f8fafc;
+  padding: 10px 12px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.perm-checkbox-cell input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.perm-result {
+  margin-top: 14px;
+  padding: 16px;
+  background: #1e1e2e;
+  border-radius: 8px;
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.perm-result .symbolic { color: #cdd6f4; margin-bottom: 6px; }
+.perm-result .numeric { color: #a6e3a1; font-size: 1.3rem; font-weight: 700; }
+
+/* ============================================================
+   MATCHING GAME
+   ============================================================ */
+.match-btn {
+  padding: 10px 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+  color: #1a1a2e;
+}
+
+.match-btn:hover { border-color: #93c5fd; background: #eff6ff; }
+.match-btn.selected { border-color: #2563eb; background: #dbeafe; color: #1e3a5f; }
+.match-btn.matched { border-color: #10b981; background: #ecfdf5; color: #064e3b; cursor: default; }
+.match-btn.wrong { border-color: #ef4444; background: #fef2f2; color: #7f1d1d; }
+
+/* ============================================================
+   OBJECTIVES CHECKLIST
+   ============================================================ */
+.objectives-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.objectives-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f5;
+  color: #1a1a2e;
+}
+
+.objectives-list li:last-child { border-bottom: none; }
+
+.objectives-list input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #2563eb;
+  margin-top: 2px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.module-footer {
+  text-align: center;
+  padding: 24px;
+  color: #6b7280;
+  font-size: 0.82rem;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 40px;
+}
+
+.module-footer a { color: #2563eb; text-decoration: none; }
+.module-footer a:hover { text-decoration: underline; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+  .course-header h1 { font-size: 1.4rem; }
+  .content-section { padding: 20px 16px; }
+  .perm-grid { font-size: 0.8rem; }
+  .header-meta { flex-direction: column; gap: 6px; }
+}
+
+@media print {
+  .progress-container, .skip-link { display: none; }
+  .content-section { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+  body { background: #fff; color: #000; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="course-header" role="banner">
+  <div class="page-wrapper">
+    <div class="breadcrumb" aria-label="Breadcrumb">CSC 152 → Week 7 → Module 7.1</div>
+    <h1>Module 7.1: Linux Permission Model &amp; Basic Commands</h1>
+    <p class="subtitle">File Systems, Ownership &amp; Permissions</p>
+    <div class="header-meta">
+      <span>📅 Week 7: March 2–8, 2026</span>
+      <span>⏱ Estimated Time: 2.5–3.0 hours</span>
+      <span>🎯 CSLO 1: OS configuration, access control</span>
+    </div>
+  </div>
+</header>
+
+<main id="main-content" class="page-wrapper" role="main">
+
+<!-- ============================================================
+     PROGRESS BAR
+     ============================================================ -->
+<div class="progress-container" role="region" aria-label="Module progress">
+  <h2 id="progress-heading">Module Progress</h2>
+  <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-labelledby="progress-heading">
+    <div class="progress-bar-fill" id="progressFill"></div>
+  </div>
+  <div class="progress-text" id="progressText" aria-live="polite">0 of 8 sections completed</div>
+</div>
+
+<!-- ============================================================
+     TABLE OF CONTENTS
+     ============================================================ -->
+<nav class="toc-container" aria-label="Table of Contents">
+  <h2>Table of Contents</h2>
+  <ol class="toc-list">
+    <li><a href="#section-objectives"><span class="toc-section-num">0</span> Learning Objectives</a></li>
+    <li><a href="#section-1"><span class="toc-section-num">1</span> Introduction: Why Permissions Matter</a></li>
+    <li><a href="#section-2"><span class="toc-section-num">2</span> The Linux Permission Model</a></li>
+    <li><a href="#section-3"><span class="toc-section-num">3</span> Reading ls -l Output</a></li>
+    <li><a href="#section-4"><span class="toc-section-num">4</span> Symbolic &amp; Numeric Notation</a></li>
+    <li><a href="#section-5"><span class="toc-section-num">5</span> The chmod Command</a></li>
+    <li><a href="#section-6"><span class="toc-section-num">6</span> File vs. Directory Permissions</a></li>
+    <li><a href="#section-7"><span class="toc-section-num">7</span> Default Permissions &amp; umask</a></li>
+    <li><a href="#section-8"><span class="toc-section-num">8</span> Interactive Activities &amp; Knowledge Checks</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================
+     LEARNING OBJECTIVES
+     ============================================================ -->
+<section class="content-section" id="section-objectives" aria-labelledby="obj-heading">
+  <h2 id="obj-heading"><span class="section-number">0</span> Learning Objectives</h2>
+  <p class="section-intro">Upon completion of Module 7.1, you will be able to:</p>
+  <ul class="objectives-list" id="objectivesList">
+    <li><input type="checkbox" id="obj1" aria-label="Objective 1 complete"><label for="obj1">Explain the three permission types (read, write, execute) and three permission categories (owner, group, others)</label></li>
+    <li><input type="checkbox" id="obj2" aria-label="Objective 2 complete"><label for="obj2">Interpret permission strings from <code>ls -l</code> output</label></li>
+    <li><input type="checkbox" id="obj3" aria-label="Objective 3 complete"><label for="obj3">Convert between symbolic and numeric (octal) permission notation</label></li>
+    <li><input type="checkbox" id="obj4" aria-label="Objective 4 complete"><label for="obj4">Use <code>chmod</code> with both symbolic and numeric notation to modify file and directory permissions</label></li>
+    <li><input type="checkbox" id="obj5" aria-label="Objective 5 complete"><label for="obj5">Distinguish between the meaning of permissions on files versus directories</label></li>
+    <li><input type="checkbox" id="obj6" aria-label="Objective 6 complete"><label for="obj6">Apply the <code>umask</code> concept to understand default permission creation</label></li>
+  </ul>
+  <div class="callout info" style="margin-top:16px;">
+    <div class="callout-title">🎯 CSLO Alignment</div>
+    <strong>CSLO 1:</strong> Manage and maintain servers, including operating system (OS) configuration, access control and virtualization.
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 1: WHY PERMISSIONS MATTER
+     ============================================================ -->
+<section class="content-section" id="section-1" aria-labelledby="s1-heading">
+  <h2 id="s1-heading"><span class="section-number">1</span> Introduction: Why Permissions Matter</h2>
+  <p class="section-intro">Permissions are the first line of defense in a multi-user operating system. They determine who can read, modify, or execute every file and directory on the system.</p>
+
+  <p>Linux is inherently a <strong>multi-user operating system</strong>. On any given server, dozens or even thousands of user accounts may exist. These include human administrators, application service accounts, and system daemons. Without a robust permission model, any user could read another user's private files, modify critical system configurations, or execute malicious programs.</p>
+
+  <h3>Real-World Scenarios</h3>
+  <ul>
+    <li><strong>Web Server:</strong> The web server process (running as user <code>www-data</code>) needs to <em>read</em> HTML files but should never be able to <em>write</em> to them — otherwise a vulnerability could allow an attacker to deface the website.</li>
+    <li><strong>SSH Keys:</strong> Your private SSH key (<code>~/.ssh/id_rsa</code>) must be readable <em>only</em> by you. SSH will refuse to use a private key file that other users can read.</li>
+    <li><strong>Shared Project Directory:</strong> A development team needs a directory where all team members can create and edit files, but users outside the team should have no access at all.</li>
+    <li><strong>Log Files:</strong> System log files should be readable by administrators for troubleshooting but not writable by regular users who might try to cover their tracks.</li>
+  </ul>
+
+  <div class="callout warning">
+    <div class="callout-title">⚠️ Security Principle</div>
+    Incorrect permissions are one of the most common causes of security vulnerabilities on Linux servers. The principle of <strong>least privilege</strong> states that every user and process should have only the minimum permissions necessary to perform their function — nothing more.
+  </div>
+
+  <h3>The Three Questions</h3>
+  <p>Every time Linux checks whether an action is allowed, it answers three questions in order:</p>
+  <ol>
+    <li><strong>Who</strong> is trying to perform the action? (Which user and what groups do they belong to?)</li>
+    <li><strong>What</strong> are they trying to do? (Read, write, or execute?)</li>
+    <li><strong>Which category</strong> do they fall into for this particular file? (Owner, group member, or other?)</li>
+  </ol>
+
+  <div class="callout info">
+    <div class="callout-title">📌 Connection to Week 6</div>
+    This module builds directly on your understanding of <strong>users and groups</strong> from Week 6. The UIDs and GIDs you learned about are exactly what the kernel uses to evaluate file permissions. If you haven't completed Week 6, review user and group concepts before proceeding.
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 2: THE LINUX PERMISSION MODEL
+     ============================================================ -->
+<section class="content-section" id="section-2" aria-labelledby="s2-heading">
+  <h2 id="s2-heading"><span class="section-number">2</span> The Linux Permission Model</h2>
+  <p class="section-intro">Linux uses a straightforward but powerful model: three types of permissions applied across three categories of users, stored as metadata for every file and directory on the system.</p>
+
+  <h3>2.1 Permission Types</h3>
+
+  <div class="def-box">
+    <div class="def-term">Read (r)</div>
+    <div class="def-desc"><strong>For files:</strong> Allows viewing the contents of the file (e.g., using <code>cat</code>, <code>less</code>, <code>head</code>, or opening in an editor). <strong>For directories:</strong> Allows listing the names of files within the directory (e.g., using <code>ls</code>). <strong>Octal value: 4</strong></div>
+  </div>
+
+  <div class="def-box">
+    <div class="def-term">Write (w)</div>
+    <div class="def-desc"><strong>For files:</strong> Allows modifying, overwriting, or truncating the file's contents. <strong>For directories:</strong> Allows creating new files, deleting files, and renaming files within the directory. <strong>Octal value: 2</strong></div>
+  </div>
+
+  <div class="def-box">
+    <div class="def-term">Execute (x)</div>
+    <div class="def-desc"><strong>For files:</strong> Allows running the file as a program or script. <strong>For directories:</strong> Allows entering the directory with <code>cd</code> and accessing file metadata (inodes). This is sometimes called the "search" permission. <strong>Octal value: 1</strong></div>
+  </div>
+
+  <div class="callout tip">
+    <div class="callout-title">💡 Memory Aid</div>
+    Think of the octal values as a powers-of-two pattern: Read = 4 (2²), Write = 2 (2¹), Execute = 1 (2⁰). Each permission is a single bit in a 3-bit binary number.
+  </div>
+
+  <h3>2.2 Permission Categories</h3>
+
+  <div class="def-box">
+    <div class="def-term">Owner (u)</div>
+    <div class="def-desc">The single user account that "owns" the file. By default, this is the user who created the file. The owner is identified by the file's UID (User ID) metadata. The letter <code>u</code> (for "user") is used in symbolic notation.</div>
+  </div>
+
+  <div class="def-box">
+    <div class="def-term">Group (g)</div>
+    <div class="def-desc">The single group associated with the file. Every file belongs to exactly one group. All members of that group receive the group permissions. By default, this is the primary group of the user who created the file. The letter <code>g</code> is used in symbolic notation.</div>
+  </div>
+
+  <div class="def-box">
+    <div class="def-term">Others (o)</div>
+    <div class="def-desc">Everyone else — any user account on the system that is neither the owner nor a member of the file's group. The letter <code>o</code> is used in symbolic notation. This is sometimes called "world" permissions.</div>
+  </div>
+
+  <div class="def-box">
+    <div class="def-term">All (a)</div>
+    <div class="def-desc">A shorthand in symbolic notation representing all three categories simultaneously: owner + group + others. The letter <code>a</code> is used in <code>chmod</code> commands when you want to change permissions for everyone at once.</div>
+  </div>
+
+  <h3>2.3 How Linux Evaluates Permissions</h3>
+  <p>When a user attempts to access a file, the kernel follows a <strong>strict evaluation order</strong>:</p>
+  <ol>
+    <li><strong>Is the user root (UID 0)?</strong> → If yes, access is granted for read and write operations regardless of permissions. (Root can also execute a file if <em>any</em> execute bit is set.)</li>
+    <li><strong>Is the user the file's owner?</strong> → If yes, <em>only</em> the owner permissions are checked. Group and other permissions are ignored — even if they are more permissive.</li>
+    <li><strong>Is the user a member of the file's group?</strong> → If yes, <em>only</em> the group permissions are checked.</li>
+    <li><strong>Otherwise</strong> → The "others" permissions are checked.</li>
+  </ol>
+
+  <div class="callout danger">
+    <div class="callout-title">🚨 Critical Concept: No Accumulation</div>
+    Permissions do <strong>not</strong> accumulate across categories. If a file has permissions <code>---rwx---</code>, the <em>owner</em> has no access at all, even though group members have full access. The kernel stops at the first matching category. This is a common source of confusion and a frequent exam topic.
+  </div>
+
+  <details>
+    <summary>Example: Permission Evaluation Walkthrough</summary>
+    <div class="details-content">
+      <p>Consider a file with the following attributes:</p>
+<pre><code>-rw-r----- 1 alice developers 2048 Mar 2 10:00 report.txt</code></pre>
+      <ul>
+        <li><strong>User <code>alice</code></strong> is the owner → owner permissions apply: <code>rw-</code> → can read and write, cannot execute.</li>
+        <li><strong>User <code>bob</code></strong> (member of <code>developers</code> group) → group permissions apply: <code>r--</code> → can read only.</li>
+        <li><strong>User <code>charlie</code></strong> (not owner, not in <code>developers</code>) → others permissions apply: <code>---</code> → no access at all.</li>
+        <li><strong>User <code>root</code></strong> → bypasses all permission checks → full access.</li>
+      </ul>
+      <p>Even if <code>alice</code> is also a member of the <code>developers</code> group, she gets the <em>owner</em> permissions (<code>rw-</code>), not the group permissions (<code>r--</code>). The kernel checks owner first and stops there.</p>
+    </div>
+  </details>
+
+  <h3>2.4 The Permission Bits in Memory</h3>
+  <p>Internally, Linux stores permissions as a 12-bit field in the file's <strong>inode</strong> (the data structure that stores file metadata). The lower 9 bits represent the standard permissions:</p>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Bit Position</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Category</strong></td>
+          <td colspan="3" style="text-align:center;background:#e0e7ff;color:#1e3a5f;">Owner</td>
+          <td colspan="3" style="text-align:center;background:#ecfdf5;color:#064e3b;">Group</td>
+          <td colspan="3" style="text-align:center;background:#fef9e7;color:#78350f;">Others</td>
+        </tr>
+        <tr>
+          <td><strong>Permission</strong></td>
+          <td>r</td><td>w</td><td>x</td><td>r</td><td>w</td><td>x</td><td>r</td><td>w</td><td>x</td>
+        </tr>
+        <tr>
+          <td><strong>Octal Value</strong></td>
+          <td>4</td><td>2</td><td>1</td><td>4</td><td>2</td><td>1</td><td>4</td><td>2</td><td>1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The upper 3 bits (positions 9, 10, 11) store <strong>special permissions</strong> (SetUID, SetGID, sticky bit), which you will learn about in Module 7.2.</p>
+</section>
+
+<!-- ============================================================
+     SECTION 3: READING ls -l OUTPUT
+     ============================================================ -->
+<section class="content-section" id="section-3" aria-labelledby="s3-heading">
+  <h2 id="s3-heading"><span class="section-number">3</span> Reading <code>ls -l</code> Output</h2>
+  <p class="section-intro">The <code>ls -l</code> command produces a long listing that displays permissions, ownership, size, and modification date for every file. Learning to read this output fluently is an essential sysadmin skill.</p>
+
+  <h3>3.1 Anatomy of a Long Listing</h3>
+<pre><code><span class="code-comment"># Example ls -l output</span>
+-rwxr-xr-- 1 alice developers 4096 Mar  2 14:30 deploy.sh</code></pre>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Value</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>File Type</strong></td><td><code>-</code></td><td>Regular file (not a directory or link)</td></tr>
+        <tr><td><strong>Owner Permissions</strong></td><td><code>rwx</code></td><td>Owner can read, write, and execute</td></tr>
+        <tr><td><strong>Group Permissions</strong></td><td><code>r-x</code></td><td>Group can read and execute, not write</td></tr>
+        <tr><td><strong>Others Permissions</strong></td><td><code>r--</code></td><td>Others can read only</td></tr>
+        <tr><td><strong>Hard Link Count</strong></td><td><code>1</code></td><td>Number of hard links to this inode</td></tr>
+        <tr><td><strong>Owner</strong></td><td><code>alice</code></td><td>User who owns the file</td></tr>
+        <tr><td><strong>Group</strong></td><td><code>developers</code></td><td>Group associated with the file</td></tr>
+        <tr><td><strong>Size</strong></td><td><code>4096</code></td><td>File size in bytes</td></tr>
+        <tr><td><strong>Modification Date</strong></td><td><code>Mar  2 14:30</code></td><td>Last modification timestamp</td></tr>
+        <tr><td><strong>Filename</strong></td><td><code>deploy.sh</code></td><td>Name of the file</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>3.2 File Type Indicators</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Character</th><th>Type</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>-</code></td><td>Regular file</td><td>Text files, binaries, scripts, images, etc.</td></tr>
+        <tr><td><code>d</code></td><td>Directory</td><td>A folder containing other files and directories</td></tr>
+        <tr><td><code>l</code></td><td>Symbolic link</td><td>A pointer to another file or directory</td></tr>
+        <tr><td><code>b</code></td><td>Block device</td><td>Block-oriented hardware device (e.g., hard drive)</td></tr>
+        <tr><td><code>c</code></td><td>Character device</td><td>Character-oriented hardware device (e.g., terminal)</td></tr>
+        <tr><td><code>p</code></td><td>Named pipe (FIFO)</td><td>Inter-process communication channel</td></tr>
+        <tr><td><code>s</code></td><td>Socket</td><td>Inter-process communication endpoint</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>3.3 Reading the Permission String</h3>
+<pre><code><span class="code-comment"># Position:  0  1  2  3  4  5  6  7  8  9</span>
+<span class="code-comment"># Field:    [T][---Owner---][---Group---][---Others--]</span>
+
+<span class="code-perm-d">d</span><span class="code-perm-r">r</span><span class="code-perm-w">w</span><span class="code-perm-x">x</span><span class="code-perm-r">r</span><span class="code-perm-dash">-</span><span class="code-perm-x">x</span><span class="code-perm-r">r</span><span class="code-perm-dash">-</span><span class="code-perm-dash">-</span>
+<span class="code-comment">│ │││ │││ │││</span>
+<span class="code-comment">│ ││└─ owner execute   ││└─ group execute   ││└─ others execute</span>
+<span class="code-comment">│ │└── owner write     │└── group write     │└── others write</span>
+<span class="code-comment">│ └─── owner read      └─── group read      └─── others read</span>
+<span class="code-comment">└───── file type (d = directory)</span></code></pre>
+
+  <details>
+    <summary>Practice: Read These Permission Strings</summary>
+    <div class="details-content">
+      <p><strong>1.</strong> <code>-rw-r--r--</code></p>
+      <details>
+        <summary>Show Answer</summary>
+        <div class="details-content">
+          <p>Regular file. Owner: read + write. Group: read only. Others: read only. Numeric: <strong>644</strong>. Typical for configuration files and documents.</p>
+        </div>
+      </details>
+      <p><strong>2.</strong> <code>drwxr-xr-x</code></p>
+      <details>
+        <summary>Show Answer</summary>
+        <div class="details-content">
+          <p>Directory. Owner: read + write + execute. Group: read + execute. Others: read + execute. Numeric: <strong>755</strong>. Standard for system directories.</p>
+        </div>
+      </details>
+      <p><strong>3.</strong> <code>-rwx------</code></p>
+      <details>
+        <summary>Show Answer</summary>
+        <div class="details-content">
+          <p>Regular file. Owner: full access. Group: none. Others: none. Numeric: <strong>700</strong>. Appropriate for private scripts.</p>
+        </div>
+      </details>
+      <p><strong>4.</strong> <code>lrwxrwxrwx</code></p>
+      <details>
+        <summary>Show Answer</summary>
+        <div class="details-content">
+          <p>Symbolic link. Permissions shown as <code>777</code> — but actual access is controlled by the permissions on the <strong>target</strong> file the link points to.</p>
+        </div>
+      </details>
+      <p><strong>5.</strong> <code>-rw-rw----</code></p>
+      <details>
+        <summary>Show Answer</summary>
+        <div class="details-content">
+          <p>Regular file. Owner: read + write. Group: read + write. Others: none. Numeric: <strong>660</strong>. Useful for team-shared files.</p>
+        </div>
+      </details>
+    </div>
+  </details>
+</section>
+
+<!-- ============================================================
+     SECTION 4: SYMBOLIC & NUMERIC NOTATION
+     ============================================================ -->
+<section class="content-section" id="section-4" aria-labelledby="s4-heading">
+  <h2 id="s4-heading"><span class="section-number">4</span> Symbolic &amp; Numeric (Octal) Notation</h2>
+  <p class="section-intro">Linux provides two ways to express permissions: symbolic notation using letters and operators, and numeric (octal) notation using a three- or four-digit number. A competent administrator must be fluent in both.</p>
+
+  <h3>4.1 Symbolic Notation</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Component</th><th>Characters</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td rowspan="4"><strong>Who</strong></td><td><code>u</code></td><td>Owner (user)</td></tr>
+        <tr><td><code>g</code></td><td>Group</td></tr>
+        <tr><td><code>o</code></td><td>Others</td></tr>
+        <tr><td><code>a</code></td><td>All (owner + group + others)</td></tr>
+        <tr><td rowspan="3"><strong>Operator</strong></td><td><code>+</code></td><td>Add permission(s)</td></tr>
+        <tr><td><code>-</code></td><td>Remove permission(s)</td></tr>
+        <tr><td><code>=</code></td><td>Set exact permission(s), removing all others</td></tr>
+        <tr><td rowspan="3"><strong>What</strong></td><td><code>r</code></td><td>Read</td></tr>
+        <tr><td><code>w</code></td><td>Write</td></tr>
+        <tr><td><code>x</code></td><td>Execute</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Symbolic Notation Examples</h4>
+<pre><code><span class="code-comment"># Add execute permission for the owner</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">u+x</span> script.sh
+
+<span class="code-comment"># Remove write permission from group and others</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">go-w</span> config.txt
+
+<span class="code-comment"># Set read-only for everyone</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">a=r</span> readme.txt
+
+<span class="code-comment"># Give owner read+write, group read, others nothing</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">u=rw,g=r,o=</span> document.txt
+
+<span class="code-comment"># Add execute for owner and group simultaneously</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">ug+x</span> deploy.sh</code></pre>
+
+  <div class="callout tip">
+    <div class="callout-title">💡 When to Use Symbolic Notation</div>
+    Symbolic notation is ideal when you want to <strong>change specific permissions without affecting others</strong>. For example, <code>chmod u+x script.sh</code> adds execute for the owner while leaving all other permissions unchanged.
+  </div>
+
+  <h3>4.2 Numeric (Octal) Notation</h3>
+  <p>Each digit is the <strong>sum</strong> of the permission values for one category:</p>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Permissions</th><th>Calculation</th><th>Octal Digit</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>rwx</code></td><td>4 + 2 + 1</td><td><strong>7</strong></td></tr>
+        <tr><td><code>rw-</code></td><td>4 + 2 + 0</td><td><strong>6</strong></td></tr>
+        <tr><td><code>r-x</code></td><td>4 + 0 + 1</td><td><strong>5</strong></td></tr>
+        <tr><td><code>r--</code></td><td>4 + 0 + 0</td><td><strong>4</strong></td></tr>
+        <tr><td><code>-wx</code></td><td>0 + 2 + 1</td><td><strong>3</strong></td></tr>
+        <tr><td><code>-w-</code></td><td>0 + 2 + 0</td><td><strong>2</strong></td></tr>
+        <tr><td><code>--x</code></td><td>0 + 0 + 1</td><td><strong>1</strong></td></tr>
+        <tr><td><code>---</code></td><td>0 + 0 + 0</td><td><strong>0</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <details>
+    <summary>Worked Example: Converting rwxr-xr-- to Octal</summary>
+    <div class="details-content">
+      <p><strong>Step 1:</strong> Split into three groups:</p>
+      <ul>
+        <li>Owner: <code>rwx</code> → 4 + 2 + 1 = <strong>7</strong></li>
+        <li>Group: <code>r-x</code> → 4 + 0 + 1 = <strong>5</strong></li>
+        <li>Others: <code>r--</code> → 4 + 0 + 0 = <strong>4</strong></li>
+      </ul>
+      <p><strong>Result:</strong> <code>754</code></p>
+    </div>
+  </details>
+
+  <h3>4.3 Common Permission Sets</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Numeric</th><th>Symbolic</th><th>Typical Use Case</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>755</code></td><td><code>rwxr-xr-x</code></td><td>Executable scripts, web directories, system binaries</td></tr>
+        <tr><td><code>644</code></td><td><code>rw-r--r--</code></td><td>Configuration files, web content, documents</td></tr>
+        <tr><td><code>700</code></td><td><code>rwx------</code></td><td>Private scripts, user home directories</td></tr>
+        <tr><td><code>600</code></td><td><code>rw-------</code></td><td>SSH private keys, sensitive configuration files</td></tr>
+        <tr><td><code>750</code></td><td><code>rwxr-x---</code></td><td>Group-shared executables, team directories</td></tr>
+        <tr><td><code>640</code></td><td><code>rw-r-----</code></td><td>Group-readable configuration files, log files</td></tr>
+        <tr><td><code>444</code></td><td><code>r--r--r--</code></td><td>Read-only files that should not be modified</td></tr>
+        <tr><td><code>000</code></td><td><code>---------</code></td><td>No access for anyone (root can still access)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warning">
+    <div class="callout-title">⚠️ When to Use Numeric Notation</div>
+    Numeric notation <strong>sets all nine permission bits at once</strong>, replacing whatever was there before. Use it when you know <em>exactly</em> what the final permissions should be.
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 5: THE chmod COMMAND
+     ============================================================ -->
+<section class="content-section" id="section-5" aria-labelledby="s5-heading">
+  <h2 id="s5-heading"><span class="section-number">5</span> The <code>chmod</code> Command</h2>
+  <p class="section-intro">The <code>chmod</code> (change mode) command is the primary tool for modifying file and directory permissions on Linux. It supports both symbolic and numeric notation.</p>
+
+  <div class="def-box">
+    <div class="def-term">chmod — Change File Mode Bits</div>
+    <div class="def-desc"><strong>Syntax:</strong> <code>chmod [OPTIONS] MODE FILE...</code><br>
+    <strong>Purpose:</strong> Changes the permission bits of files and directories.<br>
+    <strong>Who can use it:</strong> The file owner or root (superuser).<br>
+    <strong>Man page:</strong> <code>man chmod</code></div>
+  </div>
+
+  <h3>5.1 Using chmod with Symbolic Notation</h3>
+<pre><code><span class="code-comment"># Make a script executable by the owner</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">u+x</span> backup.sh
+
+<span class="code-comment"># Remove write permission from group and others</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">go-w</span> /etc/config.conf
+
+<span class="code-comment"># Set exact permissions: owner=rwx, group=rx, others=none</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">u=rwx,g=rx,o=</span> /opt/app/run.sh
+
+<span class="code-comment"># Multiple operations in one command (comma-separated)</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">u+x,g-w,o-rwx</span> sensitive_script.sh</code></pre>
+
+  <h3>5.2 Using chmod with Numeric Notation</h3>
+<pre><code><span class="code-comment"># Standard web content permissions</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">644</span> /var/www/html/index.html
+
+<span class="code-comment"># Executable script with group read+execute</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">750</span> /opt/scripts/deploy.sh
+
+<span class="code-comment"># Secure SSH private key</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">600</span> ~/.ssh/id_rsa
+
+<span class="code-comment"># Private home directory</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">700</span> /home/alice</code></pre>
+
+  <h3>5.3 The -R (Recursive) Option</h3>
+<pre><code><span class="code-comment"># Apply 755 to a directory and everything inside it</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">-R 755</span> /var/www/html/</code></pre>
+
+  <div class="callout danger">
+    <div class="callout-title">🚨 Caution with Recursive chmod</div>
+    <p>Using <code>chmod -R</code> applies the <em>same</em> permissions to both files and directories. This can cause problems because files and directories often need <em>different</em> permissions. For example, <code>chmod -R 644</code> would remove execute from directories, making them inaccessible via <code>cd</code>.</p>
+    <p><strong>Better approach — use <code>find</code> to target files and directories separately:</strong></p>
+<pre><code><span class="code-comment"># Set directories to 755</span>
+<span class="code-cmd">find</span> /var/www/html <span class="code-flag">-type d -exec</span> chmod 755 {} \;
+
+<span class="code-comment"># Set files to 644</span>
+<span class="code-cmd">find</span> /var/www/html <span class="code-flag">-type f -exec</span> chmod 644 {} \;</code></pre>
+  </div>
+
+  <h3>5.4 The -v (Verbose) and Other Useful Options</h3>
+<pre><code><span class="code-comment"># Verbose: reports each permission change</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">-v 644</span> report.txt
+<span class="code-comment"># Output: mode of 'report.txt' changed from 0755 (rwxr-xr-x) to 0644 (rw-r--r--)</span></code></pre>
+
+  <h3>5.5 Verifying Permission Changes</h3>
+<pre><code><span class="code-comment"># Check permissions before</span>
+<span class="code-cmd">ls</span> <span class="code-flag">-l</span> deploy.sh
+<span class="code-comment"># -rw-r--r-- 1 alice developers 512 Mar 2 10:00 deploy.sh</span>
+
+<span class="code-comment"># Add execute for owner</span>
+<span class="code-cmd">chmod</span> <span class="code-flag">u+x</span> deploy.sh
+
+<span class="code-comment"># Verify after</span>
+<span class="code-cmd">ls</span> <span class="code-flag">-l</span> deploy.sh
+<span class="code-comment"># -rwxr--r-- 1 alice developers 512 Mar 2 10:00 deploy.sh</span></code></pre>
+
+  <div class="callout tip">
+    <div class="callout-title">💡 Pro Tip: stat Command</div>
+<pre><code><span class="code-comment"># View detailed permission info</span>
+<span class="code-cmd">stat</span> deploy.sh
+
+<span class="code-comment"># Show just octal permissions</span>
+<span class="code-cmd">stat</span> <span class="code-flag">-c '%a %n'</span> deploy.sh
+<span class="code-comment"># Output: 744 deploy.sh</span></code></pre>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 6: FILE vs. DIRECTORY PERMISSIONS
+     ============================================================ -->
+<section class="content-section" id="section-6" aria-labelledby="s6-heading">
+  <h2 id="s6-heading"><span class="section-number">6</span> File vs. Directory Permissions</h2>
+  <p class="section-intro">The same three permission types — read, write, execute — have fundamentally different meanings when applied to files versus directories. This distinction is one of the most common sources of confusion for new Linux administrators.</p>
+
+  <h3>6.1 Side-by-Side Comparison</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Permission</th><th>On a File</th><th>On a Directory</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Read (r)</strong></td>
+          <td>View file contents (<code>cat</code>, <code>less</code>, <code>head</code>, <code>grep</code>)</td>
+          <td>List filenames in the directory (<code>ls</code>). Without execute, you can see names but not details.</td>
+        </tr>
+        <tr>
+          <td><strong>Write (w)</strong></td>
+          <td>Modify, overwrite, or truncate the file's contents</td>
+          <td>Create, delete, or rename files within the directory. You can delete a file you cannot read if you have write on the <em>directory</em>.</td>
+        </tr>
+        <tr>
+          <td><strong>Execute (x)</strong></td>
+          <td>Run the file as a program or script</td>
+          <td>Enter the directory (<code>cd</code>) and access file metadata (inodes). Sometimes called the "search" or "traverse" permission.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>6.2 Critical Directory Permission Combinations</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Permissions</th><th>Can <code>ls</code>?</th><th>Can <code>cd</code>?</th><th>Can Create/Delete?</th><th>Can Access Files?</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>r--</code></td><td>✅ Names only</td><td>❌</td><td>❌</td><td>❌</td></tr>
+        <tr><td><code>-w-</code></td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
+        <tr><td><code>--x</code></td><td>❌</td><td>✅</td><td>❌</td><td>✅ If you know the filename</td></tr>
+        <tr><td><code>r-x</code></td><td>✅ Full details</td><td>✅</td><td>❌</td><td>✅</td></tr>
+        <tr><td><code>rwx</code></td><td>✅ Full details</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td><code>-wx</code></td><td>❌</td><td>✅</td><td>✅</td><td>✅ If you know the filename</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warning">
+    <div class="callout-title">⚠️ Key Insight: Execute on Directories</div>
+    <p>The execute permission on a directory is <strong>essential</strong> for almost any useful operation. Without it, you cannot <code>cd</code> into the directory, and you cannot access any files inside it. This is why directories almost always have the execute bit set for categories that need access.</p>
+  </div>
+
+  <details>
+    <summary>Demonstration: Directory Permission Behavior</summary>
+    <div class="details-content">
+<pre><code><span class="code-comment"># Create a test directory with a file inside</span>
+<span class="code-cmd">mkdir</span> /tmp/permtest
+<span class="code-cmd">echo</span> <span class="code-string">"secret data"</span> &gt; /tmp/permtest/data.txt
+<span class="code-cmd">chmod</span> 644 /tmp/permtest/data.txt
+
+<span class="code-comment"># Test: read-only directory (r--)</span>
+<span class="code-cmd">chmod</span> 400 /tmp/permtest
+<span class="code-cmd">ls</span> /tmp/permtest/
+<span class="code-comment"># Shows filenames but with errors — cannot access metadata</span>
+<span class="code-cmd">cat</span> /tmp/permtest/data.txt
+<span class="code-comment"># Permission denied — no execute bit</span>
+
+<span class="code-comment"># Test: execute-only directory (--x)</span>
+<span class="code-cmd">chmod</span> 100 /tmp/permtest
+<span class="code-cmd">ls</span> /tmp/permtest/
+<span class="code-comment"># Permission denied — cannot list</span>
+<span class="code-cmd">cat</span> /tmp/permtest/data.txt
+<span class="code-comment"># Works! — if you know the exact filename</span>
+
+<span class="code-comment"># Test: read + execute (r-x)</span>
+<span class="code-cmd">chmod</span> 500 /tmp/permtest
+<span class="code-cmd">ls</span> <span class="code-flag">-l</span> /tmp/permtest/
+<span class="code-comment"># Full listing works</span>
+
+<span class="code-comment"># Clean up</span>
+<span class="code-cmd">chmod</span> 755 /tmp/permtest
+<span class="code-cmd">rm</span> <span class="code-flag">-rf</span> /tmp/permtest</code></pre>
+    </div>
+  </details>
+
+  <h3>6.3 Deleting Files: A Surprising Behavior</h3>
+  <p><strong>Deleting a file depends on the directory's write permission, not the file's permissions.</strong> This is because deleting a file is actually modifying the <em>directory</em> (removing the filename entry), not modifying the file itself.</p>
+<pre><code><span class="code-comment"># alice creates a file with no permissions</span>
+<span class="code-cmd">touch</span> /shared/alice-file.txt
+<span class="code-cmd">chmod</span> 000 /shared/alice-file.txt
+
+<span class="code-comment"># bob has write permission on /shared/ directory</span>
+<span class="code-cmd">rm</span> /shared/alice-file.txt  <span class="code-comment"># bob CAN delete the file!</span></code></pre>
+  <p>The <strong>sticky bit</strong> (covered in Module 7.2) was created specifically to address this behavior in shared directories like <code>/tmp</code>.</p>
+</section>
+
+<!-- ============================================================
+     SECTION 7: DEFAULT PERMISSIONS & umask
+     ============================================================ -->
+<section class="content-section" id="section-7" aria-labelledby="s7-heading">
+  <h2 id="s7-heading"><span class="section-number">7</span> Default Permissions &amp; <code>umask</code></h2>
+  <p class="section-intro">When you create a new file or directory, Linux does not assign arbitrary permissions. Instead, it uses a system of base permissions and a <code>umask</code> value to calculate the default permissions automatically.</p>
+
+  <div class="def-box">
+    <div class="def-term">umask — User File-Creation Mode Mask</div>
+    <div class="def-desc">The <code>umask</code> is a value that specifies which permission bits should be <strong>removed</strong> (masked off) from the base permissions when creating new files and directories. It acts as a filter, not an assignment.</div>
+  </div>
+
+  <h3>7.1 Base Permissions</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Object Type</th><th>Base Permissions</th><th>Octal</th><th>Reason</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Files</strong></td><td><code>rw-rw-rw-</code></td><td>666</td><td>Files are never created with execute by default (security)</td></tr>
+        <tr><td><strong>Directories</strong></td><td><code>rwxrwxrwx</code></td><td>777</td><td>Directories need execute for <code>cd</code> access</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.2 How umask Works</h3>
+  <p style="text-align:center; font-size:1.05rem; font-weight:600; margin:16px 0; color:#1e3a5f;">Default Permissions = Base Permissions AND (NOT umask)</p>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>umask</th><th>New File (666 base)</th><th>New Directory (777 base)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>022</code></td><td><code>644</code> (rw-r--r--)</td><td><code>755</code> (rwxr-xr-x)</td></tr>
+        <tr><td><code>027</code></td><td><code>640</code> (rw-r-----)</td><td><code>750</code> (rwxr-x---)</td></tr>
+        <tr><td><code>077</code></td><td><code>600</code> (rw-------)</td><td><code>700</code> (rwx------)</td></tr>
+        <tr><td><code>002</code></td><td><code>664</code> (rw-rw-r--)</td><td><code>775</code> (rwxrwxr-x)</td></tr>
+        <tr><td><code>000</code></td><td><code>666</code> (rw-rw-rw-)</td><td><code>777</code> (rwxrwxrwx)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.3 Viewing and Setting umask</h3>
+<pre><code><span class="code-comment"># View current umask (numeric)</span>
+<span class="code-cmd">umask</span>
+<span class="code-comment"># Output: 0022</span>
+
+<span class="code-comment"># View current umask (symbolic)</span>
+<span class="code-cmd">umask</span> <span class="code-flag">-S</span>
+<span class="code-comment"># Output: u=rwx,g=rx,o=rx</span>
+
+<span class="code-comment"># Set umask for current session</span>
+<span class="code-cmd">umask</span> 027
+
+<span class="code-comment"># Test: create a file and directory</span>
+<span class="code-cmd">touch</span> testfile.txt
+<span class="code-cmd">mkdir</span> testdir
+<span class="code-cmd">ls</span> <span class="code-flag">-la</span>
+<span class="code-comment"># testfile.txt: -rw-r----- (640)</span>
+<span class="code-comment"># testdir:      drwxr-x--- (750)</span></code></pre>
+
+  <h3>7.4 Making umask Persistent</h3>
+<pre><code><span class="code-comment"># For a single user — add to ~/.bashrc or ~/.profile</span>
+<span class="code-cmd">echo</span> <span class="code-string">'umask 027'</span> &gt;&gt; ~/.bashrc
+
+<span class="code-comment"># For all users system-wide — edit /etc/login.defs</span>
+<span class="code-cmd">sudo</span> <span class="code-cmd">nano</span> /etc/login.defs
+<span class="code-comment"># Find and modify: UMASK  027</span></code></pre>
+
+  <div class="callout info">
+    <div class="callout-title">📌 Common umask Values in Practice</div>
+    <ul>
+      <li><strong><code>022</code></strong> — Most common default. Files: 644, Dirs: 755. Others can read but not write.</li>
+      <li><strong><code>027</code></strong> — More restrictive. Files: 640, Dirs: 750. Others get no access.</li>
+      <li><strong><code>077</code></strong> — Most restrictive. Files: 600, Dirs: 700. Only the owner has access.</li>
+      <li><strong><code>002</code></strong> — Collaborative. Files: 664, Dirs: 775. Group members can write.</li>
+    </ul>
+  </div>
+
+  <div class="callout tip">
+    <div class="callout-title">💡 Why Not Just Subtract?</div>
+    <p>While "subtracting" works for most common cases, it's technically inaccurate. The umask uses a <strong>bitwise AND with the complement</strong>. Example with umask <code>033</code> and file base <code>666</code>:</p>
+    <ul>
+      <li>Subtraction: 666 − 033 = 633 ← <strong>Wrong!</strong></li>
+      <li>Bitwise: 666 AND NOT(033) = 644 ← <strong>Correct!</strong></li>
+    </ul>
+    <p>The umask can only <em>remove</em> bits, never <em>add</em> them. Since the file base (666) has no execute bit, no umask value can produce execute on new files.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 8: INTERACTIVE ACTIVITIES & KNOWLEDGE CHECKS
+     ============================================================ -->
+<section class="content-section" id="section-8" aria-labelledby="s8-heading">
+  <h2 id="s8-heading"><span class="section-number">8</span> Interactive Activities &amp; Knowledge Checks</h2>
+  <p class="section-intro">Test your understanding of the Linux permission model with these interactive exercises. Complete all activities to finish the module.</p>
+
+  <!-- ==================== ACTIVITY 1: PERMISSION CALCULATOR ==================== -->
+  <div class="activity-container" id="activity-calc">
+    <h3>🔧 Activity 1: Interactive Permission Calculator</h3>
+    <p class="activity-instructions">Check the boxes to set permissions for each category. The symbolic and numeric representations update in real time.</p>
+    <div class="perm-calc">
+      <div class="perm-grid" role="group" aria-label="Permission checkboxes">
+        <div class="perm-grid-header"></div>
+        <div class="perm-grid-header">Read (r=4)</div>
+        <div class="perm-grid-header">Write (w=2)</div>
+        <div class="perm-grid-header">Execute (x=1)</div>
+        <div class="perm-grid-label">Owner (u)</div>
+        <div class="perm-checkbox-cell"><input type="checkbox" id="calc-ur" aria-label="Owner read" checked></div>
+        <div class="perm-checkbox-cell"><input type="checkbox" id="calc-uw" aria-label="Owner write" checked></div>
+        <div class="perm-checkbox-cell"><input type="checkbox" id="calc-ux" aria-label="Owner execute"></div>
+        <div class="perm-grid-label">Group (g)</div>
+        <div class="perm-checkbox-cell"><input type="checkbox" id="calc-gr" aria-label="Group read" checked></div>
+        <div class="perm-checkbox-cell"><input type="checkbox" id="calc-gw" aria-label="Group write"></div>
+        <div class="perm-checkbox-cell"><input type="checkbox" id="calc-gx" aria-label="Group execute"></div>
+        <div class="perm-grid-label">Others (o)</div>
+        <div class="perm-checkbox-cell"><input type="checkbox" id="calc-or" aria-label="Others read" checked></div>
+        <div class="perm-checkbox-cell"><input type="checkbox" id="calc-ow" aria-label="Others write"></div>
+        <div class="perm-checkbox-cell"><input type="checkbox" id="calc-ox" aria-label="Others execute"></div>
+      </div>
+      <div class="perm-result" aria-live="polite">
+        <div class="symbolic" id="calcSymbolic">-rw-r--r--</div>
+        <div class="numeric" id="calcNumeric">644</div>
+      </div>
+      <p style="margin-top:12px; font-size:0.85rem; color:#4b5563;"><strong>chmod command:</strong> <code id="calcCommand">chmod 644 filename</code></p>
+    </div>
+  </div>
+
+  <!-- ==================== ACTIVITY 2: CONVERSION QUIZ ==================== -->
+  <div class="activity-container" id="activity-quiz1">
+    <h3>📝 Activity 2: Permission Conversion Quiz</h3>
+    <p class="activity-instructions">Test your ability to convert between symbolic and numeric notation.</p>
+
+    <div class="quiz-question" id="q1">
+      <p class="q-text">1. What is the numeric (octal) representation of <code>rwxr-x---</code>?</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q1" value="a"> 745</label></li>
+        <li><label><input type="radio" name="q1" value="b"> 750</label></li>
+        <li><label><input type="radio" name="q1" value="c"> 650</label></li>
+        <li><label><input type="radio" name="q1" value="d"> 760</label></li>
+      </ul>
+      <div class="quiz-feedback" id="q1-feedback"></div>
+    </div>
+
+    <div class="quiz-question" id="q2">
+      <p class="q-text">2. What symbolic permissions does <code>chmod 600</code> set?</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q2" value="a"> rw-rw----</label></li>
+        <li><label><input type="radio" name="q2" value="b"> rw-------</label></li>
+        <li><label><input type="radio" name="q2" value="c"> r--------</label></li>
+        <li><label><input type="radio" name="q2" value="d"> rwx------</label></li>
+      </ul>
+      <div class="quiz-feedback" id="q2-feedback"></div>
+    </div>
+
+    <div class="quiz-question" id="q3">
+      <p class="q-text">3. A file has permissions <code>-rw-r-----</code>. User <code>bob</code> is the owner. User <code>alice</code> is in the file's group. User <code>charlie</code> is neither. Who can read the file?</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q3" value="a"> Only bob</label></li>
+        <li><label><input type="radio" name="q3" value="b"> bob and alice</label></li>
+        <li><label><input type="radio" name="q3" value="c"> bob, alice, and charlie</label></li>
+        <li><label><input type="radio" name="q3" value="d"> bob and charlie</label></li>
+      </ul>
+      <div class="quiz-feedback" id="q3-feedback"></div>
+    </div>
+
+    <div class="quiz-question" id="q4">
+      <p class="q-text">4. What is the effect of <code>chmod go-w config.txt</code>?</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q4" value="a"> Removes write permission from the owner</label></li>
+        <li><label><input type="radio" name="q4" value="b"> Removes write permission from group and others</label></li>
+        <li><label><input type="radio" name="q4" value="c"> Adds write permission for group and others</label></li>
+        <li><label><input type="radio" name="q4" value="d"> Sets group and others to write-only</label></li>
+      </ul>
+      <div class="quiz-feedback" id="q4-feedback"></div>
+    </div>
+
+    <div class="quiz-question" id="q5">
+      <p class="q-text">5. With a umask of <code>027</code>, what permissions will a newly created <strong>file</strong> have?</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q5" value="a"> 750 (rwxr-x---)</label></li>
+        <li><label><input type="radio" name="q5" value="b"> 640 (rw-r-----)</label></li>
+        <li><label><input type="radio" name="q5" value="c"> 644 (rw-r--r--)</label></li>
+        <li><label><input type="radio" name="q5" value="d"> 660 (rw-rw----)</label></li>
+      </ul>
+      <div class="quiz-feedback" id="q5-feedback"></div>
+    </div>
+
+    <div class="quiz-question" id="q6">
+      <p class="q-text">6. A directory has permissions <code>d--x------</code> for user <code>alice</code> (owner). Which can alice do?</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q6" value="a"> List files with <code>ls</code></label></li>
+        <li><label><input type="radio" name="q6" value="b"> Create new files in the directory</label></li>
+        <li><label><input type="radio" name="q6" value="c"> <code>cd</code> into the directory and access files by name</label></li>
+        <li><label><input type="radio" name="q6" value="d"> Delete files from the directory</label></li>
+      </ul>
+      <div class="quiz-feedback" id="q6-feedback"></div>
+    </div>
+
+    <div class="quiz-question" id="q7">
+      <p class="q-text">7. Which command correctly sets different permissions for files vs. directories recursively?</p>
+      <ul class="quiz-options">
+        <li><label><input type="radio" name="q7" value="a"> <code>chmod -R 755 /var/www</code></label></li>
+        <li><label><input type="radio" name="q7" value="b"> <code>find /var/www -type f -exec chmod 644 {} \;</code></label></li>
+        <li><label><input type="radio" name="q7" value="c"> <code>chmod -R a=r /var/www</code></label></li>
+        <li><label><input type="radio" name="q7" value="d"> <code>chmod 644 /var/www/*</code></label></li>
+      </ul>
+      <div class="quiz-feedback" id="q7-feedback"></div>
+    </div>
+
+    <div style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="checkQuizBtn" onclick="checkQuiz()">Check Answers</button>
+      <button class="btn btn-reset" id="resetQuizBtn" onclick="resetQuiz()">Reset Quiz</button>
+    </div>
+    <div id="quizScore" style="margin-top:14px; font-weight:600; font-size:1rem; color:#1e293b;" aria-live="polite"></div>
+  </div>
+
+  <!-- ==================== ACTIVITY 3: SCENARIO EXERCISES ==================== -->
+  <div class="activity-container" id="activity-scenarios">
+    <h3>🏗️ Activity 3: Real-World Scenarios</h3>
+    <p class="activity-instructions">For each scenario, determine the appropriate <code>chmod</code> command. Expand to check your answer.</p>
+
+    <details>
+      <summary>Scenario 1: Securing an SSH Private Key</summary>
+      <div class="details-content">
+        <p><strong>Situation:</strong> Your private key <code>~/.ssh/id_rsa</code> has permissions <code>-rw-r--r--</code>. SSH refuses to use it, displaying: "Permissions 0644 are too open."</p>
+        <p><strong>Task:</strong> What <code>chmod</code> command fixes this?</p>
+        <details>
+          <summary>Show Solution</summary>
+          <div class="details-content">
+<pre><code><span class="code-cmd">chmod</span> <span class="code-flag">600</span> ~/.ssh/id_rsa</code></pre>
+            <p>SSH private keys must be <code>600</code> (<code>rw-------</code>) — readable only by the owner.</p>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details>
+      <summary>Scenario 2: Web Server Document Root</summary>
+      <div class="details-content">
+        <p><strong>Situation:</strong> Configure <code>/var/www/html/</code> so <code>www-data</code> can read files and traverse directories but not modify content. The developer <code>webdev</code> needs full access.</p>
+        <details>
+          <summary>Show Solution</summary>
+          <div class="details-content">
+<pre><code><span class="code-cmd">sudo chown</span> <span class="code-flag">-R</span> webdev:www-data /var/www/html/
+
+<span class="code-comment"># Directories: 750</span>
+<span class="code-cmd">sudo find</span> /var/www/html <span class="code-flag">-type d -exec</span> chmod 750 {} \;
+
+<span class="code-comment"># Files: 640</span>
+<span class="code-cmd">sudo find</span> /var/www/html <span class="code-flag">-type f -exec</span> chmod 640 {} \;</code></pre>
+            <p>Owner (<code>webdev</code>) gets full access. Group (<code>www-data</code>) gets read + traverse. Others get nothing.</p>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details>
+      <summary>Scenario 3: Making a Script Executable</summary>
+      <div class="details-content">
+        <p><strong>Situation:</strong> <code>backup.sh</code> has <code>-rw-r--r--</code>. Running <code>./backup.sh</code> gives "Permission denied."</p>
+        <details>
+          <summary>Show Solution</summary>
+          <div class="details-content">
+<pre><code><span class="code-cmd">chmod</span> <span class="code-flag">u+x</span> backup.sh</code></pre>
+            <p>Adds only execute for the owner. Result: <code>-rwxr--r--</code> (744). Using symbolic notation preserves existing permissions.</p>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <details>
+      <summary>Scenario 4: Calculating umask for Security Policy</summary>
+      <div class="details-content">
+        <p><strong>Situation:</strong> Policy requires new files to be <code>rw-r-----</code> (640) and new directories to be <code>rwxr-x---</code> (750).</p>
+        <details>
+          <summary>Show Solution</summary>
+          <div class="details-content">
+            <p>File: 666 − 640 = 026. Directory: 777 − 750 = 027. Use the larger value: <strong><code>umask 027</code></strong>.</p>
+<pre><code><span class="code-cmd">umask</span> 027</code></pre>
+            <p>Verify: 666 AND NOT(027) = 640 ✅ | 777 AND NOT(027) = 750 ✅</p>
+          </div>
+        </details>
+      </div>
+    </details>
+  </div>
+
+  <!-- ==================== ACTIVITY 4: MATCHING CHALLENGE ==================== -->
+  <div class="activity-container" id="activity-match">
+    <h3>🔗 Activity 4: Permission Matching Challenge</h3>
+    <p class="activity-instructions">Match each numeric permission to its correct use case. Click a permission on the left, then click its matching use case on the right.</p>
+    <div id="matchGame" role="group" aria-label="Permission matching exercise">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:14px 0;">
+        <div>
+          <p style="font-weight:600; margin-bottom:8px; color:#1e3a5f;">Numeric Permissions:</p>
+          <div id="matchSources" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+        <div>
+          <p style="font-weight:600; margin-bottom:8px; color:#064e3b;">Use Cases:</p>
+          <div id="matchTargets" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+      </div>
+      <div id="matchFeedback" style="margin-top:12px; font-weight:600;" aria-live="polite"></div>
+      <button class="btn btn-reset" onclick="resetMatch()" style="margin-top:10px;">Reset Matching</button>
+    </div>
+  </div>
+
+  <!-- ==================== ACTIVITY 5: umask CALCULATOR ==================== -->
+  <div class="activity-container" id="activity-umask">
+    <h3>🧮 Activity 5: Interactive umask Calculator</h3>
+    <p class="activity-instructions">Enter a umask value to see the resulting default permissions for new files and directories.</p>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+      <label for="umaskInput" style="font-weight:600; color:#1e3a5f;">umask value:</label>
+      <input type="text" id="umaskInput" value="022" maxlength="4" style="width:80px; padding:10px; font-size:1.1rem; font-family:monospace; text-align:center; border:2px solid #93c5fd; border-radius:8px; color:#1a1a2e; background:#ffffff;" aria-label="Enter umask value">
+      <button class="btn btn-primary" onclick="calcUmask()">Calculate</button>
+    </div>
+    <div id="umaskResult" style="display:none;">
+      <div class="table-wrapper">
+        <table id="umaskTable">
+          <thead>
+            <tr><th>Object</th><th>Base</th><th>umask</th><th>Result (Numeric)</th><th>Result (Symbolic)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>File</td><td id="umR-fb">666</td><td id="umR-um"></td><td id="umR-fn"></td><td id="umR-fs"></td></tr>
+            <tr><td>Directory</td><td id="umR-db">777</td><td id="umR-dum"></td><td id="umR-dn"></td><td id="umR-ds"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="umaskError" style="display:none; color:#991b1b; font-weight:600; margin-top:8px;"></div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     MODULE SUMMARY
+     ============================================================ -->
+<section class="content-section" id="section-summary" aria-labelledby="summary-heading">
+  <h2 id="summary-heading"><span class="section-number">✓</span> Module 7.1 Summary</h2>
+
+  <h3>Key Takeaways</h3>
+  <ul>
+    <li>Linux uses <strong>three permission types</strong> (read, write, execute) applied to <strong>three categories</strong> (owner, group, others).</li>
+    <li>Permissions are stored as <strong>9 bits</strong> in the file's inode, plus 3 additional bits for special permissions.</li>
+    <li>The kernel evaluates permissions in <strong>strict order</strong>: root → owner → group → others. Permissions do <strong>not accumulate</strong>.</li>
+    <li><strong>Symbolic notation</strong> (<code>chmod u+x</code>) is best for targeted changes; <strong>numeric notation</strong> (<code>chmod 755</code>) sets all bits at once.</li>
+    <li>Permissions mean <strong>different things</strong> on files versus directories — especially execute.</li>
+    <li>The <strong>umask</strong> controls default permissions by masking bits from base permissions (666 for files, 777 for directories).</li>
+    <li>Deleting a file requires <strong>write permission on the directory</strong>, not on the file itself.</li>
+  </ul>
+
+  <h3>Essential Commands Reference</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Command</th><th>Purpose</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>ls -l</code></td><td>View permissions and ownership</td><td><code>ls -l /etc/passwd</code></td></tr>
+        <tr><td><code>chmod</code></td><td>Change file/directory permissions</td><td><code>chmod 755 script.sh</code></td></tr>
+        <tr><td><code>chmod -R</code></td><td>Change permissions recursively</td><td><code>chmod -R o-w /shared/</code></td></tr>
+        <tr><td><code>umask</code></td><td>View/set default permission mask</td><td><code>umask 027</code></td></tr>
+        <tr><td><code>stat</code></td><td>View detailed file metadata</td><td><code>stat -c '%a %n' file.txt</code></td></tr>
+        <tr><td><code>find -exec chmod</code></td><td>Set different perms for files/dirs</td><td><code>find . -type f -exec chmod 644 {} \;</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout info">
+    <div class="callout-title">📌 What's Next?</div>
+    <p><strong>Module 7.2: Ownership Management &amp; Special Permissions</strong> covers the <code>chown</code> and <code>chgrp</code> commands for changing file ownership, and the special permission bits: SetUID, SetGID, and the sticky bit.</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="module-footer" role="contentinfo">
+  <p>CSC 152: Network Operating Systems and Administration — Mendocino College</p>
+  <p>Module 7.1: Linux Permission Model &amp; Basic Commands | Week 7: March 2–8, 2026</p>
+  <p>Instructor: David Pai | <a href="mailto:dpai@mendocino.edu">dpai@mendocino.edu</a></p>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ============================================================
+     SESSION STORAGE
+     ============================================================ */
+  var SK = 'csc152_mod71_progress';
+
+  function loadP() {
+    try { var d = sessionStorage.getItem(SK); return d ? JSON.parse(d) : {}; }
+    catch(e) { return {}; }
+  }
+  function saveP(d) {
+    try { sessionStorage.setItem(SK, JSON.stringify(d)); } catch(e) {}
+  }
+
+  var progress = loadP();
+  if (!progress.sections) progress.sections = [];
+  if (!progress.objectives) progress.objectives = [];
+  if (!progress.quizAnswers) progress.quizAnswers = {};
+
+  /* ============================================================
+     PROGRESS BAR
+     ============================================================ */
+  var TOTAL = 8;
+
+  function updateProgress() {
+    var n = progress.sections.length;
+    var pct = Math.round((n / TOTAL) * 100);
+    var fill = document.getElementById('progressFill');
+    var txt = document.getElementById('progressText');
+    fill.style.width = pct + '%';
+    fill.parentElement.setAttribute('aria-valuenow', pct);
+    txt.textContent = n + ' of ' + TOTAL + ' sections completed (' + pct + '%)';
+    saveP(progress);
+  }
+
+  function markSection(num) {
+    if (progress.sections.indexOf(num) === -1) {
+      progress.sections.push(num);
+      updateProgress();
+    }
+  }
+
+  /* Scroll-based section tracking */
+  function setupScroll() {
+    var secs = document.querySelectorAll('.content-section[id^="section-"]');
+    if (!('IntersectionObserver' in window)) return;
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting && e.intersectionRatio >= 0.25) {
+          var id = e.target.id;
+          var num = id.replace('section-', '');
+          if (num !== 'objectives' && num !== 'summary') markSection(num);
+        }
+      });
+    }, { threshold: 0.25 });
+    secs.forEach(function(s) { obs.observe(s); });
+  }
+
+  /* ============================================================
+     OBJECTIVES CHECKBOXES
+     ============================================================ */
+  function setupObjectives() {
+    var cbs = document.querySelectorAll('#objectivesList input[type="checkbox"]');
+    cbs.forEach(function(cb) {
+      if (progress.objectives.indexOf(cb.id) !== -1) cb.checked = true;
+      cb.addEventListener('change', function() {
+        if (this.checked) {
+          if (progress.objectives.indexOf(this.id) === -1) progress.objectives.push(this.id);
+        } else {
+          progress.objectives = progress.objectives.filter(function(x) { return x !== cb.id; });
+        }
+        saveP(progress);
+      });
+    });
+  }
+
+  /* ============================================================
+     PERMISSION CALCULATOR (Activity 1)
+     ============================================================ */
+  function setupPermCalc() {
+    var ids = ['calc-ur','calc-uw','calc-ux','calc-gr','calc-gw','calc-gx','calc-or','calc-ow','calc-ox'];
+    var letters = ['r','w','x','r','w','x','r','w','x'];
+    var values  = [4,2,1,4,2,1,4,2,1];
+
+    function update() {
+      var sym = '-';
+      var o = 0, g = 0, t = 0;
+      for (var i = 0; i < 9; i++) {
+        var ch = document.getElementById(ids[i]).checked;
+        sym += ch ? letters[i] : '-';
+        if (i < 3 && ch) o += values[i];
+        else if (i >= 3 && i < 6 && ch) g += values[i];
+        else if (i >= 6 && ch) t += values[i];
+      }
+      var num = '' + o + g + t;
+      document.getElementById('calcSymbolic').textContent = sym;
+      document.getElementById('calcNumeric').textContent = num;
+      document.getElementById('calcCommand').textContent = 'chmod ' + num + ' filename';
+    }
+
+    ids.forEach(function(id) {
+      document.getElementById(id).addEventListener('change', update);
+    });
+    update();
+  }
+
+  /* ============================================================
+     QUIZ (Activity 2)
+     ============================================================ */
+  var answers = {
+    q1: { correct: 'b', right: 'Correct! rwx=7, r-x=5, ---=0 → 750', wrong: 'Incorrect. Calculate: rwx = 4+2+1 = 7, r-x = 4+0+1 = 5, --- = 0. Answer: 750' },
+    q2: { correct: 'b', right: 'Correct! 6=rw-, 0=---, 0=--- → rw-------', wrong: 'Incorrect. 6 = 4+2 = rw-, 0 = ---, 0 = ---. Answer: rw-------' },
+    q3: { correct: 'b', right: 'Correct! bob (owner) has rw- → can read. alice (group) has r-- → can read. charlie (others) has --- → no access.', wrong: 'Incorrect. Owner bob: rw- (read ✓). Group member alice: r-- (read ✓). Others charlie: --- (no access). Answer: bob and alice.' },
+    q4: { correct: 'b', right: 'Correct! "go" = group + others, "-w" = remove write.', wrong: 'Incorrect. "go" targets group and others, "-w" removes write permission. Answer: removes write from group and others.' },
+    q5: { correct: 'b', right: 'Correct! File base 666, umask 027 → 666 AND NOT(027) = 640 (rw-r-----)', wrong: 'Incorrect. File base is 666. umask 027 removes: owner 0, group 2 (6→4), others 7 (6→0). Result: 640.' },
+    q6: { correct: 'c', right: 'Correct! Execute on a directory allows cd and accessing files by name. Without read, cannot ls. Without write, cannot create/delete.', wrong: 'Incorrect. Execute (x) on a directory allows cd-ing in and accessing files by name. No read = no ls. No write = no create/delete. Answer: cd and access by name.' },
+    q7: { correct: 'b', right: 'Correct! find with -type f targets only files, allowing different permissions for files vs. directories.', wrong: 'Incorrect. chmod -R applies the same permissions to everything. find -type f -exec chmod targets only files. Answer: find with -type f.' }
+  };
+
+  window.checkQuiz = function() {
+    var score = 0;
+    var total = Object.keys(answers).length;
+
+    Object.keys(answers).forEach(function(qid) {
+      var sel = document.querySelector('input[name="' + qid + '"]:checked');
+      var fb = document.getElementById(qid + '-feedback');
+      var ans = answers[qid];
+
+      if (!sel) {
+        fb.className = 'quiz-feedback incorrect';
+        fb.textContent = 'Please select an answer. ' + ans.wrong;
+        fb.style.display = 'block';
+        return;
+      }
+
+      progress.quizAnswers[qid] = sel.value;
+
+      if (sel.value === ans.correct) {
+        fb.className = 'quiz-feedback correct';
+        fb.textContent = '✓ ' + ans.right;
+        fb.style.display = 'block';
+        score++;
+      } else {
+        fb.className = 'quiz-feedback incorrect';
+        fb.textContent = '✗ ' + ans.wrong;
+        fb.style.display = 'block';
+      }
+    });
+
+    var scoreEl = document.getElementById('quizScore');
+    scoreEl.textContent = 'Score: ' + score + ' / ' + total + ' (' + Math.round((score / total) * 100) + '%)';
+
+    if (score === total) {
+      scoreEl.textContent += ' — Perfect! 🎉';
+      markSection('8');
+    }
+
+    saveP(progress);
+  };
+
+  window.resetQuiz = function() {
+    Object.keys(answers).forEach(function(qid) {
+      var radios = document.querySelectorAll('input[name="' + qid + '"]');
+      radios.forEach(function(r) { r.checked = false; });
+      var fb = document.getElementById(qid + '-feedback');
+      fb.className = 'quiz-feedback';
+      fb.style.display = 'none';
+      fb.textContent = '';
+    });
+    document.getElementById('quizScore').textContent = '';
+    progress.quizAnswers = {};
+    saveP(progress);
+  };
+
+  /* Restore quiz state */
+  function restoreQuiz() {
+    if (!progress.quizAnswers) return;
+    Object.keys(progress.quizAnswers).forEach(function(qid) {
+      var val = progress.quizAnswers[qid];
+      var radio = document.querySelector('input[name="' + qid + '"][value="' + val + '"]');
+      if (radio) radio.checked = true;
+    });
+  }
+
+  /* ============================================================
+     MATCHING GAME (Activity 4)
+     ============================================================ */
+  var matchData = [
+    { perm: '755', desc: 'Executable scripts, web directories' },
+    { perm: '644', desc: 'Configuration files, web content' },
+    { perm: '600', desc: 'SSH private keys, sensitive configs' },
+    { perm: '700', desc: 'Private home directories' },
+    { perm: '750', desc: 'Group-shared team directories' }
+  ];
+
+  var matchState = { selected: null, matched: [], shuffledTargets: [] };
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function buildMatch() {
+    var srcDiv = document.getElementById('matchSources');
+    var tgtDiv = document.getElementById('matchTargets');
+    srcDiv.innerHTML = '';
+    tgtDiv.innerHTML = '';
+    matchState.selected = null;
+    matchState.matched = [];
+    matchState.shuffledTargets = shuffle(matchData);
+    document.getElementById('matchFeedback').textContent = '';
+
+    matchData.forEach(function(item, i) {
+      var btn = document.createElement('button');
+      btn.className = 'match-btn';
+      btn.textContent = item.perm;
+      btn.setAttribute('data-idx', i);
+      btn.setAttribute('aria-label', 'Permission ' + item.perm);
+      btn.addEventListener('click', function() { selectSource(i, btn); });
+      srcDiv.appendChild(btn);
+    });
+
+    matchState.shuffledTargets.forEach(function(item, i) {
+      var btn = document.createElement('button');
+      btn.className = 'match-btn';
+      btn.textContent = item.desc;
+      btn.setAttribute('data-perm', item.perm);
+      btn.setAttribute('aria-label', 'Use case: ' + item.desc);
+      btn.addEventListener('click', function() { selectTarget(item.perm, btn); });
+      tgtDiv.appendChild(btn);
+    });
+  }
+
+  function selectSource(idx, btn) {
+    if (matchState.matched.indexOf(idx) !== -1) return;
+    var prev = document.querySelector('#matchSources .match-btn.selected');
+    if (prev) prev.classList.remove('selected');
+    btn.classList.add('selected');
+    matchState.selected = idx;
+  }
+
+  function selectTarget(perm, btn) {
+    if (matchState.selected === null) {
+      document.getElementById('matchFeedback').textContent = 'First click a permission on the left.';
+      return;
+    }
+    var idx = matchState.selected;
+    if (matchState.matched.indexOf(idx) !== -1) return;
+
+    var correctPerm = matchData[idx].perm;
+    var srcBtn = document.querySelector('#matchSources .match-btn[data-idx="' + idx + '"]');
+    var fb = document.getElementById('matchFeedback');
+
+    if (perm === correctPerm) {
+      srcBtn.classList.remove('selected');
+      srcBtn.classList.add('matched');
+      btn.classList.add('matched');
+      matchState.matched.push(idx);
+      matchState.selected = null;
+      fb.style.color = '#064e3b';
+      fb.textContent = '✓ Correct! ' + correctPerm + ' → ' + matchData[idx].desc;
+
+      if (matchState.matched.length === matchData.length) {
+        fb.textContent = '🎉 All matched correctly! Well done!';
+      }
+    } else {
+      srcBtn.classList.add('wrong');
+      btn.classList.add('wrong');
+      fb.style.color = '#991b1b';
+      fb.textContent = '✗ Not a match. Try again.';
+      setTimeout(function() {
+        srcBtn.classList.remove('wrong', 'selected');
+        btn.classList.remove('wrong');
+        matchState.selected = null;
+        fb.textContent = '';
+      }, 1200);
+    }
+  }
+
+  window.resetMatch = function() {
+    buildMatch();
+  };
+
+  /* ============================================================
+     umask CALCULATOR (Activity 5)
+     ============================================================ */
+  function octalToSymbolic(octal) {
+    var map = ['---','--x','-w-','-wx','r--','r-x','rw-','rwx'];
+    var s = String(octal).padStart(3, '0');
+    return map[parseInt(s[0])] + map[parseInt(s[1])] + map[parseInt(s[2])];
+  }
+
+  window.calcUmask = function() {
+    var input = document.getElementById('umaskInput').value.trim();
+    var errEl = document.getElementById('umaskError');
+    var resEl = document.getElementById('umaskResult');
+
+    /* Strip leading 0 for 4-digit entry */
+    var val = input;
+    if (val.length === 4 && val[0] === '0') val = val.substring(1);
+
+    if (!/^[0-7]{3}$/.test(val)) {
+      errEl.textContent = 'Please enter a valid 3-digit octal number (digits 0–7 only). Example: 022';
+      errEl.style.display = 'block';
+      resEl.style.display = 'none';
+      return;
+    }
+
+    errEl.style.display = 'none';
+    resEl.style.display = 'block';
+
+    var u0 = parseInt(val[0]), u1 = parseInt(val[1]), u2 = parseInt(val[2]);
+
+    /* File: base 666 */
+    var fo = (6 & ~u0) & 7;
+    var fg = (6 & ~u1) & 7;
+    var ft = (6 & ~u2) & 7;
+    var fNum = '' + fo + fg + ft;
+    var fSym = octalToSymbolic(fNum);
+
+    /* Dir: base 777 */
+    var do_ = (7 & ~u0) & 7;
+    var dg = (7 & ~u1) & 7;
+    var dt = (7 & ~u2) & 7;
+    var dNum = '' + do_ + dg + dt;
+    var dSym = octalToSymbolic(dNum);
+
+    document.getElementById('umR-um').textContent = val;
+    document.getElementById('umR-fn').textContent = fNum;
+    document.getElementById('umR-fs').textContent = fSym;
+    document.getElementById('umR-dum').textContent = val;
+    document.getElementById('umR-dn').textContent = dNum;
+    document.getElementById('umR-ds').textContent = dSym;
+  };
+
+  /* ============================================================
+     INITIALIZATION
+     ============================================================ */
+  function init() {
+    updateProgress();
+    setupScroll();
+    setupObjectives();
+    setupPermCalc();
+    restoreQuiz();
+    buildMatch();
+    /* Auto-calculate umask on load */
+    calcUmask();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+</body>
+</html>
