@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 7 Overview: File Permissions &amp; ACLs — CSC 152</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.7;
+  color: #1a1a2e;
+  background-color: #f5f5fa;
+  padding: 0;
+  margin: 0;
+}
+
+/* ===== SKIP LINK (ADA) ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  z-index: 10000;
+  font-size: 1rem;
+  text-decoration: none;
+  border-radius: 0 0 6px 0;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ===== LAYOUT WRAPPER ===== */
+.page-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+/* ===== HEADER ===== */
+.week-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #ffffff;
+  padding: 2rem 1.75rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.week-header::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  right: -15%;
+  width: 320px;
+  height: 320px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.week-header .course-tag {
+  display: inline-block;
+  background: rgba(255,255,255,0.15);
+  color: #e0e0ff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  margin-bottom: 0.75rem;
+}
+.week-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 0.25rem;
+}
+.week-header .week-subtitle {
+  font-size: 1rem;
+  color: #c0c0e0;
+  margin-bottom: 1rem;
+}
+.week-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  font-size: 0.85rem;
+  color: #b0b0d0;
+}
+.week-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ===== PROGRESS TRACKER ===== */
+.progress-section {
+  background: #ffffff;
+  border: 1px solid #dde;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.progress-section h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #1a1a2e;
+}
+.progress-bar-track {
+  width: 100%;
+  height: 14px;
+  background: #e8e8f0;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0f3460, #1a73e8);
+  border-radius: 7px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+.progress-text {
+  font-size: 0.8rem;
+  color: #666;
+  text-align: right;
+}
+
+/* ===== SECTION STYLES ===== */
+.overview-section {
+  background: #ffffff;
+  border: 1px solid #dde;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  background: #fafaff;
+  border-bottom: 1px solid #eee;
+  user-select: none;
+  transition: background 0.2s;
+}
+.section-header:hover,
+.section-header:focus-visible {
+  background: #f0f0ff;
+}
+.section-header:focus-visible {
+  outline: 3px solid #1a73e8;
+  outline-offset: -3px;
+}
+.section-header h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.section-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.chevron {
+  font-size: 1.2rem;
+  color: #888;
+  transition: transform 0.3s ease;
+}
+.section-header[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+.section-body {
+  padding: 1.25rem 1.5rem;
+  display: none;
+}
+.section-body.open {
+  display: block;
+}
+
+/* ===== TYPOGRAPHY ===== */
+.section-body h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f3460;
+  margin: 1.25rem 0 0.5rem;
+}
+.section-body h3:first-child {
+  margin-top: 0;
+}
+.section-body p {
+  margin-bottom: 0.75rem;
+  color: #333;
+}
+.section-body ul, .section-body ol {
+  margin: 0.5rem 0 1rem 1.5rem;
+  color: #333;
+}
+.section-body li {
+  margin-bottom: 0.35rem;
+}
+.section-body li ul {
+  margin-top: 0.25rem;
+}
+
+/* ===== CODE ===== */
+code {
+  font-family: "Cascadia Code", "Fira Code", "Consolas", "Courier New", monospace;
+  font-size: 0.88em;
+  background: #f0f0f5;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  color: #c7254e;
+}
+
+/* ===== CALLOUT BOXES ===== */
+.callout {
+  border-left: 4px solid;
+  padding: 0.85rem 1rem;
+  border-radius: 0 6px 6px 0;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.9rem;
+}
+.callout-info {
+  border-color: #1a73e8;
+  background: #e8f0fe;
+  color: #174ea6;
+}
+.callout-warning {
+  border-color: #e6b800;
+  background: #fef7e0;
+  color: #7a6000;
+}
+.callout-tip {
+  border-color: #0d9488;
+  background: #e6f7f5;
+  color: #065f56;
+}
+.callout-important {
+  border-color: #d93025;
+  background: #fce8e6;
+  color: #a50e0e;
+}
+.callout-project {
+  border-color: #7c3aed;
+  background: #f3f0ff;
+  color: #4c1d95;
+}
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+/* ===== TABLES ===== */
+.table-wrapper {
+  overflow-x: auto;
+  margin: 0.75rem 0 1rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+thead th {
+  background: #1a1a2e;
+  color: #fff;
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+tbody td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #e8e8f0;
+  color: #333;
+  vertical-align: top;
+}
+tbody tr:nth-child(even) {
+  background: #fafaff;
+}
+tbody tr:hover {
+  background: #f0f0ff;
+}
+
+/* ===== CSLO TAG ===== */
+.cslo-tag {
+  display: inline-block;
+  background: #e8f0fe;
+  color: #174ea6;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  margin: 0.15rem 0.2rem 0.15rem 0;
+  letter-spacing: 0.02em;
+}
+
+/* ===== BADGE ===== */
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.badge-ec {
+  background: #e6b800;
+  color: #1a1a2e;
+}
+.badge-required {
+  background: #0f3460;
+  color: #fff;
+}
+.badge-reading {
+  background: #0d9488;
+  color: #fff;
+}
+.badge-project {
+  background: #7c3aed;
+  color: #fff;
+}
+
+/* ===== CHECKLIST ===== */
+.checklist {
+  list-style: none;
+  margin: 0.5rem 0 1rem 0;
+  padding: 0;
+}
+.checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  margin: 0;
+}
+.checklist input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 0.2rem;
+  accent-color: #0f3460;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.checklist label {
+  cursor: pointer;
+  color: #333;
+}
+.checklist input[type="checkbox"]:checked + label {
+  text-decoration: line-through;
+  color: #888;
+}
+
+/* ===== MODULE CARD ===== */
+.module-card {
+  background: #fafaff;
+  border: 1px solid #e0e0ee;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.65rem;
+  transition: border-color 0.2s;
+}
+.module-card:hover {
+  border-color: #1a73e8;
+}
+.module-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.3rem;
+}
+.module-card-header strong {
+  color: #1a1a2e;
+  font-size: 0.92rem;
+}
+.module-card-time {
+  font-size: 0.75rem;
+  color: #666;
+  background: #e8e8f0;
+  padding: 0.1rem 0.5rem;
+  border-radius: 10px;
+}
+.module-card p {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0.2rem 0 0;
+}
+.module-topics {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 0;
+}
+.module-topics li {
+  font-size: 0.83rem;
+  color: #555;
+  padding: 0.15rem 0 0.15rem 1rem;
+  position: relative;
+}
+.module-topics li::before {
+  content: "\2022";
+  position: absolute;
+  left: 0;
+  color: #1a73e8;
+  font-weight: 700;
+}
+
+/* ===== ASSIGNMENT CARD ===== */
+.assignment-card {
+  background: #ffffff;
+  border: 1px solid #e0e0ee;
+  border-radius: 6px;
+  padding: 1rem 1.15rem;
+  margin-bottom: 0.75rem;
+  border-left: 4px solid #0f3460;
+}
+.assignment-card.ec {
+  border-left-color: #e6b800;
+}
+.assignment-card.project-card {
+  border-left-color: #7c3aed;
+}
+.assignment-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+.assignment-card-header strong {
+  font-size: 0.95rem;
+  color: #1a1a2e;
+}
+.assignment-card p {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0.2rem 0 0;
+}
+
+/* ===== TIMELINE ===== */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+  margin: 0.75rem 0 1rem;
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: #dde;
+}
+.timeline-item {
+  position: relative;
+  padding-bottom: 1rem;
+}
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -2rem;
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  background: #0f3460;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #0f3460;
+  z-index: 1;
+}
+.timeline-item.completed::before {
+  background: #0d9488;
+  box-shadow: 0 0 0 2px #0d9488;
+}
+.timeline-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0f3460;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.15rem;
+}
+.timeline-content {
+  font-size: 0.88rem;
+  color: #333;
+}
+
+/* ===== CONNECTION MAP ===== */
+.connection-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
+}
+.connection-box {
+  flex: 1;
+  background: #fafaff;
+  border: 1px solid #e0e0ee;
+  border-radius: 6px;
+  padding: 0.75rem 0.85rem;
+  text-align: center;
+  font-size: 0.82rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+.connection-box:hover {
+  border-color: #1a73e8;
+  background: #f0f0ff;
+}
+.connection-box strong {
+  display: block;
+  font-size: 0.78rem;
+  color: #0f3460;
+  margin-bottom: 0.2rem;
+}
+.connection-box span {
+  color: #555;
+}
+
+/* ===== SPLUNK PHASE INDICATOR ===== */
+.phase-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.78rem;
+}
+.phase-block {
+  flex: 1;
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  font-weight: 600;
+  border: 1px solid #dde;
+}
+.phase-block:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.phase-block:last-child {
+  border-radius: 0 6px 6px 0;
+}
+.phase-block.active {
+  background: #0f3460;
+  color: #fff;
+  border-color: #0f3460;
+}
+.phase-block.inactive {
+  background: #f0f0f5;
+  color: #999;
+}
+.phase-block.current {
+  background: #1a73e8;
+  color: #fff;
+  border-color: #1a73e8;
+  position: relative;
+}
+.phase-block.current::after {
+  content: "\25BC";
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: #1a73e8;
+}
+
+/* ===== FOOTER ===== */
+.week-footer {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 0.78rem;
+  color: #888;
+  border-top: 1px solid #e0e0ee;
+  margin-top: 2rem;
+}
+
+/* ===== FOCUS STYLES (ADA) ===== */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #1a73e8;
+  outline-offset: 2px;
+}
+a {
+  color: #1a73e8;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ===== PRINT ===== */
+@media print {
+  .section-body { display: block !important; }
+  .progress-section { display: none; }
+  .chevron { display: none; }
+  body { background: #fff; }
+  .week-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .page-wrapper { padding: 1rem 0.75rem 2rem; }
+  .week-header { padding: 1.5rem 1.25rem; }
+  .week-header h1 { font-size: 1.4rem; }
+  .section-header { padding: 0.85rem 1rem; }
+  .section-body { padding: 1rem; }
+  .week-meta { flex-direction: column; gap: 0.3rem; }
+  .connection-row { flex-direction: column; }
+  .phase-indicator { font-size: 0.68rem; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<div class="page-wrapper" id="main-content" role="main">
+
+  <!-- ===== HEADER ===== -->
+  <header class="week-header">
+    <span class="course-tag">CSC 152 &#8212; Spring 2026</span>
+    <h1>Week 7: File Permissions &amp; ACLs</h1>
+    <p class="week-subtitle">Linux Permissions, NTFS ACLs, Troubleshooting &amp; Security Monitoring Preview</p>
+    <div class="week-meta">
+      <span>&#128197; Week 7 of 17</span>
+      <span>&#128218; 4 Learning Modules</span>
+      <span>&#9201; Approx. 9.25 &#8211; 10.5 Hours Total</span>
+    </div>
+  </header>
+
+  <!-- ===== PROGRESS TRACKER ===== -->
+  <section class="progress-section" aria-label="Weekly progress tracker">
+    <h2>Your Week 7 Progress</h2>
+    <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Weekly completion percentage">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <p class="progress-text" id="progressText">0 of 0 items completed</p>
+  </section>
+
+  <!-- ===== SECTION 1: WELCOME & OVERVIEW ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="true" aria-controls="sec1-body" id="sec1-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128075;</span> Welcome to Week 7</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body open" id="sec1-body" role="region" aria-labelledby="sec1-header">
+
+      <p>Welcome to Week 7! This week we shift focus from <em>who can log in</em> (Week 6: User &amp; Group Administration) to <em>what they can access once they&#8217;re in</em>. File permissions and Access Control Lists (ACLs) are the gatekeepers of your server infrastructure &#8212; they determine who can read, write, and execute every file and directory on your systems.</p>
+
+      <p>You&#8217;ll work across <strong>both Linux and Windows Server</strong> environments, learning the permission models native to each operating system. By the end of this week, you&#8217;ll be able to configure, analyze, and troubleshoot file-level access controls that enforce the <strong>principle of least privilege</strong> &#8212; a foundational concept in server security.</p>
+
+      <h3>Why This Matters</h3>
+      <p>Misconfigured permissions are one of the most common causes of security breaches and operational failures in IT environments. Whether it&#8217;s a developer who accidentally exposes sensitive data with <code>chmod 777</code> or an NTFS inheritance rule that grants unintended access, permission errors can have serious consequences. The skills you build this week are essential for every system administrator.</p>
+
+      <h3>Where Week 7 Fits</h3>
+      <p>Week 7 concludes <strong>Phase 1: Awareness &amp; Context</strong> of the Splunk integration plan. You&#8217;ll get a preview of how permission changes generate security events that can be monitored and audited &#8212; a topic you&#8217;ll explore in depth during Projects 3 and 4.</p>
+
+      <div class="phase-indicator" aria-label="Splunk integration phases">
+        <div class="phase-block current">Phase 1<br>Awareness<br>(Wk 1&#8211;7)</div>
+        <div class="phase-block inactive">Phase 2<br>Foundation<br>(Wk 8&#8211;12)</div>
+        <div class="phase-block inactive">Phase 3<br>Implementation<br>(Wk 13&#8211;15)</div>
+        <div class="phase-block inactive">Phase 4<br>Integration<br>(Wk 16&#8211;17)</div>
+      </div>
+
+      <h3>CSLO Alignment</h3>
+      <p>This week&#8217;s content aligns to:</p>
+      <p>
+        <span class="cslo-tag">CSLO 1</span> Manage and maintain servers, including operating system (OS) configuration, access control and virtualization<br>
+        <span class="cslo-tag">CSLO 2</span> Apply physical and network data security techniques
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 2: LEARNING OBJECTIVES ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec2-body" id="sec2-header">
+      <h2><span class="section-icon" aria-hidden="true">&#127919;</span> Learning Objectives</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec2-body" role="region" aria-labelledby="sec2-header">
+
+      <p>By the end of Week 7, you will be able to:</p>
+
+      <ol>
+        <li>Explain the Linux file permission model including owner, group, and others tiers</li>
+        <li>Configure Linux permissions using both <strong>symbolic</strong> (<code>chmod u+rwx,g+rx,o-rwx</code>) and <strong>numeric/octal</strong> (<code>chmod 750</code>) notation</li>
+        <li>Identify and configure <strong>special permission bits</strong> (SUID, SGID, Sticky Bit)</li>
+        <li>Implement <strong>POSIX Access Control Lists</strong> (ACLs) on Linux using <code>setfacl</code> and <code>getfacl</code></li>
+        <li>Configure <strong>NTFS permissions</strong> on Windows Server using both the GUI and PowerShell</li>
+        <li>Explain NTFS permission <strong>inheritance</strong> and how to manage it</li>
+        <li>Analyze <strong>effective permissions</strong> when multiple permission entries apply to a user</li>
+        <li>Troubleshoot common <strong>access denied</strong> scenarios on both Linux and Windows</li>
+        <li>Describe how permission changes generate <strong>security audit events</strong> that can be monitored with tools like Splunk</li>
+        <li>Apply the <strong>principle of least privilege</strong> to file system access design</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 3: LEARNING MODULES ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec3-body" id="sec3-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128214;</span> Learning Modules</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec3-body" role="region" aria-labelledby="sec3-header">
+
+      <p>Week 7 content is organized into <strong>four learning modules</strong> that progressively build your file permission and access control skills across both Linux and Windows Server environments.</p>
+
+      <div class="module-card">
+        <div class="module-card-header">
+          <strong>Module 7.1: Linux File Permissions Fundamentals</strong>
+          <span class="module-card-time">&#9201; ~2.5 hrs</span>
+        </div>
+        <p>The foundation for all Linux access control. Covers the three-tier permission model and both symbolic and numeric notation.</p>
+        <ul class="module-topics">
+          <li>Owner (u), Group (g), and Others (o) permission tiers</li>
+          <li>Read (r), Write (w), and Execute (x) permission types</li>
+          <li>Symbolic notation: <code>chmod u+rwx,g=rx,o-rwx</code></li>
+          <li>Numeric/octal notation: <code>chmod 750</code></li>
+          <li>Changing ownership with <code>chown</code> and <code>chgrp</code></li>
+          <li>Default permissions and <code>umask</code></li>
+          <li>Special permission bits: SUID, SGID, Sticky Bit</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-header">
+          <strong>Module 7.2: Linux POSIX ACLs</strong>
+          <span class="module-card-time">&#9201; ~2 hrs</span>
+        </div>
+        <p>Extends the standard permission model to support fine-grained access for multiple users and groups on a single resource.</p>
+        <ul class="module-topics">
+          <li>Why standard permissions are sometimes insufficient</li>
+          <li>POSIX ACL concepts: named users, named groups, mask</li>
+          <li>Setting ACLs with <code>setfacl</code></li>
+          <li>Viewing ACLs with <code>getfacl</code></li>
+          <li>Default ACLs and inheritance on directories</li>
+          <li>The ACL mask and effective permissions</li>
+          <li>Removing and backing up ACLs</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-header">
+          <strong>Module 7.3: Windows NTFS Permissions &amp; ACLs</strong>
+          <span class="module-card-time">&#9201; ~2.5 hrs</span>
+        </div>
+        <p>Covers the Windows NTFS permission model including standard and advanced permissions, inheritance, and PowerShell management.</p>
+        <ul class="module-topics">
+          <li>NTFS permission levels: Full Control, Modify, Read &amp; Execute, Read, Write</li>
+          <li>Standard vs. Advanced (special) permissions</li>
+          <li>Permission inheritance and propagation</li>
+          <li>Explicit vs. inherited permissions</li>
+          <li>Allow vs. Deny entries and precedence rules</li>
+          <li>Managing permissions with PowerShell (<code>Get-Acl</code>, <code>Set-Acl</code>)</li>
+          <li>Using <code>icacls</code> for command-line management</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <div class="module-card-header">
+          <strong>Module 7.4: Troubleshooting &amp; Security Monitoring Preview</strong>
+          <span class="module-card-time">&#9201; ~2 hrs</span>
+        </div>
+        <p>Brings it all together with practical troubleshooting scenarios and a preview of how permissions connect to security monitoring.</p>
+        <ul class="module-topics">
+          <li>Common permission troubleshooting methodology</li>
+          <li>Linux troubleshooting: diagnosing access denied errors</li>
+          <li>Windows troubleshooting: effective permissions analysis</li>
+          <li>Cross-platform permission comparison</li>
+          <li>Security audit events related to permissions (Event IDs 4670, 4663, 4656)</li>
+          <li>Splunk Phase 1 preview: why centralized log monitoring matters</li>
+          <li>Connection to Projects 3 and 4</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-info">
+        <p class="callout-title">&#9432; Module Delivery</p>
+        <p>Detailed content for each learning module is provided separately in Canvas. Each module includes instructional text, diagrams, code examples, knowledge checks, and practice exercises. Work through the modules in order &#8212; each one builds on concepts from the previous module.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 4: ASSIGNMENTS THIS WEEK ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec4-body" id="sec4-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128221;</span> Assignments This Week</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec4-body" role="region" aria-labelledby="sec4-header">
+
+      <p>This week has <strong>two assignments</strong> plus ongoing project work:</p>
+
+      <div class="assignment-card">
+        <div class="assignment-card-header">
+          <strong>Discussion 7: Permission Challenges</strong>
+          <span class="badge badge-required">Required</span>
+        </div>
+        <p>Discuss common permission mistakes, troubleshooting strategies, and the balance between security and usability. Initial post (minimum 150 words) plus two peer responses (minimum 50 words each). <strong>12.5 points.</strong></p>
+        <p style="margin-top: 0.35rem;"><span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+      </div>
+
+      <div class="assignment-card ec">
+        <div class="assignment-card-header">
+          <strong>Lab 7: File Permissions &amp; ACLs</strong>
+          <span class="badge badge-ec">Extra Credit</span>
+        </div>
+        <p>Hands-on lab covering Linux symbolic/numeric permissions, POSIX ACLs, NTFS permissions, and troubleshooting scenarios. Five exercises with full documentation requirements. <strong>30 points EC.</strong></p>
+        <p style="margin-top: 0.35rem;"><span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+      </div>
+
+      <div class="assignment-card project-card">
+        <div class="assignment-card-header">
+          <strong>Project 1: Multi-User Server Configuration</strong>
+          <span class="badge badge-project">Ongoing</span>
+        </div>
+        <p>Continue working on Project 1 if you have not yet submitted. Week 7&#8217;s permission content directly supports the file system permissions component of Project 1. <strong>75 points.</strong></p>
+        <p style="margin-top: 0.35rem;"><span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+      </div>
+
+      <div class="callout callout-project">
+        <p class="callout-title">&#128640; Project 1 Reminder</p>
+        <p>If you haven&#8217;t completed Project 1 yet, this week&#8217;s permission content is directly applicable. The skills you learn in Modules 7.1&#8211;7.3 will help you implement the file system permissions required for Project 1. Use this week to strengthen both your module knowledge and your project work simultaneously.</p>
+      </div>
+
+      <div class="callout callout-tip">
+        <p class="callout-title">&#128161; Strategic Extra Credit Tip</p>
+        <p>Lab 7 is highly recommended even though it is optional. The permission skills practiced in this lab directly reinforce Project 1 requirements and build the foundation for NTFS ACL work you&#8217;ll need in Project 2 (Network Infrastructure &amp; Firewall Implementation). Students who complete Lab 7 consistently perform better on project permission components.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 5: CONNECTION TO COURSE PROJECTS ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec5-body" id="sec5-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128279;</span> Connection to Course Projects</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec5-body" role="region" aria-labelledby="sec5-header">
+
+      <p>Week 7 content connects to all four course projects. Understanding permissions now will pay dividends throughout the rest of the semester:</p>
+
+      <div class="connection-row">
+        <div class="connection-box">
+          <strong>Project 1 (Wk 6)</strong>
+          <span>File system permissions for multi-user server environment</span>
+        </div>
+        <div class="connection-box">
+          <strong>Project 2 (Wk 11)</strong>
+          <span>ACL skills for directory services &amp; network share security</span>
+        </div>
+      </div>
+      <div class="connection-row">
+        <div class="connection-box">
+          <strong>Project 3 (Wk 15)</strong>
+          <span>Permission auditing for security hardening &amp; Splunk monitoring</span>
+        </div>
+        <div class="connection-box">
+          <strong>Project 4 (Wk 17)</strong>
+          <span>Comprehensive integration requires correct permission architecture</span>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Week 7 Skill</th>
+              <th scope="col">Project Application</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Linux symbolic &amp; numeric permissions</td>
+              <td>Project 1: departmental directory structure</td>
+            </tr>
+            <tr>
+              <td>POSIX ACLs</td>
+              <td>Projects 1 &amp; 2: cross-department access scenarios</td>
+            </tr>
+            <tr>
+              <td>NTFS permissions &amp; inheritance</td>
+              <td>Projects 2 &amp; 4: Windows share security</td>
+            </tr>
+            <tr>
+              <td>Troubleshooting access issues</td>
+              <td>All projects: debugging permission problems</td>
+            </tr>
+            <tr>
+              <td>Security audit event awareness</td>
+              <td>Projects 3 &amp; 4: Splunk monitoring &amp; alerting</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 6: KEY CONCEPTS PREVIEW ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec6-body" id="sec6-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128273;</span> Key Concepts Preview</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec6-body" role="region" aria-labelledby="sec6-header">
+
+      <p>Here is a high-level preview of the core concepts you&#8217;ll encounter this week. Detailed explanations, examples, and practice exercises are provided in each learning module.</p>
+
+      <h3>Linux Permission Model</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Concept</th>
+              <th scope="col">Description</th>
+              <th scope="col">Module</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Three-tier model</td>
+              <td>Owner (u), Group (g), Others (o) &#8212; each with r, w, x</td>
+              <td>7.1</td>
+            </tr>
+            <tr>
+              <td>Symbolic notation</td>
+              <td><code>chmod u+rwx,g=rx,o-rwx file</code></td>
+              <td>7.1</td>
+            </tr>
+            <tr>
+              <td>Octal notation</td>
+              <td><code>chmod 750 file</code> (rwxr-x---)</td>
+              <td>7.1</td>
+            </tr>
+            <tr>
+              <td>Special bits</td>
+              <td>SUID (4), SGID (2), Sticky (1) &#8212; e.g., <code>chmod 2750</code></td>
+              <td>7.1</td>
+            </tr>
+            <tr>
+              <td>POSIX ACLs</td>
+              <td><code>setfacl -m u:charlie:r file</code> for per-user access</td>
+              <td>7.2</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Windows NTFS Permission Model</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Concept</th>
+              <th scope="col">Description</th>
+              <th scope="col">Module</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Standard permissions</td>
+              <td>Full Control, Modify, Read &amp; Execute, Read, Write</td>
+              <td>7.3</td>
+            </tr>
+            <tr>
+              <td>Inheritance</td>
+              <td>Child objects inherit parent ACL entries by default</td>
+              <td>7.3</td>
+            </tr>
+            <tr>
+              <td>Allow vs. Deny</td>
+              <td>Deny always overrides Allow at the same level</td>
+              <td>7.3</td>
+            </tr>
+            <tr>
+              <td>Effective permissions</td>
+              <td>Cumulative result of all applicable ACL entries for a user</td>
+              <td>7.3</td>
+            </tr>
+            <tr>
+              <td>PowerShell management</td>
+              <td><code>Get-Acl</code>, <code>Set-Acl</code>, <code>icacls</code></td>
+              <td>7.3</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cross-Platform Comparison</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Feature</th>
+              <th scope="col">Linux</th>
+              <th scope="col">Windows NTFS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Basic model</td>
+              <td>Owner / Group / Others</td>
+              <td>ACL entries per user/group</td>
+            </tr>
+            <tr>
+              <td>Extended access</td>
+              <td>POSIX ACLs (<code>setfacl</code>)</td>
+              <td>Built-in ACL system</td>
+            </tr>
+            <tr>
+              <td>Inheritance</td>
+              <td>Default ACLs on directories</td>
+              <td>Automatic parent-to-child propagation</td>
+            </tr>
+            <tr>
+              <td>Deny capability</td>
+              <td>No explicit deny (remove access instead)</td>
+              <td>Explicit Deny entries supported</td>
+            </tr>
+            <tr>
+              <td>CLI tools</td>
+              <td><code>chmod</code>, <code>chown</code>, <code>setfacl</code></td>
+              <td><code>icacls</code>, <code>Get-Acl</code> / <code>Set-Acl</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 7: SUGGESTED STUDY PLAN ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec7-body" id="sec7-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128197;</span> Suggested Study Plan</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec7-body" role="region" aria-labelledby="sec7-header">
+
+      <p>The following is a suggested sequence for working through Week 7 content. Adjust the schedule to fit your personal workflow.</p>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-label">Step 1 &#8212; Zoom Session</div>
+          <div class="timeline-content">Attend the weekly Zoom class (0.5 hr lecture + 1.0 hr lab). Lecture covers key permission concepts and the Splunk Phase 1 preview. Lab time provides guided practice with instructor support.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-label">Step 2 &#8212; Module 7.1</div>
+          <div class="timeline-content">Work through <strong>Linux File Permissions Fundamentals</strong>. Practice both symbolic and numeric notation. Complete the module knowledge checks.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-label">Step 3 &#8212; Module 7.2</div>
+          <div class="timeline-content">Work through <strong>Linux POSIX ACLs</strong>. Understand when and why ACLs are needed beyond standard permissions.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-label">Step 4 &#8212; Discussion 7</div>
+          <div class="timeline-content">Post your initial response to <strong>Discussion 7: Permission Challenges</strong>. Drawing on Modules 7.1&#8211;7.2 will strengthen your post. Return later to complete peer responses.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-label">Step 5 &#8212; Module 7.3</div>
+          <div class="timeline-content">Work through <strong>Windows NTFS Permissions &amp; ACLs</strong>. Compare the Windows model to what you learned about Linux.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-label">Step 6 &#8212; Module 7.4</div>
+          <div class="timeline-content">Work through <strong>Troubleshooting &amp; Security Monitoring Preview</strong>. This module ties everything together and introduces audit event concepts.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-label">Step 7 &#8212; Lab 7 (Extra Credit)</div>
+          <div class="timeline-content">If pursuing extra credit, complete <strong>Lab 7: File Permissions &amp; ACLs</strong> (30 pts EC). The lab applies concepts from all four modules in a hands-on environment.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-label">Step 8 &#8212; Discussion Peer Responses</div>
+          <div class="timeline-content">Return to Discussion 7 and respond to at least <strong>two classmates</strong> (minimum 50 words each).</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-label">Step 9 &#8212; Project 1 Work</div>
+          <div class="timeline-content">Continue working on <strong>Project 1: Multi-User Server Configuration</strong>. Apply this week&#8217;s permission skills to your project&#8217;s file system design.</div>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <p class="callout-title">&#9432; Time Estimate</p>
+        <p>The required activities (Zoom session, Modules 7.1&#8211;7.4, Discussion 7) total approximately <strong>9.25&#8211;10.5 hours</strong> including in-class time, which is within the expected range for a 3-unit course. The optional Lab 7 adds an additional 2.5&#8211;3.5 hours.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 8: CSLO & ASSESSMENT MAPPING ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec8-body" id="sec8-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128200;</span> CSLO &amp; Assessment Alignment</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec8-body" role="region" aria-labelledby="sec8-header">
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">CSLO</th>
+              <th scope="col">Week 7 Coverage</th>
+              <th scope="col">Assessment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="cslo-tag">CSLO 1</span></td>
+              <td>Linux &amp; Windows permission configuration, ownership management, ACL implementation</td>
+              <td>Discussion 7, Lab 7 (EC)</td>
+            </tr>
+            <tr>
+              <td><span class="cslo-tag">CSLO 2</span></td>
+              <td>Least privilege enforcement, security audit events, troubleshooting access controls</td>
+              <td>Discussion 7, Lab 7 (EC)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Assessment Summary</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Assessment</th>
+              <th scope="col">Type</th>
+              <th scope="col">Points</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Discussion 7: Permission Challenges</td>
+              <td>Discussion</td>
+              <td>12.5</td>
+              <td><span class="badge badge-required">Required</span></td>
+            </tr>
+            <tr>
+              <td>Lab 7: File Permissions &amp; ACLs</td>
+              <td>Lab</td>
+              <td>30</td>
+              <td><span class="badge badge-ec">Extra Credit</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 9: BUILDING ON WEEK 6 ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec9-body" id="sec9-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128256;</span> Building on Week 6</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec9-body" role="region" aria-labelledby="sec9-header">
+
+      <p>Week 7 builds directly on the <strong>user and group administration</strong> skills you developed in Week 6. Here&#8217;s how the concepts connect:</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Week 6 Foundation</th>
+              <th scope="col">&#8594;</th>
+              <th scope="col">Week 7 Extension</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Creating user accounts</td>
+              <td>&#8594;</td>
+              <td>Assigning file ownership to users</td>
+            </tr>
+            <tr>
+              <td>Creating and managing groups</td>
+              <td>&#8594;</td>
+              <td>Setting group permissions on files &amp; directories</td>
+            </tr>
+            <tr>
+              <td>Password policies</td>
+              <td>&#8594;</td>
+              <td>Access control beyond authentication</td>
+            </tr>
+            <tr>
+              <td>Sudo / administrator privileges</td>
+              <td>&#8594;</td>
+              <td>Fine-grained file-level access with ACLs</td>
+            </tr>
+            <tr>
+              <td>Principle of least privilege (users)</td>
+              <td>&#8594;</td>
+              <td>Principle of least privilege (files &amp; directories)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-tip">
+        <p class="callout-title">&#128161; Prerequisite Check</p>
+        <p>Before starting the Week 7 modules, make sure you are comfortable with: creating users and groups on Linux (<code>useradd</code>, <code>groupadd</code>) and Windows (<code>New-LocalUser</code>, <code>New-LocalGroup</code>), and that your Proxmox lab VMs have test user accounts ready. If you completed Lab 6 (EC), you&#8217;re all set.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 10: LOOKING AHEAD ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec10-body" id="sec10-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128301;</span> Looking Ahead</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec10-body" role="region" aria-labelledby="sec10-header">
+
+      <h3>Week 8: Network Configuration &amp; Diagnostics</h3>
+      <p>Next week shifts from file-level access to <strong>network-level connectivity</strong>. You&#8217;ll configure IP addresses, DNS clients, and use diagnostic tools to troubleshoot network issues. Week 8 also marks the start of <strong>Phase 2: Foundation</strong> of the Splunk integration plan and the assignment of <strong>Project 2: Network Infrastructure &amp; Firewall Implementation</strong> (100 points).</p>
+
+      <h3>How Week 7 Prepares You</h3>
+      <ul>
+        <li>Permission skills from this week are required for securing network shares in Project 2</li>
+        <li>ACL concepts extend to firewall access control lists (different context, same logic)</li>
+        <li>Troubleshooting methodology from Module 7.4 applies to network diagnostics</li>
+        <li>Security audit awareness connects to network monitoring in Projects 3&#8211;4</li>
+      </ul>
+
+      <h3>Upcoming Milestones</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Week</th>
+              <th scope="col">Milestone</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>8</td>
+              <td>Project 2 assigned; Network Configuration &amp; Diagnostics</td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td>Network Services &amp; Virtual Firewall; Discussion 5</td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td>Project 2 due; Active Directory Implementation</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 11: WEEKLY CHECKLIST ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec11-body" id="sec11-header">
+      <h2><span class="section-icon" aria-hidden="true">&#9745;</span> Weekly Checklist</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec11-body" role="region" aria-labelledby="sec11-header">
+
+      <p>Use this checklist to track your progress through Week 7. Check off each item as you complete it.</p>
+
+      <h3>Readings &amp; Modules <span class="badge badge-reading">Learning</span></h3>
+      <ul class="checklist" data-group="modules">
+        <li><input type="checkbox" id="chk-zoom"><label for="chk-zoom">Attend Week 7 Zoom session (lecture + lab)</label></li>
+        <li><input type="checkbox" id="chk-m71"><label for="chk-m71">Complete Module 7.1: Linux File Permissions Fundamentals</label></li>
+        <li><input type="checkbox" id="chk-m72"><label for="chk-m72">Complete Module 7.2: Linux POSIX ACLs</label></li>
+        <li><input type="checkbox" id="chk-m73"><label for="chk-m73">Complete Module 7.3: Windows NTFS Permissions &amp; ACLs</label></li>
+        <li><input type="checkbox" id="chk-m74"><label for="chk-m74">Complete Module 7.4: Troubleshooting &amp; Security Monitoring Preview</label></li>
+      </ul>
+
+      <h3>Assignments <span class="badge badge-required">Required</span></h3>
+      <ul class="checklist" data-group="required">
+        <li><input type="checkbox" id="chk-disc-init"><label for="chk-disc-init">Discussion 7: Post initial response (min. 150 words)</label></li>
+        <li><input type="checkbox" id="chk-disc-peer"><label for="chk-disc-peer">Discussion 7: Respond to at least 2 classmates (min. 50 words each)</label></li>
+      </ul>
+
+      <h3>Extra Credit <span class="badge badge-ec">Optional</span></h3>
+      <ul class="checklist" data-group="ec">
+        <li><input type="checkbox" id="chk-lab7"><label for="chk-lab7">Lab 7: File Permissions &amp; ACLs (30 pts EC)</label></li>
+      </ul>
+
+      <h3>Project Work <span class="badge badge-project">Ongoing</span></h3>
+      <ul class="checklist" data-group="project">
+        <li><input type="checkbox" id="chk-p1"><label for="chk-p1">Continue working on Project 1: Multi-User Server Configuration</label></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 12: TIPS FOR SUCCESS ===== -->
+  <section class="overview-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec12-body" id="sec12-header">
+      <h2><span class="section-icon" aria-hidden="true">&#128161;</span> Tips for Success</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec12-body" role="region" aria-labelledby="sec12-header">
+
+      <ol>
+        <li><strong>Practice in your lab environment.</strong> Permissions are a hands-on skill. Reading about <code>chmod 750</code> is not the same as running it, verifying with <code>ls -la</code>, and testing access as different users. Use your Proxmox VMs to experiment.</li>
+        <li><strong>Master the octal conversion.</strong> Being able to quickly convert between symbolic (<code>rwxr-x---</code>) and octal (<code>750</code>) notation is a fundamental sysadmin skill. Practice until it becomes second nature.</li>
+        <li><strong>Compare Linux and Windows side by side.</strong> Understanding the similarities and differences between the two permission models will deepen your understanding of both. Module 7.4 provides a cross-platform comparison.</li>
+        <li><strong>Think &#8220;least privilege&#8221; first.</strong> When designing permissions, start with no access and add only what&#8217;s needed. It&#8217;s much easier to grant additional access than to discover you&#8217;ve been too permissive.</li>
+        <li><strong>Document as you go.</strong> Whether for Lab 7 or Project 1, take screenshots and record the commands you use. Good documentation saves time when troubleshooting later.</li>
+        <li><strong>Use Discussion 7 to learn from others.</strong> Permission mistakes are universal. Reading about your classmates&#8217; troubleshooting experiences will expose you to scenarios you might not encounter on your own.</li>
+        <li><strong>Connect to Project 1.</strong> Every permission concept you learn this week can be immediately applied to your Project 1 server configuration. Work on both simultaneously for maximum efficiency.</li>
+      </ol>
+
+      <div class="callout callout-info">
+        <p class="callout-title">&#9432; Getting Help</p>
+        <p>If you get stuck on permission concepts or lab exercises, post in the <strong>Week 7 Questions</strong> discussion forum in Canvas, attend office hours, or ask during the Zoom lab session. Permission troubleshooting is a core skill &#8212; learning to diagnose access issues is as valuable as learning to configure them correctly.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="week-footer">
+    <p>CSC 152 &#8212; Network Operating Systems and Administration &#8212; Spring 2026</p>
+    <p>Mendocino College &#8212; Instructor: David Pai</p>
+    <p>Week 7 Overview v1.1 &#8212; File Permissions &amp; ACLs</p>
+    <p>Aligned to <span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+  </footer>
+
+</div><!-- .page-wrapper -->
+
+<script>
+(function() {
+  "use strict";
+
+  /* ===== ACCORDION TOGGLE ===== */
+  var headers = document.querySelectorAll(".section-header");
+
+  headers.forEach(function(header) {
+    function toggleSection() {
+      var expanded = header.getAttribute("aria-expanded") === "true";
+      var bodyId = header.getAttribute("aria-controls");
+      var body = document.getElementById(bodyId);
+
+      if (expanded) {
+        header.setAttribute("aria-expanded", "false");
+        body.classList.remove("open");
+      } else {
+        header.setAttribute("aria-expanded", "true");
+        body.classList.add("open");
+      }
+    }
+
+    header.addEventListener("click", toggleSection);
+    header.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggleSection();
+      }
+    });
+  });
+
+  /* ===== PROGRESS TRACKER (Session Storage) ===== */
+  var STORAGE_KEY = "csc152_week7_overview_progress";
+  var allCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+  var totalCheckboxes = allCheckboxes.length;
+  var progressFill = document.getElementById("progressFill");
+  var progressText = document.getElementById("progressText");
+  var progressBar = progressFill.parentElement;
+
+  function getState() {
+    try {
+      var data = sessionStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveState() {
+    var state = {};
+    allCheckboxes.forEach(function(cb) {
+      state[cb.id] = cb.checked;
+    });
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      /* silent fail */
+    }
+  }
+
+  function updateProgress() {
+    var checked = 0;
+    allCheckboxes.forEach(function(cb) {
+      if (cb.checked) checked++;
+    });
+    var pct = totalCheckboxes > 0 ? Math.round((checked / totalCheckboxes) * 100) : 0;
+    progressFill.style.width = pct + "%";
+    progressBar.setAttribute("aria-valuenow", pct);
+    progressText.textContent = checked + " of " + totalCheckboxes + " items completed (" + pct + "%)";
+  }
+
+  /* Restore state from session storage */
+  var savedState = getState();
+  allCheckboxes.forEach(function(cb) {
+    if (savedState[cb.id]) {
+      cb.checked = true;
+    }
+    cb.addEventListener("change", function() {
+      saveState();
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+})();
+</script>
+
+</body>
+</html>
