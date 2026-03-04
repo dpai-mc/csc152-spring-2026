@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 7: File Permissions &amp; ACLs — CSC 152 Extra Credit</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.7;
+  color: #1a1a2e;
+  background-color: #f5f5fa;
+  padding: 0;
+  margin: 0;
+}
+
+/* ===== SKIP LINK (ADA) ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  z-index: 10000;
+  font-size: 1rem;
+  text-decoration: none;
+  border-radius: 0 0 6px 0;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ===== LAYOUT WRAPPER ===== */
+.page-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+/* ===== HEADER ===== */
+.lab-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #ffffff;
+  padding: 2rem 1.75rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.lab-header::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.lab-header .course-tag {
+  display: inline-block;
+  background: rgba(255,255,255,0.15);
+  color: #e0e0ff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  margin-bottom: 0.75rem;
+}
+.lab-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 0.25rem;
+}
+.lab-header .lab-subtitle {
+  font-size: 1rem;
+  color: #c0c0e0;
+  margin-bottom: 1rem;
+}
+.lab-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  font-size: 0.85rem;
+  color: #b0b0d0;
+}
+.lab-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.ec-badge {
+  display: inline-block;
+  background: #e6b800;
+  color: #1a1a2e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.65rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-left: 0.25rem;
+}
+
+/* ===== PROGRESS TRACKER ===== */
+.progress-section {
+  background: #ffffff;
+  border: 1px solid #dde;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.progress-section h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #1a1a2e;
+}
+.progress-bar-track {
+  width: 100%;
+  height: 14px;
+  background: #e8e8f0;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0f3460, #1a73e8);
+  border-radius: 7px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+.progress-text {
+  font-size: 0.8rem;
+  color: #666;
+  text-align: right;
+}
+
+/* ===== SECTION STYLES ===== */
+.lab-section {
+  background: #ffffff;
+  border: 1px solid #dde;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  background: #fafaff;
+  border-bottom: 1px solid #eee;
+  user-select: none;
+  transition: background 0.2s;
+}
+.section-header:hover,
+.section-header:focus-visible {
+  background: #f0f0ff;
+}
+.section-header:focus-visible {
+  outline: 3px solid #1a73e8;
+  outline-offset: -3px;
+}
+.section-header h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.chevron {
+  font-size: 1.2rem;
+  color: #888;
+  transition: transform 0.3s ease;
+}
+.section-header[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+.section-body {
+  padding: 1.25rem 1.5rem;
+  display: none;
+}
+.section-body.open {
+  display: block;
+}
+
+/* ===== TYPOGRAPHY ===== */
+.section-body h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f3460;
+  margin: 1.25rem 0 0.5rem;
+}
+.section-body h3:first-child {
+  margin-top: 0;
+}
+.section-body p {
+  margin-bottom: 0.75rem;
+  color: #333;
+}
+.section-body ul, .section-body ol {
+  margin: 0.5rem 0 1rem 1.5rem;
+  color: #333;
+}
+.section-body li {
+  margin-bottom: 0.35rem;
+}
+.section-body li ul {
+  margin-top: 0.25rem;
+}
+
+/* ===== CODE BLOCKS ===== */
+code {
+  font-family: "Cascadia Code", "Fira Code", "Consolas", "Courier New", monospace;
+  font-size: 0.88em;
+  background: #f0f0f5;
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  color: #c7254e;
+}
+pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", "Courier New", monospace;
+}
+pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  white-space: pre;
+}
+.code-label {
+  display: inline-block;
+  background: #0f3460;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px 4px 0 0;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== CALLOUT BOXES ===== */
+.callout {
+  border-left: 4px solid;
+  padding: 0.85rem 1rem;
+  border-radius: 0 6px 6px 0;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.9rem;
+}
+.callout-info {
+  border-color: #1a73e8;
+  background: #e8f0fe;
+  color: #174ea6;
+}
+.callout-warning {
+  border-color: #e6b800;
+  background: #fef7e0;
+  color: #7a6000;
+}
+.callout-tip {
+  border-color: #0d9488;
+  background: #e6f7f5;
+  color: #065f56;
+}
+.callout-important {
+  border-color: #d93025;
+  background: #fce8e6;
+  color: #a50e0e;
+}
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+/* ===== TABLES ===== */
+.table-wrapper {
+  overflow-x: auto;
+  margin: 0.75rem 0 1rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+thead th {
+  background: #1a1a2e;
+  color: #fff;
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+tbody td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #e8e8f0;
+  color: #333;
+  vertical-align: top;
+}
+tbody tr:nth-child(even) {
+  background: #fafaff;
+}
+tbody tr:hover {
+  background: #f0f0ff;
+}
+
+/* ===== CHECKLIST ===== */
+.checklist {
+  list-style: none;
+  margin: 0.5rem 0 1rem 0;
+  padding: 0;
+}
+.checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  margin: 0;
+}
+.checklist input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 0.2rem;
+  accent-color: #0f3460;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.checklist label {
+  cursor: pointer;
+  color: #333;
+}
+.checklist input[type="checkbox"]:checked + label {
+  text-decoration: line-through;
+  color: #888;
+}
+
+/* ===== GRADING RUBRIC ===== */
+.rubric-category {
+  background: #fafaff;
+  border: 1px solid #e0e0ee;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+}
+.rubric-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+.rubric-category-header strong {
+  color: #1a1a2e;
+  font-size: 0.92rem;
+}
+.rubric-points {
+  background: #0f3460;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 10px;
+}
+.rubric-category p {
+  font-size: 0.83rem;
+  color: #555;
+  margin: 0;
+}
+
+/* ===== CSLO TAG ===== */
+.cslo-tag {
+  display: inline-block;
+  background: #e8f0fe;
+  color: #174ea6;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  margin: 0.15rem 0.2rem 0.15rem 0;
+  letter-spacing: 0.02em;
+}
+
+/* ===== FOOTER ===== */
+.lab-footer {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 0.78rem;
+  color: #888;
+  border-top: 1px solid #e0e0ee;
+  margin-top: 2rem;
+}
+.lab-footer a {
+  color: #1a73e8;
+  text-decoration: none;
+}
+.lab-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ===== FOCUS STYLES (ADA) ===== */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* ===== PRINT ===== */
+@media print {
+  .section-body { display: block !important; }
+  .progress-section { display: none; }
+  .chevron { display: none; }
+  body { background: #fff; }
+  .lab-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .page-wrapper { padding: 1rem 0.75rem 2rem; }
+  .lab-header { padding: 1.5rem 1.25rem; }
+  .lab-header h1 { font-size: 1.4rem; }
+  .section-header { padding: 0.85rem 1rem; }
+  .section-body { padding: 1rem; }
+  pre { font-size: 0.78rem; padding: 0.85rem; }
+  .lab-meta { flex-direction: column; gap: 0.3rem; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<div class="page-wrapper" id="main-content" role="main">
+
+  <!-- ===== HEADER ===== -->
+  <header class="lab-header">
+    <span class="course-tag">CSC 152 &#8212; Week 7</span>
+    <h1>Lab 7: File Permissions &amp; ACLs <span class="ec-badge">Extra Credit</span></h1>
+    <p class="lab-subtitle">Linux Permissions, NTFS ACLs, and Access Troubleshooting</p>
+    <div class="lab-meta">
+      <span>&#128197; Due: Sunday, March 15, 2026, 11:59 PM</span>
+      <span>&#11088; 30 Points EC</span>
+      <span>&#128218; Modules 7.1 &#8211; 7.4</span>
+    </div>
+  </header>
+
+  <!-- ===== PROGRESS TRACKER ===== -->
+  <section class="progress-section" aria-label="Lab completion progress">
+    <h2>Your Progress</h2>
+    <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Lab completion percentage">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <p class="progress-text" id="progressText">0 of 5 exercises completed</p>
+  </section>
+
+  <!-- ===== SECTION 1: OVERVIEW ===== -->
+  <section class="lab-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="true" aria-controls="sec1-body" id="sec1-header">
+      <h2><span class="section-number">1</span> Lab Overview</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body open" id="sec1-body" role="region" aria-labelledby="sec1-header">
+
+      <h3>Purpose</h3>
+      <p>This extra credit lab provides hands-on practice with file permission systems on both Linux and Windows Server. You will configure permissions using symbolic and numeric (octal) notation on Linux, implement NTFS permissions and Access Control Lists (ACLs) on Windows Server, test permission scenarios across multiple users and groups, and troubleshoot common access issues.</p>
+
+      <h3>CSLO Alignment</h3>
+      <p>
+        <span class="cslo-tag">CSLO 1</span> Manage and maintain servers, including operating system (OS) configuration, access control and virtualization<br>
+        <span class="cslo-tag">CSLO 2</span> Apply physical and network data security techniques
+      </p>
+
+      <h3>Prerequisites</h3>
+      <ul>
+        <li>Completed Labs 1&#8211;5 (required labs)</li>
+        <li>Proxmox lab environment with Linux and Windows Server VMs operational</li>
+        <li>Familiarity with user and group administration (Week 6 / Module 6.x content)</li>
+        <li>Reviewed Modules 7.1 &#8211; 7.4</li>
+      </ul>
+
+      <div class="callout callout-info">
+        <p class="callout-title">&#9432; Extra Credit Policy</p>
+        <p>This lab is <strong>optional</strong>. It follows the same format, rigor, and documentation requirements as required labs. Points are added to your final grade after the base grade calculation. No late submissions are accepted for extra credit labs.</p>
+      </div>
+
+      <h3>Connection to Course Projects</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Project</th>
+              <th scope="col">How Lab 7 Supports It</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Project 1</strong> (Week 6)</td>
+              <td>Reinforces file system permissions configured for multi-user server environment</td>
+            </tr>
+            <tr>
+              <td><strong>Project 2</strong> (Week 11)</td>
+              <td>ACL skills apply to directory services and network share security</td>
+            </tr>
+            <tr>
+              <td><strong>Project 3</strong> (Week 15)</td>
+              <td>Permission auditing connects to security hardening and Splunk monitoring</td>
+            </tr>
+            <tr>
+              <td><strong>Project 4</strong> (Week 17)</td>
+              <td>Comprehensive integration requires correct permission architecture</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Estimated Time</h3>
+      <p>2.5 &#8211; 3.5 hours (configuration, testing, and documentation)</p>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 2: ENVIRONMENT SETUP ===== -->
+  <section class="lab-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec2-body" id="sec2-header">
+      <h2><span class="section-number">2</span> Environment Setup</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec2-body" role="region" aria-labelledby="sec2-header">
+
+      <h3>Required Virtual Machines</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">VM</th>
+              <th scope="col">OS</th>
+              <th scope="col">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Linux Server</td>
+              <td>Ubuntu Server 22.04 LTS <em>or</em> Rocky Linux 9</td>
+              <td>Exercises 1 &#8211; 3 (Linux permissions, ACLs)</td>
+            </tr>
+            <tr>
+              <td>Windows Server</td>
+              <td>Windows Server 2022</td>
+              <td>Exercises 4 &#8211; 5 (NTFS permissions, ACLs)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Pre-Lab Checklist</h3>
+      <p>Before starting, verify the following on <strong>each VM</strong>:</p>
+      <ul>
+        <li>VM is running and accessible via SSH (Linux) or RDP (Windows)</li>
+        <li>At least 3 test user accounts exist (e.g., <code>alice</code>, <code>bob</code>, <code>charlie</code>)</li>
+        <li>At least 2 test groups exist (e.g., <code>engineering</code>, <code>marketing</code>)</li>
+        <li>Users are assigned to groups appropriately</li>
+        <li>You have root/administrator access for configuration changes</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <p class="callout-title">&#128161; Tip</p>
+        <p>If you completed Lab 6 (User &amp; Group Administration), you already have these users and groups. If not, create them now using the commands from Module 7.1.</p>
+      </div>
+
+      <h3>Create Test Users &amp; Groups (if needed)</h3>
+      <div class="code-label">Linux (Bash)</div>
+<pre><code># Create groups
+sudo groupadd engineering
+sudo groupadd marketing
+
+# Create users with group assignments
+sudo useradd -m -G engineering alice
+sudo useradd -m -G engineering bob
+sudo useradd -m -G marketing charlie
+
+# Set passwords
+sudo passwd alice
+sudo passwd bob
+sudo passwd charlie
+
+# Verify
+grep -E "engineering|marketing" /etc/group</code></pre>
+
+      <div class="code-label">Windows (PowerShell)</div>
+<pre><code># Create groups
+New-LocalGroup -Name "Engineering" -Description "Engineering Department"
+New-LocalGroup -Name "Marketing" -Description "Marketing Department"
+
+# Create users
+New-LocalUser -Name "alice" -Password (ConvertTo-SecureString "P@ssw0rd1!" -AsPlainText -Force) -FullName "Alice Engineer"
+New-LocalUser -Name "bob" -Password (ConvertTo-SecureString "P@ssw0rd2!" -AsPlainText -Force) -FullName "Bob Engineer"
+New-LocalUser -Name "charlie" -Password (ConvertTo-SecureString "P@ssw0rd3!" -AsPlainText -Force) -FullName "Charlie Marketer"
+
+# Add to groups
+Add-LocalGroupMember -Group "Engineering" -Member "alice","bob"
+Add-LocalGroupMember -Group "Marketing" -Member "charlie"
+
+# Verify
+Get-LocalGroupMember -Group "Engineering"
+Get-LocalGroupMember -Group "Marketing"</code></pre>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 3: EXERCISE 1 — LINUX SYMBOLIC PERMISSIONS ===== -->
+  <section class="lab-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec3-body" id="sec3-header">
+      <h2><span class="section-number">3</span> Exercise 1: Linux Symbolic Permissions</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec3-body" role="region" aria-labelledby="sec3-header">
+
+      <p><span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+
+      <h3>Objective</h3>
+      <p>Configure and verify Linux file and directory permissions using <strong>symbolic notation</strong> (<code>chmod u+rwx,g+rx,o-rwx</code>) to implement a departmental file structure that enforces the principle of least privilege.</p>
+
+      <h3>Background</h3>
+      <p>Linux uses a three-tier permission model: <strong>owner (u)</strong>, <strong>group (g)</strong>, and <strong>others (o)</strong>. Each tier can be assigned <strong>read (r)</strong>, <strong>write (w)</strong>, and <strong>execute (x)</strong> permissions. Symbolic notation uses letters and operators (<code>+</code>, <code>-</code>, <code>=</code>) to modify permissions relative to their current state.</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Symbol</th>
+              <th scope="col">Meaning</th>
+              <th scope="col">Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>u</code></td><td>Owner (user)</td><td><code>u+w</code> &#8212; add write for owner</td></tr>
+            <tr><td><code>g</code></td><td>Group</td><td><code>g-x</code> &#8212; remove execute for group</td></tr>
+            <tr><td><code>o</code></td><td>Others</td><td><code>o=r</code> &#8212; set others to read only</td></tr>
+            <tr><td><code>a</code></td><td>All (u+g+o)</td><td><code>a+r</code> &#8212; add read for everyone</td></tr>
+            <tr><td><code>+</code></td><td>Add permission</td><td><code>g+rw</code></td></tr>
+            <tr><td><code>-</code></td><td>Remove permission</td><td><code>o-rwx</code></td></tr>
+            <tr><td><code>=</code></td><td>Set exact permission</td><td><code>u=rwx</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Tasks</h3>
+      <ol>
+        <li>
+          <strong>Create the directory structure:</strong>
+<pre><code># Create departmental directories
+sudo mkdir -p /srv/departments/engineering
+sudo mkdir -p /srv/departments/marketing
+sudo mkdir -p /srv/departments/shared
+
+# Create test files in each directory
+sudo touch /srv/departments/engineering/design-spec.txt
+sudo touch /srv/departments/engineering/build-script.sh
+sudo touch /srv/departments/marketing/campaign-plan.txt
+sudo touch /srv/departments/shared/company-policy.txt</code></pre>
+        </li>
+        <li>
+          <strong>Set ownership:</strong>
+<pre><code># Set group ownership for department directories
+sudo chown -R root:engineering /srv/departments/engineering
+sudo chown -R root:marketing /srv/departments/marketing
+sudo chown root:root /srv/departments/shared</code></pre>
+        </li>
+        <li>
+          <strong>Apply symbolic permissions:</strong>
+<pre><code># Engineering: owner full, group read+execute, others none
+sudo chmod u=rwx,g=rx,o= /srv/departments/engineering
+
+# Marketing: owner full, group read+execute, others none
+sudo chmod u=rwx,g=rx,o= /srv/departments/marketing
+
+# Shared: owner full, all groups read+execute, others read
+sudo chmod u=rwx,g=rx,o=rx /srv/departments/shared
+
+# Make build-script.sh executable for group
+sudo chmod g+x /srv/departments/engineering/build-script.sh
+
+# Restrict campaign plan to group read only (no execute)
+sudo chmod u=rw,g=r,o= /srv/departments/marketing/campaign-plan.txt</code></pre>
+        </li>
+        <li>
+          <strong>Verify permissions:</strong>
+<pre><code># List all permissions recursively
+ls -laR /srv/departments/
+
+# Expected output for engineering directory:
+# drwxr-x--- root engineering  ... engineering
+# -rw-r----- root engineering  ... design-spec.txt
+# -rw-r-x--- root engineering  ... build-script.sh</code></pre>
+        </li>
+        <li>
+          <strong>Test access as different users:</strong>
+<pre><code># Test as alice (engineering group)
+sudo -u alice ls /srv/departments/engineering     # Should SUCCEED
+sudo -u alice cat /srv/departments/engineering/design-spec.txt  # Should SUCCEED
+sudo -u alice ls /srv/departments/marketing       # Should FAIL (Permission denied)
+
+# Test as charlie (marketing group)
+sudo -u charlie ls /srv/departments/marketing     # Should SUCCEED
+sudo -u charlie ls /srv/departments/engineering    # Should FAIL (Permission denied)
+
+# Test shared directory access
+sudo -u alice ls /srv/departments/shared          # Should SUCCEED
+sudo -u charlie ls /srv/departments/shared        # Should SUCCEED</code></pre>
+        </li>
+      </ol>
+
+      <div class="callout callout-warning">
+        <p class="callout-title">&#9888; Documentation Requirement</p>
+        <p>Take screenshots of: (1) the <code>ls -laR</code> output showing all permissions, and (2) each access test showing both successful and denied results. Label each screenshot clearly.</p>
+      </div>
+
+      <h3>Exercise 1 Completion</h3>
+      <ul class="checklist" data-exercise="1">
+        <li><input type="checkbox" id="ex1-task1"><label for="ex1-task1">Directory structure created with test files</label></li>
+        <li><input type="checkbox" id="ex1-task2"><label for="ex1-task2">Ownership set correctly for each department</label></li>
+        <li><input type="checkbox" id="ex1-task3"><label for="ex1-task3">Symbolic permissions applied and verified via <code>ls -laR</code></label></li>
+        <li><input type="checkbox" id="ex1-task4"><label for="ex1-task4">Access tested for alice, bob, and charlie with screenshots</label></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 4: EXERCISE 2 — LINUX NUMERIC (OCTAL) PERMISSIONS ===== -->
+  <section class="lab-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec4-body" id="sec4-header">
+      <h2><span class="section-number">4</span> Exercise 2: Linux Numeric (Octal) Permissions</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec4-body" role="region" aria-labelledby="sec4-header">
+
+      <p><span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+
+      <h3>Objective</h3>
+      <p>Apply the same permission concepts from Exercise 1 using <strong>numeric (octal) notation</strong> and understand how three-digit and four-digit modes map to permission bits.</p>
+
+      <h3>Octal Permission Reference</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Octal</th>
+              <th scope="col">Binary</th>
+              <th scope="col">Symbolic</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>7</code></td><td><code>111</code></td><td><code>rwx</code></td><td>Read + Write + Execute</td></tr>
+            <tr><td><code>6</code></td><td><code>110</code></td><td><code>rw-</code></td><td>Read + Write</td></tr>
+            <tr><td><code>5</code></td><td><code>101</code></td><td><code>r-x</code></td><td>Read + Execute</td></tr>
+            <tr><td><code>4</code></td><td><code>100</code></td><td><code>r--</code></td><td>Read only</td></tr>
+            <tr><td><code>3</code></td><td><code>011</code></td><td><code>-wx</code></td><td>Write + Execute</td></tr>
+            <tr><td><code>2</code></td><td><code>010</code></td><td><code>-w-</code></td><td>Write only</td></tr>
+            <tr><td><code>1</code></td><td><code>001</code></td><td><code>--x</code></td><td>Execute only</td></tr>
+            <tr><td><code>0</code></td><td><code>000</code></td><td><code>---</code></td><td>No permissions</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Special Permission Bits (4th digit)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Bit</th>
+              <th scope="col">Octal</th>
+              <th scope="col">Name</th>
+              <th scope="col">Effect on Files</th>
+              <th scope="col">Effect on Directories</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>s</code> (user)</td><td><code>4</code></td><td>SUID</td><td>Runs as file owner</td><td>&#8212;</td></tr>
+            <tr><td><code>s</code> (group)</td><td><code>2</code></td><td>SGID</td><td>Runs as file group</td><td>New files inherit group</td></tr>
+            <tr><td><code>t</code></td><td><code>1</code></td><td>Sticky Bit</td><td>&#8212;</td><td>Only owner can delete files</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Tasks</h3>
+      <ol>
+        <li>
+          <strong>Create a new project directory structure:</strong>
+<pre><code># Create project directories
+sudo mkdir -p /srv/projects/alpha
+sudo mkdir -p /srv/projects/beta
+sudo mkdir -p /srv/projects/temp
+
+# Create test files
+sudo touch /srv/projects/alpha/readme.md
+sudo touch /srv/projects/alpha/deploy.sh
+sudo touch /srv/projects/beta/report.docx
+sudo touch /srv/projects/temp/scratch.txt</code></pre>
+        </li>
+        <li>
+          <strong>Apply numeric permissions:</strong>
+<pre><code># alpha: owner rwx, group rx, others none = 750
+sudo chmod 750 /srv/projects/alpha
+
+# beta: owner rwx, group rx, others rx = 755
+sudo chmod 755 /srv/projects/beta
+
+# deploy.sh: owner rwx, group rx, others none = 750
+sudo chmod 750 /srv/projects/alpha/deploy.sh
+
+# readme.md: owner rw, group r, others none = 640
+sudo chmod 640 /srv/projects/alpha/readme.md
+
+# report.docx: owner rw, group r, others r = 644
+sudo chmod 644 /srv/projects/beta/report.docx</code></pre>
+        </li>
+        <li>
+          <strong>Apply special permission bits:</strong>
+<pre><code># Set SGID on alpha directory (new files inherit engineering group)
+sudo chown root:engineering /srv/projects/alpha
+sudo chmod 2750 /srv/projects/alpha
+
+# Set Sticky Bit on temp directory (only owners can delete their files)
+sudo chmod 1777 /srv/projects/temp
+
+# Verify special permissions
+ls -la /srv/projects/
+# Expected:
+# drwxr-s--- ... alpha      (SGID shown as 's' in group execute)
+# drwxr-xr-x ... beta
+# drwxrwxrwt ... temp       (Sticky shown as 't' in others execute)</code></pre>
+        </li>
+        <li>
+          <strong>Test SGID behavior:</strong>
+<pre><code># Create a file as alice in the SGID directory
+sudo -u alice touch /srv/projects/alpha/alice-file.txt
+
+# Check group ownership of new file
+ls -la /srv/projects/alpha/alice-file.txt
+# Expected: group should be "engineering" (inherited from directory)</code></pre>
+        </li>
+        <li>
+          <strong>Test Sticky Bit behavior:</strong>
+<pre><code># Create files as different users in temp
+sudo -u alice touch /srv/projects/temp/alice-temp.txt
+sudo -u bob touch /srv/projects/temp/bob-temp.txt
+
+# Try to delete another user's file
+sudo -u alice rm /srv/projects/temp/bob-temp.txt
+# Expected: Operation not permitted (sticky bit prevents deletion)</code></pre>
+        </li>
+        <li>
+          <strong>Verify with <code>stat</code> command:</strong>
+<pre><code># Show detailed permission information
+stat /srv/projects/alpha
+stat /srv/projects/temp
+
+# The "Access" line shows both symbolic and octal permissions
+# Example: Access: (2750/drwxr-s---)  Uid: (0/root)  Gid: (1001/engineering)</code></pre>
+        </li>
+      </ol>
+
+      <div class="callout callout-info">
+        <p class="callout-title">&#9432; Symbolic &#8596; Octal Conversion</p>
+        <p>Practice converting between formats. For example: <code>rwxr-x---</code> &#8594; 750, and <code>chmod 2750</code> &#8594; <code>drwxr-s---</code>. Understanding both notations is essential for Quiz 7 and the final exam.</p>
+      </div>
+
+      <h3>Exercise 2 Completion</h3>
+      <ul class="checklist" data-exercise="2">
+        <li><input type="checkbox" id="ex2-task1"><label for="ex2-task1">Project directories created with numeric permissions applied</label></li>
+        <li><input type="checkbox" id="ex2-task2"><label for="ex2-task2">SGID configured and group inheritance verified</label></li>
+        <li><input type="checkbox" id="ex2-task3"><label for="ex2-task3">Sticky Bit configured and deletion restriction verified</label></li>
+        <li><input type="checkbox" id="ex2-task4"><label for="ex2-task4">Screenshots of <code>stat</code> output and test results captured</label></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 5: EXERCISE 3 — LINUX POSIX ACLs ===== -->
+  <section class="lab-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec5-body" id="sec5-header">
+      <h2><span class="section-number">5</span> Exercise 3: Linux POSIX ACLs</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec5-body" role="region" aria-labelledby="sec5-header">
+
+      <p><span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+
+      <h3>Objective</h3>
+      <p>Extend the standard Linux permission model using <strong>POSIX Access Control Lists (ACLs)</strong> to grant fine-grained permissions to specific users and groups beyond the traditional owner/group/others model.</p>
+
+      <h3>Background</h3>
+      <p>Standard Linux permissions only allow one owner and one group per file. ACLs solve this limitation by allowing you to define permissions for <em>multiple</em> named users and groups on a single file or directory. ACLs are managed with <code>setfacl</code> (set) and <code>getfacl</code> (view).</p>
+
+      <div class="callout callout-tip">
+        <p class="callout-title">&#128161; ACL Prerequisite</p>
+        <p>Ensure the <code>acl</code> package is installed and the filesystem is mounted with ACL support. Most modern Linux distributions enable ACLs by default on ext4 and xfs filesystems.</p>
+      </div>
+
+<pre><code># Verify ACL support
+sudo apt install acl        # Debian/Ubuntu
+# OR
+sudo dnf install acl        # Rocky Linux/RHEL
+
+# Check if filesystem supports ACLs
+mount | grep acl
+# Or check for the '+' indicator in ls -l output after setting an ACL</code></pre>
+
+      <h3>Tasks</h3>
+      <ol>
+        <li>
+          <strong>Scenario:</strong> The <code>/srv/departments/engineering</code> directory belongs to the engineering group, but <code>charlie</code> (marketing) needs <strong>read-only</strong> access to <code>design-spec.txt</code> for a cross-department project. Standard permissions cannot accommodate this without adding charlie to the engineering group.
+        </li>
+        <li>
+          <strong>Set a user-specific ACL:</strong>
+<pre><code># Grant charlie read access to the engineering directory (for traversal)
+sudo setfacl -m u:charlie:rx /srv/departments/engineering
+
+# Grant charlie read access to the specific file
+sudo setfacl -m u:charlie:r /srv/departments/engineering/design-spec.txt
+
+# Verify the ACL
+getfacl /srv/departments/engineering/design-spec.txt</code></pre>
+
+          <p>Expected <code>getfacl</code> output:</p>
+<pre><code># file: srv/departments/engineering/design-spec.txt
+# owner: root
+# group: engineering
+user::rw-
+user:charlie:r--
+group::r--
+mask::r--
+other::---</code></pre>
+        </li>
+        <li>
+          <strong>Set a group-specific ACL:</strong>
+<pre><code># Grant marketing group read access to the shared company policy
+sudo setfacl -m g:marketing:r /srv/departments/shared/company-policy.txt
+
+# Verify
+getfacl /srv/departments/shared/company-policy.txt</code></pre>
+        </li>
+        <li>
+          <strong>Set default ACLs on a directory</strong> (inherited by new files):
+<pre><code># Set default ACL so new files in engineering inherit charlie's read access
+sudo setfacl -d -m u:charlie:r /srv/departments/engineering
+
+# Create a new file and verify it inherits the ACL
+sudo touch /srv/departments/engineering/new-document.txt
+getfacl /srv/departments/engineering/new-document.txt
+# charlie should have r-- access automatically</code></pre>
+        </li>
+        <li>
+          <strong>Test ACL access:</strong>
+<pre><code># Test charlie's access (should now work via ACL)
+sudo -u charlie cat /srv/departments/engineering/design-spec.txt   # Should SUCCEED
+sudo -u charlie ls /srv/departments/engineering/                    # Should SUCCEED (rx ACL)
+
+# Verify charlie still cannot write
+sudo -u charlie touch /srv/departments/engineering/test.txt         # Should FAIL</code></pre>
+        </li>
+        <li>
+          <strong>View and remove ACLs:</strong>
+<pre><code># View all ACLs recursively
+getfacl -R /srv/departments/engineering
+
+# Remove a specific ACL entry
+sudo setfacl -x u:charlie /srv/departments/engineering/design-spec.txt
+
+# Remove all ACLs from a file
+sudo setfacl -b /srv/departments/engineering/design-spec.txt
+
+# Verify removal
+getfacl /srv/departments/engineering/design-spec.txt
+# Should show standard permissions only (no named user entries)</code></pre>
+        </li>
+      </ol>
+
+      <div class="callout callout-important">
+        <p class="callout-title">&#9888; Important: The ACL Mask</p>
+        <p>The <strong>mask</strong> entry defines the maximum effective permissions for all named users and groups (not the owner). If the mask is <code>r--</code>, a named user with <code>rw-</code> ACL effectively only gets <code>r--</code>. Always check the mask when troubleshooting ACL issues. Use <code>setfacl -m m::rwx</code> to set the mask explicitly.</p>
+      </div>
+
+      <h3>Exercise 3 Completion</h3>
+      <ul class="checklist" data-exercise="3">
+        <li><input type="checkbox" id="ex3-task1"><label for="ex3-task1">User-specific ACL set and verified with <code>getfacl</code></label></li>
+        <li><input type="checkbox" id="ex3-task2"><label for="ex3-task2">Group-specific ACL set and verified</label></li>
+        <li><input type="checkbox" id="ex3-task3"><label for="ex3-task3">Default ACLs configured and inheritance tested</label></li>
+        <li><input type="checkbox" id="ex3-task4"><label for="ex3-task4">ACL access tested across users with screenshots</label></li>
+        <li><input type="checkbox" id="ex3-task5"><label for="ex3-task5">ACL removal demonstrated and verified</label></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 6: EXERCISE 4 — WINDOWS NTFS PERMISSIONS ===== -->
+  <section class="lab-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec6-body" id="sec6-header">
+      <h2><span class="section-number">6</span> Exercise 4: Windows NTFS Permissions</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec6-body" role="region" aria-labelledby="sec6-header">
+
+      <p><span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+
+      <h3>Objective</h3>
+      <p>Configure NTFS permissions on Windows Server to implement a departmental folder structure with appropriate access controls using both the GUI (Security tab) and PowerShell.</p>
+
+      <h3>NTFS Permission Levels</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Permission</th>
+              <th scope="col">Abbreviation</th>
+              <th scope="col">Allows</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Full Control</td><td><code>F</code></td><td>All operations including changing permissions and ownership</td></tr>
+            <tr><td>Modify</td><td><code>M</code></td><td>Read, write, execute, delete</td></tr>
+            <tr><td>Read &amp; Execute</td><td><code>RX</code></td><td>View contents, run programs</td></tr>
+            <tr><td>List Folder Contents</td><td><code>L</code></td><td>View folder contents (folders only)</td></tr>
+            <tr><td>Read</td><td><code>R</code></td><td>View file contents and attributes</td></tr>
+            <tr><td>Write</td><td><code>W</code></td><td>Create files/folders, modify attributes</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Tasks</h3>
+      <ol>
+        <li>
+          <strong>Create folder structure using PowerShell:</strong>
+<pre><code># Create departmental folders
+New-Item -ItemType Directory -Path "C:\Departments\Engineering" -Force
+New-Item -ItemType Directory -Path "C:\Departments\Marketing" -Force
+New-Item -ItemType Directory -Path "C:\Departments\Shared" -Force
+
+# Create test files
+New-Item -ItemType File -Path "C:\Departments\Engineering\design-spec.txt" -Force
+New-Item -ItemType File -Path "C:\Departments\Marketing\campaign-plan.txt" -Force
+New-Item -ItemType File -Path "C:\Departments\Shared\company-policy.txt" -Force
+
+# Add content for testing
+Set-Content -Path "C:\Departments\Engineering\design-spec.txt" -Value "Engineering Design Specification v1.0"
+Set-Content -Path "C:\Departments\Marketing\campaign-plan.txt" -Value "Q2 Marketing Campaign Plan"
+Set-Content -Path "C:\Departments\Shared\company-policy.txt" -Value "Company Policy Document"</code></pre>
+        </li>
+        <li>
+          <strong>Disable inheritance and remove default permissions:</strong>
+<pre><code># Get current ACL for Engineering folder
+$acl = Get-Acl "C:\Departments\Engineering"
+
+# Disable inheritance and remove inherited rules
+$acl.SetAccessRuleProtection($true, $false)
+
+# Add Administrators - Full Control
+$adminRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "Administrators", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
+)
+$acl.AddAccessRule($adminRule)
+
+# Add Engineering group - Modify
+$engRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "Engineering", "Modify", "ContainerInherit,ObjectInherit", "None", "Allow"
+)
+$acl.AddAccessRule($engRule)
+
+# Apply the ACL
+Set-Acl "C:\Departments\Engineering" $acl
+
+# Verify
+Get-Acl "C:\Departments\Engineering" | Format-List</code></pre>
+        </li>
+        <li>
+          <strong>Configure Marketing folder similarly:</strong>
+<pre><code>$acl2 = Get-Acl "C:\Departments\Marketing"
+$acl2.SetAccessRuleProtection($true, $false)
+
+$adminRule2 = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "Administrators", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
+)
+$acl2.AddAccessRule($adminRule2)
+
+$mktRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "Marketing", "Modify", "ContainerInherit,ObjectInherit", "None", "Allow"
+)
+$acl2.AddAccessRule($mktRule)
+
+Set-Acl "C:\Departments\Marketing" $acl2</code></pre>
+        </li>
+        <li>
+          <strong>Configure Shared folder with read access for all:</strong>
+<pre><code>$acl3 = Get-Acl "C:\Departments\Shared"
+$acl3.SetAccessRuleProtection($true, $false)
+
+$adminRule3 = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "Administrators", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
+)
+$acl3.AddAccessRule($adminRule3)
+
+$usersRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "Users", "ReadAndExecute", "ContainerInherit,ObjectInherit", "None", "Allow"
+)
+$acl3.AddAccessRule($usersRule)
+
+Set-Acl "C:\Departments\Shared" $acl3</code></pre>
+        </li>
+        <li>
+          <strong>Verify using <code>icacls</code>:</strong>
+<pre><code># View permissions for all department folders
+icacls "C:\Departments\Engineering"
+icacls "C:\Departments\Marketing"
+icacls "C:\Departments\Shared"
+
+# Expected output for Engineering:
+# C:\Departments\Engineering BUILTIN\Administrators:(OI)(CI)(F)
+#                             YOURSERVER\Engineering:(OI)(CI)(M)</code></pre>
+        </li>
+        <li>
+          <strong>Test access via GUI:</strong>
+          <ul>
+            <li>Log in as <code>alice</code> (Engineering) &#8594; verify access to Engineering folder, denied to Marketing</li>
+            <li>Log in as <code>charlie</code> (Marketing) &#8594; verify access to Marketing folder, denied to Engineering</li>
+            <li>Both users should have read access to Shared folder</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <p class="callout-title">&#128161; GUI Alternative</p>
+        <p>You may also configure permissions via the <strong>Security tab</strong> in folder Properties (right-click &#8594; Properties &#8594; Security). If you use the GUI, take screenshots of each dialog. PowerShell is preferred for documentation and repeatability.</p>
+      </div>
+
+      <h3>Exercise 4 Completion</h3>
+      <ul class="checklist" data-exercise="4">
+        <li><input type="checkbox" id="ex4-task1"><label for="ex4-task1">Folder structure created with test files</label></li>
+        <li><input type="checkbox" id="ex4-task2"><label for="ex4-task2">Inheritance disabled and explicit permissions set via PowerShell</label></li>
+        <li><input type="checkbox" id="ex4-task3"><label for="ex4-task3"><code>icacls</code> output captured for all three folders</label></li>
+        <li><input type="checkbox" id="ex4-task4"><label for="ex4-task4">Access tested for alice and charlie with screenshots</label></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 7: EXERCISE 5 — NTFS ACLs & TROUBLESHOOTING ===== -->
+  <section class="lab-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec7-body" id="sec7-header">
+      <h2><span class="section-number">7</span> Exercise 5: NTFS ACLs &amp; Troubleshooting</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec7-body" role="region" aria-labelledby="sec7-header">
+
+      <p><span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+
+      <h3>Objective</h3>
+      <p>Configure advanced NTFS ACL entries for cross-department access, understand permission inheritance and effective permissions, and troubleshoot common access issues.</p>
+
+      <h3>Part A: Cross-Department ACL</h3>
+      <p><strong>Scenario:</strong> <code>charlie</code> (Marketing) needs <strong>Read</strong> access to the Engineering folder&#8217;s <code>design-spec.txt</code> for a joint project, without granting access to the entire Engineering folder.</p>
+
+      <ol>
+        <li>
+          <strong>Add a specific user ACL entry:</strong>
+<pre><code># Grant charlie Read access to the specific file only
+$fileAcl = Get-Acl "C:\Departments\Engineering\design-spec.txt"
+
+$charlieRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "charlie", "Read", "None", "None", "Allow"
+)
+$fileAcl.AddAccessRule($charlieRule)
+
+Set-Acl "C:\Departments\Engineering\design-spec.txt" $fileAcl
+
+# Also grant charlie List/Traverse on the parent folder (for navigation)
+$parentAcl = Get-Acl "C:\Departments\Engineering"
+
+$traverseRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    "charlie", "ListDirectory,ReadAttributes", "None", "None", "Allow"
+)
+$parentAcl.AddAccessRule($traverseRule)
+
+Set-Acl "C:\Departments\Engineering" $parentAcl</code></pre>
+        </li>
+        <li>
+          <strong>Verify with <code>icacls</code>:</strong>
+<pre><code>icacls "C:\Departments\Engineering\design-spec.txt"
+# Should show charlie with (R) permission
+
+icacls "C:\Departments\Engineering"
+# Should show charlie with limited traverse permissions</code></pre>
+        </li>
+      </ol>
+
+      <h3>Part B: Effective Permissions Analysis</h3>
+      <ol>
+        <li>
+          <strong>Check effective permissions via PowerShell:</strong>
+<pre><code># View effective access for charlie on the Engineering folder
+$engineeringAcl = Get-Acl "C:\Departments\Engineering"
+$engineeringAcl.Access | Where-Object {
+    $_.IdentityReference -match "charlie|Engineering|Users|Everyone"
+} | Format-Table IdentityReference, FileSystemRights, AccessControlType, InheritanceFlags -AutoSize</code></pre>
+        </li>
+        <li>
+          <strong>Check effective permissions via GUI:</strong>
+          <ul>
+            <li>Right-click <code>C:\Departments\Engineering</code> &#8594; Properties &#8594; Security &#8594; Advanced &#8594; Effective Access</li>
+            <li>Select user <code>charlie</code></li>
+            <li>Screenshot the effective permissions panel</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h3>Part C: Troubleshooting Scenarios</h3>
+      <p>Work through each scenario, diagnose the issue, and document your solution:</p>
+
+      <div class="callout callout-warning">
+        <p class="callout-title">Scenario 1: Denied Despite Allow Rule</p>
+        <p><code>bob</code> has an explicit <strong>Allow: Modify</strong> on a folder, but receives &#8220;Access Denied.&#8221; What could cause this?</p>
+      </div>
+      <p><strong>Diagnostic steps:</strong></p>
+<pre><code># Check for Deny rules (Deny always overrides Allow)
+$acl = Get-Acl "C:\Departments\Engineering"
+$acl.Access | Where-Object { $_.AccessControlType -eq "Deny" } |
+    Format-Table IdentityReference, FileSystemRights, AccessControlType
+
+# Check group memberships (bob might be in a group with Deny)
+Get-LocalGroup | ForEach-Object {
+    $members = Get-LocalGroupMember -Group $_.Name -ErrorAction SilentlyContinue
+    if ($members.Name -match "bob") {
+        Write-Host "$($_.Name): bob is a member"
+    }
+}</code></pre>
+
+      <div class="callout callout-warning">
+        <p class="callout-title">Scenario 2: New Files Have Wrong Permissions</p>
+        <p>Files created in <code>C:\Departments\Shared</code> inherit Full Control for Users instead of Read &amp; Execute. Why?</p>
+      </div>
+      <p><strong>Diagnostic steps:</strong></p>
+<pre><code># Check inheritance settings
+$sharedAcl = Get-Acl "C:\Departments\Shared"
+$sharedAcl.Access | Format-Table IdentityReference, FileSystemRights,
+    InheritanceFlags, PropagationFlags -AutoSize
+
+# Look for ContainerInherit and ObjectInherit flags
+# Fix: Ensure parent folder ACL has correct inheritance flags</code></pre>
+
+      <div class="callout callout-warning">
+        <p class="callout-title">Scenario 3: Permission Changes Not Taking Effect</p>
+        <p>You changed permissions on a parent folder but files inside still show old permissions. What happened?</p>
+      </div>
+      <p><strong>Answer:</strong> Child objects may have <strong>inheritance disabled</strong> (explicit permissions). Check each child:</p>
+<pre><code># Check if inheritance is enabled on child objects
+$childAcl = Get-Acl "C:\Departments\Shared\company-policy.txt"
+Write-Host "Are inherited rules protected? $($childAcl.AreAccessRulesProtected)"
+# True = inheritance is disabled (explicit only)
+# False = inheritance is enabled
+
+# Re-enable inheritance if needed
+$childAcl.SetAccessRuleProtection($false, $true)
+Set-Acl "C:\Departments\Shared\company-policy.txt" $childAcl</code></pre>
+
+      <h3>Part D: Splunk Preview &#8212; Permission Audit Logging</h3>
+      <p>As part of the <strong>Phase 1: Awareness &amp; Context</strong> Splunk integration, consider how permission changes would appear in security logs:</p>
+
+      <div class="callout callout-info">
+        <p class="callout-title">&#9432; Splunk Connection (Preview)</p>
+        <p>In Projects 3 and 4, you will configure Splunk to monitor Windows Security Event logs. Permission-related events include:</p>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Event ID</th>
+              <th scope="col">Description</th>
+              <th scope="col">Relevance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>4670</code></td><td>Permissions on an object were changed</td><td>Tracks ACL modifications</td></tr>
+            <tr><td><code>4663</code></td><td>An attempt was made to access an object</td><td>Tracks file access attempts</td></tr>
+            <tr><td><code>4656</code></td><td>A handle to an object was requested</td><td>Tracks permission checks</td></tr>
+            <tr><td><code>5145</code></td><td>Network share object access check</td><td>Tracks share-level access</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Enable auditing on the Engineering folder to generate these events:</p>
+<pre><code># Enable Object Access auditing via PowerShell
+auditpol /set /subcategory:"File System" /success:enable /failure:enable
+
+# Add audit entry to Engineering folder (via GUI)
+# Properties &#8594; Security &#8594; Advanced &#8594; Auditing &#8594; Add
+# Principal: Everyone
+# Type: All
+# Applies to: This folder, subfolders and files
+# Permissions: Modify, Write, Delete</code></pre>
+
+      <div class="callout callout-tip">
+        <p class="callout-title">&#128161; Looking Ahead</p>
+        <p>You do not need to install Splunk for this lab. This preview shows <em>why</em> permission auditing matters and how it connects to the security monitoring you will implement in Projects 3&#8211;4. For Discussion 4 (Option E), you may reflect on how centralized log monitoring helps detect unauthorized permission changes.</p>
+      </div>
+
+      <h3>Exercise 5 Completion</h3>
+      <ul class="checklist" data-exercise="5">
+        <li><input type="checkbox" id="ex5-task1"><label for="ex5-task1">Cross-department ACL configured and tested for charlie</label></li>
+        <li><input type="checkbox" id="ex5-task2"><label for="ex5-task2">Effective permissions analyzed via PowerShell and/or GUI</label></li>
+        <li><input type="checkbox" id="ex5-task3"><label for="ex5-task3">All three troubleshooting scenarios diagnosed with documentation</label></li>
+        <li><input type="checkbox" id="ex5-task4"><label for="ex5-task4">Audit logging enabled and Splunk event IDs documented</label></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 8: SUBMISSION REQUIREMENTS ===== -->
+  <section class="lab-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec8-body" id="sec8-header">
+      <h2><span class="section-number">8</span> Submission Requirements</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec8-body" role="region" aria-labelledby="sec8-header">
+
+      <h3>Lab Report Document (PDF or DOCX)</h3>
+      <p>Your lab report must include the following sections:</p>
+      <ol>
+        <li><strong>Cover Page:</strong> Lab title, your name, date, course (CSC 152)</li>
+        <li><strong>Objectives:</strong> Brief summary of what you accomplished</li>
+        <li><strong>Environment:</strong> VM names, OS versions, network configuration</li>
+        <li><strong>Procedures:</strong> Step-by-step documentation of each exercise with:
+          <ul>
+            <li>Commands executed (copy/paste from terminal)</li>
+            <li>Annotated screenshots with captions</li>
+            <li>Expected vs. actual results</li>
+          </ul>
+        </li>
+        <li><strong>Troubleshooting Notes:</strong> Any issues encountered and how you resolved them</li>
+        <li><strong>Conclusions:</strong> Key takeaways and how this lab connects to course projects</li>
+      </ol>
+
+      <h3>Grading Rubric</h3>
+      <div class="rubric-category">
+        <div class="rubric-category-header">
+          <strong>Completion of Required Tasks</strong>
+          <span class="rubric-points">12 pts (40%)</span>
+        </div>
+        <p>All 5 exercises completed with correct configurations. Linux symbolic and numeric permissions, POSIX ACLs, NTFS permissions, and troubleshooting scenarios all functional.</p>
+      </div>
+      <div class="rubric-category">
+        <div class="rubric-category-header">
+          <strong>Documentation Quality &amp; Completeness</strong>
+          <span class="rubric-points">9 pts (30%)</span>
+        </div>
+        <p>Clear step-by-step procedures, annotated screenshots, proper formatting, all sections present. Commands and outputs clearly documented.</p>
+      </div>
+      <div class="rubric-category">
+        <div class="rubric-category-header">
+          <strong>Troubleshooting &amp; Problem-Solving</strong>
+          <span class="rubric-points">6 pts (20%)</span>
+        </div>
+        <p>Exercise 5 troubleshooting scenarios correctly diagnosed. Issues encountered during lab documented with solutions. Critical thinking demonstrated.</p>
+      </div>
+      <div class="rubric-category">
+        <div class="rubric-category-header">
+          <strong>Technical Accuracy</strong>
+          <span class="rubric-points">3 pts (10%)</span>
+        </div>
+        <p>Permission values are correct. ACL entries are properly formatted. Commands use correct syntax. Security implications are understood.</p>
+      </div>
+
+      <div class="callout callout-important">
+        <p class="callout-title">&#9888; Submission Deadline</p>
+        <p><strong>Sunday, March 15, 2026, 11:59 PM</strong> via Canvas. No late submissions accepted for extra credit labs. Ensure your PDF/DOCX is properly formatted and all screenshots are legible.</p>
+      </div>
+
+      <h3>File Naming Convention</h3>
+<pre><code>CSC152_Lab7_LastName_FirstName.pdf</code></pre>
+
+      <h3>Strategic Extra Credit Tips</h3>
+      <ul>
+        <li>Lab 7 directly reinforces the permission architecture you built in <strong>Project 1</strong></li>
+        <li>The NTFS ACL skills from Exercises 4&#8211;5 are essential for <strong>Project 2</strong> (directory services and network share security)</li>
+        <li>The Splunk audit preview (Exercise 5, Part D) prepares you for <strong>Project 3</strong></li>
+        <li>Strong documentation habits here will carry over to all future project submissions</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== SECTION 9: REFERENCE ===== -->
+  <section class="lab-section">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="sec9-body" id="sec9-header">
+      <h2><span class="section-number">9</span> Quick Reference</h2>
+      <span class="chevron" aria-hidden="true">&#9660;</span>
+    </div>
+    <div class="section-body" id="sec9-body" role="region" aria-labelledby="sec9-header">
+
+      <h3>Linux Commands</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Command</th>
+              <th scope="col">Purpose</th>
+              <th scope="col">Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>chmod</code></td><td>Change permissions</td><td><code>chmod 750 file</code></td></tr>
+            <tr><td><code>chown</code></td><td>Change ownership</td><td><code>chown user:group file</code></td></tr>
+            <tr><td><code>ls -la</code></td><td>List with permissions</td><td><code>ls -laR /srv/</code></td></tr>
+            <tr><td><code>stat</code></td><td>Detailed file info</td><td><code>stat filename</code></td></tr>
+            <tr><td><code>setfacl</code></td><td>Set ACL entries</td><td><code>setfacl -m u:user:rwx file</code></td></tr>
+            <tr><td><code>getfacl</code></td><td>View ACL entries</td><td><code>getfacl file</code></td></tr>
+            <tr><td><code>umask</code></td><td>Default permission mask</td><td><code>umask 022</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Windows Commands</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Command</th>
+              <th scope="col">Purpose</th>
+              <th scope="col">Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>icacls</code></td><td>View/set permissions</td><td><code>icacls C:\folder</code></td></tr>
+            <tr><td><code>Get-Acl</code></td><td>Get ACL object</td><td><code>Get-Acl "C:\folder"</code></td></tr>
+            <tr><td><code>Set-Acl</code></td><td>Apply ACL object</td><td><code>Set-Acl "C:\folder" $acl</code></td></tr>
+            <tr><td><code>takeown</code></td><td>Take ownership</td><td><code>takeown /f C:\file</code></td></tr>
+            <tr><td><code>auditpol</code></td><td>Configure auditing</td><td><code>auditpol /set /subcategory:...</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Module References</h3>
+      <ul>
+        <li><strong>Module 7.1:</strong> Linux File Permissions Fundamentals</li>
+        <li><strong>Module 7.2:</strong> Linux POSIX ACLs</li>
+        <li><strong>Module 7.3:</strong> <a href="https://dpai-mc.github.io/csc152-spring-2026/week7/csc152-week7-learning-module-7-3.html" target="_blank" rel="noopener">Windows NTFS Permissions &amp; ACLs</a></li>
+        <li><strong>Module 7.4:</strong> <a href="https://dpai-mc.github.io/csc152-spring-2026/week7/csc152-week7-learning-module-7-4.html" target="_blank" rel="noopener">Troubleshooting &amp; Security Monitoring Preview</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="lab-footer">
+    <p>CSC 152 &#8212; Network Operating Systems and Administration &#8212; Spring 2026</p>
+    <p>Mendocino College &#8212; Instructor: David Pai</p>
+    <p>Lab 7 v1.1 &#8212; Extra Credit &#8212; 30 Points EC</p>
+    <p>Aligned to <span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></p>
+  </footer>
+
+</div><!-- .page-wrapper -->
+
+<script>
+(function() {
+  "use strict";
+
+  /* ===== ACCORDION TOGGLE ===== */
+  var headers = document.querySelectorAll(".section-header");
+
+  headers.forEach(function(header) {
+    function toggleSection() {
+      var expanded = header.getAttribute("aria-expanded") === "true";
+      var bodyId = header.getAttribute("aria-controls");
+      var body = document.getElementById(bodyId);
+
+      if (expanded) {
+        header.setAttribute("aria-expanded", "false");
+        body.classList.remove("open");
+      } else {
+        header.setAttribute("aria-expanded", "true");
+        body.classList.add("open");
+      }
+    }
+
+    header.addEventListener("click", toggleSection);
+    header.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggleSection();
+      }
+    });
+  });
+
+  /* ===== PROGRESS TRACKER (Session Storage) ===== */
+  var STORAGE_KEY = "csc152_lab7_progress";
+  var allCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+  var totalCheckboxes = allCheckboxes.length;
+  var progressFill = document.getElementById("progressFill");
+  var progressText = document.getElementById("progressText");
+  var progressBar = progressFill.parentElement;
+
+  function getState() {
+    try {
+      var data = sessionStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveState() {
+    var state = {};
+    allCheckboxes.forEach(function(cb) {
+      state[cb.id] = cb.checked;
+    });
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      /* silent fail */
+    }
+  }
+
+  function updateProgress() {
+    var checked = 0;
+    allCheckboxes.forEach(function(cb) {
+      if (cb.checked) checked++;
+    });
+    var pct = totalCheckboxes > 0 ? Math.round((checked / totalCheckboxes) * 100) : 0;
+    progressFill.style.width = pct + "%";
+    progressBar.setAttribute("aria-valuenow", pct);
+    progressText.textContent = checked + " of " + totalCheckboxes + " tasks completed (" + pct + "%)";
+
+    /* Count exercises completed (all checkboxes in an exercise checked) */
+    var exercises = {};
+    allCheckboxes.forEach(function(cb) {
+      var ex = cb.closest("[data-exercise]");
+      if (ex) {
+        var exNum = ex.getAttribute("data-exercise");
+        if (!exercises[exNum]) exercises[exNum] = { total: 0, checked: 0 };
+        exercises[exNum].total++;
+        if (cb.checked) exercises[exNum].checked++;
+      }
+    });
+    var completedExercises = 0;
+    var totalExercises = Object.keys(exercises).length;
+    for (var key in exercises) {
+      if (exercises[key].checked === exercises[key].total) completedExercises++;
+    }
+    progressText.textContent = checked + " of " + totalCheckboxes + " tasks completed (" + pct + "%) \u2014 " + completedExercises + " of " + totalExercises + " exercises complete";
+  }
+
+  /* Restore state from session storage */
+  var savedState = getState();
+  allCheckboxes.forEach(function(cb) {
+    if (savedState[cb.id]) {
+      cb.checked = true;
+    }
+    cb.addEventListener("change", function() {
+      saveState();
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+})();
+</script>
+
+</body>
+</html>
