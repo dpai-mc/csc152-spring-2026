@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CSC 152 Discussion 4: Permission Challenges - Week 7 Assignment">
+<meta name="author" content="David Pai - Mendocino College">
+<title>Discussion 4: Permission Challenges — CSC 152</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth;color-scheme:light only}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.7;color:#1a1a2e;background:#f0f0f5;min-height:100vh;padding:0 16px 60px}
+*:focus-visible{outline:3px solid #2563eb;outline-offset:2px;border-radius:3px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link{position:absolute;top:-100%;left:0;background:#1a1a2e;color:#fff;padding:12px 24px;z-index:10000;font-size:1rem;text-decoration:none;border-radius:0 0 6px 0}
+.skip-link:focus{top:0}
+.page{max-width:800px;margin:0 auto}
+
+/* Header */
+.disc-header{background:linear-gradient(135deg,#1a1a2e 0%,#1e3a5f 50%,#1a5276 100%);color:#fff;padding:28px 24px;border-radius:0 0 14px 14px;margin-bottom:24px}
+.disc-header .breadcrumb{font-size:.82rem;color:#93c5fd;margin-bottom:6px}
+.disc-header h1{font-size:1.6rem;font-weight:700;margin-bottom:4px;line-height:1.3}
+.disc-header .subtitle{font-size:.95rem;color:#bfdbfe;margin-bottom:14px}
+.disc-meta{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:#93c5fd}
+.disc-meta span{display:flex;align-items:center;gap:4px}
+
+/* Panels */
+.panel{background:#fff;border:1px solid #d1d5db;border-radius:10px;padding:22px;margin-bottom:20px}
+.panel h2{font-size:1.1rem;color:#1a1a2e;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.panel h3{font-size:1rem;color:#1e293b;margin-top:18px;margin-bottom:8px}
+.panel h4{font-size:.95rem;color:#334155;margin-top:14px;margin-bottom:6px}
+.panel p{font-size:.9rem;color:#334155;margin-bottom:10px}
+.panel ul,.panel ol{margin-left:20px;margin-bottom:12px}
+.panel li{font-size:.9rem;color:#334155;margin-bottom:5px}
+.panel li strong{color:#1a1a2e}
+
+/* Badges */
+.badge{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:4px;margin-right:4px}
+.badge-pts{background:#e0e7ff;color:#3730a3}
+.badge-due{background:#fef3c7;color:#92400e}
+.badge-cslo{background:#ecfdf5;color:#064e3b}
+
+/* Callouts */
+.callout{border-radius:8px;padding:14px 16px;margin:16px 0;font-size:.88rem}
+.callout-title{font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.callout.info{background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;color:#1e3a5f}
+.callout.warning{background:#fef9e7;border:1px solid #fde68a;border-left:4px solid #f59e0b;color:#78350f}
+.callout.tip{background:#ecfdf5;border:1px solid #a7f3d0;border-left:4px solid #10b981;color:#064e3b}
+.callout.danger{background:#fef2f2;border:1px solid #fecaca;border-left:4px solid #ef4444;color:#7f1d1d}
+
+/* Prompt Box */
+.prompt-box{background:#f8fafc;border:2px solid #93c5fd;border-radius:10px;padding:22px;margin:18px 0}
+.prompt-box h3{color:#1e3a5f;margin-top:0;margin-bottom:10px;font-size:1.05rem}
+.prompt-box p{color:#1e293b;font-size:.92rem}
+
+/* Scenario Cards */
+.scenario-card{background:#fff;border:1px solid #d1d5db;border-left:5px solid #2563eb;border-radius:8px;padding:18px;margin:12px 0;transition:border-color .2s}
+.scenario-card:hover{border-left-color:#1d4ed8}
+.scenario-card .sc-label{display:inline-block;background:#1a1a2e;color:#fff;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:4px;margin-bottom:6px}
+.scenario-card .sc-label.linux{background:#f59e0b;color:#78350f}
+.scenario-card .sc-label.windows{background:#0369a1;color:#fff}
+.scenario-card .sc-label.cross{background:#7c3aed;color:#fff}
+.scenario-card .sc-title{font-weight:600;color:#1e293b;font-size:.95rem;margin-bottom:6px}
+.scenario-card .sc-desc{font-size:.88rem;color:#475569;line-height:1.6}
+
+/* Code */
+pre{background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:14px 16px;overflow-x:auto;margin:10px 0;font-size:.84rem;line-height:1.6;white-space:pre;border:1px solid #313244}
+pre code{font-family:'Cascadia Code','Fira Code','Consolas','Courier New',monospace;background:none;padding:0;color:inherit;font-size:inherit;white-space:pre}
+code{font-family:'Cascadia Code','Fira Code','Consolas','Courier New',monospace;background:#e8e8f0;color:#d6336c;padding:2px 6px;border-radius:4px;font-size:.86rem}
+
+/* Rubric Table */
+.table-wrapper{overflow-x:auto;margin:14px 0;border-radius:8px;border:1px solid #d1d5db}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+thead{background:#1a1a2e;color:#fff}
+th{padding:10px 14px;text-align:left;font-weight:600}
+td{padding:10px 14px;border-top:1px solid #e5e7eb;color:#1a1a2e;vertical-align:top}
+tbody tr:nth-child(even){background:#f9fafb}
+
+/* Collapsibles */
+details{border:1px solid #d1d5db;border-radius:8px;margin:12px 0;background:#fff}
+details[open]{border-color:#93c5fd}
+summary{padding:14px 18px;font-weight:600;cursor:pointer;color:#1e293b;font-size:.92rem;border-radius:8px;transition:background .2s;list-style:none;display:flex;align-items:center;gap:8px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:'▶';font-size:.7rem;transition:transform .2s;display:inline-block;color:#2563eb}
+details[open]>summary::before{transform:rotate(90deg)}
+summary:hover{background:#eff6ff}
+details .details-content{padding:4px 18px 18px}
+
+/* Checklist */
+.checklist{list-style:none;margin:0;padding:0}
+.checklist li{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f5;font-size:.9rem;color:#1a1a2e}
+.checklist li:last-child{border-bottom:none}
+.checklist input[type="checkbox"]{width:20px;height:20px;accent-color:#2563eb;margin-top:2px;flex-shrink:0;cursor:pointer}
+
+/* Footer */
+.disc-footer{text-align:center;padding:20px;color:#6b7280;font-size:.8rem;border-top:1px solid #e5e7eb;margin-top:32px}
+.disc-footer a{color:#2563eb;text-decoration:none}
+.disc-footer a:hover{text-decoration:underline}
+
+@media(max-width:640px){
+.disc-header h1{font-size:1.3rem}
+.panel{padding:16px}
+.disc-meta{flex-direction:column;gap:4px}
+}
+@media print{
+.skip-link{display:none}
+body{background:#fff}
+.panel{break-inside:avoid;border:1px solid #ccc}
+}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<div class="page">
+
+<header class="disc-header" role="banner">
+<div class="breadcrumb" aria-label="Breadcrumb">CSC 152 → Week 7 → Discussion 4</div>
+<h1>Discussion 4: Permission Challenges</h1>
+<p class="subtitle">File Systems, Ownership &amp; Permissions — Real-World Scenarios</p>
+<div class="disc-meta">
+<span>📅 Initial Post Due: Wednesday, March 4, 2026, 11:59 PM</span>
+<span>💬 Peer Responses Due: Sunday, March 8, 2026, 11:59 PM</span>
+<span>⭐ 12.5 Points Total</span>
+</div>
+</header>
+
+<main id="main-content">
+
+<!-- ============================================================
+     OVERVIEW
+     ============================================================ -->
+<section class="panel" aria-labelledby="overview-heading">
+<h2 id="overview-heading">📋 Assignment Overview</h2>
+<p>Now that you've studied both Linux and Windows permission models, you can apply these concepts to real-world scenarios. Understanding how to diagnose and resolve permission issues — and how to design permission structures that balance security with usability — is one of the most critical skills for any system administrator.</p>
+<p>This discussion asks you to analyze a permission scenario, propose a solution, and engage with your classmates' approaches.</p>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">
+<span class="badge badge-pts">12.5 Points</span>
+<span class="badge badge-due">Initial Post: Wed Mar 4</span>
+<span class="badge badge-due">Responses: Sun Mar 8</span>
+<span class="badge badge-cslo">CSLO 1 &amp; CSLO 2</span>
+</div>
+</section>
+
+<!-- ============================================================
+     PROMPT
+     ============================================================ -->
+<section class="panel" aria-labelledby="prompt-heading">
+<h2 id="prompt-heading">📝 Discussion Prompt</h2>
+
+<div class="prompt-box">
+<h3>Choose ONE of the following real-world scenarios and write an initial post (minimum 250 words) that addresses all of the required elements listed below.</h3>
+</div>
+
+<h3>Scenario Options</h3>
+<p>Select the scenario that interests you most. Each scenario requires you to apply concepts from Modules 7.1–7.4.</p>
+
+<div class="scenario-card">
+<span class="sc-label linux">🐧 Scenario A — Linux</span>
+<div class="sc-title">The Broken Web Server</div>
+<div class="sc-desc">
+<p>You are a system administrator for a small company. A junior admin ran the following command on the production web server:</p>
+<pre><code>sudo chmod -R 644 /var/www/html/</code></pre>
+<p>Immediately after, the company website went down and the web server (Apache, running as user <code>www-data</code>) is returning "403 Forbidden" errors. Developers (members of the <code>webdev</code> group) are also reporting they cannot <code>cd</code> into subdirectories or run CGI scripts.</p>
+<p><strong>Your task:</strong> Diagnose the problem, explain exactly what went wrong and why, propose the correct fix with specific commands, and describe what safeguards you would put in place to prevent this from happening again.</p>
+</div>
+</div>
+
+<div class="scenario-card">
+<span class="sc-label windows">🪟 Scenario B — Windows</span>
+<div class="sc-title">The Mysterious "Access Denied"</div>
+<div class="sc-desc">
+<p>Your company has a shared folder <code>D:\Departments\Finance\</code> on a Windows file server. The <code>Finance</code> group has Allow Modify permission with inheritance enabled. A new employee, <code>sarah</code>, was added to the <code>Finance</code> group last Friday. On Monday, sarah reports she can browse the Finance folder locally on the server, but when she tries to access <code>\\FileServer\Finance\</code> from her workstation over the network, she gets "Access Denied."</p>
+<p>Investigation reveals that the "Finance" share has share-level permissions set to <code>Everyone: Read</code>.</p>
+<p><strong>Your task:</strong> Explain the interaction between NTFS and share permissions, diagnose why sarah's network access is limited, propose the fix, and recommend a best-practice approach for configuring share vs. NTFS permissions going forward.</p>
+</div>
+</div>
+
+<div class="scenario-card">
+<span class="sc-label cross">🔄 Scenario C — Cross-Platform</span>
+<div class="sc-title">Designing a Secure Shared Project Directory</div>
+<div class="sc-desc">
+<p>Your organization has a team of 8 developers who work on both Linux and Windows servers. You need to design a shared project directory structure on BOTH platforms with the following requirements:</p>
+<ul style="margin-left:16px;margin-top:8px;">
+<li>All team members can read and write project files</li>
+<li>New files automatically belong to the team group (not individual users' primary groups)</li>
+<li>Users outside the team have NO access</li>
+<li>No team member can delete another member's files</li>
+<li>A separate "releases" subdirectory should be read-only for the team (only the lead developer can modify it)</li>
+</ul>
+<p><strong>Your task:</strong> Propose the complete permission configuration for both Linux and Windows, including specific commands. Explain which special permissions (SetGID, sticky bit, etc.) you would use and why. Discuss the advantages and limitations of each platform's approach.</p>
+</div>
+</div>
+
+<h3>Required Elements for Your Initial Post</h3>
+<p>Regardless of which scenario you choose, your post <strong>must</strong> include all of the following:</p>
+<ol>
+<li><strong>Diagnosis:</strong> A clear explanation of what is causing the problem (or what challenges the design requirements present)</li>
+<li><strong>Technical Solution:</strong> Specific commands or configurations with correct syntax — not just general descriptions. Show the actual <code>chmod</code>, <code>chown</code>, <code>icacls</code>, or PowerShell commands you would use</li>
+<li><strong>Conceptual Explanation:</strong> Explain <em>why</em> your solution works by referencing specific permission concepts (e.g., "execute on directories enables traversal," "Deny overrides Allow," "SetGID causes group inheritance")</li>
+<li><strong>Prevention / Best Practice:</strong> Describe what processes, policies, or safeguards you would implement to prevent similar issues in the future or to maintain the configuration over time</li>
+<li><strong>Security Consideration:</strong> Identify at least one security implication of the scenario and how your solution addresses it</li>
+</ol>
+
+<div class="callout info">
+<div class="callout-title">📌 Minimum Length</div>
+Your initial post must be a minimum of <strong>250 words</strong>. Posts that are purely commands without explanation, or purely explanation without specific commands, will not receive full credit. The best posts integrate both technical detail and conceptual understanding.
+</div>
+</section>
+
+<!-- ============================================================
+     PEER RESPONSE REQUIREMENTS
+     ============================================================ -->
+<section class="panel" aria-labelledby="response-heading">
+<h2 id="response-heading">💬 Peer Response Requirements</h2>
+<p>In addition to your initial post, you must respond to <strong>at least two classmates' posts</strong>. Substantive responses (minimum 75 words each) should do one or more of the following:</p>
+<ul>
+<li><strong>Offer an alternative approach</strong> — Is there a different way to solve the same problem? What are the tradeoffs?</li>
+<li><strong>Identify a potential issue</strong> — Does the classmate's solution have any gaps, edge cases, or security concerns they didn't address?</li>
+<li><strong>Build on their solution</strong> — Add additional commands, configurations, or safeguards that strengthen their approach</li>
+<li><strong>Ask a thoughtful question</strong> — Pose a "what if" scenario that tests the robustness of their solution</li>
+<li><strong>Connect to real-world experience</strong> — If you've encountered a similar situation, share your experience (even from lab work)</li>
+</ul>
+
+<div class="callout warning">
+<div class="callout-title">⚠️ What Does NOT Count as a Substantive Response</div>
+<ul>
+<li>"Great post!" or "I agree with everything you said"</li>
+<li>Restating what the classmate already wrote without adding new insight</li>
+<li>Responses under 75 words</li>
+<li>Generic comments that could apply to any post</li>
+</ul>
+</div>
+
+<div class="callout tip">
+<div class="callout-title">💡 Strategy for Better Discussions</div>
+<p><strong>Choose a different scenario</strong> than most of your classmates if possible. This creates more diverse discussions and gives you exposure to all three scenarios through peer responses. If you chose Scenario A (Linux), try responding to someone who chose Scenario B (Windows) or C (Cross-Platform).</p>
+</div>
+</section>
+
+<!-- ============================================================
+     RUBRIC
+     ============================================================ -->
+<section class="panel" aria-labelledby="rubric-heading">
+<h2 id="rubric-heading">📊 Grading Rubric (12.5 Points Total)</h2>
+
+<h3>Initial Post (8.5 points)</h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Criterion</th><th>Excellent</th><th>Good</th><th>Needs Work</th><th>Points</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Diagnosis &amp; Understanding</strong></td>
+<td>Accurately identifies root cause with clear explanation of underlying permission concepts</td>
+<td>Identifies the issue but explanation lacks some depth</td>
+<td>Incorrect or vague diagnosis</td>
+<td>2.0</td>
+</tr>
+<tr>
+<td><strong>Technical Solution</strong></td>
+<td>Provides correct, specific commands with proper syntax; solution follows least privilege</td>
+<td>Commands mostly correct but minor syntax issues or overly permissive</td>
+<td>Commands incorrect, missing, or use <code>chmod 777</code> / "Everyone: Full Control"</td>
+<td>2.5</td>
+</tr>
+<tr>
+<td><strong>Conceptual Explanation</strong></td>
+<td>Clearly explains <em>why</em> the solution works using specific module concepts</td>
+<td>Some explanation provided but doesn't fully connect to concepts</td>
+<td>Little or no explanation of underlying concepts</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td><strong>Prevention / Best Practice</strong></td>
+<td>Proposes thoughtful, practical safeguards or policies</td>
+<td>Mentions prevention but lacks specificity</td>
+<td>No prevention strategy discussed</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td><strong>Security Consideration</strong></td>
+<td>Identifies specific security implication and addresses it</td>
+<td>Mentions security but doesn't fully develop the point</td>
+<td>No security consideration</td>
+<td>1.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>Peer Responses (4.0 points)</h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Criterion</th><th>Excellent</th><th>Good</th><th>Needs Work</th><th>Points</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Response 1</strong></td>
+<td>Substantive (75+ words), adds new insight, alternative, or thoughtful question</td>
+<td>Meets minimum length but adds limited new value</td>
+<td>Too short, generic, or merely agrees</td>
+<td>2.0</td>
+</tr>
+<tr>
+<td><strong>Response 2</strong></td>
+<td>Substantive (75+ words), adds new insight, alternative, or thoughtful question</td>
+<td>Meets minimum length but adds limited new value</td>
+<td>Too short, generic, or merely agrees</td>
+<td>2.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- ============================================================
+     EXAMPLE SNIPPETS
+     ============================================================ -->
+<section class="panel" aria-labelledby="examples-heading">
+<h2 id="examples-heading">💡 Example Approaches (Starting Points Only)</h2>
+<p>These brief snippets show the <em>type</em> of technical detail expected. Your post should be much more comprehensive.</p>
+
+<details>
+<summary>Example: Scenario A — Key Commands (Do NOT copy — develop your own analysis)</summary>
+<div class="details-content">
+<p>A strong response to Scenario A would include commands like:</p>
+<pre><code># Fix directory permissions (need execute for traversal)
+sudo find /var/www/html -type d -exec chmod 750 {} \;
+
+# Fix file permissions (web content needs read by www-data)
+sudo find /var/www/html -type f -exec chmod 640 {} \;
+
+# Fix CGI scripts (need execute bit)
+sudo find /var/www/html/cgi-bin -type f -name "*.cgi" -exec chmod 750 {} \;
+
+# Ensure correct ownership
+sudo chown -R webdev:www-data /var/www/html/</code></pre>
+<p>But commands alone are not enough — you must explain <em>why</em> <code>chmod -R 644</code> broke things (removed execute from directories, preventing <code>cd</code> and file access) and <em>why</em> your fix works.</p>
+</div>
+</details>
+
+<details>
+<summary>Example: Scenario B — Key Concepts (Do NOT copy — develop your own analysis)</summary>
+<div class="details-content">
+<p>A strong response to Scenario B would explain:</p>
+<ul>
+<li>The interaction between NTFS permissions (apply locally and over the network) and share permissions (apply only over the network)</li>
+<li>The "most restrictive wins" rule for network access</li>
+<li>Why sarah can access locally (NTFS Modify) but not over the network (share limits to Read)</li>
+<li>The best practice of setting share permissions broadly and controlling access through NTFS</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>Example: Scenario C — Key Concepts (Do NOT copy — develop your own analysis)</summary>
+<div class="details-content">
+<p>A strong response to Scenario C would address:</p>
+<ul>
+<li><strong>Linux:</strong> SetGID (2000) for group inheritance, sticky bit (1000) to prevent cross-deletion, <code>umask 002</code> for group-writable files</li>
+<li><strong>Windows:</strong> NTFS ACLs with inheritance, potentially breaking inheritance on the "releases" subdirectory</li>
+<li>Comparison of how each platform handles the "no cross-deletion" requirement differently</li>
+<li>The limitation that Linux cannot natively prevent cross-deletion AND allow group write without the sticky bit</li>
+</ul>
+</div>
+</details>
+</section>
+
+<!-- ============================================================
+     SUBMISSION CHECKLIST
+     ============================================================ -->
+<section class="panel" aria-labelledby="checklist-heading">
+<h2 id="checklist-heading">✅ Submission Checklist</h2>
+<p>Use this checklist to ensure your submission is complete before the deadlines.</p>
+
+<h3>Initial Post (Due: Wednesday, March 4, 11:59 PM)</h3>
+<ul class="checklist" id="checklistInitial">
+<li><input type="checkbox" id="ck1" aria-label="Selected one scenario"><label for="ck1">Selected one of the three scenarios (A, B, or C)</label></li>
+<li><input type="checkbox" id="ck2" aria-label="Minimum 250 words"><label for="ck2">Post is at least 250 words</label></li>
+<li><input type="checkbox" id="ck3" aria-label="Includes diagnosis"><label for="ck3">Includes a clear diagnosis of the problem / design challenge</label></li>
+<li><input type="checkbox" id="ck4" aria-label="Includes specific commands"><label for="ck4">Includes specific commands with correct syntax</label></li>
+<li><input type="checkbox" id="ck5" aria-label="Explains why solution works"><label for="ck5">Explains <em>why</em> the solution works (references permission concepts)</label></li>
+<li><input type="checkbox" id="ck6" aria-label="Includes prevention"><label for="ck6">Includes prevention / best practice recommendations</label></li>
+<li><input type="checkbox" id="ck7" aria-label="Addresses security"><label for="ck7">Addresses at least one security implication</label></li>
+<li><input type="checkbox" id="ck8" aria-label="Proofread"><label for="ck8">Proofread for clarity, grammar, and command accuracy</label></li>
+<li><input type="checkbox" id="ck9" aria-label="Posted to Canvas"><label for="ck9">Posted to the Discussion 4 forum in Canvas</label></li>
+</ul>
+
+<h3>Peer Responses (Due: Sunday, March 8, 11:59 PM)</h3>
+<ul class="checklist" id="checklistResponses">
+<li><input type="checkbox" id="ck10" aria-label="Response 1 complete"><label for="ck10">Response 1: Substantive reply (75+ words) to a classmate's post</label></li>
+<li><input type="checkbox" id="ck11" aria-label="Response 2 complete"><label for="ck11">Response 2: Substantive reply (75+ words) to a different classmate's post</label></li>
+<li><input type="checkbox" id="ck12" aria-label="Responses add value"><label for="ck12">Both responses add new insight, alternatives, questions, or build on the original post</label></li>
+<li><input type="checkbox" id="ck13" aria-label="Responded to different scenario"><label for="ck13">Bonus: Responded to at least one post that chose a different scenario than yours</label></li>
+</ul>
+</section>
+
+<!-- ============================================================
+     ACADEMIC INTEGRITY
+     ============================================================ -->
+<section class="panel" aria-labelledby="integrity-heading">
+<h2 id="integrity-heading">🎓 Academic Integrity</h2>
+<div class="callout danger">
+<div class="callout-title">🚨 Important</div>
+<p>Your discussion post must be your own original work. You may:</p>
+<ul>
+<li>Reference course learning modules, textbooks, and documentation</li>
+<li>Use man pages, Microsoft Docs, or official documentation to verify command syntax</li>
+<li>Discuss general concepts with classmates before writing</li>
+</ul>
+<p>You may <strong>NOT</strong>:</p>
+<ul>
+<li>Copy another student's post or commands</li>
+<li>Submit AI-generated text without substantial original analysis</li>
+<li>Copy solutions from external websites without attribution and original commentary</li>
+</ul>
+<p>If you reference an external source, cite it. Violations will result in a zero on the assignment per college policy.</p>
+</div>
+</section>
+
+<!-- ============================================================
+     CSLO ALIGNMENT
+     ============================================================ -->
+<section class="panel" aria-labelledby="cslo-heading">
+<h2 id="cslo-heading">🎯 CSLO Alignment</h2>
+<div class="table-wrapper">
+<table>
+<thead><tr><th>CSLO</th><th>How This Discussion Assesses It</th></tr></thead>
+<tbody>
+<tr><td><strong>CSLO 1:</strong> Manage and maintain servers, including OS configuration, access control and virtualization</td><td>Diagnosing and resolving file permission issues; configuring ownership and access control on both Linux and Windows servers</td></tr>
+<tr><td><strong>CSLO 2:</strong> Apply physical and network data security techniques</td><td>Evaluating security implications of permission configurations; implementing least-privilege access; understanding audit trails</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+</main>
+
+<footer class="disc-footer" role="contentinfo">
+<p>CSC 152: Network Operating Systems and Administration — Mendocino College</p>
+<p>Discussion 4: Permission Challenges | Week 7 | Initial Post Due: March 4, 2026 | Responses Due: March 8, 2026</p>
+<p>Instructor: David Pai | <a href="mailto:dpai@mendocino.edu">dpai@mendocino.edu</a></p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* Session-level checklist persistence */
+var SK='csc152_disc4_checklist';
+function loadP(){try{var d=sessionStorage.getItem(SK);return d?JSON.parse(d):{};}catch(e){return {};}}
+function saveP(d){try{sessionStorage.setItem(SK,JSON.stringify(d));}catch(e){}}
+
+var progress=loadP();
+if(!progress.checks)progress.checks={};
+
+function setupChecklist(){
+  var cbs=document.querySelectorAll('.checklist input[type="checkbox"]');
+  cbs.forEach(function(cb){
+    if(progress.checks[cb.id])cb.checked=true;
+    cb.addEventListener('change',function(){
+      progress.checks[this.id]=this.checked;
+      saveP(progress);
+    });
+  });
+}
+
+function init(){setupChecklist();}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
+else{init();}
+
+})();
+</script>
+</body>
+</html>
