@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 8.1: IP Addressing &amp; Subnetting Foundations — CSC 152</title>
+<style>
+/* ===== CSS Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-surface-alt: #e9ecef;
+  --color-border: #dee2e6;
+  --color-text: #212529;
+  --color-text-secondary: #495057;
+  --color-heading: #1a1a2e;
+  --color-primary: #0d6efd;
+  --color-primary-dark: #0a58ca;
+  --color-primary-bg: #e7f1ff;
+  --color-accent: #6f42c1;
+  --color-accent-bg: #f3eefb;
+  --color-success: #198754;
+  --color-success-bg: #d1e7dd;
+  --color-warning: #856404;
+  --color-warning-bg: #fff3cd;
+  --color-danger: #842029;
+  --color-danger-bg: #f8d7da;
+  --color-info: #055160;
+  --color-info-bg: #cff4fc;
+  --color-code-bg: #1e1e2e;
+  --color-code-text: #cdd6f4;
+  --color-code-comment: #6c7086;
+  --color-code-keyword: #cba6f7;
+  --color-code-string: #a6e3a1;
+  --color-code-number: #fab387;
+  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --font-size-base: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-xs: 0.8125rem;
+  --font-size-lg: 1.125rem;
+  --line-height: 1.7;
+  --max-width: 54rem;
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
+  --transition: 0.2s ease;
+}
+
+html { font-size: 100%; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+/* ===== Skip Link ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+/* ===== Header ===== */
+.site-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  padding: 2rem 1.5rem 1.75rem;
+  border-bottom: 4px solid var(--color-primary);
+}
+.header-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+.breadcrumb {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 0.75rem;
+}
+.breadcrumb a {
+  color: rgba(255,255,255,0.85);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.breadcrumb a:hover, .breadcrumb a:focus {
+  color: #fff;
+}
+.breadcrumb .sep { margin: 0 0.35rem; }
+.site-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.35rem;
+  line-height: 1.3;
+}
+.header-meta {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.75);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+}
+.header-meta span { white-space: nowrap; }
+
+/* ===== Navigation ===== */
+.module-nav {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.5rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nav-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  list-style: none;
+}
+.nav-sections a {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition);
+}
+.nav-sections a:hover, .nav-sections a:focus {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+.nav-sections a.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+.nav-top-link {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav-top-link:hover, .nav-top-link:focus {
+  text-decoration: underline;
+}
+
+/* ===== Main Content ===== */
+.main-content {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+/* ===== Sections ===== */
+.section { margin-bottom: 3rem; }
+.section h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+.section h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 1.5rem 0 0.75rem;
+}
+.section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 1.25rem 0 0.5rem;
+}
+.section p { margin-bottom: 1rem; }
+.section ul, .section ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+.section li { margin-bottom: 0.35rem; }
+
+/* ===== Callout Boxes ===== */
+.callout {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+  border-left: 4px solid;
+}
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  font-size: var(--font-size-sm);
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout-info {
+  background: var(--color-info-bg);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+.callout-success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+  color: #0a3622;
+}
+.callout-warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+.callout-danger {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.callout-accent {
+  background: var(--color-accent-bg);
+  border-color: var(--color-accent);
+  color: #3b1f6e;
+}
+
+/* ===== Tables ===== */
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.table-wrap th, .table-wrap td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+.table-wrap th {
+  background: var(--color-surface);
+  font-weight: 700;
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+.table-wrap tr:last-child td { border-bottom: none; }
+.table-wrap tbody tr:hover { background: var(--color-surface); }
+.table-wrap caption {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  background: var(--color-heading);
+  color: #fff;
+}
+
+/* ===== Code Blocks ===== */
+pre {
+  background: var(--color-code-bg);
+  color: var(--color-code-text);
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: pre;
+  border: 1px solid #313244;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+:not(pre) > code {
+  background: var(--color-surface-alt);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: 0.88em;
+}
+.code-label {
+  display: inline-block;
+  background: #313244;
+  color: var(--color-code-text);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Accordion ===== */
+.accordion { margin-bottom: 1.25rem; }
+.accordion-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+.accordion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-heading);
+  text-align: left;
+  transition: background var(--transition);
+}
+.accordion-btn:hover, .accordion-btn:focus {
+  background: var(--color-primary-bg);
+}
+.accordion-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+.accordion-icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform var(--transition);
+  color: var(--color-primary);
+}
+.accordion-btn[aria-expanded="true"] .accordion-icon {
+  transform: rotate(90deg);
+}
+.accordion-panel {
+  display: none;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--color-border);
+}
+.accordion-panel[aria-hidden="false"] {
+  display: block;
+}
+
+/* ===== Tabs ===== */
+.tabs-container { margin-bottom: 1.5rem; }
+.tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 0;
+  list-style: none;
+  padding: 0;
+}
+.tab-list [role="tab"] {
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: color var(--transition), border-color var(--transition);
+  margin-bottom: -2px;
+}
+.tab-list [role="tab"]:hover,
+.tab-list [role="tab"]:focus {
+  color: var(--color-primary);
+}
+.tab-list [role="tab"][aria-selected="true"] {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+.tab-list [role="tab"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+.tab-panel {
+  display: none;
+  padding: 1.25rem 0 0;
+}
+.tab-panel.active { display: block; }
+
+/* ===== Interactive Exercises ===== */
+.exercise-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.exercise-box h4 {
+  color: var(--color-primary);
+  margin-top: 0;
+}
+.exercise-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.exercise-field label {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  min-width: 10rem;
+}
+.exercise-field input[type="text"] {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  width: 14rem;
+  max-width: 100%;
+}
+.exercise-field input[type="text"]:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1.15rem;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition);
+  text-decoration: none;
+}
+.btn:hover, .btn:focus {
+  background: var(--color-primary-dark);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-heading);
+  outline-offset: 2px;
+}
+.btn-sm { padding: 0.35rem 0.85rem; font-size: var(--font-size-xs); }
+.btn-outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+.btn-outline:hover, .btn-outline:focus {
+  background: var(--color-primary);
+  color: #fff;
+}
+.feedback {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  display: none;
+}
+.feedback.correct {
+  display: block;
+  background: var(--color-success-bg);
+  color: #0a3622;
+  border: 1px solid var(--color-success);
+}
+.feedback.incorrect {
+  display: block;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid #f1aeb5;
+}
+
+/* ===== Progress Tracker ===== */
+.progress-bar-wrap {
+  background: var(--color-surface-alt);
+  border-radius: 1rem;
+  height: 0.65rem;
+  overflow: hidden;
+  margin-bottom: 0.35rem;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 1rem;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.progress-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+/* ===== Objectives Checklist ===== */
+.objectives-list {
+  list-style: none;
+  padding: 0;
+}
+.objectives-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+.objectives-list li:last-child { border-bottom: none; }
+.obj-checkbox {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+.obj-label {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+.obj-label.completed {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Diagram / Visual ===== */
+.visual-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+.visual-box .diagram {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  white-space: pre;
+  display: inline-block;
+  text-align: left;
+}
+.visual-box figcaption {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+
+/* ===== Binary Bits Visual ===== */
+.bits-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin-bottom: 0.5rem;
+  justify-content: center;
+}
+.bit-cell {
+  width: 2.2rem;
+  height: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+.bit-cell.on {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+.bit-cell.off {
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+.bit-cell.network {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+.bit-cell.host {
+  background: var(--color-success);
+  color: #fff;
+  border-color: var(--color-success);
+}
+.octet-group {
+  display: flex;
+  gap: 0.15rem;
+  margin: 0 0.35rem;
+}
+.octet-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-top: 0.15rem;
+}
+
+/* ===== Footer ===== */
+.site-footer {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 1.5rem;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+.site-footer a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.site-footer a:hover { text-decoration: underline; }
+
+/* ===== Utility ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.text-center { text-align: center; }
+.text-mono { font-family: var(--font-mono); }
+.flex-gap { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .site-header { padding: 1.25rem 1rem; }
+  .site-header h1 { font-size: 1.3rem; }
+  .main-content { padding: 1.25rem 1rem 2rem; }
+  .module-nav { padding: 0.5rem 1rem; }
+  .tab-list [role="tab"] { padding: 0.5rem 0.75rem; }
+  .exercise-field label { min-width: auto; width: 100%; }
+  .exercise-field input[type="text"] { width: 100%; }
+  pre { font-size: var(--font-size-xs); padding: 0.85rem; }
+  .bit-cell { width: 1.8rem; height: 1.8rem; font-size: var(--font-size-xs); }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="#">CSC 152</a>
+      <span class="sep" aria-hidden="true">→</span>
+      <a href="#">Week 8</a>
+      <span class="sep" aria-hidden="true">→</span>
+      <span aria-current="page">Module 8.1</span>
+    </nav>
+    <h1>Module 8.1: IP Addressing &amp; Subnetting Foundations</h1>
+    <div class="header-meta">
+      <span>📅 Week 8 · March 9–15, 2026</span>
+      <span>⏱ Estimated Time: 1.5 hours</span>
+      <span>📖 Self-Study (Reading + Practice)</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== SECTION NAV ===== -->
+<nav class="module-nav" aria-label="Module sections">
+  <div class="nav-inner">
+    <ul class="nav-sections" id="section-nav">
+      <li><a href="#section-objectives" class="active">§0</a></li>
+      <li><a href="#section-1">§1</a></li>
+      <li><a href="#section-2">§2</a></li>
+      <li><a href="#section-3">§3</a></li>
+      <li><a href="#section-4">§4</a></li>
+      <li><a href="#section-5">§5</a></li>
+      <li><a href="#section-6">§6</a></li>
+      <li><a href="#section-7">§7</a></li>
+    </ul>
+    <a href="#main-content" class="nav-top-link" aria-label="Back to top">↑ Top</a>
+  </div>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main id="main-content" class="main-content" role="main">
+
+  <!-- ===== §0: Objectives & Overview ===== -->
+  <section id="section-objectives" class="section">
+    <h2>§0 — Learning Objectives &amp; Overview</h2>
+
+    <div class="callout callout-info">
+      <div class="callout-title">📋 Module Scope</div>
+      <p>This module covers <strong>IP addressing theory only</strong>. You will learn how IPv4 and IPv6 addresses work, how subnetting divides networks, and how to calculate network boundaries using CIDR notation. Hands-on interface configuration is covered in <strong>Module 8.2</strong>.</p>
+    </div>
+
+    <h3>Learning Objectives</h3>
+    <p>By the end of Module 8.1, you will be able to:</p>
+
+    <ul class="objectives-list" id="objectives-list">
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-1" aria-label="Mark objective 1 complete">
+        <label for="obj-1" class="obj-label">Describe the structure of an IPv4 address in dotted-decimal and binary notation</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-2" aria-label="Mark objective 2 complete">
+        <label for="obj-2" class="obj-label">Explain the role of subnet masks in defining network and host portions</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-3" aria-label="Mark objective 3 complete">
+        <label for="obj-3" class="obj-label">Read and write CIDR notation (e.g., /24, /27, /30)</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-4" aria-label="Mark objective 4 complete">
+        <label for="obj-4" class="obj-label">Calculate network ID, broadcast address, and usable host range for a given subnet</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-5" aria-label="Mark objective 5 complete">
+        <label for="obj-5" class="obj-label">Identify private (RFC 1918) vs. public address ranges</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-6" aria-label="Mark objective 6 complete">
+        <label for="obj-6" class="obj-label">Describe IPv6 address format, abbreviation rules, and link-local addresses</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-7" aria-label="Mark objective 7 complete">
+        <label for="obj-7" class="obj-label">Explain the relationship between physical network segments and logical subnets</label>
+      </li>
+    </ul>
+
+    <div class="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Objectives completion progress" id="obj-progress-bar">
+      <div class="progress-bar-fill" id="obj-progress-fill"></div>
+    </div>
+    <div class="progress-text" id="obj-progress-text" aria-live="polite">0 / 7 objectives completed</div>
+
+    <h3>Prerequisite Knowledge</h3>
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Before You Begin</div>
+      <p>This module assumes you have completed <strong>Weeks 6–7</strong> (User &amp; Group Administration, File Permissions). Specifically:</p>
+      <ul>
+        <li><strong>Week 6:</strong> You understand organizational structures (departments, groups) that map to network segments in Project 2.</li>
+        <li><strong>Week 7:</strong> You know that configuration files require root/administrator access — the same <code>sudo</code> skills apply when editing network configuration files in Modules 8.2–8.3.</li>
+        <li><strong>Weeks 1–5:</strong> You are comfortable with the Linux CLI and Windows Server GUI, and can edit files with <code>nano</code> or <code>vim</code>.</li>
+      </ul>
+    </div>
+
+    <h3>CSLO Alignment</h3>
+    <div class="callout callout-accent">
+      <div class="callout-title">🎯 CSLO 3</div>
+      <p><strong>Configure systems for network connectivity, including physical and logical elements.</strong></p>
+      <p>Module 8.1 addresses the <em>logical elements</em> portion of CSLO 3 by building your understanding of IP addressing and subnetting — the foundation for all network configuration work in Weeks 8–9 and Projects 2 and 4.</p>
+    </div>
+
+    <h3>How This Module Prepares You</h3>
+    <ul>
+      <li><strong>Project 2 (Part A):</strong> You will design an IP addressing scheme with three internal segments (Management, Servers, Clients). This module gives you the subnetting skills to plan non-overlapping address ranges.</li>
+      <li><strong>Module 8.2:</strong> You will configure static IPs on Linux and Windows — impossible without understanding addresses and masks from this module.</li>
+      <li><strong>Week 9:</strong> DHCP and DNS <em>server</em> configuration requires you to understand client-side addressing first.</li>
+    </ul>
+  </section>
+
+  <!-- ===== §1: IPv4 Address Structure ===== -->
+  <section id="section-1" class="section">
+    <h2>§1 — IPv4 Address Structure</h2>
+
+    <p>Every device on an IP network needs a unique address — just like every house on a street needs a unique number. An <strong>IPv4 address</strong> is a 32-bit number that identifies a device (called a <em>host</em>) on a network.</p>
+
+    <h3>Dotted-Decimal Notation</h3>
+    <p>Humans don't work well with 32-bit binary strings, so IPv4 addresses are written as four <strong>octets</strong> (groups of 8 bits) separated by dots. Each octet can represent a decimal value from <strong>0 to 255</strong>.</p>
+
+    <div class="visual-box">
+      <figure>
+        <div class="diagram" aria-label="IPv4 address broken into four octets">  192  .  168  .   1   .  10
+  ─────   ─────   ─────   ─────
+ Octet 1  Octet 2  Octet 3  Octet 4
+(8 bits) (8 bits) (8 bits) (8 bits)
+ ─────────────────────────────────
+          32 bits total</div>
+        <figcaption>Figure 1: An IPv4 address in dotted-decimal notation, showing four octets.</figcaption>
+      </figure>
+    </div>
+
+    <h3>Binary Representation</h3>
+    <p>Underneath the dotted-decimal format, each octet is an 8-bit binary number. Understanding binary is essential for subnetting. Each bit position represents a power of 2:</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Bit Position Values in One Octet</caption>
+        <thead>
+          <tr>
+            <th scope="col">Bit Position</th>
+            <th scope="col">7</th>
+            <th scope="col">6</th>
+            <th scope="col">5</th>
+            <th scope="col">4</th>
+            <th scope="col">3</th>
+            <th scope="col">2</th>
+            <th scope="col">1</th>
+            <th scope="col">0</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Value</th>
+            <td>128</td>
+            <td>64</td>
+            <td>32</td>
+            <td>16</td>
+            <td>8</td>
+            <td>4</td>
+            <td>2</td>
+            <td>1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>To convert a decimal octet to binary, determine which powers of 2 sum to that value.</p>
+
+    <div class="accordion" id="accordion-binary">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-binary-example" id="acc-binary-example-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Worked Example: Convert 192 to Binary
+        </button>
+        <div class="accordion-panel" id="acc-binary-example" role="region" aria-labelledby="acc-binary-example-btn" aria-hidden="true">
+          <p>Start with 192 and subtract the largest power of 2 that fits:</p>
+          <ol>
+            <li>192 ≥ 128? <strong>Yes</strong> → bit 7 = <strong>1</strong>, remainder = 192 − 128 = 64</li>
+            <li>64 ≥ 64? <strong>Yes</strong> → bit 6 = <strong>1</strong>, remainder = 64 − 64 = 0</li>
+            <li>All remaining bits = <strong>0</strong></li>
+          </ol>
+          <p>Result: <code>11000000</code></p>
+          <p>Verification: 128 + 64 = 192 ✓</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-binary-168" id="acc-binary-168-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Worked Example: Convert 168 to Binary
+        </button>
+        <div class="accordion-panel" id="acc-binary-168" role="region" aria-labelledby="acc-binary-168-btn" aria-hidden="true">
+          <ol>
+            <li>168 ≥ 128? <strong>Yes</strong> → bit 7 = 1, remainder = 40</li>
+            <li>40 ≥ 64? <strong>No</strong> → bit 6 = 0</li>
+            <li>40 ≥ 32? <strong>Yes</strong> → bit 5 = 1, remainder = 8</li>
+            <li>8 ≥ 16? <strong>No</strong> → bit 4 = 0</li>
+            <li>8 ≥ 8? <strong>Yes</strong> → bit 3 = 1, remainder = 0</li>
+            <li>Remaining bits = 0</li>
+          </ol>
+          <p>Result: <code>10101000</code></p>
+          <p>Verification: 128 + 32 + 8 = 168 ✓</p>
+        </div>
+      </div>
+    </div>
+
+    <p>The full binary representation of <code>192.168.1.10</code> is:</p>
+    <pre><code>192     . 168     . 1       . 10
+11000000. 10101000. 00000001. 00001010</code></pre>
+
+    <h3>Try It: Binary Conversion</h3>
+    <div class="exercise-box" id="exercise-binary">
+      <h4>✏️ Practice: Convert an Octet to Binary</h4>
+      <p>Convert the decimal value <strong>172</strong> to its 8-bit binary representation.</p>
+      <div class="exercise-field">
+        <label for="input-binary">Your answer (8 digits):</label>
+        <input type="text" id="input-binary" maxlength="8" pattern="[01]{8}" placeholder="e.g., 10101100" autocomplete="off">
+      </div>
+      <button class="btn btn-sm" type="button" onclick="checkBinary()">Check Answer</button>
+      <div class="feedback" id="feedback-binary" role="alert"></div>
+    </div>
+  </section>
+
+  <!-- ===== §2: Subnet Masks ===== -->
+  <section id="section-2" class="section">
+    <h2>§2 — Subnet Masks &amp; Network Boundaries</h2>
+
+    <p>An IP address alone doesn't tell you which part identifies the <em>network</em> and which part identifies the <em>host</em>. That's the job of the <strong>subnet mask</strong>.</p>
+
+    <h3>How Subnet Masks Work</h3>
+    <p>A subnet mask is also a 32-bit number. It uses a contiguous string of <strong>1-bits</strong> (the network portion) followed by <strong>0-bits</strong> (the host portion). The mask is applied to an IP address using a bitwise AND operation to determine the <strong>network ID</strong>.</p>
+
+    <div class="visual-box">
+      <figure>
+        <div aria-label="Subnet mask dividing network and host portions">
+          <div class="bits-row">
+            <div class="octet-group">
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+            </div>
+            <div class="octet-group">
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+            </div>
+            <div class="octet-group">
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+              <div class="bit-cell network" title="Network bit">1</div>
+            </div>
+            <div class="octet-group">
+              <div class="bit-cell host" title="Host bit">0</div>
+              <div class="bit-cell host" title="Host bit">0</div>
+              <div class="bit-cell host" title="Host bit">0</div>
+              <div class="bit-cell host" title="Host bit">0</div>
+              <div class="bit-cell host" title="Host bit">0</div>
+              <div class="bit-cell host" title="Host bit">0</div>
+              <div class="bit-cell host" title="Host bit">0</div>
+              <div class="bit-cell host" title="Host bit">0</div>
+            </div>
+          </div>
+          <div class="bits-row" style="font-size:0.75rem;color:var(--color-text-secondary);">
+            <span style="width:calc(2.2rem * 8 + 0.15rem * 7 + 0.7rem);text-align:center;display:inline-block;">← 24 network bits (purple) →</span>
+            <span style="width:calc(2.2rem * 8 + 0.15rem * 7 + 0.7rem);text-align:center;display:inline-block;">← 8 host bits (green) →</span>
+          </div>
+        </div>
+        <figcaption>Figure 2: A /24 subnet mask — 24 network bits followed by 8 host bits. Dotted-decimal: 255.255.255.0</figcaption>
+      </figure>
+    </div>
+
+    <h3>Common Subnet Masks</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>Frequently Used Subnet Masks</caption>
+        <thead>
+          <tr>
+            <th scope="col">CIDR</th>
+            <th scope="col">Dotted-Decimal Mask</th>
+            <th scope="col">Network Bits</th>
+            <th scope="col">Host Bits</th>
+            <th scope="col">Usable Hosts</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>/8</td><td><code>255.0.0.0</code></td><td>8</td><td>24</td><td>16,777,214</td></tr>
+          <tr><td>/16</td><td><code>255.255.0.0</code></td><td>16</td><td>16</td><td>65,534</td></tr>
+          <tr><td>/24</td><td><code>255.255.255.0</code></td><td>24</td><td>8</td><td>254</td></tr>
+          <tr><td>/25</td><td><code>255.255.255.128</code></td><td>25</td><td>7</td><td>126</td></tr>
+          <tr><td>/26</td><td><code>255.255.255.192</code></td><td>26</td><td>6</td><td>62</td></tr>
+          <tr><td>/27</td><td><code>255.255.255.224</code></td><td>27</td><td>5</td><td>30</td></tr>
+          <tr><td>/28</td><td><code>255.255.255.240</code></td><td>28</td><td>4</td><td>14</td></tr>
+          <tr><td>/30</td><td><code>255.255.255.252</code></td><td>30</td><td>2</td><td>2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">💡 Key Formula</div>
+      <p><strong>Usable Hosts = 2<sup>h</sup> − 2</strong>, where <em>h</em> is the number of host bits. The two subtracted addresses are the <strong>network ID</strong> (all host bits = 0) and the <strong>broadcast address</strong> (all host bits = 1).</p>
+    </div>
+
+    <h3>Bitwise AND: Finding the Network ID</h3>
+    <p>To find the network ID, perform a bitwise AND between the IP address and the subnet mask. Any bit position where the mask has a 1 keeps the IP address bit; where the mask has a 0, the result is 0.</p>
+
+    <div class="accordion" id="accordion-and">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-and-example" id="acc-and-example-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Worked Example: 192.168.1.10 AND 255.255.255.0
+        </button>
+        <div class="accordion-panel" id="acc-and-example" role="region" aria-labelledby="acc-and-example-btn" aria-hidden="true">
+<pre><code>IP Address:    11000000.10101000.00000001.00001010  (192.168.1.10)
+Subnet Mask:   11111111.11111111.11111111.00000000  (255.255.255.0)
+               ──────────────────────────────────
+Network ID:    11000000.10101000.00000001.00000000  (192.168.1.0)</code></pre>
+          <p>The last octet is zeroed out because the mask has 0s there. The network ID is <strong>192.168.1.0/24</strong>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §3: CIDR Notation ===== -->
+  <section id="section-3" class="section">
+    <h2>§3 — CIDR Notation</h2>
+
+    <p><strong>CIDR</strong> (Classless Inter-Domain Routing, pronounced "cider") notation is the modern way to express an IP address together with its subnet mask. Instead of writing the full dotted-decimal mask, you append a <strong>slash and the number of network bits</strong> to the IP address.</p>
+
+    <div class="visual-box">
+      <figure>
+        <div class="diagram" aria-label="CIDR notation example">     192.168.1.0  /  24
+     ───────────    ──
+      IP address    prefix length
+                    (network bits)</div>
+        <figcaption>Figure 3: CIDR notation combines the network address and prefix length into one compact expression.</figcaption>
+      </figure>
+    </div>
+
+    <h3>Why CIDR Replaced Classful Addressing</h3>
+    <p>Early IP addressing used rigid "classes" (A, B, C) that wasted huge numbers of addresses. CIDR allows subnets of <em>any</em> size by using variable-length prefix lengths. You should be aware of the legacy classes for exam purposes, but CIDR is the standard in modern networking.</p>
+
+    <div class="accordion" id="accordion-classful">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-classful" id="acc-classful-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Reference: Legacy Classful Addressing (Historical Context)
+        </button>
+        <div class="accordion-panel" id="acc-classful" role="region" aria-labelledby="acc-classful-btn" aria-hidden="true">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Class</th>
+                  <th scope="col">First Octet Range</th>
+                  <th scope="col">Default Mask</th>
+                  <th scope="col">CIDR Equivalent</th>
+                  <th scope="col">Networks</th>
+                  <th scope="col">Hosts per Network</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>A</td><td>1–126</td><td>255.0.0.0</td><td>/8</td><td>126</td><td>~16.7 million</td></tr>
+                <tr><td>B</td><td>128–191</td><td>255.255.0.0</td><td>/16</td><td>16,384</td><td>65,534</td></tr>
+                <tr><td>C</td><td>192–223</td><td>255.255.255.0</td><td>/24</td><td>~2.1 million</td><td>254</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><strong>Problem:</strong> A company needing 500 addresses had to get a Class B (/16) with 65,534 addresses — wasting over 65,000 addresses. CIDR solves this by allowing a /23 (510 usable hosts) instead.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Reading CIDR Notation</h3>
+    <p>When you see <code>10.0.50.0/27</code>, you know:</p>
+    <ul>
+      <li><strong>Network address:</strong> 10.0.50.0</li>
+      <li><strong>Prefix length:</strong> 27 bits for the network portion</li>
+      <li><strong>Host bits:</strong> 32 − 27 = 5</li>
+      <li><strong>Usable hosts:</strong> 2<sup>5</sup> − 2 = 30</li>
+      <li><strong>Subnet mask:</strong> 255.255.255.224</li>
+    </ul>
+  </section>
+
+  <!-- ===== §4: Subnetting Calculations ===== -->
+  <section id="section-4" class="section">
+    <h2>§4 — Subnetting Calculations</h2>
+
+    <p>Subnetting is the process of dividing a larger network into smaller, more manageable pieces. This is a critical skill for Project 2, where you will design three separate subnets for Management, Servers, and Clients.</p>
+
+    <h3>The Subnetting Process</h3>
+    <p>Given a network and a prefix length, you can calculate three key values:</p>
+    <ol>
+      <li><strong>Network ID</strong> — the first address in the subnet (all host bits = 0)</li>
+      <li><strong>Broadcast Address</strong> — the last address in the subnet (all host bits = 1)</li>
+      <li><strong>Usable Host Range</strong> — Network ID + 1 through Broadcast − 1</li>
+    </ol>
+
+    <h3>Step-by-Step Method</h3>
+
+    <div class="tabs-container" id="tabs-subnet-method">
+      <div class="tab-list" role="tablist" aria-label="Subnetting method steps">
+        <button role="tab" aria-selected="true" aria-controls="tab-step1" id="tab-btn-step1">Step 1: Host Bits</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-step2" id="tab-btn-step2" tabindex="-1">Step 2: Block Size</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-step3" id="tab-btn-step3" tabindex="-1">Step 3: Boundaries</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-step4" id="tab-btn-step4" tabindex="-1">Step 4: Summary</button>
+      </div>
+      <div class="tab-panel active" id="tab-step1" role="tabpanel" aria-labelledby="tab-btn-step1">
+        <h4>Step 1: Determine Host Bits</h4>
+        <p>Subtract the prefix length from 32:</p>
+        <p><strong>Host bits = 32 − prefix length</strong></p>
+        <p>Example: For /27 → 32 − 27 = <strong>5 host bits</strong></p>
+        <p>This tells you: usable hosts = 2<sup>5</sup> − 2 = <strong>30</strong></p>
+      </div>
+      <div class="tab-panel" id="tab-step2" role="tabpanel" aria-labelledby="tab-btn-step2">
+        <h4>Step 2: Calculate Block Size</h4>
+        <p>The <strong>block size</strong> (also called the "increment") is 2<sup>host bits</sup>. This is how many total addresses are in each subnet.</p>
+        <p><strong>Block size = 2<sup>h</sup></strong></p>
+        <p>Example: For /27 → 2<sup>5</sup> = <strong>32</strong></p>
+        <p>Subnets start at multiples of the block size in the relevant octet.</p>
+      </div>
+      <div class="tab-panel" id="tab-step3" role="tabpanel" aria-labelledby="tab-btn-step3">
+        <h4>Step 3: Find Subnet Boundaries</h4>
+        <p>Starting from 0 in the "interesting" octet (the octet where subnetting occurs), count by the block size:</p>
+        <p>For <code>192.168.1.0/27</code> (block size 32, interesting octet is the 4th):</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Subnet #</th>
+                <th scope="col">Network ID</th>
+                <th scope="col">First Usable</th>
+                <th scope="col">Last Usable</th>
+                <th scope="col">Broadcast</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>192.168.1.0</td><td>192.168.1.1</td><td>192.168.1.30</td><td>192.168.1.31</td></tr>
+              <tr><td>2</td><td>192.168.1.32</td><td>192.168.1.33</td><td>192.168.1.62</td><td>192.168.1.63</td></tr>
+              <tr><td>3</td><td>192.168.1.64</td><td>192.168.1.65</td><td>192.168.1.94</td><td>192.168.1.95</td></tr>
+              <tr><td>4</td><td>192.168.1.96</td><td>192.168.1.97</td><td>192.168.1.126</td><td>192.168.1.127</td></tr>
+              <tr><td>…</td><td colspan="4">continues in increments of 32…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tab-panel" id="tab-step4" role="tabpanel" aria-labelledby="tab-btn-step4">
+        <h4>Step 4: Document the Summary</h4>
+        <p>For each subnet, record:</p>
+        <ul>
+          <li><strong>Network ID / CIDR:</strong> e.g., 192.168.1.0/27</li>
+          <li><strong>Subnet mask:</strong> 255.255.255.224</li>
+          <li><strong>Usable range:</strong> 192.168.1.1 – 192.168.1.30</li>
+          <li><strong>Broadcast:</strong> 192.168.1.31</li>
+          <li><strong>Usable hosts:</strong> 30</li>
+          <li><strong>Purpose:</strong> e.g., "Management subnet"</li>
+        </ul>
+        <p>This documentation format is exactly what Project 2 Part A requires.</p>
+      </div>
+    </div>
+
+    <h3>Try It: Subnet Calculation</h3>
+    <div class="exercise-box" id="exercise-subnet">
+      <h4>✏️ Practice: Calculate Subnet Details</h4>
+      <p>Given the network <strong>10.0.0.0/26</strong>, answer the following:</p>
+      <div class="exercise-field">
+        <label for="input-hosts">Usable hosts per subnet:</label>
+        <input type="text" id="input-hosts" placeholder="e.g., 62" autocomplete="off">
+      </div>
+      <div class="exercise-field">
+        <label for="input-broadcast">Broadcast address of the first subnet:</label>
+        <input type="text" id="input-broadcast" placeholder="e.g., 10.0.0.63" autocomplete="off">
+      </div>
+      <div class="exercise-field">
+        <label for="input-last-usable">Last usable host of the first subnet:</label>
+        <input type="text" id="input-last-usable" placeholder="e.g., 10.0.0.62" autocomplete="off">
+      </div>
+      <button class="btn btn-sm" type="button" onclick="checkSubnet()">Check Answers</button>
+      <div class="feedback" id="feedback-subnet" role="alert"></div>
+    </div>
+  </section>
+
+  <!-- ===== §5: Private vs. Public Addresses ===== -->
+  <section id="section-5" class="section">
+    <h2>§5 — Private vs. Public Address Ranges</h2>
+
+    <p><strong>RFC 1918</strong> defines three address blocks reserved for <em>private</em> use — they are not routable on the public internet. Every organization uses these ranges internally, and a router or firewall performs <strong>Network Address Translation (NAT)</strong> to map private addresses to a public address for internet access.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>RFC 1918 Private Address Ranges</caption>
+        <thead>
+          <tr>
+            <th scope="col">CIDR Block</th>
+            <th scope="col">Address Range</th>
+            <th scope="col">Number of Addresses</th>
+            <th scope="col">Common Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>10.0.0.0/8</code></td>
+            <td>10.0.0.0 – 10.255.255.255</td>
+            <td>16,777,216</td>
+            <td>Class A private</td>
+          </tr>
+          <tr>
+            <td><code>172.16.0.0/12</code></td>
+            <td>172.16.0.0 – 172.31.255.255</td>
+            <td>1,048,576</td>
+            <td>Class B private</td>
+          </tr>
+          <tr>
+            <td><code>192.168.0.0/16</code></td>
+            <td>192.168.0.0 – 192.168.255.255</td>
+            <td>65,536</td>
+            <td>Class C private</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-success">
+      <div class="callout-title">🔗 Project 2 Connection</div>
+      <p>In Project 2, your pfSense firewall will use a <strong>public-facing</strong> WAN interface (assigned by Proxmox) and <strong>private</strong> LAN interfaces for your three internal segments. You will choose subnets from the RFC 1918 ranges — typically <code>10.x.x.x</code> or <code>192.168.x.x</code> — for Management, Servers, and Clients.</p>
+    </div>
+
+    <h3>Special Address Ranges</h3>
+    <p>Beyond RFC 1918, you should recognize these reserved ranges:</p>
+    <div class="table-wrap">
+      <table>
+        <caption>Other Notable Reserved Ranges</caption>
+        <thead>
+          <tr>
+            <th scope="col">Range</th>
+            <th scope="col">Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>127.0.0.0/8</code></td><td>Loopback (localhost) — used for testing the local TCP/IP stack</td></tr>
+          <tr><td><code>169.254.0.0/16</code></td><td>Link-local / APIPA — auto-assigned when DHCP fails</td></tr>
+          <tr><td><code>0.0.0.0/0</code></td><td>Default route — "all networks" (used in routing tables)</td></tr>
+          <tr><td><code>255.255.255.255</code></td><td>Limited broadcast — sent to all hosts on the local segment</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Troubleshooting Tip</div>
+      <p>If you see a <code>169.254.x.x</code> address on a server, it means the DHCP client did not receive a response. This is one of the first things to check when troubleshooting connectivity — a topic covered in detail in <strong>Module 8.4</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ===== §6: IPv6 Fundamentals ===== -->
+  <section id="section-6" class="section">
+    <h2>§6 — IPv6 Addressing Fundamentals</h2>
+
+    <p>IPv4's 32-bit address space provides about 4.3 billion addresses — not enough for the modern internet. <strong>IPv6</strong> uses <strong>128-bit addresses</strong>, providing approximately 3.4 × 10<sup>38</sup> unique addresses. While most enterprise LANs still run IPv4 (and your Project 2 lab will use IPv4), understanding IPv6 basics is essential for any system administrator.</p>
+
+    <h3>IPv6 Address Format</h3>
+    <p>An IPv6 address is written as <strong>eight groups of four hexadecimal digits</strong>, separated by colons:</p>
+    <pre><code>2001:0db8:85a3:0000:0000:8a2e:0370:7334</code></pre>
+
+    <h3>Abbreviation Rules</h3>
+    <p>IPv6 addresses are long, so two abbreviation rules make them more manageable:</p>
+
+    <div class="accordion" id="accordion-ipv6">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-ipv6-rule1" id="acc-ipv6-rule1-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Rule 1: Drop Leading Zeros Within Each Group
+        </button>
+        <div class="accordion-panel" id="acc-ipv6-rule1" role="region" aria-labelledby="acc-ipv6-rule1-btn" aria-hidden="true">
+          <p>You can remove leading zeros in each 4-digit group (but at least one digit must remain):</p>
+<pre><code>2001:0db8:85a3:0000:0000:8a2e:0370:7334
+                    ↓
+2001: db8:85a3:   0:   0:8a2e: 370:7334</code></pre>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-ipv6-rule2" id="acc-ipv6-rule2-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Rule 2: Replace One Consecutive Run of All-Zero Groups With ::
+        </button>
+        <div class="accordion-panel" id="acc-ipv6-rule2" role="region" aria-labelledby="acc-ipv6-rule2-btn" aria-hidden="true">
+          <p>One (and only one) consecutive sequence of all-zero groups can be replaced with <code>::</code></p>
+<pre><code>2001:db8:85a3:0:0:8a2e:370:7334
+                ↓
+2001:db8:85a3::8a2e:370:7334</code></pre>
+          <p><strong>Important:</strong> You can only use <code>::</code> once per address. Using it twice would make the address ambiguous.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Link-Local Addresses</h3>
+    <p>Every IPv6-enabled interface automatically generates a <strong>link-local address</strong> in the <code>fe80::/10</code> range. These addresses are used for communication on the local network segment only (not routable). You will see them when running <code>ip addr</code> on Linux or <code>ipconfig</code> on Windows.</p>
+    <pre><code># Example link-local address on a Linux interface
+fe80::215:5dff:fe01:a3b2%eth0</code></pre>
+
+    <div class="callout callout-info">
+      <div class="callout-title">💡 Practical Note</div>
+      <p>In this course and Project 2, you will primarily work with <strong>IPv4</strong>. However, Quiz 8 will include IPv6 questions, and understanding IPv6 basics prepares you for modern network environments and certification exams (CompTIA Server+, Network+).</p>
+    </div>
+  </section>
+
+  <!-- ===== §7: Physical vs. Logical Networks ===== -->
+  <section id="section-7" class="section">
+    <h2>§7 — Physical Segments vs. Logical Subnets</h2>
+
+    <p>A key concept in network administration is the distinction between <strong>physical</strong> and <strong>logical</strong> network elements — and how they relate to each other.</p>
+
+    <h3>Physical Network Elements</h3>
+    <ul>
+      <li><strong>NICs</strong> (Network Interface Cards) — the hardware that connects a device to the network</li>
+      <li><strong>Cables</strong> (Ethernet, fiber) — the physical medium carrying signals</li>
+      <li><strong>Switches</strong> — devices that connect multiple hosts on the same physical segment</li>
+      <li><strong>Routers / Firewalls</strong> — devices that connect different network segments</li>
+    </ul>
+
+    <h3>Logical Network Elements</h3>
+    <ul>
+      <li><strong>IP addresses</strong> — logical identifiers assigned to interfaces</li>
+      <li><strong>Subnets</strong> — logical groupings of IP addresses</li>
+      <li><strong>VLANs</strong> (Virtual LANs) — logical segmentation on a single physical switch</li>
+      <li><strong>Routing tables</strong> — logical rules for forwarding traffic between subnets</li>
+    </ul>
+
+    <h3>How They Map Together</h3>
+    <div class="visual-box">
+      <figure>
+        <div class="diagram" aria-label="Diagram showing physical NIC connecting to logical subnet through IP assignment">┌──────────────────────────────────────────────────────┐
+│                    pfSense Firewall                   │
+│                                                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
+│  │  NIC 1   │  │  NIC 2   │  │  NIC 3   │  Physical│
+│  │ (vtnet0) │  │ (vtnet1) │  │ (vtnet2) │  Layer   │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘          │
+│       │              │              │                │
+│  ┌────┴─────┐  ┌────┴─────┐  ┌────┴─────┐          │
+│  │10.0.1.1  │  │10.0.2.1  │  │10.0.3.1  │  Logical │
+│  │  /24     │  │  /24     │  │  /24     │  Layer   │
+│  │Management│  │ Servers  │  │ Clients  │          │
+│  └──────────┘  └──────────┘  └──────────┘          │
+└──────────────────────────────────────────────────────┘</div>
+        <figcaption>Figure 4: In Project 2, your pfSense VM will have three virtual NICs, each assigned to a different logical subnet. The physical NIC provides the connection; the IP address and subnet define the logical boundary.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout callout-success">
+      <div class="callout-title">🔗 Week 6–7 Connection</div>
+      <p>In Weeks 6–7, you organized users into <em>groups</em> (departments) and assigned <em>permissions</em> based on those groups. Network subnets work similarly: you organize <em>devices</em> into <em>subnets</em> (segments) and assign <em>access rules</em> (firewall rules) based on those segments. The organizational thinking is the same — the scope changes from users and files to devices and traffic.</p>
+    </div>
+
+    <h3>Why Subnetting Matters for Server Administrators</h3>
+    <ul>
+      <li><strong>Security:</strong> Placing servers on a separate subnet from clients allows firewall rules to control which traffic reaches the servers.</li>
+      <li><strong>Performance:</strong> Smaller subnets reduce broadcast traffic, improving network efficiency.</li>
+      <li><strong>Management:</strong> Logical grouping makes it easier to apply policies, monitor traffic, and troubleshoot issues.</li>
+      <li><strong>Scalability:</strong> A well-designed IP scheme accommodates future growth without re-addressing.</li>
+    </ul>
+  </section>
+
+  <!-- ===== Summary & Next Steps ===== -->
+  <section id="section-summary" class="section">
+    <h2>Module Summary &amp; Next Steps</h2>
+
+    <h3>Key Takeaways</h3>
+    <ol>
+      <li>An IPv4 address is a 32-bit number written as four dotted-decimal octets (0–255 each).</li>
+      <li>The subnet mask determines which bits are the network portion and which are the host portion.</li>
+      <li>CIDR notation (<code>/24</code>, <code>/27</code>, etc.) is the modern way to express the prefix length.</li>
+      <li>Usable hosts = 2<sup>h</sup> − 2 (subtracting network ID and broadcast address).</li>
+      <li>RFC 1918 defines private address ranges (10.x, 172.16–31.x, 192.168.x) used in internal networks.</li>
+      <li>IPv6 uses 128-bit addresses in hexadecimal colon notation with two abbreviation rules.</li>
+      <li>Physical NICs and cables provide connectivity; IP addresses and subnets provide logical organization.</li>
+    </ol>
+
+    <h3>Readings &amp; Resources</h3>
+    <p>Complete the following before moving to Module 8.2 (estimated 45–60 minutes):</p>
+    <ol>
+      <li><strong>"IPv4 Addressing and Subnetting"</strong> — Cisco Networking Academy (free, link in Canvas) ~20 min</li>
+      <li><strong>Professor Messer — "IP Addressing" and "Subnetting"</strong> videos (YouTube) ~20 min</li>
+      <li><strong>"IPv6 Basics for System Administrators"</strong> — Red Hat Documentation (link in Canvas) ~15 min</li>
+    </ol>
+
+    <h3>Self-Assessment Worksheet</h3>
+    <div class="callout callout-accent">
+      <div class="callout-title">📝 Subnet Calculation Worksheet (in Canvas)</div>
+      <p>Complete the <strong>Module 8.1 Subnet Worksheet</strong> posted in Canvas. You will be given a /24 network and asked to divide it into 4 equal subnets, documenting the network ID, usable range, and broadcast address for each. This exercise directly mirrors the IP addressing plan required in <strong>Project 2 Part A</strong>.</p>
+      <p><em>This worksheet is ungraded but strongly recommended. The same calculation skills appear on Quiz 8.</em></p>
+    </div>
+
+    <h3>What's Next</h3>
+    <div class="callout callout-info">
+      <div class="callout-title">➡️ Module 8.2: Network Interface Configuration</div>
+      <p>Now that you understand IP addresses and subnets, Module 8.2 puts theory into practice. You will configure static IP addresses on both Linux (using Netplan and <code>nmcli</code>) and Windows Server (using GUI and PowerShell), verify your configuration, and understand persistent vs. runtime changes. Module 8.2 is the core of the in-class Zoom lab session.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer" role="contentinfo">
+  <p>CSC 152 — Network Operating Systems and Administration · Mendocino College · Spring 2026</p>
+  <p>Instructor: David Pai · <a href="#">Course Home in Canvas</a></p>
+  <p>Module content aligned with <strong>CSLO 3:</strong> Configure systems for network connectivity, including physical and logical elements.</p>
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+(function() {
+  'use strict';
+
+  /* ===== Accordion Logic ===== */
+  document.querySelectorAll('.accordion-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      var panel = document.getElementById(this.getAttribute('aria-controls'));
+      this.setAttribute('aria-expanded', String(!expanded));
+      panel.setAttribute('aria-hidden', String(expanded));
+    });
+    btn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.click();
+      }
+    });
+  });
+
+  /* ===== Tabs Logic ===== */
+  document.querySelectorAll('.tabs-container').forEach(function(container) {
+    var tabs = Array.from(container.querySelectorAll('[role="tab"]'));
+    var panels = Array.from(container.querySelectorAll('[role="tabpanel"]'));
+
+    function activateTab(tab) {
+      tabs.forEach(function(t) {
+        t.setAttribute('aria-selected', 'false');
+        t.setAttribute('tabindex', '-1');
+      });
+      panels.forEach(function(p) { p.classList.remove('active'); });
+
+      tab.setAttribute('aria-selected', 'true');
+      tab.removeAttribute('tabindex');
+      var panel = document.getElementById(tab.getAttribute('aria-controls'));
+      if (panel) panel.classList.add('active');
+      tab.focus();
+    }
+
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() { activateTab(this); });
+      tab.addEventListener('keydown', function(e) {
+        var idx = tabs.indexOf(this);
+        var newIdx = idx;
+        if (e.key === 'ArrowRight') { newIdx = (idx + 1) % tabs.length; }
+        else if (e.key === 'ArrowLeft') { newIdx = (idx - 1 + tabs.length) % tabs.length; }
+        else if (e.key === 'Home') { newIdx = 0; }
+        else if (e.key === 'End') { newIdx = tabs.length - 1; }
+        else { return; }
+        e.preventDefault();
+        activateTab(tabs[newIdx]);
+      });
+    });
+  });
+
+  /* ===== Objectives Progress ===== */
+  var checkboxes = document.querySelectorAll('.obj-checkbox');
+  var progressFill = document.getElementById('obj-progress-fill');
+  var progressText = document.getElementById('obj-progress-text');
+  var progressBar = document.getElementById('obj-progress-bar');
+  var total = checkboxes.length;
+
+  function updateProgress() {
+    var checked = document.querySelectorAll('.obj-checkbox:checked').length;
+    var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+    progressFill.style.width = pct + '%';
+    progressBar.setAttribute('aria-valuenow', String(pct));
+    progressText.textContent = checked + ' / ' + total + ' objectives completed';
+    checkboxes.forEach(function(cb) {
+      var label = cb.nextElementSibling;
+      if (label) {
+        if (cb.checked) { label.classList.add('completed'); }
+        else { label.classList.remove('completed'); }
+      }
+    });
+    /* Session storage (best-effort) */
+    try {
+      var state = [];
+      checkboxes.forEach(function(cb) { state.push(cb.checked); });
+      sessionStorage.setItem('csc152-m81-obj', JSON.stringify(state));
+    } catch(e) { /* ignore */ }
+  }
+
+  /* Restore session state */
+  try {
+    var saved = sessionStorage.getItem('csc152-m81-obj');
+    if (saved) {
+      var state = JSON.parse(saved);
+      checkboxes.forEach(function(cb, i) {
+        if (state[i]) cb.checked = true;
+      });
+    }
+  } catch(e) { /* ignore */ }
+
+  checkboxes.forEach(function(cb) { cb.addEventListener('change', updateProgress); });
+  updateProgress();
+
+  /* ===== Section Nav Active State ===== */
+  var navLinks = document.querySelectorAll('#section-nav a');
+  var sections = [];
+  navLinks.forEach(function(link) {
+    var target = document.querySelector(link.getAttribute('href'));
+    if (target) sections.push({ link: link, el: target });
+  });
+
+  function updateActiveNav() {
+    var scrollY = window.scrollY || window.pageYOffset;
+    var current = sections[0];
+    for (var i = 0; i < sections.length; i++) {
+      if (sections[i].el.offsetTop <= scrollY + 120) {
+        current = sections[i];
+      }
+    }
+    navLinks.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+
+  var scrollTimer;
+  window.addEventListener('scroll', function() {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(updateActiveNav, 60);
+  }, { passive: true });
+  updateActiveNav();
+
+  /* ===== Exercise: Binary Conversion ===== */
+  window.checkBinary = function() {
+    var input = document.getElementById('input-binary').value.trim();
+    var feedback = document.getElementById('feedback-binary');
+    if (input === '10101100') {
+      feedback.className = 'feedback correct';
+      feedback.textContent = '✓ Correct! 128 + 32 + 8 + 4 = 172. Binary: 10101100.';
+    } else if (input.length === 0) {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = 'Please enter an 8-digit binary number.';
+    } else {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = '✗ Not quite. Hint: 172 = 128 + 32 + 8 + 4. Which bit positions are those? Try again.';
+    }
+  };
+
+  /* ===== Exercise: Subnet Calculation ===== */
+  window.checkSubnet = function() {
+    var hosts = document.getElementById('input-hosts').value.trim();
+    var broadcast = document.getElementById('input-broadcast').value.trim();
+    var lastUsable = document.getElementById('input-last-usable').value.trim();
+    var feedback = document.getElementById('feedback-subnet');
+
+    var correct = 0;
+    var messages = [];
+
+    if (hosts === '62') { correct++; }
+    else { messages.push('Usable hosts: 32 − 26 = 6 host bits → 2⁶ − 2 = 62'); }
+
+    if (broadcast === '10.0.0.63') { correct++; }
+    else { messages.push('Broadcast: block size is 2⁶ = 64, so first subnet is 10.0.0.0–10.0.0.63; broadcast = 10.0.0.63'); }
+
+    if (lastUsable === '10.0.0.62') { correct++; }
+    else { messages.push('Last usable: broadcast − 1 = 10.0.0.62'); }
+
+    if (correct === 3) {
+      feedback.className = 'feedback correct';
+      feedback.textContent = '✓ All correct! /26 gives 62 usable hosts, broadcast 10.0.0.63, last usable 10.0.0.62.';
+    } else if (correct === 0 && hosts === '' && broadcast === '' && lastUsable === '') {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = 'Please fill in at least one answer before checking.';
+    } else {
+      feedback.className = 'feedback incorrect';
+      feedback.innerHTML = '✗ ' + correct + '/3 correct. Review:<br>• ' + messages.join('<br>• ');
+    }
+  };
+
+})();
+</script>
+</body>
+</html>
