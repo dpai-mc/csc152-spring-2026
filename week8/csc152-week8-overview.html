@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 8 Overview: Network Configuration Fundamentals — CSC 152</title>
+<style>
+/* ===== CSS Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-surface-alt: #e9ecef;
+  --color-border: #dee2e6;
+  --color-text: #212529;
+  --color-text-secondary: #495057;
+  --color-heading: #1a1a2e;
+  --color-primary: #0d6efd;
+  --color-primary-dark: #0a58ca;
+  --color-primary-bg: #e7f1ff;
+  --color-accent: #6f42c1;
+  --color-accent-bg: #f3eefb;
+  --color-success: #198754;
+  --color-success-bg: #d1e7dd;
+  --color-warning: #856404;
+  --color-warning-bg: #fff3cd;
+  --color-danger: #842029;
+  --color-danger-bg: #f8d7da;
+  --color-info: #055160;
+  --color-info-bg: #cff4fc;
+  --color-code-bg: #1e1e2e;
+  --color-code-text: #cdd6f4;
+  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --font-size-base: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-xs: 0.8125rem;
+  --font-size-lg: 1.125rem;
+  --line-height: 1.7;
+  --max-width: 54rem;
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
+  --transition: 0.2s ease;
+}
+
+html { font-size: 100%; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+/* ===== Skip Link ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus { top: 0.5rem; }
+
+/* ===== Header ===== */
+.site-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  padding: 2rem 1.5rem 1.75rem;
+  border-bottom: 4px solid var(--color-primary);
+}
+.header-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+.breadcrumb {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 0.75rem;
+}
+.breadcrumb .sep { margin: 0 0.35rem; }
+.site-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.35rem;
+  line-height: 1.3;
+}
+.header-meta {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.75);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+}
+.header-meta span { white-space: nowrap; }
+
+/* ===== Navigation ===== */
+.module-nav {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.5rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nav-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  list-style: none;
+}
+.nav-sections a {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition);
+}
+.nav-sections a:hover, .nav-sections a:focus {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+.nav-sections a.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+.nav-top-link {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav-top-link:hover, .nav-top-link:focus { text-decoration: underline; }
+
+/* ===== Nav Tooltips ===== */
+.nav-sections li { position: relative; }
+.nav-sections a[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-heading);
+  color: #fff;
+  white-space: nowrap;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 300;
+}
+.nav-sections a[data-tooltip]:hover::after,
+.nav-sections a[data-tooltip]:focus::after { opacity: 1; }
+@media (max-width: 640px) {
+  .nav-sections a[data-tooltip]::after { display: none; }
+}
+
+/* ===== Main Content ===== */
+.main-content {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+/* ===== Sections ===== */
+.section { margin-bottom: 3rem; }
+.section h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+.section h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 1.5rem 0 0.75rem;
+}
+.section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 1.25rem 0 0.5rem;
+}
+.section p { margin-bottom: 1rem; }
+.section ul, .section ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+.section li { margin-bottom: 0.35rem; }
+
+/* ===== Callout Boxes ===== */
+.callout {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+  border-left: 4px solid;
+}
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  font-size: var(--font-size-sm);
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout-info {
+  background: var(--color-info-bg);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+.callout-success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+  color: #0a3622;
+}
+.callout-warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+.callout-danger {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.callout-accent {
+  background: var(--color-accent-bg);
+  border-color: var(--color-accent);
+  color: #3b1f6e;
+}
+
+/* ===== Tables ===== */
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.table-wrap th, .table-wrap td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+.table-wrap th {
+  background: var(--color-surface);
+  font-weight: 700;
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+.table-wrap tr:last-child td { border-bottom: none; }
+.table-wrap tbody tr:hover { background: var(--color-surface); }
+.table-wrap caption {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  background: var(--color-heading);
+  color: #fff;
+}
+
+/* ===== Code ===== */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+:not(pre) > code {
+  background: var(--color-surface-alt);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: 0.88em;
+}
+
+/* ===== Accordion ===== */
+.accordion { margin-bottom: 1.25rem; }
+.accordion-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+.accordion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-heading);
+  text-align: left;
+  transition: background var(--transition);
+}
+.accordion-btn:hover, .accordion-btn:focus {
+  background: var(--color-primary-bg);
+}
+.accordion-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+.accordion-icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform var(--transition);
+  color: var(--color-primary);
+}
+.accordion-btn[aria-expanded="true"] .accordion-icon {
+  transform: rotate(90deg);
+}
+.accordion-panel {
+  display: none;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--color-border);
+}
+.accordion-panel[aria-hidden="false"] { display: block; }
+
+/* ===== Objectives Checklist ===== */
+.objectives-list {
+  list-style: none;
+  padding: 0;
+}
+.objectives-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+.objectives-list li:last-child { border-bottom: none; }
+.obj-checkbox {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+.obj-label {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+.obj-label.completed {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Progress Tracker ===== */
+.progress-bar-wrap {
+  background: var(--color-surface-alt);
+  border-radius: 1rem;
+  height: 0.65rem;
+  overflow: hidden;
+  margin-bottom: 0.35rem;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 1rem;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.progress-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+/* ===== Module Cards ===== */
+.module-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--color-primary);
+  transition: box-shadow var(--transition);
+}
+.module-card:hover { box-shadow: var(--shadow); }
+.module-card h4 {
+  margin-top: 0;
+  margin-bottom: 0.35rem;
+  color: var(--color-heading);
+  font-size: 1rem;
+  font-weight: 700;
+}
+.module-card .card-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+.module-card p { font-size: var(--font-size-sm); margin-bottom: 0; }
+
+/* ===== Assessment Card ===== */
+.assessment-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.assessment-card.required {
+  border-left: 4px solid var(--color-accent);
+}
+.assessment-card.optional {
+  border-left: 4px solid var(--color-success);
+}
+.assessment-card h4 {
+  margin-top: 0;
+  margin-bottom: 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.assessment-card .card-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+.assessment-card p { font-size: var(--font-size-sm); margin-bottom: 0; }
+
+/* ===== Badge ===== */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  vertical-align: middle;
+}
+.badge-required {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+}
+.badge-optional {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.badge-time {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+/* ===== Timeline ===== */
+.timeline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  border-left: 3px solid var(--color-primary);
+  padding-left: 1.5rem;
+}
+.timeline-list li {
+  position: relative;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px dashed var(--color-border);
+}
+.timeline-list li:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.timeline-list li::before {
+  content: '';
+  position: absolute;
+  left: -1.75rem;
+  top: 0.45rem;
+  width: 0.65rem;
+  height: 0.65rem;
+  background: var(--color-primary);
+  border-radius: 50%;
+  border: 2px solid var(--color-bg);
+}
+.timeline-day {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  color: var(--color-heading);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+.timeline-detail {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ===== Interactive Quiz ===== */
+.exercise-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.exercise-box h4 {
+  color: var(--color-primary);
+  margin-top: 0;
+}
+.quiz-option {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.quiz-option input[type="radio"] {
+  margin-right: 0.5rem;
+  accent-color: var(--color-primary);
+}
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1.15rem;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition);
+  text-decoration: none;
+}
+.btn:hover, .btn:focus { background: var(--color-primary-dark); }
+.btn:focus-visible {
+  outline: 2px solid var(--color-heading);
+  outline-offset: 2px;
+}
+.btn-sm { padding: 0.35rem 0.85rem; font-size: var(--font-size-xs); }
+.feedback {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  display: none;
+}
+.feedback.correct {
+  display: block;
+  background: var(--color-success-bg);
+  color: #0a3622;
+  border: 1px solid var(--color-success);
+}
+.feedback.incorrect {
+  display: block;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid #f1aeb5;
+}
+
+/* ===== Footer ===== */
+.site-footer {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 1.5rem;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ===== Utility ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .site-header { padding: 1.25rem 1rem; }
+  .site-header h1 { font-size: 1.3rem; }
+  .main-content { padding: 1.25rem 1rem 2rem; }
+  .module-nav { padding: 0.5rem 1rem; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <span>CSC 152</span>
+      <span class="sep" aria-hidden="true">→</span>
+      <span aria-current="page">Week 8 Overview</span>
+    </nav>
+    <h1>Week 8: Network Configuration Fundamentals</h1>
+    <div class="header-meta">
+      <span>📅 March 9–15, 2026</span>
+      <span>⏱ Estimated Total: 8–10 hours (including 1.5 hr Zoom session)</span>
+      <span>🎯 CSLO 3</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== SECTION NAV ===== -->
+<nav class="module-nav" aria-label="Page sections">
+  <div class="nav-inner">
+    <ul class="nav-sections" id="section-nav">
+      <li><a href="#section-overview" class="active" data-tooltip="Overview &amp; Objectives" aria-label="Overview &amp; Objectives">Overview</a></li>
+      <li><a href="#section-modules" data-tooltip="Learning Modules 8.1–8.4" aria-label="Learning Modules 8.1–8.4">Modules</a></li>
+      <li><a href="#section-assessments" data-tooltip="Lab 8 &amp; Quiz 8" aria-label="Lab 8 &amp; Quiz 8">Assessments</a></li>
+      <li><a href="#section-timeline" data-tooltip="Suggested Timeline" aria-label="Suggested Timeline">Timeline</a></li>
+      <li><a href="#section-preview" data-tooltip="Week 9 Preview" aria-label="Week 9 Preview">Week 9</a></li>
+    </ul>
+    <a href="#main-content" class="nav-top-link" aria-label="Back to top">↑ Top</a>
+  </div>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main id="main-content" class="main-content" role="main">
+
+  <!-- ===== Overview & Objectives ===== -->
+  <section id="section-overview" class="section">
+    <h2>Overview &amp; Learning Objectives</h2>
+
+    <p>Week 8 marks a major transition in the course. After five weeks focused on OS installation, command-line skills, user management, and file permissions (CSLOs 1 &amp; 2), you now shift to <strong>network configuration</strong> — the domain of <strong>CSLO 3: Configure systems for network connectivity, including physical and logical elements.</strong></p>
+
+    <p>This week builds the networking foundation you need for the rest of the semester. You will learn how IP addressing and subnetting work, configure network interfaces on both Linux and Windows Server, understand the difference between static and dynamic addressing, and practice using essential network diagnostic tools. Everything this week feeds directly into <strong>Project 2</strong> (multi-segment network infrastructure) and prepares you for <strong>Week 9</strong> (DHCP and DNS server configuration).</p>
+
+    <div class="callout callout-accent">
+      <div class="callout-title">🎯 CSLO 3 — Primary Alignment</div>
+      <p><strong>Configure systems for network connectivity, including physical and logical elements.</strong></p>
+      <p>All four modules this week, along with Lab 8 and Quiz 8, directly assess CSLO 3. This is the first week in the course dedicated entirely to networking.</p>
+    </div>
+
+    <h3>Week 8 Learning Objectives</h3>
+    <p>By the end of this week, you will be able to:</p>
+
+    <ul class="objectives-list" id="objectives-list">
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-1" aria-label="Mark objective 1 complete">
+        <label for="obj-1" class="obj-label">Describe IPv4 and IPv6 address structure, including binary/decimal conversion, CIDR notation, and subnet masks</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-2" aria-label="Mark objective 2 complete">
+        <label for="obj-2" class="obj-label">Calculate network IDs, broadcast addresses, and usable host ranges for a given subnet</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-3" aria-label="Mark objective 3 complete">
+        <label for="obj-3" class="obj-label">Configure network interfaces with static and dynamic IP addresses on Linux and Windows Server</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-4" aria-label="Mark objective 4 complete">
+        <label for="obj-4" class="obj-label">Implement DNS client configuration on both platforms</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-5" aria-label="Mark objective 5 complete">
+        <label for="obj-5" class="obj-label">Use network diagnostic tools (ping, traceroute/tracert, nslookup, ip/ipconfig/ifconfig) to verify connectivity</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-6" aria-label="Mark objective 6 complete">
+        <label for="obj-6" class="obj-label">Troubleshoot basic network issues using a structured methodology</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-7" aria-label="Mark objective 7 complete">
+        <label for="obj-7" class="obj-label">Explain the relationship between physical network segments and logical subnets</label>
+      </li>
+    </ul>
+
+    <div class="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Objectives completion progress" id="obj-progress-bar">
+      <div class="progress-bar-fill" id="obj-progress-fill"></div>
+    </div>
+    <div class="progress-text" id="obj-progress-text" aria-live="polite">0 / 7 objectives completed</div>
+
+    <h3>Prerequisite Knowledge</h3>
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Before You Begin</div>
+      <p>This week assumes you have completed Weeks 1–7. Specifically:</p>
+      <ul>
+        <li><strong>Weeks 3–5:</strong> You are comfortable with the Linux CLI (<code>nano</code>, <code>vim</code>, file editing) and Windows Server GUI, and can use SSH and PowerShell.</li>
+        <li><strong>Week 6:</strong> You understand organizational structures (users, groups, departments) that map to network segments in Project 2.</li>
+        <li><strong>Week 7:</strong> You know that configuration files require root/administrator access — the same <code>sudo</code> skills apply when editing network configuration files.</li>
+      </ul>
+    </div>
+
+    <h3>Connection to Course Projects</h3>
+    <div class="callout callout-success">
+      <div class="callout-title">🔗 Project 2 Connection</div>
+      <p><strong>Project 2 (Multi-Segment Network Infrastructure)</strong> requires you to design an IP addressing scheme, configure static IPs on multiple VMs, set up pfSense as a firewall/router, and verify connectivity across three internal segments (Management, Servers, Clients). Every module this week directly prepares you for Project 2 tasks.</p>
+    </div>
+  </section>
+
+  <!-- ===== Learning Modules ===== -->
+  <section id="section-modules" class="section">
+    <h2>Learning Modules</h2>
+
+    <p>Week 8 consists of four self-study modules. Complete them in order — each builds on the previous one. The first three modules are pre-class preparation; Module 8.4 reinforces what you practice in the Zoom lab session.</p>
+
+    <div class="module-card">
+      <h4>Module 8.1: IP Addressing &amp; Subnetting Foundations</h4>
+      <div class="card-meta">
+        <span><span class="badge badge-time">⏱ ~1.5 hours</span></span>
+        <span>📖 Self-Study (Reading + Practice)</span>
+      </div>
+      <p>Covers IPv4 address structure (dotted-decimal and binary), subnet masks and the bitwise AND operation, CIDR notation, subnetting calculations (network ID, broadcast, usable range), private vs. public address ranges (RFC 1918), IPv6 addressing fundamentals, and the relationship between physical segments and logical subnets. Includes interactive binary conversion and subnetting exercises with immediate feedback.</p>
+    </div>
+
+    <div class="module-card">
+      <h4>Module 8.2: Network Interface Configuration</h4>
+      <div class="card-meta">
+        <span><span class="badge badge-time">⏱ ~2 hours</span></span>
+        <span>📖 Self-Study + 🖥 Zoom Lab Core</span>
+      </div>
+      <p>Puts Module 8.1 theory into practice. Covers configuring static IP addresses on Linux (using Netplan YAML files and <code>nmcli</code>) and Windows Server (using the GUI and PowerShell <code>New-NetIPAddress</code>). Explains persistent vs. runtime configuration changes, and walks through verifying settings with <code>ip addr</code> and <code>ipconfig</code>. This module forms the core of the in-class Zoom lab session.</p>
+    </div>
+
+    <div class="module-card">
+      <h4>Module 8.3: DNS Client Configuration &amp; Hostname Resolution</h4>
+      <div class="card-meta">
+        <span><span class="badge badge-time">⏱ ~1 hour</span></span>
+        <span>📖 Self-Study (Reading + Practice)</span>
+      </div>
+      <p>Explains how DNS client resolution works, including <code>/etc/resolv.conf</code> on Linux and DNS server settings in Windows network adapter properties. Covers hostname configuration, the role of <code>/etc/hosts</code> and <code>C:\Windows\System32\drivers\etc\hosts</code> for local name resolution, and how DNS client settings integrate with the static IP configuration from Module 8.2. Prepares you for DNS server setup in Week 9.</p>
+    </div>
+
+    <div class="module-card">
+      <h4>Module 8.4: Network Testing &amp; Verification Tools</h4>
+      <div class="card-meta">
+        <span><span class="badge badge-time">⏱ ~1.5 hours</span></span>
+        <span>📖 Self-Study (Reading + Practice)</span>
+      </div>
+      <p>Covers the essential network diagnostic toolkit: <code>ping</code> (connectivity testing), <code>traceroute</code>/<code>tracert</code> (path tracing), <code>nslookup</code>/<code>dig</code> (DNS queries), <code>ip addr</code>/<code>ipconfig</code>/<code>ifconfig</code> (interface status), and <code>ss</code>/<code>netstat</code> (listening ports). Introduces a structured troubleshooting methodology (bottom-up, from physical layer to application) and common failure patterns such as APIPA addresses (<code>169.254.x.x</code>) indicating DHCP failure.</p>
+    </div>
+  </section>
+
+  <!-- ===== Assessments ===== -->
+  <section id="section-assessments" class="section">
+    <h2>Assessments</h2>
+
+    <div class="assessment-card optional">
+      <h4>Lab 8: Network Configuration &amp; Verification <span class="badge badge-optional">Optional EC</span></h4>
+      <div class="card-meta">
+        <span>🖥 Hands-On Lab</span>
+        <span>⏱ ~2–3 hours</span>
+        <span>📊 30 points extra credit</span>
+        <span>📅 Due: Sunday, March 15, 2026 at 11:59 PM</span>
+      </div>
+      <p>Lab 8 is an <strong>optional extra credit</strong> assignment worth 30 points. You will configure static IP addresses on Linux and Windows Server VMs in your Proxmox lab environment, configure DNS client settings, verify connectivity using diagnostic tools, and document your configuration and test results. The Zoom session provides guided time to start this lab with instructor support. Lab 8 directly practices the skills needed for Project 2's network configuration tasks.</p>
+    </div>
+
+    <div class="assessment-card required">
+      <h4>Quiz 8: Network Configuration Fundamentals <span class="badge badge-required">Required</span></h4>
+      <div class="card-meta">
+        <span>📝 Online Quiz</span>
+        <span>⏱ ~30–45 minutes</span>
+        <span>📊 25 points</span>
+        <span>📅 Due: Sunday, March 15, 2026 at 11:59 PM</span>
+      </div>
+      <p>Quiz 8 is <strong>required</strong> and covers all four modules: IPv4/IPv6 addressing and subnetting calculations (Module 8.1), network interface configuration concepts for Linux and Windows (Module 8.2), DNS client configuration (Module 8.3), and network diagnostic tools and troubleshooting methodology (Module 8.4). Expect a mix of multiple-choice, fill-in-the-blank (e.g., subnet calculations), and short-answer questions. The ungraded practice problems in the modules are excellent preparation.</p>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">💡 Strategic Tip</div>
+      <p>Even though Lab 8 is optional extra credit, completing it is <strong>strongly recommended</strong>. The hands-on practice directly prepares you for Project 2, which is a required graded project. Students who complete the weekly labs consistently perform better on the projects.</p>
+    </div>
+  </section>
+
+  <!-- ===== Suggested Timeline ===== -->
+  <section id="section-timeline" class="section">
+    <h2>Suggested Timeline</h2>
+
+    <p>This timeline distributes the Week 8 workload across the week. Adjust to fit your schedule, but aim to complete Modules 8.1–8.2 <strong>before</strong> the Zoom session so you can use lab time effectively.</p>
+
+    <ul class="timeline-list">
+      <li>
+        <span class="timeline-day">Monday–Tuesday (March 9–10)</span>
+        <span class="timeline-detail">Complete <strong>Module 8.1: IP Addressing &amp; Subnetting Foundations</strong> (~1.5 hrs). Work through all reading sections and the interactive practice problems. This is the theoretical foundation for the entire week.</span>
+      </li>
+      <li>
+        <span class="timeline-day">Wednesday–Thursday (March 11–12)</span>
+        <span class="timeline-detail">Complete <strong>Module 8.2: Network Interface Configuration</strong> (~2 hrs). Read through the Linux Netplan/nmcli and Windows static IP configuration sections. If possible, try the commands in your Proxmox lab before the Zoom session.</span>
+      </li>
+      <li>
+        <span class="timeline-day">Thursday Evening — Zoom Session (March 12)</span>
+        <span class="timeline-detail"><strong>Zoom class</strong> (1.5 hrs): Brief lecture on Week 8 key concepts (~30 min), then guided lab time (~60 min) to configure static IPs, DNS client settings, and verify connectivity. This is your opportunity to start Lab 8 with instructor support.</span>
+      </li>
+      <li>
+        <span class="timeline-day">Friday–Saturday (March 13–14)</span>
+        <span class="timeline-detail">Complete <strong>Module 8.3: DNS Client Configuration</strong> (~1 hr) and <strong>Module 8.4: Network Testing &amp; Verification Tools</strong> (~1.5 hrs). Continue working on Lab 8 if pursuing extra credit.</span>
+      </li>
+      <li>
+        <span class="timeline-day">Sunday (March 15) — Deadline Day</span>
+        <span class="timeline-detail">Finalize and submit <strong>Lab 8</strong> (optional EC, 30 pts) by 11:59 PM. Complete <strong>Quiz 8</strong> (required, 25 pts) by 11:59 PM. Review any objectives you haven't checked off above.</span>
+      </li>
+    </ul>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⏰ Time Management Note</div>
+      <p>The estimated total for Week 8 is 8–10 hours including the 1.5-hour Zoom session. This is within the expected range for a 3-unit course (~9 hours/week total student effort). If subnetting is new to you, budget extra time for Module 8.1's practice problems — this investment pays off in Quiz 8 and Project 2.</p>
+    </div>
+  </section>
+
+  <!-- ===== Week 9 Preview ===== -->
+  <section id="section-preview" class="section">
+    <h2>Looking Ahead: Week 9 Preview</h2>
+
+    <p><strong>Week 9: Network Services &amp; Infrastructure</strong> builds directly on this week's client-side networking skills by moving to the <strong>server side</strong>. You will:</p>
+
+    <ul>
+      <li><strong>Configure a DHCP server</strong> — automate the IP address assignment process you performed manually this week</li>
+      <li><strong>Set up basic DNS zones</strong> — build the name resolution infrastructure your clients rely on</li>
+      <li><strong>Learn common server ports and protocols</strong> — understand what services listen on which ports</li>
+      <li><strong>Configure basic firewall rules</strong> — control traffic between the network segments you designed this week using iptables and Windows Firewall</li>
+      <li><strong>Introduction to centralized log collection</strong> — begin configuring pfSense syslog forwarding to a shared Splunk instance (Phase 2 of the Splunk integration plan)</li>
+    </ul>
+
+    <div class="callout callout-info">
+      <div class="callout-title">➡️ Week 9 CSLO Alignment</div>
+      <p>Week 9 aligns with <strong>CSLO 2</strong> (Apply physical and network data security techniques) and <strong>CSLO 3</strong> (Configure systems for network connectivity). The firewall and Splunk components introduce the security monitoring thread that continues through the rest of the semester.</p>
+    </div>
+
+    <p>A solid understanding of IP addressing, interface configuration, and diagnostic tools from this week is <strong>essential</strong> for Week 9. If any Week 8 concepts feel unclear, revisit the relevant module and practice problems before moving on.</p>
+  </section>
+
+  <!-- ===== Quick Self-Check ===== -->
+  <section id="section-selfcheck" class="section">
+    <h2>Quick Self-Check</h2>
+
+    <p>Test your readiness for this week's content with two quick ungraded questions. These are <strong>not submitted</strong> — they simply help you gauge whether you need to review prerequisite material before diving into the modules.</p>
+
+    <div class="exercise-box" id="exercise-q1">
+      <h4>✏️ Question 1: Binary Basics</h4>
+      <p>How many unique values can be represented by 8 bits (one octet)?</p>
+      <fieldset>
+        <legend class="sr-only">Select your answer for Question 1</legend>
+        <label class="quiz-option"><input type="radio" name="q1" value="a"> 8</label>
+        <label class="quiz-option"><input type="radio" name="q1" value="b"> 128</label>
+        <label class="quiz-option"><input type="radio" name="q1" value="c"> 256</label>
+        <label class="quiz-option"><input type="radio" name="q1" value="d"> 1024</label>
+      </fieldset>
+      <button class="btn btn-sm" type="button" onclick="checkQ1()">Check Answer</button>
+      <div class="feedback" id="feedback-q1" role="alert"></div>
+    </div>
+
+    <div class="exercise-box" id="exercise-q2">
+      <h4>✏️ Question 2: Prerequisite Skills</h4>
+      <p>Which command would you use on a Linux system to edit a network configuration file with elevated privileges?</p>
+      <fieldset>
+        <legend class="sr-only">Select your answer for Question 2</legend>
+        <label class="quiz-option"><input type="radio" name="q2" value="a"> <code>nano /etc/netplan/config.yaml</code></label>
+        <label class="quiz-option"><input type="radio" name="q2" value="b"> <code>sudo nano /etc/netplan/config.yaml</code></label>
+        <label class="quiz-option"><input type="radio" name="q2" value="c"> <code>admin nano /etc/netplan/config.yaml</code></label>
+        <label class="quiz-option"><input type="radio" name="q2" value="d"> <code>root nano /etc/netplan/config.yaml</code></label>
+      </fieldset>
+      <button class="btn btn-sm" type="button" onclick="checkQ2()">Check Answer</button>
+      <div class="feedback" id="feedback-q2" role="alert"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer" role="contentinfo">
+  <p>CSC 152 — Network Operating Systems and Administration · Mendocino College · Spring 2026</p>
+  <p>Instructor: David Pai</p>
+  <p>Week 8 content aligned with <strong>CSLO 3:</strong> Configure systems for network connectivity, including physical and logical elements.</p>
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+(function() {
+  'use strict';
+
+  /* ===== Accordion Logic ===== */
+  document.querySelectorAll('.accordion-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      var panel = document.getElementById(this.getAttribute('aria-controls'));
+      this.setAttribute('aria-expanded', String(!expanded));
+      panel.setAttribute('aria-hidden', String(expanded));
+    });
+    btn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.click();
+      }
+    });
+  });
+
+  /* ===== Objectives Progress ===== */
+  var checkboxes = document.querySelectorAll('.obj-checkbox');
+  var progressFill = document.getElementById('obj-progress-fill');
+  var progressText = document.getElementById('obj-progress-text');
+  var progressBar = document.getElementById('obj-progress-bar');
+  var total = checkboxes.length;
+
+  function updateProgress() {
+    var checked = document.querySelectorAll('.obj-checkbox:checked').length;
+    var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+    progressFill.style.width = pct + '%';
+    progressBar.setAttribute('aria-valuenow', String(pct));
+    progressText.textContent = checked + ' / ' + total + ' objectives completed';
+    checkboxes.forEach(function(cb) {
+      var label = cb.nextElementSibling;
+      if (label) {
+        if (cb.checked) { label.classList.add('completed'); }
+        else { label.classList.remove('completed'); }
+      }
+    });
+    try {
+      var state = [];
+      checkboxes.forEach(function(cb) { state.push(cb.checked); });
+      sessionStorage.setItem('csc152-w8-overview-obj', JSON.stringify(state));
+    } catch(e) { /* ignore */ }
+  }
+
+  try {
+    var saved = sessionStorage.getItem('csc152-w8-overview-obj');
+    if (saved) {
+      var state = JSON.parse(saved);
+      checkboxes.forEach(function(cb, i) {
+        if (state[i]) cb.checked = true;
+      });
+    }
+  } catch(e) { /* ignore */ }
+
+  checkboxes.forEach(function(cb) { cb.addEventListener('change', updateProgress); });
+  updateProgress();
+
+  /* ===== Section Nav Active State ===== */
+  var navLinks = document.querySelectorAll('#section-nav a');
+  var sections = [];
+  navLinks.forEach(function(link) {
+    var target = document.querySelector(link.getAttribute('href'));
+    if (target) sections.push({ link: link, el: target });
+  });
+
+  function updateActiveNav() {
+    var scrollY = window.scrollY || window.pageYOffset;
+    var current = sections[0];
+    for (var i = 0; i < sections.length; i++) {
+      if (sections[i].el.offsetTop <= scrollY + 120) {
+        current = sections[i];
+      }
+    }
+    navLinks.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+
+  var scrollTimer;
+  window.addEventListener('scroll', function() {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(updateActiveNav, 60);
+  }, { passive: true });
+  updateActiveNav();
+
+  /* ===== Self-Check: Question 1 ===== */
+  window.checkQ1 = function() {
+    var selected = document.querySelector('input[name="q1"]:checked');
+    var feedback = document.getElementById('feedback-q1');
+    if (!selected) {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = 'Please select an answer before checking.';
+      return;
+    }
+    if (selected.value === 'c') {
+      feedback.className = 'feedback correct';
+      feedback.textContent = '✓ Correct! 2⁸ = 256 unique values (0–255). This is why each IPv4 octet ranges from 0 to 255. You\'re ready for Module 8.1!';
+    } else {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = '✗ Not quite. Remember: n bits can represent 2ⁿ unique values. For 8 bits: 2⁸ = 256 (values 0 through 255). Review binary number basics before starting Module 8.1.';
+    }
+  };
+
+  /* ===== Self-Check: Question 2 ===== */
+  window.checkQ2 = function() {
+    var selected = document.querySelector('input[name="q2"]:checked');
+    var feedback = document.getElementById('feedback-q2');
+    if (!selected) {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = 'Please select an answer before checking.';
+      return;
+    }
+    if (selected.value === 'b') {
+      feedback.className = 'feedback correct';
+      feedback.textContent = '✓ Correct! The sudo command elevates privileges to edit system configuration files. You practiced this in Weeks 5–7 and will use it extensively this week when configuring network interfaces.';
+    } else {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = '✗ Not quite. On Linux, the sudo command is used to run commands with elevated (root) privileges. Review Week 5 (Command Line Administration) and Week 6 (sudo configuration) if this is unfamiliar.';
+    }
+  };
+
+})();
+</script>
+</body>
+</html>
