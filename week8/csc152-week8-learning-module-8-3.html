@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 8.3: DNS Client Configuration &amp; Hostname Resolution — CSC 152</title>
+<style>
+/* ===== CSS Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-surface-alt: #e9ecef;
+  --color-border: #dee2e6;
+  --color-text: #212529;
+  --color-text-secondary: #495057;
+  --color-heading: #1a1a2e;
+  --color-primary: #0d6efd;
+  --color-primary-dark: #0a58ca;
+  --color-primary-bg: #e7f1ff;
+  --color-accent: #6f42c1;
+  --color-accent-bg: #f3eefb;
+  --color-success: #198754;
+  --color-success-bg: #d1e7dd;
+  --color-warning: #856404;
+  --color-warning-bg: #fff3cd;
+  --color-danger: #842029;
+  --color-danger-bg: #f8d7da;
+  --color-info: #055160;
+  --color-info-bg: #cff4fc;
+  --color-code-bg: #1e1e2e;
+  --color-code-text: #cdd6f4;
+  --color-code-comment: #6c7086;
+  --color-code-keyword: #cba6f7;
+  --color-code-string: #a6e3a1;
+  --color-code-number: #fab387;
+  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --font-size-base: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-xs: 0.8125rem;
+  --font-size-lg: 1.125rem;
+  --line-height: 1.7;
+  --max-width: 54rem;
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
+  --transition: 0.2s ease;
+}
+html { font-size: 100%; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+/* ===== Skip Link ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+/* ===== Header ===== */
+.site-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  padding: 2rem 1.5rem 1.75rem;
+  border-bottom: 4px solid var(--color-primary);
+}
+.header-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+.breadcrumb {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 0.75rem;
+}
+.breadcrumb a {
+  color: rgba(255,255,255,0.85);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.breadcrumb a:hover, .breadcrumb a:focus {
+  color: #fff;
+}
+.breadcrumb .sep { margin: 0 0.35rem; }
+.site-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.35rem;
+  line-height: 1.3;
+}
+.header-meta {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.75);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+}
+.header-meta span { white-space: nowrap; }
+/* ===== Navigation ===== */
+.module-nav {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.5rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nav-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  list-style: none;
+}
+.nav-sections a {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition);
+}
+.nav-sections a:hover, .nav-sections a:focus {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+.nav-sections a.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+.nav-top-link {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav-top-link:hover, .nav-top-link:focus {
+  text-decoration: underline;
+}
+/* ===== Nav Section Tooltips ===== */
+.nav-sections li { position: relative; }
+.nav-sections a[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-heading);
+  color: #fff;
+  white-space: nowrap;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 300;
+}
+.nav-sections a[data-tooltip]:hover::after,
+.nav-sections a[data-tooltip]:focus::after {
+  opacity: 1;
+}
+@media (max-width: 640px) {
+  .nav-sections a[data-tooltip]::after { display: none; }
+}
+/* ===== Main Content ===== */
+.main-content {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+/* ===== Sections ===== */
+.section { margin-bottom: 3rem; }
+.section h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+.section h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 1.5rem 0 0.75rem;
+}
+.section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 1.25rem 0 0.5rem;
+}
+.section p { margin-bottom: 1rem; }
+.section ul, .section ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+.section li { margin-bottom: 0.35rem; }
+/* ===== Callout Boxes ===== */
+.callout {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+  border-left: 4px solid;
+}
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  font-size: var(--font-size-sm);
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout-info {
+  background: var(--color-info-bg);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+.callout-success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+  color: #0a3622;
+}
+.callout-warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+.callout-danger {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.callout-accent {
+  background: var(--color-accent-bg);
+  border-color: var(--color-accent);
+  color: #3b1f6e;
+}
+/* ===== Tables ===== */
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.table-wrap th, .table-wrap td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+.table-wrap th {
+  background: var(--color-surface);
+  font-weight: 700;
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+.table-wrap tr:last-child td { border-bottom: none; }
+.table-wrap tbody tr:hover { background: var(--color-surface); }
+.table-wrap caption {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  background: var(--color-heading);
+  color: #fff;
+}
+/* ===== Code Blocks ===== */
+pre {
+  background: var(--color-code-bg);
+  color: var(--color-code-text);
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: pre;
+  border: 1px solid #313244;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+:not(pre) > code {
+  background: var(--color-surface-alt);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: 0.88em;
+}
+.code-label {
+  display: inline-block;
+  background: #313244;
+  color: var(--color-code-text);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+/* ===== Accordion ===== */
+.accordion { margin-bottom: 1.25rem; }
+.accordion-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+.accordion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-heading);
+  text-align: left;
+  transition: background var(--transition);
+}
+.accordion-btn:hover, .accordion-btn:focus {
+  background: var(--color-primary-bg);
+}
+.accordion-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+.accordion-icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform var(--transition);
+  color: var(--color-primary);
+}
+.accordion-btn[aria-expanded="true"] .accordion-icon {
+  transform: rotate(90deg);
+}
+.accordion-panel {
+  display: none;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--color-border);
+}
+.accordion-panel[aria-hidden="false"] {
+  display: block;
+}
+/* ===== Tabs ===== */
+.tabs-container { margin-bottom: 1.5rem; }
+.tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 0;
+  list-style: none;
+  padding: 0;
+}
+.tab-list [role="tab"] {
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: color var(--transition), border-color var(--transition);
+  margin-bottom: -2px;
+}
+.tab-list [role="tab"]:hover,
+.tab-list [role="tab"]:focus {
+  color: var(--color-primary);
+}
+.tab-list [role="tab"][aria-selected="true"] {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+.tab-list [role="tab"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+.tab-panel {
+  display: none;
+  padding: 1.25rem 0 0;
+}
+.tab-panel.active { display: block; }
+/* ===== Interactive Exercises ===== */
+.exercise-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.exercise-box h4 {
+  color: var(--color-primary);
+  margin-top: 0;
+}
+.exercise-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.exercise-field label {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  min-width: 10rem;
+}
+.exercise-field input[type="text"],
+.exercise-field select {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  width: 14rem;
+  max-width: 100%;
+}
+.exercise-field input[type="text"]:focus,
+.exercise-field select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1.15rem;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition);
+  text-decoration: none;
+}
+.btn:hover, .btn:focus {
+  background: var(--color-primary-dark);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-heading);
+  outline-offset: 2px;
+}
+.btn-sm { padding: 0.35rem 0.85rem; font-size: var(--font-size-xs); }
+.btn-outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+.btn-outline:hover, .btn-outline:focus {
+  background: var(--color-primary);
+  color: #fff;
+}
+.feedback {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  display: none;
+}
+.feedback.correct {
+  display: block;
+  background: var(--color-success-bg);
+  color: #0a3622;
+  border: 1px solid var(--color-success);
+}
+.feedback.incorrect {
+  display: block;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid #f1aeb5;
+}
+/* ===== Progress Tracker ===== */
+.progress-bar-wrap {
+  background: var(--color-surface-alt);
+  border-radius: 1rem;
+  height: 0.65rem;
+  overflow: hidden;
+  margin-bottom: 0.35rem;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 1rem;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.progress-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+/* ===== Objectives Checklist ===== */
+.objectives-list {
+  list-style: none;
+  padding: 0;
+}
+.objectives-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+.objectives-list li:last-child { border-bottom: none; }
+.obj-checkbox {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+.obj-label {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+.obj-label.completed {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+}
+/* ===== Diagram / Visual ===== */
+.visual-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+.visual-box .diagram {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  white-space: pre;
+  display: inline-block;
+  text-align: left;
+}
+.visual-box figcaption {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+/* ===== Practice Problems ===== */
+.practice-problem {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.practice-problem h4 {
+  color: var(--color-primary);
+  margin-top: 0.4rem;
+  margin-bottom: 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.practice-num {
+  display: inline-block;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.35rem;
+}
+.practice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.practice-reveal {
+  margin-top: 0.85rem;
+}
+.practice-reveal .callout { margin-bottom: 0; }
+.practice-answer-section {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-border);
+}
+.practice-answer-section fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+.practice-answer-section legend {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+  padding: 0;
+}
+.practice-answer-section input[type="text"][aria-invalid="false"] {
+  border-color: var(--color-success);
+  outline-color: var(--color-success);
+}
+.practice-answer-section input[type="text"][aria-invalid="true"] {
+  border-color: #dc3545;
+  outline-color: #dc3545;
+}
+/* ===== Radio Group Styling ===== */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.radio-group label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+.radio-group label:hover {
+  background: var(--color-primary-bg);
+}
+.radio-group input[type="radio"] {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  accent-color: var(--color-primary);
+}
+/* ===== Footer ===== */
+.site-footer {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 1.5rem;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+.site-footer a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.site-footer a:hover { text-decoration: underline; }
+/* ===== Utility ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.text-center { text-align: center; }
+.text-mono { font-family: var(--font-mono); }
+.flex-gap { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .site-header { padding: 1.25rem 1rem; }
+  .site-header h1 { font-size: 1.3rem; }
+  .main-content { padding: 1.25rem 1rem 2rem; }
+  .module-nav { padding: 0.5rem 1rem; }
+  .tab-list [role="tab"] { padding: 0.5rem 0.75rem; }
+  .exercise-field label { min-width: auto; width: 100%; }
+  .exercise-field input[type="text"],
+  .exercise-field select { width: 100%; }
+  pre { font-size: var(--font-size-xs); padding: 0.85rem; }
+}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="#">CSC 152</a>
+      <span class="sep" aria-hidden="true">→</span>
+      <a href="#">Week 8</a>
+      <span class="sep" aria-hidden="true">→</span>
+      <span aria-current="page">Module 8.3</span>
+    </nav>
+    <h1>Module 8.3: DNS Client Configuration &amp; Hostname Resolution</h1>
+    <div class="header-meta">
+      <span>📅 Week 8 · March 9–15, 2026</span>
+      <span>⏱ Estimated Time: 1.5 hours</span>
+      <span>📖 Self-Study (Reading + Guided Practice)</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== SECTION NAV ===== -->
+<nav class="module-nav" aria-label="Module sections">
+  <div class="nav-inner">
+    <ul class="nav-sections" id="section-nav">
+      <li><a href="#section-objectives" class="active" data-tooltip="§0 – Learning Objectives &amp; Overview" aria-label="§0 – Learning Objectives &amp; Overview">§0</a></li>
+      <li><a href="#section-1" data-tooltip="§1 – The Role of DNS" aria-label="§1 – The Role of DNS">§1</a></li>
+      <li><a href="#section-2" data-tooltip="§2 – Name Resolution Order" aria-label="§2 – Name Resolution Order">§2</a></li>
+      <li><a href="#section-3" data-tooltip="§3 – Linux DNS Client Configuration" aria-label="§3 – Linux DNS Client Configuration">§3</a></li>
+      <li><a href="#section-4" data-tooltip="§4 – Windows DNS Client Configuration" aria-label="§4 – Windows DNS Client Configuration">§4</a></li>
+      <li><a href="#section-5" data-tooltip="§5 – Testing Name Resolution" aria-label="§5 – Testing Name Resolution">§5</a></li>
+      <li><a href="#section-6" data-tooltip="§6 – The Local Hosts File" aria-label="§6 – The Local Hosts File">§6</a></li>
+      <li><a href="#section-7" data-tooltip="§7 – DNS Record Types Preview" aria-label="§7 – DNS Record Types Preview">§7</a></li>
+    </ul>
+    <a href="#main-content" class="nav-top-link" aria-label="Back to top">↑ Top</a>
+  </div>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main id="main-content" class="main-content" role="main">
+
+  <!-- ===== §0: Objectives & Overview ===== -->
+  <section id="section-objectives" class="section">
+    <h2>§0 — Learning Objectives &amp; Overview</h2>
+
+    <div class="callout callout-info">
+      <div class="callout-title">📋 Module Scope</div>
+      <p>This module covers <strong>DNS client configuration and hostname resolution testing</strong>. You will learn how Linux and Windows systems resolve hostnames to IP addresses, configure DNS resolver settings on both platforms, and test resolution using <code>nslookup</code>, <code>dig</code>, and <code>Resolve-DnsName</code>. Building a DNS <em>server</em> is covered in <strong>Week 9</strong>.</p>
+    </div>
+
+    <h3>Learning Objectives</h3>
+    <p>By the end of Module 8.3, you will be able to:</p>
+    <ul class="objectives-list" id="objectives-list">
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-1" aria-label="Mark objective 1 complete">
+        <label for="obj-1" class="obj-label">Explain the role of DNS in translating hostnames to IP addresses</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-2" aria-label="Mark objective 2 complete">
+        <label for="obj-2" class="obj-label">Describe the name resolution order on Linux and Windows</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-3" aria-label="Mark objective 3 complete">
+        <label for="obj-3" class="obj-label">Configure DNS resolver settings on Linux using /etc/resolv.conf and Netplan</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-4" aria-label="Mark objective 4 complete">
+        <label for="obj-4" class="obj-label">Configure DNS client settings on Windows Server using GUI and PowerShell</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-5" aria-label="Mark objective 5 complete">
+        <label for="obj-5" class="obj-label">Test name resolution using nslookup, dig, and Resolve-DnsName</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-6" aria-label="Mark objective 6 complete">
+        <label for="obj-6" class="obj-label">Edit the local hosts file for static hostname-to-IP mappings</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-7" aria-label="Mark objective 7 complete">
+        <label for="obj-7" class="obj-label">Identify common DNS record types (A, AAAA, PTR, CNAME) at a conceptual level</label>
+      </li>
+    </ul>
+
+    <div class="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Objectives completion progress" id="obj-progress-bar">
+      <div class="progress-bar-fill" id="obj-progress-fill"></div>
+    </div>
+    <div class="progress-text" id="obj-progress-text" aria-live="polite">0 / 7 objectives completed</div>
+
+    <h3>Prerequisite Knowledge</h3>
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Before You Begin</div>
+      <p>This module assumes you have completed <strong>Modules 8.1 and 8.2</strong>. Specifically:</p>
+      <ul>
+        <li><strong>Module 8.1:</strong> You understand IP addresses, subnet masks, and CIDR notation — DNS resolves hostnames <em>to</em> these addresses.</li>
+        <li><strong>Module 8.2:</strong> You have a working static IP configuration on both your Linux and Windows Server VMs. DNS client settings will not function without a valid IP and gateway.</li>
+        <li><strong>Week 7:</strong> You know that <code>/etc/hosts</code> and <code>/etc/resolv.conf</code> require root access to edit — the same <code>sudo</code> skills apply here.</li>
+      </ul>
+    </div>
+
+    <h3>CSLO Alignment</h3>
+    <div class="callout callout-accent">
+      <div class="callout-title">🎯 CSLO 3</div>
+      <p><strong>Configure systems for network connectivity, including physical and logical elements.</strong></p>
+      <p>Module 8.3 addresses the <em>name resolution</em> component of CSLO 3. A server with a valid IP address but no DNS configuration can reach other hosts only by IP — it cannot resolve hostnames, which breaks nearly every real-world service dependency.</p>
+    </div>
+
+    <h3>How This Module Prepares You</h3>
+    <ul>
+      <li><strong>Project 2 (Part B):</strong> You will configure a DNS server with forward and reverse lookup zones. This module ensures you understand the <em>client perspective</em> of DNS before you build the server side.</li>
+      <li><strong>Project 2 (Part D):</strong> Testing evidence requires <code>nslookup</code> and <code>dig</code> output to validate your DNS server — you learn those tools here.</li>
+      <li><strong>Week 9:</strong> DNS server configuration assumes you can already verify resolution from the client side.</li>
+      <li><strong>Lab 8 (EC):</strong> Part C requires configuring hosts files, testing DNS resolution, and explaining the resolution process.</li>
+    </ul>
+  </section>
+
+  <!-- ===== §1: The Role of DNS ===== -->
+  <section id="section-1" class="section">
+    <h2>§1 — The Role of DNS in Network Communication</h2>
+
+    <p>The <strong>Domain Name System (DNS)</strong> is often described as the "phone book of the internet." It translates human-readable hostnames (like <code>www.google.com</code>) into IP addresses (like <code>142.250.80.4</code>) that computers use to route traffic. Without DNS, you would need to memorize IP addresses for every server you want to reach.</p>
+
+    <h3>Why DNS Matters for Server Administrators</h3>
+    <p>DNS is not just a convenience — it is a <strong>critical infrastructure service</strong> that nearly every other service depends on:</p>
+    <ul>
+      <li><strong>Software updates:</strong> <code>apt update</code> and Windows Update resolve repository hostnames via DNS</li>
+      <li><strong>Email delivery:</strong> Mail servers use DNS MX records to find the recipient's mail server</li>
+      <li><strong>Active Directory:</strong> Windows domain-joined machines rely on DNS to locate domain controllers</li>
+      <li><strong>Web services:</strong> Every HTTP request begins with a DNS lookup</li>
+      <li><strong>Internal services:</strong> In Project 2, your VMs will use DNS to find each other by hostname rather than memorizing IPs</li>
+    </ul>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">🚨 Common Misconception</div>
+      <p>"My server has an IP address and can ping the gateway, so networking is done." <strong>Not quite.</strong> Without DNS configuration, your server can reach other hosts by IP but cannot resolve hostnames. Commands like <code>apt update</code>, <code>curl https://example.com</code>, and even <code>ping google.com</code> will fail. DNS is the final piece of basic network configuration.</p>
+    </div>
+
+    <h3>How DNS Resolution Works (Simplified)</h3>
+    <p>When your server needs to resolve a hostname, the process follows these steps:</p>
+
+    <div class="visual-box">
+      <figure>
+        <div class="diagram" aria-label="Simplified DNS resolution flow diagram">Your Server                    DNS Resolver                  DNS Server(s)
+    │                              │                              │
+    │  1. "What is the IP          │                              │
+    │     for www.example.com?"    │                              │
+    │─────────────────────────────→│                              │
+    │                              │  2. Query sent to            │
+    │                              │     configured DNS server    │
+    │                              │─────────────────────────────→│
+    │                              │                              │
+    │                              │  3. Response: 93.184.216.34  │
+    │                              │←─────────────────────────────│
+    │  4. Answer: 93.184.216.34    │                              │
+    │←─────────────────────────────│                              │
+    │                              │                              │
+    │  5. Connect to 93.184.216.34 │                              │
+    │─────────────────────────────────────────────────────────────→</div>
+        <figcaption>Figure 1: Simplified DNS resolution — the client asks its configured resolver, which queries an upstream DNS server and returns the IP address.</figcaption>
+      </figure>
+    </div>
+
+    <p>The <strong>DNS resolver</strong> is the software on your system that handles this lookup. On Linux, this is typically <code>systemd-resolved</code> or the C library's built-in resolver reading <code>/etc/resolv.conf</code>. On Windows, it is the <strong>DNS Client service</strong>. Your job as an administrator is to tell the resolver <em>which DNS server(s) to query</em>.</p>
+  </section>
+
+  <!-- ===== §2: Name Resolution Order ===== -->
+  <section id="section-2" class="section">
+    <h2>§2 — Name Resolution Order</h2>
+
+    <p>When a system needs to resolve a hostname, it does <strong>not</strong> immediately contact a DNS server. Instead, it checks several sources in a specific order. Understanding this order is essential for troubleshooting — if a hosts file entry overrides DNS, you need to know where to look.</p>
+
+    <h3>Linux Resolution Order</h3>
+    <p>On Linux, the name resolution order is controlled by <code>/etc/nsswitch.conf</code>. The default configuration typically specifies:</p>
+
+    <pre><code># /etc/nsswitch.conf (relevant line)
+hosts:  files dns</code></pre>
+
+    <p>This means:</p>
+    <ol>
+      <li><strong><code>files</code></strong> → Check <code>/etc/hosts</code> first (local static mappings)</li>
+      <li><strong><code>dns</code></strong> → If not found in hosts, query the DNS server(s) listed in <code>/etc/resolv.conf</code></li>
+    </ol>
+
+    <h3>Windows Resolution Order</h3>
+    <p>Windows follows a similar but slightly more complex order:</p>
+    <ol>
+      <li><strong>Local DNS cache</strong> → Previously resolved names are cached in memory</li>
+      <li><strong>Hosts file</strong> → <code>C:\Windows\System32\drivers\etc\hosts</code></li>
+      <li><strong>DNS server query</strong> → Preferred DNS server, then alternate DNS server</li>
+    </ol>
+
+    <div class="callout callout-info">
+      <div class="callout-title">💡 Why This Matters</div>
+      <p>If you add an entry to <code>/etc/hosts</code> mapping <code>myserver</code> to <code>10.0.1.50</code>, that mapping takes priority over any DNS response. This is useful for testing (you can override DNS temporarily) but can also cause confusion if you forget about a stale hosts file entry.</p>
+    </div>
+
+    <h3>Resolution Order Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>Name Resolution Order: Linux vs. Windows</caption>
+        <thead>
+          <tr>
+            <th scope="col">Priority</th>
+            <th scope="col">Linux</th>
+            <th scope="col">Windows</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1st (highest)</td>
+            <td><code>/etc/hosts</code></td>
+            <td>Local DNS cache</td>
+          </tr>
+          <tr>
+            <td>2nd</td>
+            <td>DNS server (via <code>/etc/resolv.conf</code>)</td>
+            <td><code>C:\Windows\...\hosts</code></td>
+          </tr>
+          <tr>
+            <td>3rd</td>
+            <td>—</td>
+            <td>DNS server (preferred → alternate)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Windows DNS Cache</div>
+      <p>Windows aggressively caches DNS responses. If you change a DNS record but Windows still resolves the old IP, flush the cache with: <code>ipconfig /flushdns</code>. Linux with <code>systemd-resolved</code> can be flushed with: <code>sudo resolvectl flush-caches</code>.</p>
+    </div>
+  </section>
+
+  <!-- ===== §3: Linux DNS Client Configuration ===== -->
+  <section id="section-3" class="section">
+    <h2>§3 — Linux DNS Client Configuration</h2>
+
+    <p>On Linux, there are multiple ways to configure which DNS servers your system uses. The method depends on your distribution and whether you use <code>systemd-resolved</code>, NetworkManager, or Netplan. We will focus on the two approaches most relevant to your lab environment: <strong>direct <code>/etc/resolv.conf</code> editing</strong> and <strong>Netplan configuration</strong>.</p>
+
+    <h3>Understanding /etc/resolv.conf</h3>
+    <p>The file <code>/etc/resolv.conf</code> is the traditional DNS configuration file on Linux. It tells the system's resolver which DNS servers to query and which domain to append to short hostnames.</p>
+
+    <div class="code-label">/etc/resolv.conf</div>
+    <pre><code># DNS servers to query (up to 3)
+nameserver 10.0.2.1
+nameserver 8.8.8.8
+
+# Domain to append for short hostnames
+search techstart.local</code></pre>
+
+    <h4>Key Directives</h4>
+    <div class="table-wrap">
+      <table>
+        <caption>/etc/resolv.conf Directives</caption>
+        <thead>
+          <tr>
+            <th scope="col">Directive</th>
+            <th scope="col">Purpose</th>
+            <th scope="col">Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>nameserver</code></td>
+            <td>IP address of a DNS server to query (max 3 entries)</td>
+            <td><code>nameserver 10.0.2.1</code></td>
+          </tr>
+          <tr>
+            <td><code>search</code></td>
+            <td>Domain(s) appended to unqualified hostnames</td>
+            <td><code>search techstart.local</code></td>
+          </tr>
+          <tr>
+            <td><code>domain</code></td>
+            <td>Default domain (similar to search but for a single domain)</td>
+            <td><code>domain techstart.local</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Direct Editing Limitation</div>
+      <p>On many modern distributions, <code>/etc/resolv.conf</code> is <strong>auto-generated</strong> by <code>systemd-resolved</code> or NetworkManager. Edits you make directly may be <strong>overwritten</strong> on reboot or when the network restarts. For persistent changes, configure DNS through <strong>Netplan</strong> (Ubuntu) or <strong>nmcli</strong> (Rocky Linux) instead.</p>
+    </div>
+
+    <h3>Persistent Configuration with Netplan (Ubuntu Server)</h3>
+    <p>In Module 8.2, you configured a static IP using Netplan. DNS settings are added to the same YAML file. The <code>nameservers</code> directive specifies DNS servers and search domains:</p>
+
+    <div class="code-label">/etc/netplan/01-netcfg.yaml</div>
+    <pre><code>network:
+  version: 2
+  ethernets:
+    ens18:
+      addresses:
+        - 10.0.2.10/24
+      routes:
+        - to: default
+          via: 10.0.2.1
+      nameservers:
+        addresses:
+          - 10.0.2.1
+          - 8.8.8.8
+        search:
+          - techstart.local</code></pre>
+
+    <p>After editing, apply the configuration:</p>
+    <pre><code>sudo netplan apply</code></pre>
+
+    <p>Netplan writes the DNS settings into <code>systemd-resolved</code> (or generates <code>/etc/resolv.conf</code> directly), ensuring your changes survive reboots.</p>
+
+    <h3>Verifying DNS Configuration on Linux</h3>
+    <p>After configuring DNS, verify the active settings:</p>
+
+    <div class="code-label">Bash</div>
+    <pre><code># Check the current resolv.conf contents
+cat /etc/resolv.conf
+
+# If using systemd-resolved, check its status
+resolvectl status
+
+# Quick test: resolve a hostname
+nslookup google.com</code></pre>
+
+    <div class="accordion" id="accordion-systemd">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-systemd-resolved" id="acc-systemd-resolved-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Deep Dive: systemd-resolved
+        </button>
+        <div class="accordion-panel" id="acc-systemd-resolved" role="region" aria-labelledby="acc-systemd-resolved-btn" aria-hidden="true">
+          <p><code>systemd-resolved</code> is a system service that provides DNS resolution for local applications. On Ubuntu Server, it typically runs by default and manages <code>/etc/resolv.conf</code> as a symlink to its own stub resolver at <code>127.0.0.53</code>.</p>
+          <p>When you see <code>nameserver 127.0.0.53</code> in <code>/etc/resolv.conf</code>, that is the <code>systemd-resolved</code> stub listener — it forwards queries to the actual upstream DNS servers configured via Netplan or NetworkManager.</p>
+          <p>Useful commands:</p>
+<pre><code># Show all DNS configuration details
+resolvectl status
+
+# Flush the DNS cache
+sudo resolvectl flush-caches
+
+# Query a specific hostname through systemd-resolved
+resolvectl query www.example.com</code></pre>
+          <p>For this course, you do not need to configure <code>systemd-resolved</code> directly — Netplan handles it. But understanding this layer helps when troubleshooting unexpected <code>resolv.conf</code> contents.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §4: Windows DNS Client Configuration ===== -->
+  <section id="section-4" class="section">
+    <h2>§4 — Windows Server DNS Client Configuration</h2>
+
+    <p>On Windows Server, DNS client settings are configured per network adapter — the same place where you set the static IP in Module 8.2. Windows provides both a GUI method and PowerShell commands.</p>
+
+    <h3>GUI Method</h3>
+    <p>From Module 8.2, you already know how to reach adapter properties. The DNS settings are on the same screen:</p>
+    <ol>
+      <li>Open <strong>Network and Sharing Center</strong> → <strong>Change adapter settings</strong></li>
+      <li>Right-click the adapter → <strong>Properties</strong></li>
+      <li>Select <strong>Internet Protocol Version 4 (TCP/IPv4)</strong> → <strong>Properties</strong></li>
+      <li>In the lower section, select <strong>"Use the following DNS server addresses"</strong></li>
+      <li>Enter the <strong>Preferred DNS server</strong> (e.g., <code>10.0.2.1</code>)</li>
+      <li>Enter the <strong>Alternate DNS server</strong> (e.g., <code>8.8.8.8</code>)</li>
+      <li>Click <strong>OK</strong> → <strong>Close</strong></li>
+    </ol>
+
+    <div class="callout callout-info">
+      <div class="callout-title">💡 Preferred vs. Alternate</div>
+      <p>Windows queries the <strong>Preferred</strong> DNS server first. The <strong>Alternate</strong> server is used only if the preferred server does not respond (timeout). It is <em>not</em> a secondary lookup — if the preferred server responds with "name not found," Windows does <strong>not</strong> retry with the alternate server.</p>
+    </div>
+
+    <h3>PowerShell Method</h3>
+    <p>The <code>Set-DnsClientServerAddress</code> cmdlet configures DNS servers for a specific adapter. This is the same cmdlet you may have seen briefly in Module 8.2:</p>
+
+    <div class="code-label">PowerShell (Run as Administrator)</div>
+    <pre><code># Set preferred and alternate DNS servers for the "Ethernet" adapter
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet" `
+    -ServerAddresses ("10.0.2.1", "8.8.8.8")
+
+# Verify the configuration
+Get-DnsClientServerAddress -InterfaceAlias "Ethernet"</code></pre>
+
+    <p>To configure the DNS suffix (search domain):</p>
+
+    <div class="code-label">PowerShell</div>
+    <pre><code># Set the DNS suffix search list
+Set-DnsClientGlobalSetting -SuffixSearchList @("techstart.local")
+
+# Verify
+Get-DnsClientGlobalSetting</code></pre>
+
+    <h3>Verifying DNS Configuration on Windows</h3>
+    <pre><code># Show full IP and DNS configuration
+ipconfig /all
+
+# Show just DNS server addresses
+Get-DnsClientServerAddress
+
+# Flush DNS cache (useful after changing DNS settings)
+ipconfig /flushdns
+
+# View current DNS cache entries
+ipconfig /displaydns</code></pre>
+
+    <div class="accordion" id="accordion-ipconfig">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-ipconfig-output" id="acc-ipconfig-output-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Example: ipconfig /all DNS-Relevant Output
+        </button>
+        <div class="accordion-panel" id="acc-ipconfig-output" role="region" aria-labelledby="acc-ipconfig-output-btn" aria-hidden="true">
+<pre><code>Windows IP Configuration
+
+   Host Name . . . . . . . . . . : WIN-SERVER
+   Primary Dns Suffix  . . . . . : techstart.local
+   DNS Suffix Search List. . . . : techstart.local
+
+Ethernet adapter Ethernet:
+
+   Connection-specific DNS Suffix  . :
+   IPv4 Address. . . . . . . . . . : 10.0.2.11
+   Subnet Mask . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . : 10.0.2.1
+   DNS Servers . . . . . . . . . . : 10.0.2.1
+                                      8.8.8.8</code></pre>
+          <p>The key fields to verify are <strong>DNS Servers</strong> (should show your configured servers) and <strong>DNS Suffix Search List</strong> (should show your domain).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §5: Testing Name Resolution ===== -->
+  <section id="section-5" class="section">
+    <h2>§5 — Testing Name Resolution</h2>
+
+    <p>After configuring DNS client settings, you must verify that name resolution actually works. Three tools are essential: <code>nslookup</code> (cross-platform), <code>dig</code> (Linux), and <code>Resolve-DnsName</code> (PowerShell). Each provides different levels of detail.</p>
+
+    <h3>Tool Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>DNS Testing Tools</caption>
+        <thead>
+          <tr>
+            <th scope="col">Tool</th>
+            <th scope="col">Platform</th>
+            <th scope="col">Detail Level</th>
+            <th scope="col">Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>nslookup</code></td>
+            <td>Linux, Windows</td>
+            <td>Basic</td>
+            <td>Quick lookups; available everywhere</td>
+          </tr>
+          <tr>
+            <td><code>dig</code></td>
+            <td>Linux</td>
+            <td>Detailed</td>
+            <td>Full DNS query/response analysis; record types, TTLs</td>
+          </tr>
+          <tr>
+            <td><code>Resolve-DnsName</code></td>
+            <td>Windows (PowerShell)</td>
+            <td>Moderate</td>
+            <td>Scriptable; integrates with PowerShell pipeline</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Using nslookup (Cross-Platform)</h3>
+    <p><code>nslookup</code> queries DNS servers and returns the resolved IP address. It works identically on Linux and Windows:</p>
+
+    <div class="code-label">Bash / PowerShell</div>
+    <pre><code># Basic forward lookup (hostname → IP)
+nslookup www.google.com
+
+# Query a specific DNS server
+nslookup www.google.com 8.8.8.8
+
+# Reverse lookup (IP → hostname)
+nslookup 142.250.80.4</code></pre>
+
+    <div class="accordion" id="accordion-nslookup">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-nslookup-output" id="acc-nslookup-output-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Example: nslookup Output Explained
+        </button>
+        <div class="accordion-panel" id="acc-nslookup-output" role="region" aria-labelledby="acc-nslookup-output-btn" aria-hidden="true">
+<pre><code>$ nslookup www.google.com
+Server:         10.0.2.1          ← DNS server that answered
+Address:        10.0.2.1#53       ← DNS server IP and port (53 = DNS)
+
+Non-authoritative answer:         ← Answer came from cache, not the
+                                     authoritative server for google.com
+Name:   www.google.com
+Address: 142.250.80.4             ← Resolved IPv4 address</code></pre>
+          <p><strong>"Non-authoritative answer"</strong> means the response came from a caching/recursive DNS server (like your gateway or 8.8.8.8), not from Google's own authoritative DNS server. This is normal for most queries.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Using dig (Linux)</h3>
+    <p><code>dig</code> (Domain Information Groper) provides much more detailed output than <code>nslookup</code>, including the query type, response flags, TTL values, and the authority section. It is the preferred tool for DNS troubleshooting on Linux.</p>
+
+    <div class="code-label">Bash</div>
+    <pre><code># Basic query
+dig www.example.com
+
+# Query for a specific record type
+dig www.example.com A        # IPv4 address record
+dig www.example.com AAAA     # IPv6 address record
+dig example.com MX           # Mail exchange record
+
+# Short output (just the answer)
+dig +short www.example.com
+
+# Query a specific DNS server
+dig @8.8.8.8 www.example.com
+
+# Reverse lookup
+dig -x 93.184.216.34</code></pre>
+
+    <div class="accordion" id="accordion-dig">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-dig-output" id="acc-dig-output-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Example: dig Output Explained
+        </button>
+        <div class="accordion-panel" id="acc-dig-output" role="region" aria-labelledby="acc-dig-output-btn" aria-hidden="true">
+<pre><code>$ dig www.example.com
+
+; &lt;&lt;&gt;&gt; DiG 9.18.18 &lt;&lt;&gt;&gt; www.example.com
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 45231
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0
+
+;; QUESTION SECTION:
+;www.example.com.            IN      A
+
+;; ANSWER SECTION:
+www.example.com.     3600    IN      A       93.184.216.34
+
+;; Query time: 23 msec
+;; SERVER: 10.0.2.1#53(10.0.2.1) (UDP)
+;; WHEN: Thu Mar 12 14:30:00 UTC 2026
+;; MSG SIZE  rcvd: 62</code></pre>
+          <p>Key fields:</p>
+          <ul>
+            <li><strong>status: NOERROR</strong> — query succeeded</li>
+            <li><strong>ANSWER SECTION</strong> — the resolved record: <code>www.example.com</code> has an A record pointing to <code>93.184.216.34</code> with a TTL of 3600 seconds (1 hour)</li>
+            <li><strong>SERVER</strong> — which DNS server answered (<code>10.0.2.1</code>)</li>
+            <li><strong>Query time</strong> — how long the lookup took (23 ms)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3>Using Resolve-DnsName (PowerShell)</h3>
+    <p><code>Resolve-DnsName</code> is the PowerShell-native DNS lookup tool. It returns objects that can be piped to other cmdlets:</p>
+
+    <div class="code-label">PowerShell</div>
+    <pre><code># Basic lookup
+Resolve-DnsName www.google.com
+
+# Query specific record type
+Resolve-DnsName example.com -Type MX
+
+# Query a specific DNS server
+Resolve-DnsName www.google.com -Server 8.8.8.8
+
+# Reverse lookup
+Resolve-DnsName 142.250.80.4</code></pre>
+
+    <h3>Try It: Interpret nslookup Output</h3>
+    <div class="exercise-box" id="exercise-nslookup">
+      <h4>✏️ Practice: Reading nslookup Output</h4>
+      <p>Given the following <code>nslookup</code> output, answer the questions below:</p>
+<pre><code>$ nslookup webserver.techstart.local
+Server:         10.0.2.1
+Address:        10.0.2.1#53
+
+Name:   webserver.techstart.local
+Address: 10.0.3.20</code></pre>
+
+      <div class="exercise-field">
+        <label for="input-dns-server">Which DNS server answered?</label>
+        <input type="text" id="input-dns-server" placeholder="e.g., 10.0.x.x" autocomplete="off">
+      </div>
+      <div class="exercise-field">
+        <label for="input-resolved-ip">What IP did the hostname resolve to?</label>
+        <input type="text" id="input-resolved-ip" placeholder="e.g., 10.0.x.x" autocomplete="off">
+      </div>
+      <button class="btn btn-sm" type="button" onclick="checkNslookup()">Check Answers</button>
+      <div class="feedback" id="feedback-nslookup" role="alert"></div>
+    </div>
+  </section>
+
+  <!-- ===== §6: The Local Hosts File ===== -->
+  <section id="section-6" class="section">
+    <h2>§6 — The Local Hosts File</h2>
+
+    <p>Before DNS existed, <em>every</em> hostname-to-IP mapping was maintained in a local file. Today, the hosts file still exists on every operating system and is checked <strong>before DNS</strong> in the resolution order. It is useful for:</p>
+    <ul>
+      <li><strong>Testing:</strong> Override DNS temporarily to point a hostname at a test server</li>
+      <li><strong>Local aliases:</strong> Give friendly names to lab VMs before you build a DNS server</li>
+      <li><strong>Blocking:</strong> Map unwanted hostnames to <code>127.0.0.1</code> to block access</li>
+    </ul>
+
+    <h3>Hosts File Locations</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>Hosts File Path by OS</caption>
+        <thead>
+          <tr>
+            <th scope="col">Operating System</th>
+            <th scope="col">File Path</th>
+            <th scope="col">Requires Elevated Privileges</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Linux</td>
+            <td><code>/etc/hosts</code></td>
+            <td>Yes — <code>sudo</code> required</td>
+          </tr>
+          <tr>
+            <td>Windows</td>
+            <td><code>C:\Windows\System32\drivers\etc\hosts</code></td>
+            <td>Yes — Run as Administrator</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Hosts File Format</h3>
+    <p>The format is identical on both platforms — one mapping per line: <strong>IP address</strong>, then one or more <strong>hostnames</strong>, separated by spaces or tabs. Lines starting with <code>#</code> are comments.</p>
+
+    <div class="tabs-container" id="tabs-hosts">
+      <div class="tab-list" role="tablist" aria-label="Hosts file examples by platform">
+        <button role="tab" aria-selected="true" aria-controls="tab-hosts-linux" id="tab-btn-hosts-linux">Linux</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-hosts-windows" id="tab-btn-hosts-windows" tabindex="-1">Windows</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-hosts-linux" role="tabpanel" aria-labelledby="tab-btn-hosts-linux">
+        <div class="code-label">/etc/hosts</div>
+<pre><code># Loopback entries (do not remove)
+127.0.0.1       localhost
+127.0.1.1       linux-server
+
+# Lab VM mappings (added for Module 8.3 practice)
+10.0.2.10       linux-server.techstart.local    linux-server
+10.0.2.11       win-server.techstart.local      win-server
+10.0.3.20       webserver.techstart.local        webserver</code></pre>
+        <p>Edit with: <code>sudo nano /etc/hosts</code></p>
+      </div>
+
+      <div class="tab-panel" id="tab-hosts-windows" role="tabpanel" aria-labelledby="tab-btn-hosts-windows">
+        <div class="code-label">C:\Windows\System32\drivers\etc\hosts</div>
+<pre><code># Loopback entry
+127.0.0.1       localhost
+
+# Lab VM mappings
+10.0.2.10       linux-server.techstart.local    linux-server
+10.0.2.11       win-server.techstart.local      win-server
+10.0.3.20       webserver.techstart.local        webserver</code></pre>
+        <p>Edit with: Open <strong>Notepad as Administrator</strong>, then File → Open → navigate to the hosts file. Change the file type filter from "Text Documents" to "All Files" to see it.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-success">
+      <div class="callout-title">🔗 Lab 8 Connection</div>
+      <p>Lab 8 Part C requires you to add hosts file entries for both your Linux and Windows VMs, then test resolution with <code>ping</code> by hostname. The format shown above is exactly what you will use.</p>
+    </div>
+
+    <h3>Testing Hosts File Entries</h3>
+    <p>After adding entries, verify they work by pinging the hostname:</p>
+
+    <div class="code-label">Bash</div>
+    <pre><code># Ping by hostname — should resolve to the hosts file IP
+ping -c 3 win-server
+
+# Verify the resolution source (hosts file, not DNS)
+# getent uses the same resolution order as applications
+getent hosts win-server</code></pre>
+
+    <div class="code-label">PowerShell</div>
+    <pre><code># Ping by hostname
+ping linux-server
+
+# Note: nslookup does NOT check the hosts file — it queries DNS directly.
+# Use ping or Resolve-DnsName to test hosts file entries.
+Resolve-DnsName linux-server</code></pre>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">🚨 Common Pitfall: nslookup vs. Hosts File</div>
+      <p><code>nslookup</code> and <code>dig</code> query DNS servers <strong>directly</strong> — they do <strong>not</strong> read the hosts file. If you add an entry to <code>/etc/hosts</code> and test with <code>nslookup</code>, it will appear to fail. Use <code>ping</code> or <code>getent hosts</code> (Linux) to test hosts file entries. This is one of the most common troubleshooting mistakes students make.</p>
+    </div>
+  </section>
+
+  <!-- ===== §7: DNS Record Types Preview ===== -->
+  <section id="section-7" class="section">
+    <h2>§7 — DNS Record Types Preview</h2>
+
+    <p>In Week 9, you will configure a DNS server and create actual DNS records. For now, you need a <strong>conceptual understanding</strong> of the most common record types — enough to interpret <code>dig</code> and <code>nslookup</code> output and prepare for Quiz 8.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Common DNS Record Types</caption>
+        <thead>
+          <tr>
+            <th scope="col">Record Type</th>
+            <th scope="col">Name</th>
+            <th scope="col">Purpose</th>
+            <th scope="col">Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>A</code></td>
+            <td>Address</td>
+            <td>Maps a hostname to an <strong>IPv4</strong> address</td>
+            <td><code>www.example.com → 93.184.216.34</code></td>
+          </tr>
+          <tr>
+            <td><code>AAAA</code></td>
+            <td>IPv6 Address</td>
+            <td>Maps a hostname to an <strong>IPv6</strong> address</td>
+            <td><code>www.example.com → 2606:2800:220:1:…</code></td>
+          </tr>
+          <tr>
+            <td><code>PTR</code></td>
+            <td>Pointer</td>
+            <td><strong>Reverse lookup</strong> — maps an IP back to a hostname</td>
+            <td><code>93.184.216.34 → www.example.com</code></td>
+          </tr>
+          <tr>
+            <td><code>CNAME</code></td>
+            <td>Canonical Name</td>
+            <td>Creates an <strong>alias</strong> pointing to another hostname</td>
+            <td><code>mail.example.com → mx1.example.com</code></td>
+          </tr>
+          <tr>
+            <td><code>MX</code></td>
+            <td>Mail Exchange</td>
+            <td>Identifies the mail server for a domain</td>
+            <td><code>example.com MX → mx1.example.com</code></td>
+          </tr>
+          <tr>
+            <td><code>NS</code></td>
+            <td>Name Server</td>
+            <td>Identifies authoritative DNS servers for a domain</td>
+            <td><code>example.com NS → ns1.example.com</code></td>
+          </tr>
+          <tr>
+            <td><code>SOA</code></td>
+            <td>Start of Authority</td>
+            <td>Contains zone metadata (serial number, refresh intervals)</td>
+            <td><code>example.com SOA ns1.example.com…</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Forward vs. Reverse Lookups</h3>
+    <p>The two most common DNS operations are:</p>
+    <ul>
+      <li><strong>Forward lookup:</strong> hostname → IP address (uses A or AAAA records)</li>
+      <li><strong>Reverse lookup:</strong> IP address → hostname (uses PTR records in a special <code>in-addr.arpa</code> zone)</li>
+    </ul>
+
+    <div class="accordion" id="accordion-reverse">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-reverse-detail" id="acc-reverse-detail-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          How Reverse DNS Works (in-addr.arpa)
+        </button>
+        <div class="accordion-panel" id="acc-reverse-detail" role="region" aria-labelledby="acc-reverse-detail-btn" aria-hidden="true">
+          <p>Reverse DNS uses a special domain called <code>in-addr.arpa</code>. The IP address is written in <strong>reverse order</strong> and appended to this domain. For example:</p>
+          <ul>
+            <li>IP: <code>10.0.2.10</code></li>
+            <li>Reverse DNS name: <code>10.2.0.10.in-addr.arpa</code></li>
+          </ul>
+          <p>A PTR record at that name points back to the hostname. You can test this with:</p>
+<pre><code># dig reverse lookup
+dig -x 10.0.2.10
+
+# nslookup reverse lookup
+nslookup 10.0.2.10</code></pre>
+          <p>In Project 2 Part B, you will create a <strong>reverse lookup zone</strong> on your DNS server for your lab network. Understanding the <code>in-addr.arpa</code> structure now will make that configuration much clearer.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-accent">
+      <div class="callout-title">🎯 Week 9 Preview</div>
+      <p>In Week 9, you will build a DNS server (BIND on Linux or DNS role on Windows Server) and create A, PTR, and CNAME records for your lab network. The client-side skills from this module — configuring resolvers, testing with <code>dig</code>/<code>nslookup</code>, understanding record types — are the exact tools you will use to <strong>validate</strong> your server configuration.</p>
+    </div>
+
+    <h3>Try It: Match the Record Type</h3>
+    <div class="exercise-box" id="exercise-records">
+      <h4>✏️ Practice: DNS Record Types</h4>
+      <p>For each scenario, select the correct DNS record type:</p>
+
+      <div class="exercise-field">
+        <label for="select-r1">Map <code>www.techstart.local</code> to <code>10.0.3.20</code>:</label>
+        <select id="select-r1">
+          <option value="">— select —</option>
+          <option value="A">A</option>
+          <option value="AAAA">AAAA</option>
+          <option value="PTR">PTR</option>
+          <option value="CNAME">CNAME</option>
+          <option value="MX">MX</option>
+        </select>
+      </div>
+      <div class="exercise-field">
+        <label for="select-r2">Map <code>10.0.3.20</code> back to <code>www.techstart.local</code>:</label>
+        <select id="select-r2">
+          <option value="">— select —</option>
+          <option value="A">A</option>
+          <option value="AAAA">AAAA</option>
+          <option value="PTR">PTR</option>
+          <option value="CNAME">CNAME</option>
+          <option value="MX">MX</option>
+        </select>
+      </div>
+      <div class="exercise-field">
+        <label for="select-r3">Make <code>web.techstart.local</code> an alias for <code>www.techstart.local</code>:</label>
+        <select id="select-r3">
+          <option value="">— select —</option>
+          <option value="A">A</option>
+          <option value="AAAA">AAAA</option>
+          <option value="PTR">PTR</option>
+          <option value="CNAME">CNAME</option>
+          <option value="MX">MX</option>
+        </select>
+      </div>
+      <div class="exercise-field">
+        <label for="select-r4">Map a hostname to an IPv6 address:</label>
+        <select id="select-r4">
+          <option value="">— select —</option>
+          <option value="A">A</option>
+          <option value="AAAA">AAAA</option>
+          <option value="PTR">PTR</option>
+          <option value="CNAME">CNAME</option>
+          <option value="MX">MX</option>
+        </select>
+      </div>
+
+      <button class="btn btn-sm" type="button" onclick="checkRecords()">Check Answers</button>
+      <div class="feedback" id="feedback-records" role="alert"></div>
+    </div>
+  </section>
+
+  <!-- ===== Summary & Next Steps ===== -->
+  <section id="section-summary" class="section">
+    <h2>Module Summary &amp; Next Steps</h2>
+
+    <h3>Key Takeaways</h3>
+    <ol>
+      <li>DNS translates hostnames to IP addresses and is a critical dependency for nearly every network service.</li>
+      <li>Name resolution checks the local hosts file <strong>before</strong> querying DNS servers (on both Linux and Windows).</li>
+      <li>On Linux, configure DNS persistently through <strong>Netplan</strong> (<code>nameservers</code> directive), not by editing <code>/etc/resolv.conf</code> directly.</li>
+      <li>On Windows, configure DNS via <strong>adapter properties</strong> (GUI) or <code>Set-DnsClientServerAddress</code> (PowerShell).</li>
+      <li>Use <code>nslookup</code> for quick cross-platform lookups, <code>dig</code> for detailed Linux analysis, and <code>Resolve-DnsName</code> for PowerShell scripting.</li>
+      <li><code>nslookup</code> and <code>dig</code> query DNS directly — they do <strong>not</strong> read the hosts file. Use <code>ping</code> or <code>getent hosts</code> to test hosts file entries.</li>
+      <li>Common DNS record types: <strong>A</strong> (IPv4), <strong>AAAA</strong> (IPv6), <strong>PTR</strong> (reverse), <strong>CNAME</strong> (alias), <strong>MX</strong> (mail).</li>
+    </ol>
+
+    <h3>Self-Assessment Practice</h3>
+    <div class="callout callout-info" style="margin-bottom:1.25rem;">
+      <div class="callout-title">📝 Ungraded Practice Scenarios</div>
+      <p>Work through these troubleshooting scenarios to reinforce your understanding of DNS client configuration. <strong>No submission required</strong> — hints and solutions are available on this page. These scenarios directly prepare you for Quiz 8 and Lab 8 Part C.</p>
+    </div>
+
+    <!-- Live region for screen-reader announcements -->
+    <div id="practice-live" aria-live="polite" class="sr-only"></div>
+
+    <!-- ── Practice Problem 1 ── -->
+    <div class="practice-problem" id="practice-p1">
+      <span class="practice-num">Scenario 1 of 3</span>
+      <h4>Server Can Ping by IP but Not by Hostname</h4>
+      <p>Your Linux server can successfully <code>ping 8.8.8.8</code> but <code>ping google.com</code> fails with "Temporary failure in name resolution." You check <code>/etc/resolv.conf</code> and find it is empty.</p>
+      <p><strong>Questions:</strong></p>
+      <ul>
+        <li>What is the most likely cause?</li>
+        <li>What command would you run to fix this persistently on Ubuntu Server?</li>
+        <li>What file would you edit?</li>
+      </ul>
+
+      <div class="practice-answer-section">
+        <fieldset>
+          <legend>Your answers — Scenario 1</legend>
+          <div class="exercise-field">
+            <label for="p1-cause">Most likely cause:</label>
+            <input type="text" id="p1-cause" autocomplete="off" placeholder="No DNS server configured">
+          </div>
+          <div class="exercise-field">
+            <label for="p1-file">File to edit:</label>
+            <input type="text" id="p1-file" autocomplete="off" placeholder="/etc/netplan/...">
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="practice-actions">
+        <button type="button" class="btn btn-sm btn-outline practice-toggle"
+                aria-expanded="false" aria-controls="hint-p1"
+                data-show-label="Show Hint" data-hide-label="Hide Hint">
+          <span aria-hidden="true">💡</span> <span class="practice-toggle-label">Show Hint</span>
+        </button>
+        <button type="button" class="btn btn-sm practice-toggle"
+                aria-expanded="false" aria-controls="solution-p1"
+                data-show-label="Show Solution" data-hide-label="Hide Solution">
+          <span aria-hidden="true">✅</span> <span class="practice-toggle-label">Show Solution</span>
+        </button>
+      </div>
+
+      <div id="hint-p1" class="practice-reveal" hidden aria-label="Hint for Scenario 1 revealed">
+        <div class="callout callout-warning">
+          <div class="callout-title">💡 Hint</div>
+          <p>If the server can reach an IP address but not a hostname, the network layer is working — the problem is at the DNS resolution layer. An empty <code>/etc/resolv.conf</code> means no DNS servers are configured. On Ubuntu Server, Netplan manages this file.</p>
+        </div>
+      </div>
+
+      <div id="solution-p1" class="practice-reveal" hidden aria-label="Full solution for Scenario 1 revealed">
+        <div class="callout callout-success">
+          <div class="callout-title">✅ Solution — Scenario 1</div>
+          <p><strong>Cause:</strong> No DNS nameserver is configured. The empty <code>/etc/resolv.conf</code> means the resolver has no server to query.</p>
+          <p><strong>Fix:</strong> Edit the Netplan configuration file (e.g., <code>/etc/netplan/01-netcfg.yaml</code>) and add the <code>nameservers</code> block under the interface:</p>
+<pre><code>      nameservers:
+        addresses:
+          - 10.0.2.1
+          - 8.8.8.8</code></pre>
+          <p>Then apply: <code>sudo netplan apply</code></p>
+          <p>Verify: <code>cat /etc/resolv.conf</code> should now show the nameserver entries, and <code>ping google.com</code> should succeed.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Practice Problem 2 ── -->
+    <div class="practice-problem" id="practice-p2">
+      <span class="practice-num">Scenario 2 of 3</span>
+      <h4>nslookup Works but ping by Hostname Fails</h4>
+      <p>You added the following entry to <code>/etc/hosts</code> on your Linux server:</p>
+      <pre><code>10.0.2.11    win-server</code></pre>
+      <p>Running <code>ping win-server</code> succeeds (pings 10.0.2.11). But when you try <code>nslookup win-server</code>, it returns <strong>"server can't find win-server: NXDOMAIN"</strong>.</p>
+      <p><strong>Question:</strong> Why does <code>ping</code> work but <code>nslookup</code> fails? Is there actually a problem?</p>
+
+      <div class="practice-actions">
+        <button type="button" class="btn btn-sm btn-outline practice-toggle"
+                aria-expanded="false" aria-controls="hint-p2"
+                data-show-label="Show Hint" data-hide-label="Hide Hint">
+          <span aria-hidden="true">💡</span> <span class="practice-toggle-label">Show Hint</span>
+        </button>
+        <button type="button" class="btn btn-sm practice-toggle"
+                aria-expanded="false" aria-controls="solution-p2"
+                data-show-label="Show Solution" data-hide-label="Hide Solution">
+          <span aria-hidden="true">✅</span> <span class="practice-toggle-label">Show Solution</span>
+        </button>
+      </div>
+
+      <div id="hint-p2" class="practice-reveal" hidden aria-label="Hint for Scenario 2 revealed">
+        <div class="callout callout-warning">
+          <div class="callout-title">💡 Hint</div>
+          <p>Re-read the "Common Pitfall" callout in §6. Think about what <code>nslookup</code> queries versus what <code>ping</code> uses for name resolution.</p>
+        </div>
+      </div>
+
+      <div id="solution-p2" class="practice-reveal" hidden aria-label="Full solution for Scenario 2 revealed">
+        <div class="callout callout-success">
+          <div class="callout-title">✅ Solution — Scenario 2</div>
+          <p><strong>There is no problem.</strong> This is expected behavior:</p>
+          <ul>
+            <li><code>ping</code> uses the system resolver, which follows the resolution order: <code>/etc/hosts</code> first, then DNS. It finds <code>win-server</code> in the hosts file and resolves it to <code>10.0.2.11</code>.</li>
+            <li><code>nslookup</code> queries the DNS server <strong>directly</strong> — it does <strong>not</strong> read <code>/etc/hosts</code>. Since there is no DNS record for <code>win-server</code>, the DNS server returns NXDOMAIN (non-existent domain).</li>
+          </ul>
+          <p>This is one of the most common sources of confusion. Remember: <strong><code>nslookup</code> and <code>dig</code> bypass the hosts file.</strong> Use <code>ping</code> or <code>getent hosts</code> to verify hosts file entries.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Practice Problem 3 ── -->
+    <div class="practice-problem" id="practice-p3">
+      <span class="practice-num">Scenario 3 of 3</span>
+      <h4>Windows DNS Resolution Returns Wrong IP</h4>
+      <p>You changed a DNS record for <code>webserver.techstart.local</code> from <code>10.0.3.20</code> to <code>10.0.3.25</code> on your DNS server. But when you run <code>nslookup webserver.techstart.local</code> on your Windows Server, it still returns the old IP <code>10.0.3.20</code>.</p>
+      <p><strong>Questions:</strong></p>
+      <ul>
+        <li>What is the most likely cause?</li>
+        <li>What command would you run to fix it?</li>
+        <li>Where else should you check for stale mappings?</li>
+      </ul>
+
+      <div class="practice-actions">
+        <button type="button" class="btn btn-sm btn-outline practice-toggle"
+                aria-expanded="false" aria-controls="hint-p3"
+                data-show-label="Show Hint" data-hide-label="Hide Hint">
+          <span aria-hidden="true">💡</span> <span class="practice-toggle-label">Show Hint</span>
+        </button>
+        <button type="button" class="btn btn-sm practice-toggle"
+                aria-expanded="false" aria-controls="solution-p3"
+                data-show-label="Show Solution" data-hide-label="Hide Solution">
+          <span aria-hidden="true">✅</span> <span class="practice-toggle-label">Show Solution</span>
+        </button>
+      </div>
+
+      <div id="hint-p3" class="practice-reveal" hidden aria-label="Hint for Scenario 3 revealed">
+        <div class="callout callout-warning">
+          <div class="callout-title">💡 Hint</div>
+          <p>Windows caches DNS responses aggressively. Also consider: could there be a hosts file entry overriding DNS? Check both the cache and the hosts file.</p>
+        </div>
+      </div>
+
+      <div id="solution-p3" class="practice-reveal" hidden aria-label="Full solution for Scenario 3 revealed">
+        <div class="callout callout-success">
+          <div class="callout-title">✅ Solution — Scenario 3</div>
+          <p><strong>Most likely cause:</strong> Windows has cached the old DNS response. The cached entry has not expired yet (its TTL has not elapsed).</p>
+          <p><strong>Fix:</strong> Flush the Windows DNS cache:</p>
+          <pre><code>ipconfig /flushdns</code></pre>
+          <p>Then retry <code>nslookup webserver.techstart.local</code> — it should now return <code>10.0.3.25</code>.</p>
+          <p><strong>Also check:</strong> The hosts file (<code>C:\Windows\System32\drivers\etc\hosts</code>) for a stale entry mapping <code>webserver.techstart.local</code> to the old IP. Since the hosts file is checked before DNS on Windows (after the cache), a stale entry there would also cause this behavior.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>What's Next</h3>
+    <div class="callout callout-info">
+      <div class="callout-title">➡️ Module 8.4: Network Diagnostics &amp; Structured Troubleshooting</div>
+      <p>Module 8.4 brings together everything from Modules 8.1–8.3 into a practical troubleshooting framework. You will learn a structured, bottom-up methodology (physical → data link → network → transport → application) and use diagnostic tools like <code>ping</code>, <code>traceroute</code>/<code>tracert</code>, <code>ss</code>/<code>netstat</code>, and <code>arp</code> to systematically identify and resolve connectivity problems. This methodology becomes the testing framework for Project 2 Part D.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer" role="contentinfo">
+  <p>CSC 152 — Network Operating Systems and Administration · Mendocino College · Spring 2026</p>
+  <p>Instructor: David Pai · <a href="#">Course Home in Canvas</a></p>
+  <p>Module content aligned with <strong>CSLO 3:</strong> Configure systems for network connectivity, including physical and logical elements.</p>
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+(function() {
+  'use strict';
+
+  /* ===== Accordion Logic ===== */
+  document.querySelectorAll('.accordion-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      var panel = document.getElementById(this.getAttribute('aria-controls'));
+      this.setAttribute('aria-expanded', String(!expanded));
+      panel.setAttribute('aria-hidden', String(expanded));
+    });
+    btn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.click();
+      }
+    });
+  });
+
+  /* ===== Tabs Logic ===== */
+  document.querySelectorAll('.tabs-container').forEach(function(container) {
+    var tabs = Array.from(container.querySelectorAll('[role="tab"]'));
+    var panels = Array.from(container.querySelectorAll('[role="tabpanel"]'));
+
+    function activateTab(tab) {
+      tabs.forEach(function(t) {
+        t.setAttribute('aria-selected', 'false');
+        t.setAttribute('tabindex', '-1');
+      });
+      panels.forEach(function(p) { p.classList.remove('active'); });
+      tab.setAttribute('aria-selected', 'true');
+      tab.removeAttribute('tabindex');
+      var panel = document.getElementById(tab.getAttribute('aria-controls'));
+      if (panel) panel.classList.add('active');
+      tab.focus();
+    }
+
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() { activateTab(this); });
+      tab.addEventListener('keydown', function(e) {
+        var idx = tabs.indexOf(this);
+        var newIdx = idx;
+        if (e.key === 'ArrowRight') { newIdx = (idx + 1) % tabs.length; }
+        else if (e.key === 'ArrowLeft') { newIdx = (idx - 1 + tabs.length) % tabs.length; }
+        else if (e.key === 'Home') { newIdx = 0; }
+        else if (e.key === 'End') { newIdx = tabs.length - 1; }
+        else { return; }
+        e.preventDefault();
+        activateTab(tabs[newIdx]);
+      });
+    });
+  });
+
+  /* ===== Objectives Progress ===== */
+  var checkboxes = document.querySelectorAll('.obj-checkbox');
+  var progressFill = document.getElementById('obj-progress-fill');
+  var progressText = document.getElementById('obj-progress-text');
+  var progressBar = document.getElementById('obj-progress-bar');
+  var total = checkboxes.length;
+
+  function updateProgress() {
+    var checked = document.querySelectorAll('.obj-checkbox:checked').length;
+    var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+    progressFill.style.width = pct + '%';
+    progressBar.setAttribute('aria-valuenow', String(pct));
+    progressText.textContent = checked + ' / ' + total + ' objectives completed';
+    checkboxes.forEach(function(cb) {
+      var label = cb.nextElementSibling;
+      if (label) {
+        if (cb.checked) { label.classList.add('completed'); }
+        else { label.classList.remove('completed'); }
+      }
+    });
+    try {
+      var state = [];
+      checkboxes.forEach(function(cb) { state.push(cb.checked); });
+      sessionStorage.setItem('csc152-m83-obj', JSON.stringify(state));
+    } catch(e) { /* ignore */ }
+  }
+
+  /* Restore session state */
+  try {
+    var saved = sessionStorage.getItem('csc152-m83-obj');
+    if (saved) {
+      var state = JSON.parse(saved);
+      checkboxes.forEach(function(cb, i) {
+        if (state[i]) cb.checked = true;
+      });
+    }
+  } catch(e) { /* ignore */ }
+
+  checkboxes.forEach(function(cb) { cb.addEventListener('change', updateProgress); });
+  updateProgress();
+
+  /* ===== Section Nav Active State ===== */
+  var navLinks = document.querySelectorAll('#section-nav a');
+  var sections = [];
+  navLinks.forEach(function(link) {
+    var target = document.querySelector(link.getAttribute('href'));
+    if (target) sections.push({ link: link, el: target });
+  });
+
+  function updateActiveNav() {
+    var scrollY = window.scrollY || window.pageYOffset;
+    var current = sections[0];
+    for (var i = 0; i < sections.length; i++) {
+      if (sections[i].el.offsetTop <= scrollY + 120) {
+        current = sections[i];
+      }
+    }
+    navLinks.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+
+  var scrollTimer;
+  window.addEventListener('scroll', function() {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(updateActiveNav, 60);
+  }, { passive: true });
+  updateActiveNav();
+
+  /* ===== Exercise: nslookup Interpretation ===== */
+  window.checkNslookup = function() {
+    var server = document.getElementById('input-dns-server').value.trim();
+    var ip = document.getElementById('input-resolved-ip').value.trim();
+    var feedback = document.getElementById('feedback-nslookup');
+    var correct = 0;
+    var messages = [];
+
+    if (server === '10.0.2.1') { correct++; }
+    else { messages.push('DNS server: look at the "Server:" line → 10.0.2.1'); }
+
+    if (ip === '10.0.3.20') { correct++; }
+    else { messages.push('Resolved IP: look at the "Address:" line under the hostname → 10.0.3.20'); }
+
+    if (correct === 2) {
+      feedback.className = 'feedback correct';
+      feedback.textContent = '\u2713 Correct! The DNS server 10.0.2.1 resolved webserver.techstart.local to 10.0.3.20.';
+    } else if (server === '' && ip === '') {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = 'Please fill in at least one answer before checking.';
+    } else {
+      feedback.className = 'feedback incorrect';
+      feedback.innerHTML = '\u2717 ' + correct + '/2 correct. Review:<br>\u2022 ' + messages.join('<br>\u2022 ');
+    }
+  };
+
+  /* ===== Exercise: DNS Record Types ===== */
+  window.checkRecords = function() {
+    var answers = {
+      'select-r1': 'A',
+      'select-r2': 'PTR',
+      'select-r3': 'CNAME',
+      'select-r4': 'AAAA'
+    };
+    var labels = {
+      'select-r1': 'Hostname → IPv4 (A record)',
+      'select-r2': 'IP → Hostname (PTR record)',
+      'select-r3': 'Alias (CNAME record)',
+      'select-r4': 'Hostname → IPv6 (AAAA record)'
+    };
+    var feedback = document.getElementById('feedback-records');
+    var correct = 0;
+    var wrong = [];
+    var allBlank = true;
+
+    Object.keys(answers).forEach(function(id) {
+      var el = document.getElementById(id);
+      var val = el ? el.value : '';
+      if (val !== '') allBlank = false;
+      if (val === answers[id]) {
+        correct++;
+      } else {
+        wrong.push(labels[id]);
+      }
+    });
+
+    if (allBlank) {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = 'Please select at least one answer before checking.';
+      return;
+    }
+
+    var totalQ = Object.keys(answers).length;
+    if (correct === totalQ) {
+      feedback.className = 'feedback correct';
+      feedback.textContent = '\u2713 All ' + totalQ + '/' + totalQ + ' correct! You know your DNS record types.';
+    } else {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = '\u2717 ' + correct + '/' + totalQ + ' correct. Review: ' + wrong.join('; ') + '.';
+    }
+  };
+
+  /* ===== Practice Problem Toggles ===== */
+  var practiceAnnouncer = document.getElementById('practice-live');
+  document.querySelectorAll('.practice-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var targetId = this.getAttribute('aria-controls');
+      var target = document.getElementById(targetId);
+      if (!target) return;
+      var isExpanded = this.getAttribute('aria-expanded') === 'true';
+      var labelSpan = this.querySelector('.practice-toggle-label');
+
+      if (isExpanded) {
+        target.hidden = true;
+        this.setAttribute('aria-expanded', 'false');
+        if (labelSpan) labelSpan.textContent = this.getAttribute('data-show-label');
+      } else {
+        target.hidden = false;
+        this.setAttribute('aria-expanded', 'true');
+        if (labelSpan) labelSpan.textContent = this.getAttribute('data-hide-label');
+        if (practiceAnnouncer) {
+          var announcement = target.getAttribute('aria-label') || 'Content revealed.';
+          practiceAnnouncer.textContent = '';
+          setTimeout(function() {
+            practiceAnnouncer.textContent = announcement;
+          }, 50);
+        }
+        setTimeout(function() {
+          if (target.getBoundingClientRect().bottom > window.innerHeight) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 80);
+      }
+    });
+  });
+
+})();
+</script>
+</body>
+</html>

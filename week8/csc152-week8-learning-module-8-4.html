@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 8.4: Network Diagnostics &amp; Structured Troubleshooting — CSC 152</title>
+<style>
+/* ===== CSS Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-surface-alt: #e9ecef;
+  --color-border: #dee2e6;
+  --color-text: #212529;
+  --color-text-secondary: #495057;
+  --color-heading: #1a1a2e;
+  --color-primary: #0d6efd;
+  --color-primary-dark: #0a58ca;
+  --color-primary-bg: #e7f1ff;
+  --color-accent: #6f42c1;
+  --color-accent-bg: #f3eefb;
+  --color-success: #198754;
+  --color-success-bg: #d1e7dd;
+  --color-warning: #856404;
+  --color-warning-bg: #fff3cd;
+  --color-danger: #842029;
+  --color-danger-bg: #f8d7da;
+  --color-info: #055160;
+  --color-info-bg: #cff4fc;
+  --color-code-bg: #1e1e2e;
+  --color-code-text: #cdd6f4;
+  --color-code-comment: #6c7086;
+  --color-code-keyword: #cba6f7;
+  --color-code-string: #a6e3a1;
+  --color-code-number: #fab387;
+  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --font-size-base: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-xs: 0.8125rem;
+  --font-size-lg: 1.125rem;
+  --line-height: 1.7;
+  --max-width: 54rem;
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
+  --transition: 0.2s ease;
+}
+
+html { font-size: 100%; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+/* ===== Skip Link ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+/* ===== Header ===== */
+.site-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  padding: 2rem 1.5rem 1.75rem;
+  border-bottom: 4px solid var(--color-primary);
+}
+.header-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+.breadcrumb {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 0.75rem;
+}
+.breadcrumb a {
+  color: rgba(255,255,255,0.85);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.breadcrumb a:hover, .breadcrumb a:focus {
+  color: #fff;
+}
+.breadcrumb .sep { margin: 0 0.35rem; }
+.site-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.35rem;
+  line-height: 1.3;
+}
+.header-meta {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.75);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+}
+.header-meta span { white-space: nowrap; }
+
+/* ===== Navigation ===== */
+.module-nav {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.5rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nav-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  list-style: none;
+}
+.nav-sections a {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition);
+}
+.nav-sections a:hover, .nav-sections a:focus {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+.nav-sections a.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+.nav-top-link {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav-top-link:hover, .nav-top-link:focus {
+  text-decoration: underline;
+}
+
+/* ===== Nav Section Tooltips ===== */
+.nav-sections li { position: relative; }
+.nav-sections a[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-heading);
+  color: #fff;
+  white-space: nowrap;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 300;
+}
+.nav-sections a[data-tooltip]:hover::after,
+.nav-sections a[data-tooltip]:focus::after {
+  opacity: 1;
+}
+@media (max-width: 640px) {
+  .nav-sections a[data-tooltip]::after { display: none; }
+}
+
+/* ===== Main Content ===== */
+.main-content {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+/* ===== Sections ===== */
+.section { margin-bottom: 3rem; }
+.section h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+.section h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 1.5rem 0 0.75rem;
+}
+.section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 1.25rem 0 0.5rem;
+}
+.section p { margin-bottom: 1rem; }
+.section ul, .section ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+.section li { margin-bottom: 0.35rem; }
+
+/* ===== Callout Boxes ===== */
+.callout {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+  border-left: 4px solid;
+}
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  font-size: var(--font-size-sm);
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout-info {
+  background: var(--color-info-bg);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+.callout-success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+  color: #0a3622;
+}
+.callout-warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+.callout-danger {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.callout-accent {
+  background: var(--color-accent-bg);
+  border-color: var(--color-accent);
+  color: #3b1f6e;
+}
+
+/* ===== Tables ===== */
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.table-wrap th, .table-wrap td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+.table-wrap th {
+  background: var(--color-surface);
+  font-weight: 700;
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+.table-wrap tr:last-child td { border-bottom: none; }
+.table-wrap tbody tr:hover { background: var(--color-surface); }
+.table-wrap caption {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  background: var(--color-heading);
+  color: #fff;
+}
+
+/* ===== Code Blocks ===== */
+pre {
+  background: var(--color-code-bg);
+  color: var(--color-code-text);
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: pre;
+  border: 1px solid #313244;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+:not(pre) > code {
+  background: var(--color-surface-alt);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: 0.88em;
+}
+.code-label {
+  display: inline-block;
+  background: #313244;
+  color: var(--color-code-text);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Accordion ===== */
+.accordion { margin-bottom: 1.25rem; }
+.accordion-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+.accordion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-heading);
+  text-align: left;
+  transition: background var(--transition);
+}
+.accordion-btn:hover, .accordion-btn:focus {
+  background: var(--color-primary-bg);
+}
+.accordion-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+.accordion-icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform var(--transition);
+  color: var(--color-primary);
+}
+.accordion-btn[aria-expanded="true"] .accordion-icon {
+  transform: rotate(90deg);
+}
+.accordion-panel {
+  display: none;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--color-border);
+}
+.accordion-panel[aria-hidden="false"] {
+  display: block;
+}
+
+/* ===== Tabs ===== */
+.tabs-container { margin-bottom: 1.5rem; }
+.tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 0;
+  list-style: none;
+  padding: 0;
+}
+.tab-list [role="tab"] {
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: color var(--transition), border-color var(--transition);
+  margin-bottom: -2px;
+}
+.tab-list [role="tab"]:hover,
+.tab-list [role="tab"]:focus {
+  color: var(--color-primary);
+}
+.tab-list [role="tab"][aria-selected="true"] {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+.tab-list [role="tab"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+.tab-panel {
+  display: none;
+  padding: 1.25rem 0 0;
+}
+.tab-panel.active { display: block; }
+
+/* ===== Interactive Exercises ===== */
+.exercise-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.exercise-box h4 {
+  color: var(--color-primary);
+  margin-top: 0;
+}
+.exercise-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.exercise-field label {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  min-width: 10rem;
+}
+.exercise-field input[type="text"],
+.exercise-field select {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  width: 14rem;
+  max-width: 100%;
+}
+.exercise-field select {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.exercise-field input[type="text"]:focus,
+.exercise-field select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1.15rem;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition);
+  text-decoration: none;
+}
+.btn:hover, .btn:focus {
+  background: var(--color-primary-dark);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-heading);
+  outline-offset: 2px;
+}
+.btn-sm { padding: 0.35rem 0.85rem; font-size: var(--font-size-xs); }
+.btn-outline {
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+}
+.btn-outline:hover, .btn-outline:focus {
+  background: var(--color-primary);
+  color: #fff;
+}
+.feedback {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  display: none;
+}
+.feedback.correct {
+  display: block;
+  background: var(--color-success-bg);
+  color: #0a3622;
+  border: 1px solid var(--color-success);
+}
+.feedback.incorrect {
+  display: block;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid #f1aeb5;
+}
+
+/* ===== Progress Tracker ===== */
+.progress-bar-wrap {
+  background: var(--color-surface-alt);
+  border-radius: 1rem;
+  height: 0.65rem;
+  overflow: hidden;
+  margin-bottom: 0.35rem;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 1rem;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.progress-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+/* ===== Objectives Checklist ===== */
+.objectives-list {
+  list-style: none;
+  padding: 0;
+}
+.objectives-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+.objectives-list li:last-child { border-bottom: none; }
+.obj-checkbox {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.15rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+.obj-label {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+.obj-label.completed {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Diagram / Visual ===== */
+.visual-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+.visual-box .diagram {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  white-space: pre;
+  display: inline-block;
+  text-align: left;
+}
+.visual-box figcaption {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+
+/* ===== Practice Problems ===== */
+.practice-problem {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.practice-problem h4 {
+  color: var(--color-primary);
+  margin-top: 0.4rem;
+  margin-bottom: 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.practice-num {
+  display: inline-block;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.35rem;
+}
+.practice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.practice-reveal {
+  margin-top: 0.85rem;
+}
+.practice-reveal .callout { margin-bottom: 0; }
+.practice-answer-section {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-border);
+}
+.practice-answer-section fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+.practice-answer-section legend {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+  padding: 0;
+}
+.practice-group-label {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0.65rem 0 0.25rem;
+}
+
+/* ===== Scenario Cards ===== */
+.scenario-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.scenario-card h4 {
+  color: var(--color-primary);
+  margin-top: 0;
+  margin-bottom: 0.6rem;
+}
+.scenario-symptom {
+  background: var(--color-warning-bg);
+  border: 1px solid #ffc107;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: var(--font-size-sm);
+}
+.scenario-symptom strong {
+  color: var(--color-warning);
+}
+
+/* ===== Layer Badge ===== */
+.layer-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  margin-right: 0.35rem;
+}
+.layer-badge.physical { background: #6c757d; }
+.layer-badge.network { background: var(--color-primary); }
+.layer-badge.transport { background: var(--color-accent); }
+.layer-badge.application { background: var(--color-success); }
+.layer-badge.dns { background: #0dcaf0; color: #000; }
+
+/* ===== Footer ===== */
+.site-footer {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 1.5rem;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+.site-footer a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.site-footer a:hover { text-decoration: underline; }
+
+/* ===== Utility ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.text-center { text-align: center; }
+.text-mono { font-family: var(--font-mono); }
+.flex-gap { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .site-header { padding: 1.25rem 1rem; }
+  .site-header h1 { font-size: 1.3rem; }
+  .main-content { padding: 1.25rem 1rem 2rem; }
+  .module-nav { padding: 0.5rem 1rem; }
+  .tab-list [role="tab"] { padding: 0.5rem 0.75rem; }
+  .exercise-field label { min-width: auto; width: 100%; }
+  .exercise-field input[type="text"],
+  .exercise-field select { width: 100%; }
+  pre { font-size: var(--font-size-xs); padding: 0.85rem; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="#">CSC 152</a>
+      <span class="sep" aria-hidden="true">→</span>
+      <a href="#">Week 8</a>
+      <span class="sep" aria-hidden="true">→</span>
+      <span aria-current="page">Module 8.4</span>
+    </nav>
+    <h1>Module 8.4: Network Diagnostics &amp; Structured Troubleshooting</h1>
+    <div class="header-meta">
+      <span>📅 Week 8 · March 9–15, 2026</span>
+      <span>⏱ Estimated Time: 1.0 hour</span>
+      <span>📖 Self-Study (Review + Troubleshooting Practice)</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== SECTION NAV ===== -->
+<nav class="module-nav" aria-label="Module sections">
+  <div class="nav-inner">
+    <ul class="nav-sections" id="section-nav">
+      <li><a href="#section-objectives" class="active" data-tooltip="§0 – Learning Objectives &amp; Overview" aria-label="§0 – Learning Objectives &amp; Overview">§0</a></li>
+      <li><a href="#section-1" data-tooltip="§1 – Diagnostic Tool Suite" aria-label="§1 – Diagnostic Tool Suite">§1</a></li>
+      <li><a href="#section-2" data-tooltip="§2 – Structured Troubleshooting Methodology" aria-label="§2 – Structured Troubleshooting Methodology">§2</a></li>
+      <li><a href="#section-3" data-tooltip="§3 – ping &amp; traceroute Deep Dive" aria-label="§3 – ping &amp; traceroute Deep Dive">§3</a></li>
+      <li><a href="#section-4" data-tooltip="§4 – Routing &amp; Connection Inspection" aria-label="§4 – Routing &amp; Connection Inspection">§4</a></li>
+      <li><a href="#section-5" data-tooltip="§5 – Documentation Standards" aria-label="§5 – Documentation Standards">§5</a></li>
+      <li><a href="#section-6" data-tooltip="§6 – Troubleshooting Scenarios" aria-label="§6 – Troubleshooting Scenarios">§6</a></li>
+      <li><a href="#section-summary" data-tooltip="Summary &amp; Next Steps" aria-label="Summary &amp; Next Steps">Summary</a></li>
+    </ul>
+    <a href="#main-content" class="nav-top-link" aria-label="Back to top">↑ Top</a>
+  </div>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main id="main-content" class="main-content" role="main">
+
+  <!-- ===== §0: Objectives & Overview ===== -->
+  <section id="section-objectives" class="section">
+    <h2>§0 — Learning Objectives &amp; Overview</h2>
+
+    <div class="callout callout-info">
+      <div class="callout-title">📋 Module Scope</div>
+      <p>This capstone module for Week 8 brings together everything from Modules 8.1–8.3 into a practical troubleshooting framework. You will learn a comprehensive set of diagnostic tools, apply a structured bottom-up troubleshooting methodology, and practice documenting network configurations. <strong>This module assumes you have completed Modules 8.1–8.3</strong> and have working knowledge of IP addressing, interface configuration, and DNS client setup.</p>
+    </div>
+
+    <h3>Learning Objectives</h3>
+    <p>By the end of Module 8.4, you will be able to:</p>
+
+    <ul class="objectives-list" id="objectives-list">
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-1" aria-label="Mark objective 1 complete">
+        <label for="obj-1" class="obj-label">Identify and use the core network diagnostic tools on Linux and Windows (ping, traceroute/tracert, ip route/route print, ss/netstat, arp)</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-2" aria-label="Mark objective 2 complete">
+        <label for="obj-2" class="obj-label">Apply a structured, bottom-up troubleshooting methodology (physical → network → transport → application)</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-3" aria-label="Mark objective 3 complete">
+        <label for="obj-3" class="obj-label">Interpret the output of diagnostic commands to identify the failing network layer</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-4" aria-label="Mark objective 4 complete">
+        <label for="obj-4" class="obj-label">Document network configurations using IP addressing tables and topology diagrams</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-5" aria-label="Mark objective 5 complete">
+        <label for="obj-5" class="obj-label">Create structured troubleshooting logs that record symptoms, steps taken, and resolutions</label>
+      </li>
+      <li>
+        <input type="checkbox" class="obj-checkbox" id="obj-6" aria-label="Mark objective 6 complete">
+        <label for="obj-6" class="obj-label">Diagnose common connectivity failures (e.g., wrong gateway, DNS misconfiguration, link down) using the correct diagnostic tool</label>
+      </li>
+    </ul>
+
+    <div class="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Objectives completion progress" id="obj-progress-bar">
+      <div class="progress-bar-fill" id="obj-progress-fill"></div>
+    </div>
+    <div class="progress-text" id="obj-progress-text" aria-live="polite">0 / 6 objectives completed</div>
+
+    <h3>Prerequisite Knowledge</h3>
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Before You Begin</div>
+      <p>This module builds directly on Modules 8.1–8.3. Specifically:</p>
+      <ul>
+        <li><strong>Module 8.1:</strong> You understand IP addresses, subnet masks, CIDR notation, and how to calculate network boundaries — essential for recognizing misconfigured addresses.</li>
+        <li><strong>Module 8.2:</strong> You can configure static IPs on Linux (Netplan/<code>nmcli</code>) and Windows (GUI/PowerShell) and verify with <code>ip addr</code> / <code>ipconfig</code>.</li>
+        <li><strong>Module 8.3:</strong> You understand DNS resolution order, can configure DNS client settings, and have used <code>nslookup</code> and <code>dig</code>.</li>
+      </ul>
+    </div>
+
+    <h3>CSLO Alignment</h3>
+    <div class="callout callout-accent">
+      <div class="callout-title">🎯 CSLO 3</div>
+      <p><strong>Configure systems for network connectivity, including physical and logical elements.</strong></p>
+      <p>Module 8.4 addresses the <em>verification and troubleshooting</em> dimension of CSLO 3. Configuration without verification is incomplete — this module teaches you to confirm that configurations work and to systematically diagnose failures when they don't.</p>
+    </div>
+
+    <h3>How This Module Prepares You</h3>
+    <ul>
+      <li><strong>Project 2 (Part D):</strong> Requires comprehensive testing evidence and documentation. The structured troubleshooting methodology and documentation standards introduced here become your framework for Project 2 testing.</li>
+      <li><strong>Project 2 (Part A):</strong> Requires a network topology diagram — this module introduces diagramming conventions.</li>
+      <li><strong>Week 9:</strong> Firewall configuration requires verifying connectivity before and after applying rules — the diagnostic workflow from this module is essential.</li>
+      <li><strong>Quiz 8:</strong> Includes scenario-based questions where you must identify the failing layer and select the appropriate diagnostic tool.</li>
+    </ul>
+  </section>
+
+  <!-- ===== §1: Diagnostic Tool Suite ===== -->
+  <section id="section-1" class="section">
+    <h2>§1 — Network Diagnostic Tool Suite</h2>
+
+    <p>Network administrators rely on a core set of command-line tools to verify connectivity, trace network paths, inspect routing tables, and examine active connections. Every tool you learn here has equivalents on both Linux and Windows.</p>
+
+    <h3>Tool Reference Table</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>Core Network Diagnostic Tools — Linux &amp; Windows</caption>
+        <thead>
+          <tr>
+            <th scope="col">Purpose</th>
+            <th scope="col">Linux Command</th>
+            <th scope="col">Windows Command</th>
+            <th scope="col">Layer Tested</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ICMP connectivity test</td>
+            <td><code>ping</code></td>
+            <td><code>ping</code> / <code>Test-Connection</code></td>
+            <td><span class="layer-badge network">Network</span></td>
+          </tr>
+          <tr>
+            <td>Path analysis (hop-by-hop)</td>
+            <td><code>traceroute</code></td>
+            <td><code>tracert</code></td>
+            <td><span class="layer-badge network">Network</span></td>
+          </tr>
+          <tr>
+            <td>Routing table inspection</td>
+            <td><code>ip route</code></td>
+            <td><code>route print</code></td>
+            <td><span class="layer-badge network">Network</span></td>
+          </tr>
+          <tr>
+            <td>Active connections &amp; listening ports</td>
+            <td><code>ss</code></td>
+            <td><code>netstat</code></td>
+            <td><span class="layer-badge transport">Transport</span></td>
+          </tr>
+          <tr>
+            <td>ARP cache inspection</td>
+            <td><code>arp</code> / <code>ip neigh</code></td>
+            <td><code>arp -a</code></td>
+            <td><span class="layer-badge physical">Data Link</span></td>
+          </tr>
+          <tr>
+            <td>DNS lookup</td>
+            <td><code>dig</code> / <code>nslookup</code></td>
+            <td><code>nslookup</code> / <code>Resolve-DnsName</code></td>
+            <td><span class="layer-badge dns">Application (DNS)</span></td>
+          </tr>
+          <tr>
+            <td>Interface status &amp; IP config</td>
+            <td><code>ip addr</code> / <code>ip link</code></td>
+            <td><code>ipconfig /all</code></td>
+            <td><span class="layer-badge network">Network</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">💡 Recall from Modules 8.2–8.3</div>
+      <p>You have already used <code>ip addr</code>, <code>ipconfig</code>, <code>nslookup</code>, and <code>dig</code> in earlier modules. This module adds <code>ping</code>, <code>traceroute</code>/<code>tracert</code>, <code>ip route</code>/<code>route print</code>, <code>ss</code>/<code>netstat</code>, and <code>arp</code> to your toolkit — and, more importantly, teaches you <em>when</em> to use each one.</p>
+    </div>
+
+    <h3>Quick-Reference: When to Use Each Tool</h3>
+    <div class="accordion" id="accordion-when">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-when-ping" id="acc-when-ping-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          "Can I reach this host at all?" → ping / Test-Connection
+        </button>
+        <div class="accordion-panel" id="acc-when-ping" role="region" aria-labelledby="acc-when-ping-btn" aria-hidden="true">
+          <p><strong>Use when:</strong> You need a quick yes/no answer about IP-level reachability to a specific host.</p>
+          <p><strong>What it tells you:</strong> Whether ICMP echo requests reach the target and replies come back, plus round-trip time and packet loss.</p>
+          <p><strong>Limitation:</strong> Some hosts or firewalls block ICMP — a failed ping does not always mean the host is down.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-when-trace" id="acc-when-trace-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          "Where is the path failing?" → traceroute / tracert
+        </button>
+        <div class="accordion-panel" id="acc-when-trace" role="region" aria-labelledby="acc-when-trace-btn" aria-hidden="true">
+          <p><strong>Use when:</strong> Ping fails to a remote host and you need to find <em>where</em> along the path the failure occurs.</p>
+          <p><strong>What it tells you:</strong> Each router (hop) between your host and the destination, with round-trip times for each hop.</p>
+          <p><strong>Limitation:</strong> Some routers do not respond to traceroute probes, showing <code>* * *</code> — this does not necessarily indicate a problem at that hop.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-when-route" id="acc-when-route-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          "Is my routing table correct?" → ip route / route print
+        </button>
+        <div class="accordion-panel" id="acc-when-route" role="region" aria-labelledby="acc-when-route-btn" aria-hidden="true">
+          <p><strong>Use when:</strong> You can reach local hosts but not remote ones, or traffic is going to the wrong gateway.</p>
+          <p><strong>What it tells you:</strong> All routes the system knows, including the default gateway, directly-connected subnets, and any static routes.</p>
+          <p><strong>Key check:</strong> Verify the <code>default</code> route points to the correct gateway IP.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-when-ss" id="acc-when-ss-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          "Is the service listening?" → ss / netstat
+        </button>
+        <div class="accordion-panel" id="acc-when-ss" role="region" aria-labelledby="acc-when-ss-btn" aria-hidden="true">
+          <p><strong>Use when:</strong> You can ping a server but cannot connect to a specific service (e.g., SSH on port 22, HTTP on port 80).</p>
+          <p><strong>What it tells you:</strong> Which ports are open and listening, which processes own them, and active connections.</p>
+          <p><strong>Key command:</strong> <code>ss -tlnp</code> (Linux) shows TCP listening ports with process names.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-when-arp" id="acc-when-arp-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          "Is ARP resolving correctly?" → arp / ip neigh
+        </button>
+        <div class="accordion-panel" id="acc-when-arp" role="region" aria-labelledby="acc-when-arp-btn" aria-hidden="true">
+          <p><strong>Use when:</strong> You suspect a Layer 2 issue — the host has an IP address but cannot reach other hosts on the same subnet.</p>
+          <p><strong>What it tells you:</strong> The mapping between IP addresses and MAC addresses that the system has cached.</p>
+          <p><strong>Key check:</strong> If the gateway's MAC address is missing or marked <code>FAILED</code>, the host cannot reach the gateway at the data-link layer.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2: Structured Troubleshooting Methodology ===== -->
+  <section id="section-2" class="section">
+    <h2>§2 — Structured Troubleshooting Methodology</h2>
+
+    <p>Random troubleshooting wastes time. Professional network administrators follow a <strong>bottom-up, layered approach</strong> that systematically eliminates possible causes from the physical layer up to the application layer. Each step builds on the previous one — if a lower layer fails, there is no point testing higher layers.</p>
+
+    <h3>The Six-Step Bottom-Up Method</h3>
+
+    <div class="visual-box">
+      <figure>
+        <div class="diagram" aria-label="Six-step bottom-up troubleshooting methodology">Step 6: Application-layer connectivity  (specific service/port)
+   ↑
+Step 5: Name resolution               (ping by hostname)
+   ↑
+Step 4: Remote connectivity            (ping external IP)
+   ↑
+Step 3: Local connectivity             (ping default gateway)
+   ↑
+Step 2: IP configuration               (correct addr/mask/gw)
+   ↑
+Step 1: Physical/virtual link state    (interface up?)</div>
+        <figcaption>Figure 1: The bottom-up troubleshooting methodology. Always start at Step 1 and work upward. If a step fails, the problem is at or below that layer.</figcaption>
+      </figure>
+    </div>
+
+    <div class="tabs-container" id="tabs-troubleshoot">
+      <div class="tab-list" role="tablist" aria-label="Troubleshooting steps">
+        <button role="tab" aria-selected="true" aria-controls="tab-ts1" id="tab-btn-ts1">Step 1</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-ts2" id="tab-btn-ts2" tabindex="-1">Step 2</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-ts3" id="tab-btn-ts3" tabindex="-1">Step 3</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-ts4" id="tab-btn-ts4" tabindex="-1">Step 4</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-ts5" id="tab-btn-ts5" tabindex="-1">Step 5</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-ts6" id="tab-btn-ts6" tabindex="-1">Step 6</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-ts1" role="tabpanel" aria-labelledby="tab-btn-ts1">
+        <h4>Step 1: Verify Physical / Virtual Link State</h4>
+        <p><strong>Question:</strong> Is the network interface up and connected?</p>
+        <p><strong>Tools:</strong></p>
+        <ul>
+          <li>Linux: <code>ip link show</code> — look for <code>state UP</code></li>
+          <li>Windows: <code>ipconfig /all</code> — check "Media State"; <code>Get-NetAdapter</code> in PowerShell</li>
+        </ul>
+<pre><code># Linux — check link state
+ip link show ens18
+# Look for: state UP  (good)
+# vs:       state DOWN (problem — cable, VM NIC, or switch)</code></pre>
+        <p><strong>If this fails:</strong> Check the virtual NIC assignment (in Proxmox/Hyper-V), cable connections (physical), or VLAN/bridge configuration.</p>
+      </div>
+
+      <div class="tab-panel" id="tab-ts2" role="tabpanel" aria-labelledby="tab-btn-ts2">
+        <h4>Step 2: Verify IP Configuration</h4>
+        <p><strong>Question:</strong> Does the interface have the correct IP address, subnet mask, and default gateway?</p>
+        <p><strong>Tools:</strong></p>
+        <ul>
+          <li>Linux: <code>ip addr show ens18</code> — verify IP/mask</li>
+          <li>Linux: <code>ip route show</code> — verify default gateway</li>
+          <li>Windows: <code>ipconfig /all</code> — verify all three</li>
+        </ul>
+<pre><code># Linux — verify IP and gateway
+ip addr show ens18
+ip route show default
+
+# Windows — verify all settings
+ipconfig /all</code></pre>
+        <p><strong>Common problems:</strong></p>
+        <ul>
+          <li><code>169.254.x.x</code> address → DHCP failure (recall Module 8.1, §5)</li>
+          <li>Wrong subnet mask → host calculates wrong network boundary</li>
+          <li>Missing or wrong default gateway → cannot reach other subnets</li>
+        </ul>
+      </div>
+
+      <div class="tab-panel" id="tab-ts3" role="tabpanel" aria-labelledby="tab-btn-ts3">
+        <h4>Step 3: Verify Local Connectivity</h4>
+        <p><strong>Question:</strong> Can I reach my default gateway?</p>
+        <p><strong>Tool:</strong> <code>ping &lt;gateway-IP&gt;</code></p>
+<pre><code># Example: ping the gateway
+ping -c 4 10.0.1.1        # Linux (4 packets)
+ping 10.0.1.1              # Windows (4 packets by default)</code></pre>
+        <p><strong>If this fails:</strong> The problem is between your host and the gateway — check Step 1 and Step 2 again, verify the gateway device is running, and check ARP resolution with <code>arp</code> or <code>ip neigh</code>.</p>
+        <p><strong>If this succeeds:</strong> Your local network connection is working. Proceed to Step 4.</p>
+      </div>
+
+      <div class="tab-panel" id="tab-ts4" role="tabpanel" aria-labelledby="tab-btn-ts4">
+        <h4>Step 4: Verify Remote Connectivity</h4>
+        <p><strong>Question:</strong> Can I reach a host on a different network <em>by IP address</em>?</p>
+        <p><strong>Tool:</strong> <code>ping &lt;remote-IP&gt;</code></p>
+<pre><code># Ping a well-known public IP (Google DNS)
+ping -c 4 8.8.8.8          # Linux
+ping 8.8.8.8                # Windows</code></pre>
+        <p><strong>If this fails but Step 3 succeeded:</strong> The problem is in routing — the gateway is not forwarding traffic correctly, or there is a firewall blocking outbound traffic. Use <code>traceroute</code>/<code>tracert</code> to find where packets stop.</p>
+        <p><strong>If this succeeds:</strong> IP-level connectivity is fully working. Proceed to Step 5.</p>
+      </div>
+
+      <div class="tab-panel" id="tab-ts5" role="tabpanel" aria-labelledby="tab-btn-ts5">
+        <h4>Step 5: Verify Name Resolution</h4>
+        <p><strong>Question:</strong> Can I resolve hostnames to IP addresses?</p>
+        <p><strong>Tools:</strong> <code>ping &lt;hostname&gt;</code>, <code>nslookup</code>, <code>dig</code></p>
+<pre><code># Test DNS resolution
+ping -c 4 www.google.com    # Linux
+nslookup www.google.com     # Cross-platform
+dig www.google.com          # Linux (detailed)</code></pre>
+        <p><strong>If this fails but Step 4 succeeded:</strong> The problem is DNS. Check your resolver configuration (recall Module 8.3):</p>
+        <ul>
+          <li>Linux: <code>cat /etc/resolv.conf</code> — is the <code>nameserver</code> correct?</li>
+          <li>Windows: <code>ipconfig /all</code> — check "DNS Servers" field</li>
+          <li>Can you ping the DNS server by IP? If not, the DNS server itself may be unreachable.</li>
+        </ul>
+      </div>
+
+      <div class="tab-panel" id="tab-ts6" role="tabpanel" aria-labelledby="tab-btn-ts6">
+        <h4>Step 6: Verify Application-Layer Connectivity</h4>
+        <p><strong>Question:</strong> Can I connect to the specific service I need (SSH, HTTP, DNS, etc.)?</p>
+        <p><strong>Tools:</strong></p>
+        <ul>
+          <li><code>ss -tlnp</code> (Linux) / <code>netstat -an</code> (Windows) — check if the service is listening</li>
+          <li><code>curl http://&lt;host&gt;</code> — test HTTP connectivity</li>
+          <li><code>ssh &lt;user&gt;@&lt;host&gt;</code> — test SSH connectivity</li>
+        </ul>
+<pre><code># Check if SSH is listening on the server
+ss -tlnp | grep :22
+
+# Check if a web server is responding
+curl -I http://10.0.2.10</code></pre>
+        <p><strong>If this fails but Step 5 succeeded:</strong> The problem is at the application layer — the service may not be running, may be listening on a different port, or a firewall rule may be blocking the specific port.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-success">
+      <div class="callout-title">🔗 Project 2 Connection</div>
+      <p>In Project 2 Part D, you must provide testing evidence for each network segment. Following this six-step methodology for each segment ensures you have comprehensive, organized evidence. Your testing documentation should show: "I verified Step 1 ✓, Step 2 ✓, Step 3 ✓ …" for each VM on each subnet.</p>
+    </div>
+  </section>
+
+  <!-- ===== §3: ping & traceroute Deep Dive ===== -->
+  <section id="section-3" class="section">
+    <h2>§3 — <code>ping</code> &amp; <code>traceroute</code> Deep Dive</h2>
+
+    <p>These two tools are the workhorses of network troubleshooting. Understanding their output in detail helps you quickly narrow down problems.</p>
+
+    <h3>Understanding <code>ping</code> Output</h3>
+<pre><code># Linux ping output
+$ ping -c 4 10.0.1.1
+PING 10.0.1.1 (10.0.1.1) 56(84) bytes of data.
+64 bytes from 10.0.1.1: icmp_seq=1 ttl=64 time=0.523 ms
+64 bytes from 10.0.1.1: icmp_seq=2 ttl=64 time=0.412 ms
+64 bytes from 10.0.1.1: icmp_seq=3 ttl=64 time=0.398 ms
+64 bytes from 10.0.1.1: icmp_seq=4 ttl=64 time=0.445 ms
+
+--- 10.0.1.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 0.398/0.444/0.523/0.047 ms</code></pre>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Key Fields in ping Output</caption>
+        <thead>
+          <tr>
+            <th scope="col">Field</th>
+            <th scope="col">Meaning</th>
+            <th scope="col">What to Watch For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>icmp_seq</code></td>
+            <td>Sequence number of each packet</td>
+            <td>Gaps indicate dropped packets</td>
+          </tr>
+          <tr>
+            <td><code>ttl</code></td>
+            <td>Time To Live — decremented by each router</td>
+            <td>Low TTL on a LAN host suggests extra hops (routing issue)</td>
+          </tr>
+          <tr>
+            <td><code>time</code></td>
+            <td>Round-trip time in milliseconds</td>
+            <td>LAN: &lt; 1 ms typical; high/variable times suggest congestion</td>
+          </tr>
+          <tr>
+            <td><code>packet loss</code></td>
+            <td>Percentage of packets that did not return</td>
+            <td>0% = healthy; &gt; 0% = investigate</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Common <code>ping</code> Error Messages</h3>
+    <div class="accordion" id="accordion-ping-errors">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-ping-err1" id="acc-ping-err1-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          "Destination Host Unreachable"
+        </button>
+        <div class="accordion-panel" id="acc-ping-err1" role="region" aria-labelledby="acc-ping-err1-btn" aria-hidden="true">
+          <p><strong>Meaning:</strong> A router along the path (often your own gateway) could not find a route to the destination, or ARP resolution failed on the local segment.</p>
+          <p><strong>Common causes:</strong></p>
+          <ul>
+            <li>Wrong default gateway configured</li>
+            <li>Target host is on the same subnet but powered off (ARP failure)</li>
+            <li>Routing table on the gateway is missing a route</li>
+          </ul>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-ping-err2" id="acc-ping-err2-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          "Request Timed Out" (no response)
+        </button>
+        <div class="accordion-panel" id="acc-ping-err2" role="region" aria-labelledby="acc-ping-err2-btn" aria-hidden="true">
+          <p><strong>Meaning:</strong> The ICMP echo request was sent but no reply was received within the timeout period.</p>
+          <p><strong>Common causes:</strong></p>
+          <ul>
+            <li>Target host's firewall is blocking ICMP</li>
+            <li>Packets are being dropped by an intermediate device</li>
+            <li>Target host is down or unreachable</li>
+          </ul>
+          <p><strong>Important:</strong> A timeout does not always mean the host is down — many firewalls block ping by default.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-ping-err3" id="acc-ping-err3-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          "Network is unreachable"
+        </button>
+        <div class="accordion-panel" id="acc-ping-err3" role="region" aria-labelledby="acc-ping-err3-btn" aria-hidden="true">
+          <p><strong>Meaning:</strong> Your system has no route to the destination network — the routing table does not contain a matching entry.</p>
+          <p><strong>Common causes:</strong></p>
+          <ul>
+            <li>No default gateway configured</li>
+            <li>Interface is down (link state issue)</li>
+            <li>Static route is missing</li>
+          </ul>
+          <p><strong>Next step:</strong> Check <code>ip route</code> (Linux) or <code>route print</code> (Windows) to verify the routing table.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Understanding <code>traceroute</code> / <code>tracert</code> Output</h3>
+<pre><code># Linux traceroute
+$ traceroute 8.8.8.8
+traceroute to 8.8.8.8 (8.8.8.8), 30 hops max, 60 byte packets
+ 1  10.0.1.1 (10.0.1.1)       0.524 ms  0.487 ms  0.463 ms
+ 2  192.168.100.1 (192.168.100.1)  1.234 ms  1.198 ms  1.176 ms
+ 3  isp-router.example.net (203.0.113.1)  5.678 ms  5.432 ms  5.401 ms
+ 4  * * *
+ 5  dns.google (8.8.8.8)      12.345 ms  12.123 ms  12.098 ms</code></pre>
+
+    <p>Each numbered line represents a <strong>hop</strong> (a router the packet passed through). Three round-trip times are shown per hop. The <code>* * *</code> at hop 4 means that router did not respond — this is common and usually not a problem if subsequent hops succeed.</p>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Windows Difference</div>
+      <p>On Windows, the command is <code>tracert</code> (not <code>traceroute</code>). It uses ICMP by default, while Linux <code>traceroute</code> uses UDP by default. The output format is similar, but the protocol difference can affect results when firewalls are involved.</p>
+    </div>
+
+    <h3>Try It: Interpret ping Output</h3>
+    <div class="exercise-box" id="exercise-ping">
+      <h4>✏️ Practice: What Does This ping Tell You?</h4>
+      <p>A server administrator runs <code>ping -c 4 10.0.2.1</code> and sees:</p>
+<pre><code>PING 10.0.2.1 (10.0.2.1) 56(84) bytes of data.
+From 10.0.1.50 icmp_seq=1 Destination Host Unreachable
+From 10.0.1.50 icmp_seq=2 Destination Host Unreachable
+From 10.0.1.50 icmp_seq=3 Destination Host Unreachable
+From 10.0.1.50 icmp_seq=4 Destination Host Unreachable
+
+--- 10.0.2.1 ping statistics ---
+4 packets transmitted, 0 received, +4 errors, 100% packet loss</code></pre>
+      <p>The server's IP is <code>10.0.1.50/24</code> and its gateway is <code>10.0.1.1</code>. The target <code>10.0.2.1</code> is on a different subnet.</p>
+      <div class="exercise-field">
+        <label for="input-ping-layer">Which layer is most likely failing?</label>
+        <select id="input-ping-layer">
+          <option value="">— Select —</option>
+          <option value="physical">Physical / Link</option>
+          <option value="network">Network (routing)</option>
+          <option value="dns">DNS</option>
+          <option value="application">Application</option>
+        </select>
+      </div>
+      <div class="exercise-field">
+        <label for="input-ping-tool">What should you check next?</label>
+        <select id="input-ping-tool">
+          <option value="">— Select —</option>
+          <option value="route">ip route / route print (routing table)</option>
+          <option value="dig">dig / nslookup (DNS)</option>
+          <option value="ss">ss / netstat (listening ports)</option>
+          <option value="link">ip link show (interface state)</option>
+        </select>
+      </div>
+      <button class="btn btn-sm" type="button" onclick="checkPingExercise()">Check Answer</button>
+      <div class="feedback" id="feedback-ping" role="alert"></div>
+    </div>
+  </section>
+
+  <!-- ===== §4: Routing & Connection Inspection ===== -->
+  <section id="section-4" class="section">
+    <h2>§4 — Routing Tables &amp; Connection Inspection</h2>
+
+    <h3>Reading the Routing Table</h3>
+    <p>The routing table tells the operating system where to send packets for each destination network. Every host has one, and understanding it is critical for diagnosing "can reach local but not remote" problems.</p>
+
+    <div class="tabs-container" id="tabs-routing">
+      <div class="tab-list" role="tablist" aria-label="Routing table examples">
+        <button role="tab" aria-selected="true" aria-controls="tab-route-linux" id="tab-btn-route-linux">Linux</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-route-windows" id="tab-btn-route-windows" tabindex="-1">Windows</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-route-linux" role="tabpanel" aria-labelledby="tab-btn-route-linux">
+        <h4>Linux: <code>ip route show</code></h4>
+<pre><code>$ ip route show
+default via 10.0.1.1 dev ens18 proto static
+10.0.1.0/24 dev ens18 proto kernel scope link src 10.0.1.50</code></pre>
+        <p>Reading this output:</p>
+        <ul>
+          <li><strong><code>default via 10.0.1.1</code></strong> — packets for unknown destinations go to gateway 10.0.1.1</li>
+          <li><strong><code>10.0.1.0/24 dev ens18</code></strong> — the 10.0.1.0/24 subnet is directly connected via ens18</li>
+          <li><strong><code>src 10.0.1.50</code></strong> — this host's source address on that subnet</li>
+        </ul>
+        <p><strong>Missing default route?</strong> That explains why local pings work but remote pings fail.</p>
+      </div>
+
+      <div class="tab-panel" id="tab-route-windows" role="tabpanel" aria-labelledby="tab-btn-route-windows">
+        <h4>Windows: <code>route print</code></h4>
+<pre><code>C:\> route print
+...
+IPv4 Route Table
+===========================================================================
+Active Routes:
+Network Destination    Netmask          Gateway       Interface    Metric
+          0.0.0.0      0.0.0.0        10.0.1.1      10.0.1.50       25
+         10.0.1.0  255.255.255.0      On-link       10.0.1.50      281
+        10.0.1.50  255.255.255.255    On-link       10.0.1.50      281
+       10.0.1.255  255.255.255.255    On-link       10.0.1.50      281
+===========================================================================</code></pre>
+        <p>Reading this output:</p>
+        <ul>
+          <li><strong><code>0.0.0.0 → 10.0.1.1</code></strong> — the default route (destination 0.0.0.0 with mask 0.0.0.0 means "everything else")</li>
+          <li><strong><code>10.0.1.0 → On-link</code></strong> — directly connected subnet (no gateway needed)</li>
+          <li><strong><code>10.0.1.50 → On-link</code></strong> — the host's own address (loopback to self)</li>
+          <li><strong><code>10.0.1.255 → On-link</code></strong> — the subnet broadcast address</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Inspecting Active Connections and Listening Ports</h3>
+    <p>When network-level connectivity is confirmed (Steps 1–5 pass) but a specific service is unreachable, you need to verify the service is actually running and listening.</p>
+
+    <div class="tabs-container" id="tabs-connections">
+      <div class="tab-list" role="tablist" aria-label="Connection inspection examples">
+        <button role="tab" aria-selected="true" aria-controls="tab-conn-linux" id="tab-btn-conn-linux">Linux (ss)</button>
+        <button role="tab" aria-selected="false" aria-controls="tab-conn-windows" id="tab-btn-conn-windows" tabindex="-1">Windows (netstat)</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-conn-linux" role="tabpanel" aria-labelledby="tab-btn-conn-linux">
+        <h4>Linux: <code>ss -tlnp</code></h4>
+<pre><code>$ sudo ss -tlnp
+State   Recv-Q  Send-Q  Local Address:Port  Peer Address:Port  Process
+LISTEN  0       128     0.0.0.0:22          0.0.0.0:*          users:(("sshd",pid=1234,...))
+LISTEN  0       128     127.0.0.1:953       0.0.0.0:*          users:(("named",pid=5678,...))
+LISTEN  0       10      0.0.0.0:53          0.0.0.0:*          users:(("named",pid=5678,...))</code></pre>
+        <p>Flag meanings: <code>-t</code> = TCP, <code>-l</code> = listening only, <code>-n</code> = numeric (no DNS), <code>-p</code> = show process.</p>
+        <p><strong>Key observations:</strong></p>
+        <ul>
+          <li>SSH (port 22) is listening on <code>0.0.0.0</code> — accessible from any interface ✓</li>
+          <li>BIND control (port 953) is listening on <code>127.0.0.1</code> only — localhost only (by design)</li>
+          <li>DNS (port 53) is listening on <code>0.0.0.0</code> — accessible from any interface ✓</li>
+        </ul>
+      </div>
+
+      <div class="tab-panel" id="tab-conn-windows" role="tabpanel" aria-labelledby="tab-btn-conn-windows">
+        <h4>Windows: <code>netstat -an</code></h4>
+<pre><code>C:\> netstat -an | findstr LISTENING
+  TCP    0.0.0.0:53       0.0.0.0:0       LISTENING
+  TCP    0.0.0.0:135      0.0.0.0:0       LISTENING
+  TCP    0.0.0.0:445      0.0.0.0:0       LISTENING
+  TCP    0.0.0.0:3389     0.0.0.0:0       LISTENING</code></pre>
+        <p>Flag meanings: <code>-a</code> = all connections, <code>-n</code> = numeric.</p>
+        <p><strong>Key observations:</strong></p>
+        <ul>
+          <li>DNS (port 53), RPC (135), SMB (445), and RDP (3389) are all listening</li>
+          <li>If a service you expect is missing from this list, it is not running or is misconfigured</li>
+        </ul>
+        <div class="callout callout-info">
+          <div class="callout-title">💡 PowerShell Alternative</div>
+          <p>Use <code>Get-NetTCPConnection -State Listen</code> for a more structured view with process IDs.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>ARP Cache Inspection</h3>
+    <p>ARP (Address Resolution Protocol) maps IP addresses to MAC addresses on the local network. If ARP resolution fails, the host cannot communicate even with devices on the same subnet.</p>
+
+<pre><code># Linux — view ARP cache
+$ ip neigh show
+10.0.1.1 dev ens18 lladdr 00:15:5d:01:a3:b2 REACHABLE
+10.0.1.20 dev ens18 lladdr 00:15:5d:01:a3:c4 STALE
+
+# Windows — view ARP cache
+C:\> arp -a
+Interface: 10.0.1.50 --- 0x3
+  Internet Address    Physical Address    Type
+  10.0.1.1            00-15-5d-01-a3-b2   dynamic
+  10.0.1.20           00-15-5d-01-a3-c4   dynamic</code></pre>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Security Note</div>
+      <p>Diagnostic tools like <code>ss</code>, <code>netstat</code>, and <code>arp</code> can reveal security-relevant information — open ports that should be closed, unexpected connections, or unknown MAC addresses on the network. This is a preview of security monitoring concepts covered in <strong>Week 14 (Security Hardening)</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ===== §5: Documentation Standards ===== -->
+  <section id="section-5" class="section">
+    <h2>§5 — Network Configuration Documentation</h2>
+
+    <p>Professional network administration requires thorough documentation. Well-documented networks are easier to troubleshoot, audit, and hand off to other administrators. Project 2 requires three types of documentation: <strong>IP addressing tables</strong>, <strong>network topology diagrams</strong>, and <strong>troubleshooting logs</strong>.</p>
+
+    <h3>IP Addressing Tables</h3>
+    <p>An IP addressing table records every interface, its address, mask, gateway, and purpose. Here is the format you will use in Project 2:</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Example: Project 2 IP Addressing Table</caption>
+        <thead>
+          <tr>
+            <th scope="col">Device</th>
+            <th scope="col">Interface</th>
+            <th scope="col">IP Address</th>
+            <th scope="col">Subnet Mask</th>
+            <th scope="col">Default Gateway</th>
+            <th scope="col">Segment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>pfSense</td>
+            <td>vtnet1 (LAN1)</td>
+            <td>10.0.1.1</td>
+            <td>255.255.255.0</td>
+            <td>—</td>
+            <td>Management</td>
+          </tr>
+          <tr>
+            <td>pfSense</td>
+            <td>vtnet2 (LAN2)</td>
+            <td>10.0.2.1</td>
+            <td>255.255.255.0</td>
+            <td>—</td>
+            <td>Servers</td>
+          </tr>
+          <tr>
+            <td>pfSense</td>
+            <td>vtnet3 (LAN3)</td>
+            <td>10.0.3.1</td>
+            <td>255.255.255.0</td>
+            <td>—</td>
+            <td>Clients</td>
+          </tr>
+          <tr>
+            <td>Linux Server</td>
+            <td>ens18</td>
+            <td>10.0.2.10</td>
+            <td>255.255.255.0</td>
+            <td>10.0.2.1</td>
+            <td>Servers</td>
+          </tr>
+          <tr>
+            <td>Windows Server</td>
+            <td>Ethernet0</td>
+            <td>10.0.2.20</td>
+            <td>255.255.255.0</td>
+            <td>10.0.2.1</td>
+            <td>Servers</td>
+          </tr>
+          <tr>
+            <td>Client VM</td>
+            <td>ens18</td>
+            <td>DHCP</td>
+            <td>255.255.255.0</td>
+            <td>10.0.3.1</td>
+            <td>Clients</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Network Topology Diagrams</h3>
+    <p>A topology diagram visually represents how devices connect to each other and to network segments. For Project 2 Part A, you will create a diagram showing your pfSense firewall, server VMs, client VMs, and the three subnets.</p>
+
+    <div class="visual-box">
+      <figure>
+        <div class="diagram" aria-label="Simplified network topology diagram for Project 2">                    ┌─────────────┐
+                    │  Internet /  │
+                    │  Proxmox WAN │
+                    └──────┬──────┘
+                           │ WAN (DHCP)
+                    ┌──────┴──────┐
+                    │   pfSense   │
+                    │  Firewall   │
+                    └──┬───┬───┬──┘
+                       │   │   │
+          ┌────────────┘   │   └────────────┐
+          │                │                │
+  LAN1: 10.0.1.0/24  LAN2: 10.0.2.0/24  LAN3: 10.0.3.0/24
+  (Management)        (Servers)           (Clients)
+          │                │                │
+          │          ┌─────┴─────┐          │
+          │          │           │          │
+       [Admin]   [Linux Srv] [Win Srv]  [Client]
+       .1.50      .2.10       .2.20     DHCP</div>
+        <figcaption>Figure 2: Simplified topology diagram showing pfSense connecting three subnets. Your Project 2 diagram should include interface names, IP addresses, and CIDR notation for each segment.</figcaption>
+      </figure>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">💡 Diagramming Tools</div>
+      <p>For Project 2, you may use any tool: <strong>draw.io</strong> (free, web-based), <strong>Microsoft Visio</strong>, or even a well-formatted ASCII diagram. The key is clarity — every device, interface, IP address, and subnet should be labeled.</p>
+    </div>
+
+    <h3>Troubleshooting Logs</h3>
+    <p>When documenting a troubleshooting session, record each step systematically. This creates an audit trail and helps you (or a colleague) reproduce the diagnosis.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Example: Troubleshooting Log Entry</caption>
+        <thead>
+          <tr>
+            <th scope="col">Step</th>
+            <th scope="col">Action</th>
+            <th scope="col">Command</th>
+            <th scope="col">Expected Result</th>
+            <th scope="col">Actual Result</th>
+            <th scope="col">Conclusion</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Check link state</td>
+            <td><code>ip link show ens18</code></td>
+            <td>state UP</td>
+            <td>state UP ✓</td>
+            <td>Link OK</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Verify IP config</td>
+            <td><code>ip addr show ens18</code></td>
+            <td>10.0.2.10/24</td>
+            <td>10.0.2.10/24 ✓</td>
+            <td>IP correct</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Ping gateway</td>
+            <td><code>ping -c 4 10.0.2.1</code></td>
+            <td>4/4 replies</td>
+            <td>0/4 — Host Unreachable</td>
+            <td>Gateway unreachable — check pfSense LAN2 interface</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-success">
+      <div class="callout-title">🔗 Project 2 Connection</div>
+      <p>Project 2 Part D requires you to submit testing evidence in exactly this format. Start practicing this documentation style now — it will save you significant time when you assemble your Project 2 deliverables.</p>
+    </div>
+  </section>
+
+  <!-- ===== §6: Troubleshooting Scenarios ===== -->
+  <section id="section-6" class="section">
+    <h2>§6 — Troubleshooting Scenario Practice</h2>
+
+    <div class="callout callout-info" style="margin-bottom:1.25rem;">
+      <div class="callout-title">📝 Ungraded Practice Scenarios</div>
+      <p>Work through these three scenarios to practice applying the structured troubleshooting methodology. For each scenario, identify the <strong>failing layer</strong>, select the <strong>appropriate diagnostic tool</strong>, and describe the <strong>expected finding</strong>. These scenarios directly mirror Quiz 8 question formats and Project 2 troubleshooting tasks. <strong>No submission required</strong> — hints and solutions are available on this page.</p>
+    </div>
+
+    <!-- Live region for screen-reader announcements -->
+    <div id="practice-live" aria-live="polite" class="sr-only"></div>
+
+    <!-- ── Scenario 1 ── -->
+    <div class="practice-problem" id="scenario-1">
+      <span class="practice-num">Scenario 1 of 3</span>
+      <h4>Server Can Ping Gateway but Cannot Resolve Hostnames</h4>
+      <div class="scenario-symptom">
+        <strong>🔍 Symptom:</strong> A Linux server (<code>10.0.2.10/24</code>, gateway <code>10.0.2.1</code>) can successfully ping <code>10.0.2.1</code> and <code>8.8.8.8</code>, but <code>ping www.google.com</code> fails with "Temporary failure in name resolution."
+      </div>
+      <div class="practice-answer-section">
+        <fieldset>
+          <legend>Your analysis — Scenario 1</legend>
+          <div class="exercise-field">
+            <label for="s1-layer">Failing layer:</label>
+            <select id="s1-layer">
+              <option value="">— Select —</option>
+              <option value="physical">Physical / Link</option>
+              <option value="network">Network (IP/routing)</option>
+              <option value="dns">Name Resolution (DNS)</option>
+              <option value="application">Application</option>
+            </select>
+          </div>
+          <div class="exercise-field">
+            <label for="s1-tool">Best diagnostic tool:</label>
+            <select id="s1-tool">
+              <option value="">— Select —</option>
+              <option value="ping">ping</option>
+              <option value="traceroute">traceroute / tracert</option>
+              <option value="iproute">ip route / route print</option>
+              <option value="ss">ss / netstat</option>
+              <option value="nslookup">nslookup / dig</option>
+              <option value="iplink">ip link show</option>
+            </select>
+          </div>
+          <div class="exercise-field">
+            <label for="s1-check">What config file to check:</label>
+            <select id="s1-check">
+              <option value="">— Select —</option>
+              <option value="resolv">/etc/resolv.conf</option>
+              <option value="netplan">Netplan YAML</option>
+              <option value="hosts">/etc/hosts</option>
+              <option value="interfaces">/etc/network/interfaces</option>
+            </select>
+          </div>
+        </fieldset>
+      </div>
+      <div class="practice-actions">
+        <button type="button" class="btn btn-sm" onclick="checkScenario1()">
+          <span aria-hidden="true">✓</span> Check Answers
+        </button>
+        <button type="button" class="btn btn-sm btn-outline practice-toggle"
+                aria-expanded="false" aria-controls="hint-s1"
+                data-show-label="Show Hint" data-hide-label="Hide Hint">
+          <span aria-hidden="true">💡</span> <span class="practice-toggle-label">Show Hint</span>
+        </button>
+        <button type="button" class="btn btn-sm practice-toggle"
+                aria-expanded="false" aria-controls="solution-s1"
+                data-show-label="Show Solution" data-hide-label="Hide Solution">
+          <span aria-hidden="true">✅</span> <span class="practice-toggle-label">Show Solution</span>
+        </button>
+      </div>
+      <div id="s1-feedback" class="feedback" role="alert" aria-atomic="true"></div>
+      <div id="hint-s1" class="practice-reveal" hidden aria-label="Hint for Scenario 1 revealed">
+        <div class="callout callout-warning">
+          <div class="callout-title">💡 Hint</div>
+          <p>The server can reach remote IPs (Step 4 passes) but cannot resolve names (Step 5 fails). This tells you the problem is specifically at the name resolution layer. Think about what Module 8.3 taught you about the DNS resolution chain and where the resolver configuration lives on Linux.</p>
+        </div>
+      </div>
+      <div id="solution-s1" class="practice-reveal" hidden aria-label="Full solution for Scenario 1 revealed">
+        <div class="callout callout-success">
+          <div class="callout-title">✅ Full Solution — Scenario 1</div>
+          <p><strong>Failing layer:</strong> Name Resolution (DNS) — Steps 1–4 pass, Step 5 fails.</p>
+          <p><strong>Best diagnostic tool:</strong> <code>nslookup</code> or <code>dig</code> — to test DNS resolution directly and see which DNS server is being queried.</p>
+          <p><strong>Config file to check:</strong> <code>/etc/resolv.conf</code> — verify the <code>nameserver</code> line points to a valid, reachable DNS server.</p>
+          <p><strong>Likely fix:</strong> Add or correct the <code>nameserver</code> entry in <code>/etc/resolv.conf</code>, or configure it persistently via Netplan's <code>nameservers</code> directive (as covered in Module 8.3).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Scenario 2 ── -->
+    <div class="practice-problem" id="scenario-2">
+      <span class="practice-num">Scenario 2 of 3</span>
+      <h4>Windows Server Cannot Reach Any Network</h4>
+      <div class="scenario-symptom">
+        <strong>🔍 Symptom:</strong> A Windows Server (<code>10.0.2.20/24</code>, gateway <code>10.0.2.1</code>) cannot ping its own gateway. Running <code>ipconfig</code> shows the IP address as <code>169.254.47.102</code> with subnet mask <code>255.255.0.0</code>.
+      </div>
+      <div class="practice-answer-section">
+        <fieldset>
+          <legend>Your analysis — Scenario 2</legend>
+          <div class="exercise-field">
+            <label for="s2-layer">Failing layer:</label>
+            <select id="s2-layer">
+              <option value="">— Select —</option>
+              <option value="physical">Physical / Link</option>
+              <option value="ipcfg">IP Configuration (DHCP failure)</option>
+              <option value="routing">Routing</option>
+              <option value="dns">Name Resolution (DNS)</option>
+            </select>
+          </div>
+          <div class="exercise-field">
+            <label for="s2-cause">Most likely cause:</label>
+            <select id="s2-cause">
+              <option value="">— Select —</option>
+              <option value="dhcp">DHCP server unreachable or not configured</option>
+              <option value="gateway">Wrong default gateway</option>
+              <option value="dns">Wrong DNS server</option>
+              <option value="firewall">Firewall blocking ICMP</option>
+            </select>
+          </div>
+          <div class="exercise-field">
+            <label for="s2-fix">Immediate fix approach:</label>
+            <select id="s2-fix">
+              <option value="">— Select —</option>
+              <option value="static">Assign a static IP manually</option>
+              <option value="restart">Restart the DNS service</option>
+              <option value="route">Add a static route</option>
+              <option value="flush">Flush the ARP cache</option>
+            </select>
+          </div>
+        </fieldset>
+      </div>
+      <div class="practice-actions">
+        <button type="button" class="btn btn-sm" onclick="checkScenario2()">
+          <span aria-hidden="true">✓</span> Check Answers
+        </button>
+        <button type="button" class="btn btn-sm btn-outline practice-toggle"
+                aria-expanded="false" aria-controls="hint-s2"
+                data-show-label="Show Hint" data-hide-label="Hide Hint">
+          <span aria-hidden="true">💡</span> <span class="practice-toggle-label">Show Hint</span>
+        </button>
+        <button type="button" class="btn btn-sm practice-toggle"
+                aria-expanded="false" aria-controls="solution-s2"
+                data-show-label="Show Solution" data-hide-label="Hide Solution">
+          <span aria-hidden="true">✅</span> <span class="practice-toggle-label">Show Solution</span>
+        </button>
+      </div>
+      <div id="s2-feedback" class="feedback" role="alert" aria-atomic="true"></div>
+      <div id="hint-s2" class="practice-reveal" hidden aria-label="Hint for Scenario 2 revealed">
+        <div class="callout callout-warning">
+          <div class="callout-title">💡 Hint</div>
+          <p>Remember from Module 8.1, §5: the <code>169.254.x.x</code> range is APIPA — an address automatically assigned when a DHCP client fails to get a response. The server was configured for DHCP but no DHCP server responded. This is a Step 2 (IP configuration) failure.</p>
+        </div>
+      </div>
+      <div id="solution-s2" class="practice-reveal" hidden aria-label="Full solution for Scenario 2 revealed">
+        <div class="callout callout-success">
+          <div class="callout-title">✅ Full Solution — Scenario 2</div>
+          <p><strong>Failing layer:</strong> IP Configuration — the <code>169.254.x.x</code> address proves the DHCP client did not receive a lease.</p>
+          <p><strong>Most likely cause:</strong> DHCP server unreachable or not configured — either no DHCP server exists on this segment, or the server VM's NIC is on the wrong virtual network.</p>
+          <p><strong>Immediate fix:</strong> Assign a static IP manually using the GUI or PowerShell (<code>New-NetIPAddress</code>), as learned in Module 8.2. Then investigate why DHCP is not working (is there a DHCP server on this segment? Is the NIC connected to the correct virtual bridge?).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Scenario 3 ── -->
+    <div class="practice-problem" id="scenario-3">
+      <span class="practice-num">Scenario 3 of 3</span>
+      <h4>SSH Connection Refused Despite Successful Ping</h4>
+      <div class="scenario-symptom">
+        <strong>🔍 Symptom:</strong> From the Management subnet, an administrator can successfully <code>ping 10.0.2.10</code> (the Linux server) and can resolve its hostname. However, <code>ssh admin@10.0.2.10</code> returns "Connection refused."
+      </div>
+      <div class="practice-answer-section">
+        <fieldset>
+          <legend>Your analysis — Scenario 3</legend>
+          <div class="exercise-field">
+            <label for="s3-step">Which troubleshooting step fails?</label>
+            <select id="s3-step">
+              <option value="">— Select —</option>
+              <option value="1">Step 1 (Link state)</option>
+              <option value="3">Step 3 (Local connectivity)</option>
+              <option value="5">Step 5 (Name resolution)</option>
+              <option value="6">Step 6 (Application layer)</option>
+            </select>
+          </div>
+          <div class="exercise-field">
+            <label for="s3-tool">Best tool to run ON the server:</label>
+            <select id="s3-tool">
+              <option value="">— Select —</option>
+              <option value="ping">ping</option>
+              <option value="traceroute">traceroute</option>
+              <option value="ss">ss -tlnp</option>
+              <option value="dig">dig</option>
+              <option value="iproute">ip route</option>
+            </select>
+          </div>
+          <div class="exercise-field">
+            <label for="s3-look">What to look for in the output:</label>
+            <select id="s3-look">
+              <option value="">— Select —</option>
+              <option value="port22">Whether port 22 is in LISTEN state</option>
+              <option value="defaultgw">Whether the default gateway exists</option>
+              <option value="dns">Whether DNS resolves correctly</option>
+              <option value="linkup">Whether the interface is UP</option>
+            </select>
+          </div>
+        </fieldset>
+      </div>
+      <div class="practice-actions">
+        <button type="button" class="btn btn-sm" onclick="checkScenario3()">
+          <span aria-hidden="true">✓</span> Check Answers
+        </button>
+        <button type="button" class="btn btn-sm btn-outline practice-toggle"
+                aria-expanded="false" aria-controls="hint-s3"
+                data-show-label="Show Hint" data-hide-label="Hide Hint">
+          <span aria-hidden="true">💡</span> <span class="practice-toggle-label">Show Hint</span>
+        </button>
+        <button type="button" class="btn btn-sm practice-toggle"
+                aria-expanded="false" aria-controls="solution-s3"
+                data-show-label="Show Solution" data-hide-label="Hide Solution">
+          <span aria-hidden="true">✅</span> <span class="practice-toggle-label">Show Solution</span>
+        </button>
+      </div>
+      <div id="s3-feedback" class="feedback" role="alert" aria-atomic="true"></div>
+      <div id="hint-s3" class="practice-reveal" hidden aria-label="Hint for Scenario 3 revealed">
+        <div class="callout callout-warning">
+          <div class="callout-title">💡 Hint</div>
+          <p>"Connection refused" is different from "Connection timed out." A <em>refusal</em> means the target host received the connection request but actively rejected it — typically because no service is listening on that port. Steps 1–5 all pass (ping and DNS work). The failure is at Step 6 (application layer).</p>
+        </div>
+      </div>
+      <div id="solution-s3" class="practice-reveal" hidden aria-label="Full solution for Scenario 3 revealed">
+        <div class="callout callout-success">
+          <div class="callout-title">✅ Full Solution — Scenario 3</div>
+          <p><strong>Failing step:</strong> Step 6 (Application layer) — all lower layers are working (ping and DNS succeed).</p>
+          <p><strong>Best tool on the server:</strong> <code>ss -tlnp</code> — check whether the SSH daemon (<code>sshd</code>) is listening on port 22.</p>
+          <p><strong>What to look for:</strong> Whether port 22 is in LISTEN state. If it is not listed, the SSH service is either not installed, not started, or configured to listen on a different port.</p>
+          <p><strong>Likely fixes:</strong></p>
+          <ul>
+            <li><code>sudo systemctl status sshd</code> — check if the service is running</li>
+            <li><code>sudo systemctl start sshd</code> — start it if stopped</li>
+            <li>Check <code>/etc/ssh/sshd_config</code> for a non-standard <code>Port</code> setting</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Summary & Next Steps ===== -->
+  <section id="section-summary" class="section">
+    <h2>Module Summary &amp; Next Steps</h2>
+
+    <h3>Key Takeaways</h3>
+    <ol>
+      <li><strong>Core diagnostic tools</strong> include <code>ping</code>, <code>traceroute</code>/<code>tracert</code>, <code>ip route</code>/<code>route print</code>, <code>ss</code>/<code>netstat</code>, and <code>arp</code> — each targeting a specific network layer.</li>
+      <li>The <strong>six-step bottom-up methodology</strong> (link → IP config → local ping → remote ping → DNS → application) systematically isolates the failing layer.</li>
+      <li><strong>"Destination Host Unreachable"</strong> usually indicates a routing or ARP problem; <strong>"Connection refused"</strong> indicates the service is not listening; <strong>"Request timed out"</strong> may indicate a firewall or unreachable host.</li>
+      <li><strong>IP addressing tables</strong> document every device, interface, and address on the network.</li>
+      <li><strong>Topology diagrams</strong> visually map the physical and logical network structure.</li>
+      <li><strong>Troubleshooting logs</strong> record each diagnostic step, expected vs. actual results, and conclusions — creating an audit trail.</li>
+    </ol>
+
+    <h3>Week 8 Recap — All Four Modules</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>Week 8 Module Summary</caption>
+        <thead>
+          <tr>
+            <th scope="col">Module</th>
+            <th scope="col">Focus</th>
+            <th scope="col">Key Skills</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>8.1</strong></td>
+            <td>IP Addressing &amp; Subnetting</td>
+            <td>IPv4/IPv6 theory, CIDR, subnet calculations</td>
+          </tr>
+          <tr>
+            <td><strong>8.2</strong></td>
+            <td>Interface Configuration</td>
+            <td>Static IP on Linux (Netplan/nmcli) &amp; Windows (GUI/PowerShell)</td>
+          </tr>
+          <tr>
+            <td><strong>8.3</strong></td>
+            <td>DNS Client Configuration</td>
+            <td>Resolver setup, nslookup/dig, hosts file</td>
+          </tr>
+          <tr>
+            <td><strong>8.4</strong></td>
+            <td>Diagnostics &amp; Troubleshooting</td>
+            <td>Diagnostic tools, bottom-up methodology, documentation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Week 8 Deliverables Reminder</h3>
+    <div class="callout callout-danger">
+      <div class="callout-title">📌 Due This Week</div>
+      <ul>
+        <li><strong>Quiz 8: Network Configuration (14 pts)</strong> — Due Sunday, March 15, 2026, 11:59 PM. Covers Modules 8.1–8.4. Available Friday–Sunday, 2 attempts.</li>
+        <li><strong>Lab 8: Network Configuration &amp; Diagnostics (EC, 30 pts)</strong> — Due Sunday, March 15, 2026, 11:59 PM. Extra credit but <em>strongly recommended</em> — the hands-on skills directly transfer to Project 2.</li>
+        <li><strong>Project 2 Specification Review</strong> — Not graded, but read the full Project 2 spec this week and begin planning your IP addressing scheme.</li>
+      </ul>
+    </div>
+
+    <h3>What's Next</h3>
+    <div class="callout callout-info">
+      <div class="callout-title">➡️ Week 9: Network Services &amp; Infrastructure</div>
+      <p>Week 9 shifts from <em>client-side</em> configuration (Week 8) to <em>server-side</em> services. You will:</p>
+      <ul>
+        <li><strong>Configure a DHCP server</strong> to automate the IP assignment process you learned in Module 8.2</li>
+        <li><strong>Build a DNS server</strong> with forward and reverse lookup zones, applying the client-side DNS knowledge from Module 8.3</li>
+        <li><strong>Deploy pfSense virtual firewall</strong> and create firewall rules — using the diagnostic tools from this module to verify rule behavior</li>
+        <li><strong>Begin hands-on Project 2 work</strong> on Parts A and B</li>
+      </ul>
+      <p>Every skill practiced in Week 8 Modules 8.1–8.4 is a direct prerequisite for Week 9 activities.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer" role="contentinfo">
+  <p>CSC 152 — Network Operating Systems and Administration · Mendocino College · Spring 2026</p>
+  <p>Instructor: David Pai · <a href="#">Course Home in Canvas</a></p>
+  <p>Module content aligned with <strong>CSLO 3:</strong> Configure systems for network connectivity, including physical and logical elements.</p>
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+(function() {
+  'use strict';
+
+  /* ===== Accordion Logic ===== */
+  document.querySelectorAll('.accordion-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      var panel = document.getElementById(this.getAttribute('aria-controls'));
+      this.setAttribute('aria-expanded', String(!expanded));
+      panel.setAttribute('aria-hidden', String(expanded));
+    });
+    btn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.click();
+      }
+    });
+  });
+
+  /* ===== Tabs Logic ===== */
+  document.querySelectorAll('.tabs-container').forEach(function(container) {
+    var tabs = Array.from(container.querySelectorAll('[role="tab"]'));
+    var panels = Array.from(container.querySelectorAll('[role="tabpanel"]'));
+
+    function activateTab(tab) {
+      tabs.forEach(function(t) {
+        t.setAttribute('aria-selected', 'false');
+        t.setAttribute('tabindex', '-1');
+      });
+      panels.forEach(function(p) { p.classList.remove('active'); });
+
+      tab.setAttribute('aria-selected', 'true');
+      tab.removeAttribute('tabindex');
+      var panel = document.getElementById(tab.getAttribute('aria-controls'));
+      if (panel) panel.classList.add('active');
+      tab.focus();
+    }
+
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() { activateTab(this); });
+      tab.addEventListener('keydown', function(e) {
+        var idx = tabs.indexOf(this);
+        var newIdx = idx;
+        if (e.key === 'ArrowRight') { newIdx = (idx + 1) % tabs.length; }
+        else if (e.key === 'ArrowLeft') { newIdx = (idx - 1 + tabs.length) % tabs.length; }
+        else if (e.key === 'Home') { newIdx = 0; }
+        else if (e.key === 'End') { newIdx = tabs.length - 1; }
+        else { return; }
+        e.preventDefault();
+        activateTab(tabs[newIdx]);
+      });
+    });
+  });
+
+  /* ===== Objectives Progress ===== */
+  var checkboxes = document.querySelectorAll('.obj-checkbox');
+  var progressFill = document.getElementById('obj-progress-fill');
+  var progressText = document.getElementById('obj-progress-text');
+  var progressBar = document.getElementById('obj-progress-bar');
+  var total = checkboxes.length;
+
+  function updateProgress() {
+    var checked = document.querySelectorAll('.obj-checkbox:checked').length;
+    var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+    progressFill.style.width = pct + '%';
+    progressBar.setAttribute('aria-valuenow', String(pct));
+    progressText.textContent = checked + ' / ' + total + ' objectives completed';
+    checkboxes.forEach(function(cb) {
+      var label = cb.nextElementSibling;
+      if (label) {
+        if (cb.checked) { label.classList.add('completed'); }
+        else { label.classList.remove('completed'); }
+      }
+    });
+    try {
+      var state = [];
+      checkboxes.forEach(function(cb) { state.push(cb.checked); });
+      sessionStorage.setItem('csc152-m84-obj', JSON.stringify(state));
+    } catch(e) { /* ignore */ }
+  }
+
+  try {
+    var saved = sessionStorage.getItem('csc152-m84-obj');
+    if (saved) {
+      var state = JSON.parse(saved);
+      checkboxes.forEach(function(cb, i) {
+        if (state[i]) cb.checked = true;
+      });
+    }
+  } catch(e) { /* ignore */ }
+
+  checkboxes.forEach(function(cb) { cb.addEventListener('change', updateProgress); });
+  updateProgress();
+
+  /* ===== Section Nav Active State ===== */
+  var navLinks = document.querySelectorAll('#section-nav a');
+  var sections = [];
+  navLinks.forEach(function(link) {
+    var target = document.querySelector(link.getAttribute('href'));
+    if (target) sections.push({ link: link, el: target });
+  });
+
+  function updateActiveNav() {
+    var scrollY = window.scrollY || window.pageYOffset;
+    var current = sections[0];
+    for (var i = 0; i < sections.length; i++) {
+      if (sections[i].el.offsetTop <= scrollY + 120) {
+        current = sections[i];
+      }
+    }
+    navLinks.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+
+  var scrollTimer;
+  window.addEventListener('scroll', function() {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(updateActiveNav, 60);
+  }, { passive: true });
+  updateActiveNav();
+
+  /* ===== Exercise: Interpret ping Output ===== */
+  window.checkPingExercise = function() {
+    var layer = document.getElementById('input-ping-layer').value;
+    var tool = document.getElementById('input-ping-tool').value;
+    var feedback = document.getElementById('feedback-ping');
+    var correct = 0;
+    var messages = [];
+
+    if (layer === '' && tool === '') {
+      feedback.className = 'feedback incorrect';
+      feedback.textContent = 'Please select at least one answer before checking.';
+      return;
+    }
+
+    if (layer === 'network') { correct++; }
+    else { messages.push('Layer: The error is "Destination Host Unreachable" and the target is on a different subnet — this is a Network (routing) layer issue.'); }
+
+    if (tool === 'route') { correct++; }
+    else { messages.push('Tool: Since the target is on a different subnet, check the routing table (ip route / route print) to verify the gateway is forwarding correctly.'); }
+
+    if (correct === 2) {
+      feedback.className = 'feedback correct';
+      feedback.textContent = '\u2713 Correct! "Destination Host Unreachable" for a remote subnet points to a routing problem. Checking the routing table is the right next step.';
+    } else {
+      feedback.className = 'feedback incorrect';
+      feedback.innerHTML = '\u2717 ' + correct + '/2 correct. Review:<br>\u2022 ' + messages.join('<br>\u2022 ');
+    }
+  };
+
+  /* ===== Scenario Answer Checkers ===== */
+  var practiceAnnouncer = document.getElementById('practice-live');
+
+  function checkSelectFields(fields, fbId) {
+    var fb = document.getElementById(fbId);
+    var correct = 0, wrongLabels = [], allBlank = true;
+    fields.forEach(function(f) {
+      var el = document.getElementById(f.id);
+      if (!el) return;
+      var val = el.value;
+      if (val !== '') allBlank = false;
+      if (val === f.answer) {
+        correct++;
+      } else {
+        wrongLabels.push(f.label);
+      }
+    });
+    if (allBlank) {
+      fb.className = 'feedback incorrect';
+      fb.textContent = 'Please select at least one answer before checking.';
+      return;
+    }
+    var t = fields.length;
+    if (correct === t) {
+      fb.className = 'feedback correct';
+      fb.textContent = '\u2713 All ' + t + '/' + t + ' correct!';
+    } else {
+      fb.className = 'feedback incorrect';
+      fb.textContent = '\u2717 ' + correct + '/' + t + ' correct. Review: ' + wrongLabels.join(', ') + '.';
+    }
+    if (practiceAnnouncer) {
+      practiceAnnouncer.textContent = '';
+      setTimeout(function() { practiceAnnouncer.textContent = fb.textContent; }, 50);
+    }
+  }
+
+  window.checkScenario1 = function() {
+    checkSelectFields([
+      { id: 's1-layer', answer: 'dns',       label: 'Failing layer (DNS)' },
+      { id: 's1-tool',  answer: 'nslookup',  label: 'Diagnostic tool (nslookup/dig)' },
+      { id: 's1-check', answer: 'resolv',    label: 'Config file (/etc/resolv.conf)' }
+    ], 's1-feedback');
+  };
+
+  window.checkScenario2 = function() {
+    checkSelectFields([
+      { id: 's2-layer', answer: 'ipcfg',  label: 'Failing layer (IP Configuration)' },
+      { id: 's2-cause', answer: 'dhcp',   label: 'Cause (DHCP unreachable)' },
+      { id: 's2-fix',   answer: 'static', label: 'Fix (Assign static IP)' }
+    ], 's2-feedback');
+  };
+
+  window.checkScenario3 = function() {
+    checkSelectFields([
+      { id: 's3-step', answer: '6',      label: 'Failing step (Step 6 — Application)' },
+      { id: 's3-tool', answer: 'ss',     label: 'Tool (ss -tlnp)' },
+      { id: 's3-look', answer: 'port22', label: 'What to look for (port 22 LISTEN)' }
+    ], 's3-feedback');
+  };
+
+  /* ===== Practice Problem Toggles ===== */
+  document.querySelectorAll('.practice-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var targetId = this.getAttribute('aria-controls');
+      var target = document.getElementById(targetId);
+      if (!target) return;
+      var isExpanded = this.getAttribute('aria-expanded') === 'true';
+      var labelSpan = this.querySelector('.practice-toggle-label');
+
+      if (isExpanded) {
+        target.hidden = true;
+        this.setAttribute('aria-expanded', 'false');
+        if (labelSpan) labelSpan.textContent = this.getAttribute('data-show-label');
+      } else {
+        target.hidden = false;
+        this.setAttribute('aria-expanded', 'true');
+        if (labelSpan) labelSpan.textContent = this.getAttribute('data-hide-label');
+        if (practiceAnnouncer) {
+          var announcement = target.getAttribute('aria-label') || 'Content revealed.';
+          practiceAnnouncer.textContent = '';
+          setTimeout(function() {
+            practiceAnnouncer.textContent = announcement;
+          }, 50);
+        }
+        setTimeout(function() {
+          if (target.getBoundingClientRect().bottom > window.innerHeight) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 80);
+      }
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
