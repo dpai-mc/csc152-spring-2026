@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 8.2: Network Interface Configuration — CSC 152</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.65;
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+/* ===== Skip Link ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0.5rem;
+  background: #0d47a1;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  z-index: 1000;
+  border-radius: 0 0 4px 4px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus { top: 0; }
+
+/* ===== Header ===== */
+header[role="banner"] {
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%);
+  color: #fff;
+  padding: 1.25rem 1.5rem;
+}
+header .course-tag {
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.88;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+header h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+header .subtitle {
+  font-size: 0.92rem;
+  opacity: 0.92;
+  margin-top: 0.2rem;
+}
+
+/* ===== Sticky Nav ===== */
+nav[aria-label="Module section navigation"] {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  background: #e3f2fd;
+  border-bottom: 2px solid #90caf9;
+  padding: 0.35rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+nav .nav-label {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #0d47a1;
+  margin-right: 0.35rem;
+  white-space: nowrap;
+}
+nav a {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0d47a1;
+  text-decoration: none;
+  padding: 0.2rem 0.55rem;
+  border-radius: 3px;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+nav a:hover,
+nav a:focus-visible {
+  background: #0d47a1;
+  color: #fff;
+  outline: none;
+}
+nav a .nav-hint {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 400;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 910;
+}
+nav a:hover .nav-hint,
+nav a:focus-visible .nav-hint { display: block; }
+nav .nav-sep {
+  color: #90caf9;
+  font-size: 0.7rem;
+  user-select: none;
+}
+nav .back-to-top {
+  margin-left: auto;
+  font-size: 0.75rem;
+}
+
+/* ===== Main Content ===== */
+main {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+/* ===== Section Headings ===== */
+main h2 {
+  font-size: 1.3rem;
+  color: #0d47a1;
+  border-bottom: 2px solid #90caf9;
+  padding-bottom: 0.3rem;
+  margin: 2.25rem 0 1rem;
+}
+main h3 {
+  font-size: 1.08rem;
+  color: #1565c0;
+  margin: 1.5rem 0 0.6rem;
+}
+main h4 {
+  font-size: 0.97rem;
+  color: #1a1a1a;
+  font-weight: 700;
+  margin: 1.2rem 0 0.4rem;
+}
+
+/* ===== Prose ===== */
+main p { margin: 0.6rem 0; }
+main ul, main ol { margin: 0.5rem 0 0.5rem 1.6rem; }
+main li { margin: 0.25rem 0; }
+main strong { color: #0d47a1; }
+
+/* ===== Info / Tip / Warning Boxes ===== */
+.info-box, .tip-box, .warning-box, .project-box {
+  border-left: 4px solid;
+  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.93rem;
+}
+.info-box    { background: #e3f2fd; border-color: #1565c0; }
+.tip-box     { background: #e8f5e9; border-color: #2e7d32; }
+.warning-box { background: #fff3e0; border-color: #e65100; }
+.project-box { background: #f3e5f5; border-color: #7b1fa2; }
+.info-box .box-label,
+.tip-box .box-label,
+.warning-box .box-label,
+.project-box .box-label {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+.info-box .box-label    { color: #0d47a1; }
+.tip-box .box-label     { color: #2e7d32; }
+.warning-box .box-label { color: #bf360c; }
+.project-box .box-label { color: #6a1b9a; }
+
+/* ===== Code Blocks ===== */
+pre {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  white-space: pre;
+}
+pre code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  color: #1a1a1a;
+  background: transparent;
+  padding: 0;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.88em;
+  background: #f5f5f5;
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  color: #c62828;
+}
+pre code { color: #1a1a1a; }
+
+/* ===== Tables ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+}
+th {
+  background: #e3f2fd;
+  font-weight: 700;
+  color: #0d47a1;
+}
+tr:nth-child(even) { background: #fafafa; }
+
+/* ===== Accordion ===== */
+.accordion { margin: 0.85rem 0; border: 1px solid #e0e0e0; border-radius: 4px; }
+.accordion-toggle {
+  width: 100%;
+  background: #f5f5f5;
+  border: none;
+  padding: 0.7rem 1rem;
+  font-size: 0.93rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #1a1a1a;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.accordion-toggle:hover,
+.accordion-toggle:focus-visible { background: #e3f2fd; }
+.accordion-toggle:focus-visible { outline: 2px solid #0d47a1; outline-offset: -2px; }
+.accordion-toggle::after {
+  content: "▸";
+  font-size: 0.95rem;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+.accordion-toggle[aria-expanded="true"]::after { transform: rotate(90deg); }
+.accordion-panel {
+  display: none;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+.accordion-panel.open { display: block; }
+
+/* ===== Self-Check (inline quiz) ===== */
+.self-check {
+  background: #fffde7;
+  border: 1px solid #f9a825;
+  border-radius: 4px;
+  padding: 1rem;
+  margin: 1.25rem 0;
+}
+.self-check .sc-label {
+  font-weight: 700;
+  color: #f57f17;
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.self-check fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+.self-check legend {
+  font-weight: 600;
+  font-size: 0.93rem;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+}
+.self-check label {
+  display: block;
+  padding: 0.3rem 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.self-check input[type="radio"] { margin-right: 0.45rem; }
+.self-check .sc-btn {
+  margin-top: 0.6rem;
+  padding: 0.4rem 1.1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: #f9a825;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.self-check .sc-btn:hover,
+.self-check .sc-btn:focus-visible { background: #f57f17; color: #fff; }
+.self-check .sc-btn:focus-visible { outline: 2px solid #1a1a1a; outline-offset: 2px; }
+.self-check .sc-feedback {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-height: 1.4em;
+}
+.sc-correct { color: #2e7d32; }
+.sc-incorrect { color: #c62828; }
+
+/* ===== Objectives List ===== */
+.objectives-list {
+  background: #e8f5e9;
+  border-left: 4px solid #2e7d32;
+  border-radius: 4px;
+  padding: 0.85rem 1rem 0.85rem 1.25rem;
+  margin: 1rem 0;
+}
+.objectives-list .obj-label {
+  font-weight: 700;
+  color: #2e7d32;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+.objectives-list ol { margin-left: 1.2rem; }
+.objectives-list li { margin: 0.3rem 0; font-size: 0.93rem; }
+
+/* ===== Comparison Layout ===== */
+.os-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+@media (max-width: 640px) {
+  .os-compare { grid-template-columns: 1fr; }
+}
+.os-compare .os-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.os-card .os-card-header {
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+}
+.os-card.linux .os-card-header { background: #e65100; }
+.os-card.windows .os-card-header { background: #1565c0; }
+.os-card .os-card-body { padding: 0.75rem; font-size: 0.9rem; }
+
+/* ===== Footer ===== */
+footer[role="contentinfo"] {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #666;
+  padding: 1.5rem 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* ===== Focus Visible Global ===== */
+:focus-visible {
+  outline: 2px solid #0d47a1;
+  outline-offset: 2px;
+}
+a:focus-visible { outline-offset: 1px; }
+
+/* ===== Print ===== */
+@media print {
+  nav, .skip-link { display: none; }
+  main { max-width: 100%; }
+  .accordion-panel { display: block !important; }
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- ===== HEADER ===== -->
+<header role="banner">
+  <span class="course-tag">CSC 152 — Week 8</span>
+  <h1>Module 8.2: Network Interface Configuration</h1>
+  <span class="subtitle">Static &amp; DHCP Configuration on Linux and Windows Server</span>
+</header>
+
+<!-- ===== STICKY NAV ===== -->
+<nav aria-label="Module section navigation">
+  <span class="nav-label">Module 8.2</span>
+  <span class="nav-sep">|</span>
+  <a href="#section-objectives">
+    §0
+    <span class="nav-hint" role="tooltip">Objectives</span>
+  </a>
+  <a href="#section-1">
+    §1
+    <span class="nav-hint" role="tooltip">Interface Naming</span>
+  </a>
+  <a href="#section-2">
+    §2
+    <span class="nav-hint" role="tooltip">Viewing Config</span>
+  </a>
+  <a href="#section-3">
+    §3
+    <span class="nav-hint" role="tooltip">Linux Static IP</span>
+  </a>
+  <a href="#section-4">
+    §4
+    <span class="nav-hint" role="tooltip">Windows Static IP</span>
+  </a>
+  <a href="#section-5">
+    §5
+    <span class="nav-hint" role="tooltip">DHCP Client</span>
+  </a>
+  <a href="#section-6">
+    §6
+    <span class="nav-hint" role="tooltip">Default Gateway</span>
+  </a>
+  <a href="#section-7">
+    §7
+    <span class="nav-hint" role="tooltip">Persistent vs. Runtime</span>
+  </a>
+  <a href="#section-8">
+    §8
+    <span class="nav-hint" role="tooltip">Guided Practice</span>
+  </a>
+  <a href="#section-9">
+    §9
+    <span class="nav-hint" role="tooltip">Summary</span>
+  </a>
+  <span class="nav-sep">|</span>
+  <a class="back-to-top" href="#main-content">
+    ↑ Top
+  </a>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main id="main-content" role="main">
+
+  <!-- ==================== §0 OBJECTIVES ==================== -->
+  <section id="section-objectives" aria-labelledby="heading-objectives">
+    <h2 id="heading-objectives">§0 — Learning Objectives</h2>
+    <div class="objectives-list">
+      <span class="obj-label">After completing Module 8.2, you will be able to:</span>
+      <ol>
+        <li>Identify Linux network interface naming conventions (traditional and predictable).</li>
+        <li>View current interface configuration using <code>ip addr</code>, <code>ip link</code>, and <code>ipconfig /all</code>.</li>
+        <li>Configure a static IPv4 address on Linux using Netplan and <code>nmcli</code>.</li>
+        <li>Configure a static IPv4 address on Windows Server using the GUI and PowerShell.</li>
+        <li>Configure DHCP client mode on both Linux and Windows Server.</li>
+        <li>Explain the role of the default gateway in routing traffic beyond the local subnet.</li>
+        <li>Distinguish between persistent (on-disk) and runtime (non-persistent) configuration changes.</li>
+        <li>Verify interface configuration and test basic connectivity with <code>ping</code>.</li>
+      </ol>
+    </div>
+
+    <div class="info-box">
+      <span class="box-label">ℹ️ Prerequisites</span>
+      This module assumes you have completed <strong>Module 8.1: IP Addressing &amp; Subnetting Foundations</strong>. You should be comfortable with IPv4 address structure, subnet masks, CIDR notation, and calculating network IDs and usable host ranges. You will apply those concepts directly when assigning addresses in this module.
+    </div>
+
+    <div class="project-box">
+      <span class="box-label">🔗 Project 2 Connection</span>
+      Project 2 Part A requires deploying pfSense with multiple network interfaces, each on a different subnet. The static IP configuration skills you learn here are exactly what you will use to connect your server VMs to those pfSense-managed segments. Master these skills now and Project 2 becomes significantly easier.
+    </div>
+
+    <p><strong>Estimated self-study time:</strong> 1.5 hours (readings ≈ 30–45 min; guided practice ≈ 45–60 min).</p>
+
+    <p><strong>CSLO Alignment:</strong> CSLO 3 — Configure systems for network connectivity, including physical and logical elements.</p>
+  </section>
+
+  <!-- ==================== §1 INTERFACE NAMING ==================== -->
+  <section id="section-1" aria-labelledby="heading-1">
+    <h2 id="heading-1">§1 — Linux Network Interface Naming Conventions</h2>
+
+    <p>Before you can configure a network interface, you need to know its <em>name</em>. Linux has used two different naming schemes over the years, and you will encounter both in documentation and in the field.</p>
+
+    <h3>1.1 Traditional Naming (<code>eth0</code>, <code>eth1</code>, …)</h3>
+    <p>Older Linux kernels assigned interface names sequentially based on detection order: <code>eth0</code> for the first Ethernet NIC, <code>eth1</code> for the second, and so on. This scheme is simple but has a critical flaw: if hardware changes or the kernel detects devices in a different order after a reboot, interface names can swap unpredictably.</p>
+
+    <h3>1.2 Predictable Interface Names</h3>
+    <p>Modern Linux distributions (including Ubuntu Server 20.04+ and Rocky Linux 8+) use <strong>systemd predictable network interface names</strong>. These names encode information about the hardware location, making them stable across reboots.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Prefix</th>
+          <th scope="col">Meaning</th>
+          <th scope="col">Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>en</code></td>
+          <td>Ethernet</td>
+          <td><code>ens18</code>, <code>enp0s3</code></td>
+        </tr>
+        <tr>
+          <td><code>wl</code></td>
+          <td>Wireless LAN</td>
+          <td><code>wlp2s0</code></td>
+        </tr>
+        <tr>
+          <td><code>lo</code></td>
+          <td>Loopback</td>
+          <td><code>lo</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>The characters after the prefix indicate the bus type and slot number. For example:</p>
+    <ul>
+      <li><code>ens18</code> — Ethernet, hotplug slot 18 (common on Proxmox/KVM virtual machines)</li>
+      <li><code>enp0s3</code> — Ethernet, PCI bus 0, slot 3 (common on VirtualBox)</li>
+    </ul>
+
+    <div class="tip-box">
+      <span class="box-label">💡 Lab Tip</span>
+      In our Proxmox lab environment, your Linux VMs will most likely show <code>ens18</code> as the primary interface. Always verify the actual name on your system before editing configuration files — never assume it is <code>eth0</code>.
+    </div>
+
+    <h3>1.3 Windows Interface Names</h3>
+    <p>Windows Server uses friendly names like <strong>"Ethernet"</strong>, <strong>"Ethernet 2"</strong>, or names assigned by the administrator. You can view and rename interfaces in <strong>Network and Sharing Center → Change adapter settings</strong> or with PowerShell:</p>
+    <pre><code>Get-NetAdapter</code></pre>
+    <p>This cmdlet lists all network adapters with their names, status, and link speed.</p>
+
+    <!-- Self-check 1 -->
+    <div class="self-check" id="sc1">
+      <span class="sc-label">✏️ Self-Check 1</span>
+      <fieldset>
+        <legend>A Linux VM in Proxmox shows an interface named <code>ens18</code>. What does the <code>en</code> prefix indicate?</legend>
+        <label><input type="radio" name="sc1" value="a"> A wireless interface</label>
+        <label><input type="radio" name="sc1" value="b"> An Ethernet interface</label>
+        <label><input type="radio" name="sc1" value="c"> An encrypted tunnel interface</label>
+        <label><input type="radio" name="sc1" value="d"> A loopback interface</label>
+      </fieldset>
+      <button class="sc-btn" onclick="checkAnswer('sc1','b','Correct! The &quot;en&quot; prefix stands for Ethernet in the predictable naming scheme.','Not quite. The &quot;en&quot; prefix stands for Ethernet. Wireless uses &quot;wl&quot; and loopback is &quot;lo&quot;.')">Check Answer</button>
+      <div class="sc-feedback" id="sc1-fb" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ==================== §2 VIEWING CONFIGURATION ==================== -->
+  <section id="section-2" aria-labelledby="heading-2">
+    <h2 id="heading-2">§2 — Viewing Current Interface Configuration</h2>
+
+    <p>Before making changes, always inspect the current state. This is your "before" snapshot — essential for troubleshooting if something goes wrong.</p>
+
+    <div class="os-compare">
+      <div class="os-card linux">
+        <div class="os-card-header">🐧 Linux</div>
+        <div class="os-card-body">
+          <p><strong>Show IP addresses on all interfaces:</strong></p>
+          <pre><code>ip addr show</code></pre>
+          <p><strong>Show link status (up/down, MAC address):</strong></p>
+          <pre><code>ip link show</code></pre>
+          <p><strong>Show only a specific interface:</strong></p>
+          <pre><code>ip addr show ens18</code></pre>
+          <p>Key fields in the output:</p>
+          <ul>
+            <li><code>state UP</code> / <code>state DOWN</code> — link status</li>
+            <li><code>inet 10.0.1.10/24</code> — IPv4 address with CIDR prefix</li>
+            <li><code>link/ether</code> — MAC address</li>
+          </ul>
+        </div>
+      </div>
+      <div class="os-card windows">
+        <div class="os-card-header">🪟 Windows Server</div>
+        <div class="os-card-body">
+          <p><strong>Show all interface details:</strong></p>
+          <pre><code>ipconfig /all</code></pre>
+          <p><strong>PowerShell — list adapters:</strong></p>
+          <pre><code>Get-NetAdapter</code></pre>
+          <p><strong>PowerShell — show IP configuration:</strong></p>
+          <pre><code>Get-NetIPAddress -InterfaceAlias "Ethernet"</code></pre>
+          <p>Key fields in <code>ipconfig /all</code> output:</p>
+          <ul>
+            <li><strong>IPv4 Address</strong> — current IP</li>
+            <li><strong>Subnet Mask</strong> — e.g., 255.255.255.0</li>
+            <li><strong>Default Gateway</strong> — router address</li>
+            <li><strong>DHCP Enabled</strong> — Yes or No</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <span class="box-label">⚠️ Deprecated Command</span>
+      You may see <code>ifconfig</code> in older documentation. On modern Linux distributions, <code>ifconfig</code> is deprecated and often not installed by default. Always use the <code>ip</code> command suite instead (<code>ip addr</code>, <code>ip link</code>, <code>ip route</code>).
+    </div>
+
+    <div class="accordion">
+      <button class="accordion-toggle" aria-expanded="false" aria-controls="panel-ip-output" id="toggle-ip-output">
+        Example: Reading <code>ip addr show</code> output
+      </button>
+      <div class="accordion-panel" id="panel-ip-output" role="region" aria-labelledby="toggle-ip-output">
+        <pre><code>2: ens18: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether bc:24:11:ab:cd:ef brd ff:ff:ff:ff:ff:ff
+    inet 10.0.1.10/24 brd 10.0.1.255 scope global ens18
+       valid_lft forever preferred_lft forever
+    inet6 fe80::be24:11ff:feab:cdef/64 scope link
+       valid_lft forever preferred_lft forever</code></pre>
+        <p>Breaking this down:</p>
+        <ul>
+          <li><code>ens18</code> — interface name (Ethernet, slot 18)</li>
+          <li><code>state UP</code> — the link is active</li>
+          <li><code>link/ether bc:24:11:ab:cd:ef</code> — MAC address</li>
+          <li><code>inet 10.0.1.10/24</code> — IPv4 address is 10.0.1.10 with a /24 subnet mask (255.255.255.0)</li>
+          <li><code>brd 10.0.1.255</code> — broadcast address for this subnet</li>
+          <li><code>inet6 fe80::…</code> — auto-configured IPv6 link-local address (recall from Module 8.1)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== §3 LINUX STATIC IP ==================== -->
+  <section id="section-3" aria-labelledby="heading-3">
+    <h2 id="heading-3">§3 — Configuring Static IP Addresses on Linux</h2>
+
+    <p>Linux offers multiple tools for network configuration depending on the distribution and the network management stack in use. We will cover the two most common approaches you will encounter in this course.</p>
+
+    <h3>3.1 Netplan (Ubuntu Server)</h3>
+    <p><strong>Netplan</strong> is the default network configuration tool on Ubuntu Server 18.04 and later. It uses YAML files stored in <code>/etc/netplan/</code> and renders the configuration to either <code>systemd-networkd</code> or <code>NetworkManager</code> as a backend.</p>
+
+    <h4>Step-by-Step: Assign a Static IP with Netplan</h4>
+
+    <p><strong>Step 1:</strong> Identify the Netplan configuration file.</p>
+    <pre><code>ls /etc/netplan/</code></pre>
+    <p>You will typically see a file like <code>00-installer-config.yaml</code> or <code>50-cloud-init.yaml</code>.</p>
+
+    <p><strong>Step 2:</strong> Open the file with elevated privileges.</p>
+    <pre><code>sudo nano /etc/netplan/00-installer-config.yaml</code></pre>
+
+    <div class="warning-box">
+      <span class="box-label">⚠️ File Permissions Reminder</span>
+      Netplan YAML files in <code>/etc/netplan/</code> are owned by <code>root</code> and require <code>sudo</code> to edit. This directly applies the privilege escalation concepts from Week 6.
+    </div>
+
+    <p><strong>Step 3:</strong> Edit the file to set a static IP. Here is an example configuration:</p>
+    <pre><code>network:
+  version: 2
+  ethernets:
+    ens18:
+      addresses:
+        - 10.0.1.10/24
+      routes:
+        - to: default
+          via: 10.0.1.1
+      nameservers:
+        addresses:
+          - 10.0.1.1
+          - 8.8.8.8</code></pre>
+
+    <div class="tip-box">
+      <span class="box-label">💡 YAML Syntax Matters</span>
+      YAML is whitespace-sensitive. Use <strong>spaces only</strong> (no tabs) and maintain consistent indentation (2 spaces per level is standard). A single tab character or misaligned key will cause Netplan to reject the file.
+    </div>
+
+    <p><strong>Step 4:</strong> Apply the configuration.</p>
+    <pre><code>sudo netplan apply</code></pre>
+
+    <p><strong>Step 5:</strong> Verify the new configuration.</p>
+    <pre><code>ip addr show ens18</code></pre>
+
+    <div class="accordion">
+      <button class="accordion-toggle" aria-expanded="false" aria-controls="panel-netplan-keys" id="toggle-netplan-keys">
+        Netplan YAML Key Reference
+      </button>
+      <div class="accordion-panel" id="panel-netplan-keys" role="region" aria-labelledby="toggle-netplan-keys">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Key</th>
+              <th scope="col">Purpose</th>
+              <th scope="col">Example Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>addresses</code></td>
+              <td>Static IP(s) in CIDR notation</td>
+              <td><code>- 10.0.1.10/24</code></td>
+            </tr>
+            <tr>
+              <td><code>routes</code></td>
+              <td>Routing entries (default gateway)</td>
+              <td><code>- to: default</code> / <code>via: 10.0.1.1</code></td>
+            </tr>
+            <tr>
+              <td><code>nameservers</code></td>
+              <td>DNS server addresses</td>
+              <td><code>addresses: [10.0.1.1, 8.8.8.8]</code></td>
+            </tr>
+            <tr>
+              <td><code>dhcp4</code></td>
+              <td>Enable/disable DHCPv4</td>
+              <td><code>true</code> or <code>false</code></td>
+            </tr>
+            <tr>
+              <td><code>dhcp6</code></td>
+              <td>Enable/disable DHCPv6</td>
+              <td><code>true</code> or <code>false</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>3.2 nmcli (Rocky Linux / NetworkManager-based Systems)</h3>
+    <p><strong>nmcli</strong> (NetworkManager Command-Line Interface) is the primary configuration tool on distributions that use NetworkManager, including Rocky Linux, AlmaLinux, and Fedora Server.</p>
+
+    <h4>Step-by-Step: Assign a Static IP with nmcli</h4>
+
+    <p><strong>Step 1:</strong> Identify the connection name.</p>
+    <pre><code>nmcli connection show</code></pre>
+    <p>Note the <code>NAME</code> column — it might be something like <code>"Wired connection 1"</code> or <code>ens18</code>.</p>
+
+    <p><strong>Step 2:</strong> Set the IP address, gateway, and DNS.</p>
+    <pre><code>sudo nmcli connection modify "ens18" \
+  ipv4.addresses 10.0.1.10/24 \
+  ipv4.gateway 10.0.1.1 \
+  ipv4.dns "10.0.1.1 8.8.8.8" \
+  ipv4.method manual</code></pre>
+
+    <p><strong>Step 3:</strong> Activate the changes.</p>
+    <pre><code>sudo nmcli connection up "ens18"</code></pre>
+
+    <p><strong>Step 4:</strong> Verify.</p>
+    <pre><code>ip addr show ens18</code></pre>
+
+    <div class="info-box">
+      <span class="box-label">ℹ️ Netplan vs. nmcli</span>
+      Both tools accomplish the same goal — persistent static IP configuration. The choice depends on your distribution:
+      <ul>
+        <li><strong>Ubuntu Server</strong> → Netplan (renders to systemd-networkd)</li>
+        <li><strong>Rocky Linux / RHEL</strong> → nmcli (NetworkManager)</li>
+      </ul>
+      In our course labs, you will primarily use <strong>Netplan</strong> on Ubuntu Server VMs. Knowing <code>nmcli</code> prepares you for RHEL-family systems you will encounter in the workplace.
+    </div>
+
+    <!-- Self-check 2 -->
+    <div class="self-check" id="sc2">
+      <span class="sc-label">✏️ Self-Check 2</span>
+      <fieldset>
+        <legend>After editing a Netplan YAML file on Ubuntu Server, which command applies the new configuration?</legend>
+        <label><input type="radio" name="sc2" value="a"> <code>sudo systemctl restart networking</code></label>
+        <label><input type="radio" name="sc2" value="b"> <code>sudo netplan apply</code></label>
+        <label><input type="radio" name="sc2" value="c"> <code>sudo nmcli connection up ens18</code></label>
+        <label><input type="radio" name="sc2" value="d"> <code>sudo ifup ens18</code></label>
+      </fieldset>
+      <button class="sc-btn" onclick="checkAnswer('sc2','b','Correct! On Ubuntu Server, &lt;code&gt;sudo netplan apply&lt;/code&gt; reads the YAML files and applies the configuration.','Not quite. On Ubuntu Server with Netplan, use &lt;code&gt;sudo netplan apply&lt;/code&gt;. The &lt;code&gt;nmcli&lt;/code&gt; command is for NetworkManager-based systems like Rocky Linux.')">Check Answer</button>
+      <div class="sc-feedback" id="sc2-fb" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ==================== §4 WINDOWS STATIC IP ==================== -->
+  <section id="section-4" aria-labelledby="heading-4">
+    <h2 id="heading-4">§4 — Configuring Static IP Addresses on Windows Server</h2>
+
+    <p>Windows Server provides both a graphical interface and PowerShell for network configuration. As a server administrator, you should be comfortable with both approaches.</p>
+
+    <h3>4.1 GUI Method (Network and Sharing Center)</h3>
+    <ol>
+      <li>Open <strong>Server Manager → Local Server</strong> and click the link next to <strong>Ethernet</strong> (or open <strong>Control Panel → Network and Sharing Center</strong>).</li>
+      <li>Click <strong>Change adapter settings</strong> in the left pane.</li>
+      <li>Right-click the target adapter (e.g., <strong>Ethernet</strong>) → <strong>Properties</strong>.</li>
+      <li>Select <strong>Internet Protocol Version 4 (TCP/IPv4)</strong> → click <strong>Properties</strong>.</li>
+      <li>Select <strong>"Use the following IP address"</strong> and enter:
+        <ul>
+          <li><strong>IP address:</strong> 10.0.1.20</li>
+          <li><strong>Subnet mask:</strong> 255.255.255.0</li>
+          <li><strong>Default gateway:</strong> 10.0.1.1</li>
+        </ul>
+      </li>
+      <li>Under <strong>"Use the following DNS server addresses"</strong>, enter:
+        <ul>
+          <li><strong>Preferred DNS server:</strong> 10.0.1.1</li>
+          <li><strong>Alternate DNS server:</strong> 8.8.8.8</li>
+        </ul>
+      </li>
+      <li>Click <strong>OK</strong> → <strong>Close</strong>.</li>
+    </ol>
+
+    <div class="tip-box">
+      <span class="box-label">💡 When to Use the GUI</span>
+      The GUI is useful for one-time configuration on a single server. For configuring multiple servers or for repeatable, scriptable deployments, PowerShell is strongly preferred — especially in Project 2 where you will document your configuration steps.
+    </div>
+
+    <h3>4.2 PowerShell Method</h3>
+    <p>PowerShell provides cmdlets that accomplish the same configuration programmatically. Run PowerShell <strong>as Administrator</strong>.</p>
+
+    <h4>Step 1: Identify the interface index.</h4>
+    <pre><code>Get-NetAdapter</code></pre>
+    <p>Note the <code>ifIndex</code> value for your target adapter (e.g., <code>6</code>).</p>
+
+    <h4>Step 2: Remove any existing IP configuration (if needed).</h4>
+    <pre><code>Remove-NetIPAddress -InterfaceIndex 6 -Confirm:$false
+Remove-NetRoute -InterfaceIndex 6 -Confirm:$false</code></pre>
+
+    <h4>Step 3: Assign the static IP address and default gateway.</h4>
+    <pre><code>New-NetIPAddress `
+  -InterfaceIndex 6 `
+  -IPAddress 10.0.1.20 `
+  -PrefixLength 24 `
+  -DefaultGateway 10.0.1.1</code></pre>
+
+    <h4>Step 4: Set the DNS client server addresses.</h4>
+    <pre><code>Set-DnsClientServerAddress `
+  -InterfaceIndex 6 `
+  -ServerAddresses ("10.0.1.1","8.8.8.8")</code></pre>
+
+    <h4>Step 5: Verify the configuration.</h4>
+    <pre><code>ipconfig /all</code></pre>
+    <p>Or in PowerShell:</p>
+    <pre><code>Get-NetIPConfiguration -InterfaceIndex 6</code></pre>
+
+    <div class="accordion">
+      <button class="accordion-toggle" aria-expanded="false" aria-controls="panel-ps-params" id="toggle-ps-params">
+        PowerShell Parameter Reference
+      </button>
+      <div class="accordion-panel" id="panel-ps-params" role="region" aria-labelledby="toggle-ps-params">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Cmdlet</th>
+              <th scope="col">Key Parameters</th>
+              <th scope="col">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>New-NetIPAddress</code></td>
+              <td><code>-InterfaceIndex</code>, <code>-IPAddress</code>, <code>-PrefixLength</code>, <code>-DefaultGateway</code></td>
+              <td>Assigns a static IP and gateway</td>
+            </tr>
+            <tr>
+              <td><code>Set-DnsClientServerAddress</code></td>
+              <td><code>-InterfaceIndex</code>, <code>-ServerAddresses</code></td>
+              <td>Sets preferred and alternate DNS servers</td>
+            </tr>
+            <tr>
+              <td><code>Get-NetIPConfiguration</code></td>
+              <td><code>-InterfaceIndex</code></td>
+              <td>Displays IP, gateway, and DNS for an interface</td>
+            </tr>
+            <tr>
+              <td><code>Get-NetAdapter</code></td>
+              <td>(none required)</td>
+              <td>Lists all adapters with name, status, index</td>
+            </tr>
+          </tbody>
+        </table>
+        <p><strong>Note:</strong> Use <code>-PrefixLength 24</code> instead of a subnet mask. This is the CIDR prefix length from Module 8.1 — PowerShell uses it natively.</p>
+      </div>
+    </div>
+
+    <!-- Self-check 3 -->
+    <div class="self-check" id="sc3">
+      <span class="sc-label">✏️ Self-Check 3</span>
+      <fieldset>
+        <legend>Which PowerShell cmdlet sets the DNS server addresses on a Windows Server interface?</legend>
+        <label><input type="radio" name="sc3" value="a"> <code>New-NetIPAddress</code></label>
+        <label><input type="radio" name="sc3" value="b"> <code>Set-NetAdapter</code></label>
+        <label><input type="radio" name="sc3" value="c"> <code>Set-DnsClientServerAddress</code></label>
+        <label><input type="radio" name="sc3" value="d"> <code>Resolve-DnsName</code></label>
+      </fieldset>
+      <button class="sc-btn" onclick="checkAnswer('sc3','c','Correct! &lt;code&gt;Set-DnsClientServerAddress&lt;/code&gt; configures the DNS servers for a given interface.','Not quite. &lt;code&gt;New-NetIPAddress&lt;/code&gt; sets the IP/gateway, and &lt;code&gt;Resolve-DnsName&lt;/code&gt; is a query tool. The correct cmdlet is &lt;code&gt;Set-DnsClientServerAddress&lt;/code&gt;.')">Check Answer</button>
+      <div class="sc-feedback" id="sc3-fb" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ==================== §5 DHCP CLIENT ==================== -->
+  <section id="section-5" aria-labelledby="heading-5">
+    <h2 id="heading-5">§5 — Configuring DHCP Client Mode</h2>
+
+    <p>Not every system needs a static IP. Client workstations and some non-critical servers use <strong>DHCP</strong> (Dynamic Host Configuration Protocol) to obtain an IP address, subnet mask, default gateway, and DNS servers automatically from a DHCP server. Recall from Module 8.1 that DHCP uses a four-step process: <strong>Discover → Offer → Request → Acknowledge (DORA)</strong>.</p>
+
+    <div class="info-box">
+      <span class="box-label">ℹ️ When to Use Static vs. DHCP</span>
+      <ul>
+        <li><strong>Static IP</strong> — Servers, routers, printers, and any device that other systems need to find at a consistent address.</li>
+        <li><strong>DHCP</strong> — Client workstations, laptops, and devices that do not host services accessed by name or IP.</li>
+      </ul>
+      In Project 2, your <strong>server VMs</strong> will use static IPs, while the <strong>client subnet</strong> will be served by a DHCP server (configured in Week 9).
+    </div>
+
+    <div class="os-compare">
+      <div class="os-card linux">
+        <div class="os-card-header">🐧 Linux — DHCP Client</div>
+        <div class="os-card-body">
+          <p><strong>Netplan (Ubuntu Server):</strong></p>
+          <pre><code>network:
+  version: 2
+  ethernets:
+    ens18:
+      dhcp4: true</code></pre>
+          <p>Then apply:</p>
+          <pre><code>sudo netplan apply</code></pre>
+          <p><strong>nmcli (Rocky Linux):</strong></p>
+          <pre><code>sudo nmcli connection modify "ens18" \
+  ipv4.method auto
+sudo nmcli connection up "ens18"</code></pre>
+          <p>Setting <code>ipv4.method auto</code> tells NetworkManager to use DHCP.</p>
+        </div>
+      </div>
+      <div class="os-card windows">
+        <div class="os-card-header">🪟 Windows Server — DHCP Client</div>
+        <div class="os-card-body">
+          <p><strong>GUI:</strong> In the IPv4 Properties dialog, select <strong>"Obtain an IP address automatically"</strong> and <strong>"Obtain DNS server address automatically"</strong>.</p>
+          <p><strong>PowerShell:</strong></p>
+          <pre><code>Set-NetIPInterface `
+  -InterfaceIndex 6 `
+  -Dhcp Enabled</code></pre>
+          <p>To also reset DNS to DHCP-assigned:</p>
+          <pre><code>Set-DnsClientServerAddress `
+  -InterfaceIndex 6 `
+  -ResetServerAddresses</code></pre>
+          <p>Verify with:</p>
+          <pre><code>ipconfig /all</code></pre>
+          <p>Look for <strong>"DHCP Enabled: Yes"</strong> in the output.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion">
+      <button class="accordion-toggle" aria-expanded="false" aria-controls="panel-dhcp-release" id="toggle-dhcp-release">
+        Releasing and Renewing a DHCP Lease
+      </button>
+      <div class="accordion-panel" id="panel-dhcp-release" role="region" aria-labelledby="toggle-dhcp-release">
+        <p>If you switch from static to DHCP (or need to refresh your lease), use these commands:</p>
+        <div class="os-compare">
+          <div class="os-card linux">
+            <div class="os-card-header">🐧 Linux</div>
+            <div class="os-card-body">
+              <pre><code># Release current lease
+sudo dhclient -r ens18
+
+# Request a new lease
+sudo dhclient ens18</code></pre>
+              <p>On systems using <code>systemd-networkd</code>, restarting the service or running <code>sudo netplan apply</code> triggers a new DHCP request.</p>
+            </div>
+          </div>
+          <div class="os-card windows">
+            <div class="os-card-header">🪟 Windows</div>
+            <div class="os-card-body">
+              <pre><code>ipconfig /release
+ipconfig /renew</code></pre>
+              <p>These commands release and renew the DHCP lease on all DHCP-enabled interfaces.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== §6 DEFAULT GATEWAY ==================== -->
+  <section id="section-6" aria-labelledby="heading-6">
+    <h2 id="heading-6">§6 — Default Gateway Configuration</h2>
+
+    <p>The <strong>default gateway</strong> is the IP address of the router interface on your local subnet. When a system needs to communicate with a host <em>outside</em> its own subnet, it forwards the packet to the default gateway, which then routes it toward the destination.</p>
+
+    <h3>6.1 How the Default Gateway Works</h3>
+    <p>When your system sends a packet, it performs this decision:</p>
+    <ol>
+      <li><strong>Is the destination on my local subnet?</strong> (Compare destination IP against my IP and subnet mask.)</li>
+      <li>If <strong>yes</strong> → send directly to the destination via the local network (ARP to find the MAC address).</li>
+      <li>If <strong>no</strong> → send to the <strong>default gateway</strong>, which forwards the packet onward.</li>
+    </ol>
+
+    <p>Without a correctly configured default gateway, a system can communicate with other hosts on the same subnet but <strong>cannot reach any remote network</strong>, including the internet.</p>
+
+    <h3>6.2 Verifying the Default Gateway</h3>
+    <div class="os-compare">
+      <div class="os-card linux">
+        <div class="os-card-header">🐧 Linux</div>
+        <div class="os-card-body">
+          <pre><code>ip route show</code></pre>
+          <p>Look for a line like:</p>
+          <pre><code>default via 10.0.1.1 dev ens18</code></pre>
+          <p>This means: "For any destination not in my local routing table, send to 10.0.1.1 via interface ens18."</p>
+        </div>
+      </div>
+      <div class="os-card windows">
+        <div class="os-card-header">🪟 Windows</div>
+        <div class="os-card-body">
+          <pre><code>route print</code></pre>
+          <p>Or simply check the <strong>Default Gateway</strong> line in:</p>
+          <pre><code>ipconfig</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <h3>6.3 Common Gateway Mistakes</h3>
+    <ul>
+      <li><strong>Gateway on wrong subnet:</strong> The gateway IP must be on the same subnet as the interface. If your IP is 10.0.1.10/24, the gateway must be in the 10.0.1.0/24 range (e.g., 10.0.1.1).</li>
+      <li><strong>Gateway omitted:</strong> The system can reach local hosts but nothing beyond the subnet.</li>
+      <li><strong>Wrong gateway IP:</strong> Packets are sent to a non-existent or incorrect router — connectivity to remote networks fails.</li>
+    </ul>
+
+    <div class="project-box">
+      <span class="box-label">🔗 Project 2 Connection</span>
+      In Project 2, your pfSense firewall will act as the default gateway for each of the three internal subnets (Management, Servers, Clients). Each server VM must have its default gateway set to the pfSense interface address on its respective subnet. Getting this wrong is one of the most common Project 2 troubleshooting issues.
+    </div>
+
+    <!-- Self-check 4 -->
+    <div class="self-check" id="sc4">
+      <span class="sc-label">✏️ Self-Check 4</span>
+      <fieldset>
+        <legend>A Linux server has IP 10.0.2.15/24 and default gateway 10.0.1.1. The server can ping 10.0.2.1 but cannot reach 8.8.8.8. What is the most likely problem?</legend>
+        <label><input type="radio" name="sc4" value="a"> The DNS server is misconfigured</label>
+        <label><input type="radio" name="sc4" value="b"> The default gateway is on a different subnet than the server</label>
+        <label><input type="radio" name="sc4" value="c"> The server's IP address is invalid</label>
+        <label><input type="radio" name="sc4" value="d"> The server's subnet mask is too small</label>
+      </fieldset>
+      <button class="sc-btn" onclick="checkAnswer('sc4','b','Correct! The server is on 10.0.2.0/24 but the gateway 10.0.1.1 is on 10.0.1.0/24 — a different subnet. The server cannot reach its gateway, so it cannot route to remote networks.','Not quite. Look at the subnets: the server is on 10.0.2.0/24 but the gateway 10.0.1.1 is on 10.0.1.0/24. The gateway must be on the same subnet as the server\'s interface.')">Check Answer</button>
+      <div class="sc-feedback" id="sc4-fb" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ==================== §7 PERSISTENT VS RUNTIME ==================== -->
+  <section id="section-7" aria-labelledby="heading-7">
+    <h2 id="heading-7">§7 — Persistent vs. Runtime Configuration</h2>
+
+    <p>A critical concept for any server administrator: <strong>not all configuration changes survive a reboot</strong>. Understanding the difference between persistent and runtime changes prevents frustrating troubleshooting sessions where "it worked until I rebooted."</p>
+
+    <h3>7.1 Runtime (Non-Persistent) Changes</h3>
+    <p>Commands that modify the running configuration <em>immediately</em> but do <strong>not</strong> write to disk:</p>
+
+    <pre><code># Linux — add an IP address at runtime only
+sudo ip addr add 10.0.1.50/24 dev ens18
+
+# Linux — add a default route at runtime only
+sudo ip route add default via 10.0.1.1</code></pre>
+
+    <p>These changes take effect instantly but are <strong>lost on reboot</strong> (or when the network service restarts). They are useful for:</p>
+    <ul>
+      <li>Quick testing before committing a change</li>
+      <li>Temporary troubleshooting</li>
+      <li>Verifying connectivity before editing configuration files</li>
+    </ul>
+
+    <h3>7.2 Persistent (On-Disk) Changes</h3>
+    <p>Persistent changes are written to configuration files and survive reboots:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Platform</th>
+          <th scope="col">Persistent Method</th>
+          <th scope="col">Configuration Location</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ubuntu Server</td>
+          <td>Netplan YAML + <code>sudo netplan apply</code></td>
+          <td><code>/etc/netplan/*.yaml</code></td>
+        </tr>
+        <tr>
+          <td>Rocky Linux</td>
+          <td><code>nmcli connection modify</code> + <code>nmcli connection up</code></td>
+          <td><code>/etc/NetworkManager/system-connections/</code></td>
+        </tr>
+        <tr>
+          <td>Windows Server</td>
+          <td>GUI (adapter properties) or PowerShell (<code>New-NetIPAddress</code>)</td>
+          <td>Windows Registry / WMI store</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>7.3 Best Practice Workflow</h3>
+    <div class="tip-box">
+      <span class="box-label">💡 Recommended Approach</span>
+      <ol>
+        <li><strong>Test at runtime first:</strong> Use <code>ip addr add</code> to test a new IP. Verify connectivity with <code>ping</code>.</li>
+        <li><strong>If it works, make it persistent:</strong> Edit the Netplan YAML (or use <code>nmcli modify</code>) and apply.</li>
+        <li><strong>If it doesn't work:</strong> Reboot (or <code>sudo ip addr del</code>) to revert — no configuration files were changed.</li>
+      </ol>
+      This two-step approach is especially valuable in production environments where a misconfiguration could lock you out of a remote server.
+    </div>
+
+    <div class="warning-box">
+      <span class="box-label">⚠️ Conflicting Configurations</span>
+      If you add an IP at runtime with <code>ip addr add</code> <em>and</em> have a different IP in Netplan, running <code>sudo netplan apply</code> will overwrite the runtime change. Always ensure your persistent configuration matches your intended state.
+    </div>
+
+    <!-- Self-check 5 -->
+    <div class="self-check" id="sc5">
+      <span class="sc-label">✏️ Self-Check 5</span>
+      <fieldset>
+        <legend>An administrator runs <code>sudo ip addr add 192.168.5.10/24 dev ens18</code> on an Ubuntu Server. After a reboot, the address is gone. Why?</legend>
+        <label><input type="radio" name="sc5" value="a"> The <code>ip addr add</code> command has a syntax error</label>
+        <label><input type="radio" name="sc5" value="b"> The address conflicted with another device on the network</label>
+        <label><input type="radio" name="sc5" value="c"> The <code>ip addr add</code> command makes a runtime change that is not persistent</label>
+        <label><input type="radio" name="sc5" value="d"> Ubuntu Server does not support the <code>ip</code> command</label>
+      </fieldset>
+      <button class="sc-btn" onclick="checkAnswer('sc5','c','Correct! The &lt;code&gt;ip addr add&lt;/code&gt; command modifies the running configuration only. To make the change persistent on Ubuntu Server, edit the Netplan YAML file and run &lt;code&gt;sudo netplan apply&lt;/code&gt;.','Not quite. The &lt;code&gt;ip addr add&lt;/code&gt; command is valid, but it only changes the runtime configuration. It does not write to disk, so the change is lost on reboot.')">Check Answer</button>
+      <div class="sc-feedback" id="sc5-fb" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ==================== §8 GUIDED PRACTICE ==================== -->
+  <section id="section-8" aria-labelledby="heading-8">
+    <h2 id="heading-8">§8 — Guided Practice Activity</h2>
+
+    <div class="info-box">
+      <span class="box-label">ℹ️ About This Activity</span>
+      This guided practice is <strong>ungraded</strong> and designed to reinforce the skills covered in this module. It mirrors the in-class Zoom lab activity. If you completed these steps during the live session, use this section as a reference and review. If you were unable to attend, complete these steps asynchronously in your Proxmox lab environment.
+    </div>
+
+    <h3>Part A: Linux Static IP Configuration (Netplan)</h3>
+    <p><strong>Goal:</strong> Configure your Ubuntu Server VM with a static IP address and verify connectivity.</p>
+    <ol>
+      <li>Log in to your Ubuntu Server VM via the Proxmox console.</li>
+      <li>Check your current configuration:
+        <pre><code>ip addr show ens18
+ip route show</code></pre>
+        <p>Record the current IP, subnet mask, and gateway.</p>
+      </li>
+      <li>Open the Netplan configuration file:
+        <pre><code>sudo nano /etc/netplan/00-installer-config.yaml</code></pre>
+      </li>
+      <li>Replace the contents with a static configuration appropriate for your lab subnet. Use the addressing scheme provided by your instructor. Example:
+        <pre><code>network:
+  version: 2
+  ethernets:
+    ens18:
+      addresses:
+        - 10.0.1.10/24
+      routes:
+        - to: default
+          via: 10.0.1.1
+      nameservers:
+        addresses:
+          - 10.0.1.1
+          - 8.8.8.8</code></pre>
+      </li>
+      <li>Apply the configuration:
+        <pre><code>sudo netplan apply</code></pre>
+      </li>
+      <li>Verify:
+        <pre><code>ip addr show ens18
+ip route show
+ping -c 4 10.0.1.1</code></pre>
+        <p>You should see your new IP address, the correct default route, and successful ping replies from the gateway.</p>
+      </li>
+    </ol>
+
+    <h3>Part B: Windows Server Static IP Configuration (PowerShell)</h3>
+    <p><strong>Goal:</strong> Configure your Windows Server VM with a static IP address using PowerShell and verify connectivity.</p>
+    <ol>
+      <li>Open <strong>PowerShell as Administrator</strong> on your Windows Server VM.</li>
+      <li>Identify your adapter:
+        <pre><code>Get-NetAdapter</code></pre>
+        <p>Note the <code>ifIndex</code> value.</p>
+      </li>
+      <li>Check current configuration:
+        <pre><code>Get-NetIPConfiguration</code></pre>
+      </li>
+      <li>Assign a static IP (adjust the index and addresses for your lab):
+        <pre><code>New-NetIPAddress `
+  -InterfaceIndex 6 `
+  -IPAddress 10.0.1.20 `
+  -PrefixLength 24 `
+  -DefaultGateway 10.0.1.1</code></pre>
+      </li>
+      <li>Set DNS servers:
+        <pre><code>Set-DnsClientServerAddress `
+  -InterfaceIndex 6 `
+  -ServerAddresses ("10.0.1.1","8.8.8.8")</code></pre>
+      </li>
+      <li>Verify:
+        <pre><code>ipconfig /all
+ping 10.0.1.1</code></pre>
+        <p>Confirm the static IP, subnet mask, gateway, and DNS are correct, and that ping succeeds.</p>
+      </li>
+    </ol>
+
+    <h3>Part C: Connectivity Verification</h3>
+    <p>After configuring both VMs, verify cross-platform connectivity:</p>
+    <ol>
+      <li>From the <strong>Linux VM</strong>, ping the Windows Server VM:
+        <pre><code>ping -c 4 10.0.1.20</code></pre>
+      </li>
+      <li>From the <strong>Windows Server VM</strong>, ping the Linux VM:
+        <pre><code>ping 10.0.1.10</code></pre>
+      </li>
+    </ol>
+
+    <div class="tip-box">
+      <span class="box-label">💡 Troubleshooting Tip</span>
+      If pings fail between VMs, check these common issues in order:
+      <ol>
+        <li><strong>Are both VMs on the same virtual network/bridge in Proxmox?</strong></li>
+        <li><strong>Are the IPs on the same subnet?</strong> (Both should be in 10.0.1.0/24 in this example.)</li>
+        <li><strong>Is Windows Firewall blocking ICMP?</strong> By default, Windows Server may block incoming ping requests. You can temporarily allow them:
+          <pre><code>New-NetFirewallRule -DisplayName "Allow ICMPv4" `
+  -Protocol ICMPv4 -IcmpType 8 `
+  -Action Allow</code></pre>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ==================== §9 SUMMARY ==================== -->
+  <section id="section-9" aria-labelledby="heading-9">
+    <h2 id="heading-9">§9 — Module Summary &amp; What's Next</h2>
+
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>Modern Linux uses <strong>predictable interface names</strong> (e.g., <code>ens18</code>) instead of the legacy <code>eth0</code> scheme.</li>
+      <li>Always <strong>inspect current configuration</strong> (<code>ip addr show</code> / <code>ipconfig /all</code>) before making changes.</li>
+      <li>On <strong>Ubuntu Server</strong>, use <strong>Netplan YAML files</strong> + <code>sudo netplan apply</code> for persistent static IP configuration.</li>
+      <li>On <strong>Rocky Linux</strong>, use <strong>nmcli</strong> for persistent configuration via NetworkManager.</li>
+      <li>On <strong>Windows Server</strong>, use <strong>New-NetIPAddress</strong> and <strong>Set-DnsClientServerAddress</strong> in PowerShell (or the GUI for one-off changes).</li>
+      <li>The <strong>default gateway</strong> must be on the same subnet as the interface — without it, the system cannot reach remote networks.</li>
+      <li><strong>Runtime changes</strong> (e.g., <code>ip addr add</code>) are immediate but lost on reboot; <strong>persistent changes</strong> are written to configuration files.</li>
+      <li>Use the <strong>test-then-persist workflow</strong>: verify at runtime first, then commit to configuration files.</li>
+    </ul>
+
+    <h3>Preparing for Module 8.3</h3>
+    <p><strong>Module 8.3: DNS Client Configuration &amp; Hostname Resolution</strong> builds directly on the interface configuration you completed here. You will:</p>
+    <ul>
+      <li>Configure DNS resolver settings on Linux (<code>/etc/resolv.conf</code>, Netplan <code>nameservers</code>) and Windows Server.</li>
+      <li>Understand the name resolution order (hosts file → DNS resolver → DNS server).</li>
+      <li>Test resolution using <code>nslookup</code>, <code>dig</code>, and <code>Resolve-DnsName</code>.</li>
+    </ul>
+    <p>A working static IP configuration (from this module) is a <strong>prerequisite</strong> — DNS client settings will not function correctly without a properly configured network interface.</p>
+
+    <h3>Readings for Module 8.3</h3>
+    <ol>
+      <li>"How DNS Works" — Cloudflare Learning Center (link in Canvas, ~15 min)</li>
+      <li>"Linux DNS Client Configuration" — Red Hat Documentation (link in Canvas, ~15 min)</li>
+      <li>Professor Messer — "DNS Configuration" video (YouTube, ~10 min)</li>
+    </ol>
+  </section>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer role="contentinfo">
+  CSC 152 → Week 8 → Module 8.2
+</footer>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+/* === Accordion toggle === */
+document.querySelectorAll('.accordion-toggle').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var expanded = this.getAttribute('aria-expanded') === 'true';
+    this.setAttribute('aria-expanded', String(!expanded));
+    var panel = document.getElementById(this.getAttribute('aria-controls'));
+    if (panel) {
+      panel.classList.toggle('open', !expanded);
+    }
+  });
+  btn.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.click();
+    }
+  });
+});
+
+/* === Self-check answer checker === */
+function checkAnswer(name, correctValue, correctMsg, incorrectMsg) {
+  var radios = document.querySelectorAll('input[name="' + name + '"]');
+  var selected = null;
+  radios.forEach(function(r) { if (r.checked) selected = r.value; });
+  var fb = document.getElementById(name + '-fb');
+  if (!fb) return;
+  if (selected === null) {
+    fb.innerHTML = '<span style="color:#1a1a1a;">Please select an answer.</span>';
+    return;
+  }
+  if (selected === correctValue) {
+    fb.innerHTML = '<span class="sc-correct">✔ ' + correctMsg + '</span>';
+  } else {
+    fb.innerHTML = '<span class="sc-incorrect">✘ ' + incorrectMsg + '</span>';
+  }
+}
+</script>
+
+</body>
+</html>
