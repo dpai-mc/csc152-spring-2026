@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 8: Network Configuration &amp; Diagnostics — CSC 152</title>
+<style>
+/* ===== CSS Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-surface-alt: #e9ecef;
+  --color-border: #dee2e6;
+  --color-text: #212529;
+  --color-text-secondary: #495057;
+  --color-heading: #1a1a2e;
+  --color-primary: #0d6efd;
+  --color-primary-dark: #0a58ca;
+  --color-primary-bg: #e7f1ff;
+  --color-accent: #6f42c1;
+  --color-accent-bg: #f3eefb;
+  --color-success: #198754;
+  --color-success-bg: #d1e7dd;
+  --color-warning: #856404;
+  --color-warning-bg: #fff3cd;
+  --color-danger: #842029;
+  --color-danger-bg: #f8d7da;
+  --color-info: #055160;
+  --color-info-bg: #cff4fc;
+  --color-code-bg: #1e1e2e;
+  --color-code-text: #cdd6f4;
+  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --font-size-base: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-xs: 0.8125rem;
+  --font-size-lg: 1.125rem;
+  --line-height: 1.7;
+  --max-width: 54rem;
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
+  --transition: 0.2s ease;
+}
+
+html { font-size: 100%; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+/* ===== Skip Link ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  z-index: 1000;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus { top: 0.5rem; }
+
+/* ===== Header ===== */
+.site-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  padding: 2rem 1.5rem 1.75rem;
+  border-bottom: 4px solid var(--color-primary);
+}
+.header-inner { max-width: var(--max-width); margin: 0 auto; }
+.breadcrumb {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 0.75rem;
+}
+.breadcrumb a {
+  color: rgba(255,255,255,0.85);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.breadcrumb a:hover, .breadcrumb a:focus { color: #fff; }
+.breadcrumb .sep { margin: 0 0.35rem; }
+.site-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.35rem;
+  line-height: 1.3;
+}
+.header-meta {
+  font-size: var(--font-size-sm);
+  color: rgba(255,255,255,0.75);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+}
+.header-meta span { white-space: nowrap; }
+
+/* ===== Navigation ===== */
+.module-nav {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.5rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nav-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  list-style: none;
+}
+.nav-sections a {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition), color var(--transition);
+}
+.nav-sections a:hover, .nav-sections a:focus {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+.nav-sections a.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+.nav-top-link {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav-top-link:hover, .nav-top-link:focus { text-decoration: underline; }
+
+/* ===== Nav Section Tooltips ===== */
+.nav-sections li { position: relative; }
+.nav-sections a[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-heading);
+  color: #fff;
+  white-space: nowrap;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 300;
+}
+.nav-sections a[data-tooltip]:hover::after,
+.nav-sections a[data-tooltip]:focus::after { opacity: 1; }
+@media (max-width: 640px) {
+  .nav-sections a[data-tooltip]::after { display: none; }
+}
+
+/* ===== Main Content ===== */
+.main-content {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+/* ===== Sections ===== */
+.section { margin-bottom: 3rem; }
+.section h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-primary);
+}
+.section h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin: 1.5rem 0 0.75rem;
+}
+.section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 1.25rem 0 0.5rem;
+}
+.section p { margin-bottom: 1rem; }
+.section ul, .section ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+.section li { margin-bottom: 0.35rem; }
+
+/* ===== Callout Boxes ===== */
+.callout {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+  border-left: 4px solid;
+}
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  font-size: var(--font-size-sm);
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout-info { background: var(--color-info-bg); border-color: var(--color-info); color: var(--color-info); }
+.callout-success { background: var(--color-success-bg); border-color: var(--color-success); color: #0a3622; }
+.callout-warning { background: var(--color-warning-bg); border-color: var(--color-warning); color: var(--color-warning); }
+.callout-danger { background: var(--color-danger-bg); border-color: var(--color-danger); color: var(--color-danger); }
+.callout-accent { background: var(--color-accent-bg); border-color: var(--color-accent); color: #3b1f6e; }
+
+/* ===== Tables ===== */
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.table-wrap th, .table-wrap td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+.table-wrap th {
+  background: var(--color-surface);
+  font-weight: 700;
+  color: var(--color-heading);
+  white-space: nowrap;
+}
+.table-wrap tr:last-child td { border-bottom: none; }
+.table-wrap tbody tr:hover { background: var(--color-surface); }
+.table-wrap caption {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  background: var(--color-heading);
+  color: #fff;
+}
+
+/* ===== Code Blocks ===== */
+pre {
+  background: var(--color-code-bg);
+  color: var(--color-code-text);
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: pre;
+  border: 1px solid #313244;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+:not(pre) > code {
+  background: var(--color-surface-alt);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: 0.88em;
+}
+.code-label {
+  display: inline-block;
+  background: #313244;
+  color: var(--color-code-text);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Form Fields ===== */
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-group label, .form-group > .form-label {
+  display: block;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  margin-bottom: 0.3rem;
+  color: var(--color-heading);
+}
+.form-group input[type="text"],
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-bg);
+  transition: border-color var(--transition), outline-color var(--transition);
+}
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  border-color: var(--color-primary);
+}
+.form-group textarea { resize: vertical; min-height: 5rem; }
+.form-group-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+.form-group-inline .form-group { flex: 1 1 14rem; }
+
+.form-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 0.2rem;
+  font-style: italic;
+}
+
+/* ===== Checkbox Groups ===== */
+.checkbox-group { margin-bottom: 1rem; }
+.checkbox-group label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  margin-bottom: 0.35rem;
+}
+.checkbox-group input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.2rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+/* ===== Task Boxes ===== */
+.task-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.task-box h4 {
+  color: var(--color-primary);
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.task-num {
+  display: inline-block;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1.15rem;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition);
+  text-decoration: none;
+}
+.btn:hover, .btn:focus { background: var(--color-primary-dark); }
+.btn:focus-visible { outline: 2px solid var(--color-heading); outline-offset: 2px; }
+.btn-lg { padding: 0.65rem 1.5rem; font-size: var(--font-size-base); }
+.btn-success { background: var(--color-success); }
+.btn-success:hover, .btn-success:focus { background: #146c43; }
+
+/* ===== Save PDF Bar ===== */
+.pdf-bar {
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1.25rem;
+}
+.pdf-bar .form-group { margin-bottom: 0; flex: 1 1 12rem; }
+.pdf-bar .form-group label { color: #0a3622; }
+.pdf-bar .form-group input[type="text"] {
+  font-family: var(--font-body);
+  background: #fff;
+}
+
+/* ===== Accordion ===== */
+.accordion { margin-bottom: 1.25rem; }
+.accordion-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+.accordion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-heading);
+  text-align: left;
+  transition: background var(--transition);
+}
+.accordion-btn:hover, .accordion-btn:focus { background: var(--color-primary-bg); }
+.accordion-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.accordion-icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform var(--transition);
+  color: var(--color-primary);
+}
+.accordion-btn[aria-expanded="true"] .accordion-icon { transform: rotate(90deg); }
+.accordion-panel {
+  display: none;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--color-border);
+}
+.accordion-panel[aria-hidden="false"] { display: block; }
+
+/* ===== Footer ===== */
+.site-footer {
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding: 1.5rem;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+.site-footer a { color: var(--color-primary); text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
+
+/* ===== Utility ===== */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.text-center { text-align: center; }
+
+/* ===== Print / PDF Styles ===== */
+@media print {
+  .module-nav, .skip-link, .pdf-bar, .btn-pdf-trigger { display: none !important; }
+  body { font-size: 10pt; }
+  .site-header { padding: 1rem; }
+  .main-content { padding: 1rem; }
+  .task-box, .callout { break-inside: avoid; }
+  pre { white-space: pre-wrap; word-wrap: break-word; }
+  textarea, input[type="text"] {
+    border: 1px solid #999 !important;
+    background: #fff !important;
+  }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .site-header { padding: 1.25rem 1rem; }
+  .site-header h1 { font-size: 1.3rem; }
+  .main-content { padding: 1.25rem 1rem 2rem; }
+  .module-nav { padding: 0.5rem 1rem; }
+  pre { font-size: var(--font-size-xs); padding: 0.85rem; }
+  .pdf-bar { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="#">CSC 152</a>
+      <span class="sep" aria-hidden="true">→</span>
+      <a href="#">Week 8</a>
+      <span class="sep" aria-hidden="true">→</span>
+      <span aria-current="page">Lab 8</span>
+    </nav>
+    <h1>Lab 8: Network Configuration &amp; Diagnostics</h1>
+    <div class="header-meta">
+      <span>📅 Week 8 · March 9–15, 2026</span>
+      <span>⏱ Estimated Time: 1.5–2.0 hours</span>
+      <span>⭐ Extra Credit · 30 points</span>
+      <span>📄 Submit PDF to Canvas</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== SECTION NAV ===== -->
+<nav class="module-nav" aria-label="Lab sections">
+  <div class="nav-inner">
+    <ul class="nav-sections" id="section-nav">
+      <li><a href="#section-overview" class="active" data-tooltip="Overview &amp; Objectives" aria-label="Overview &amp; Objectives">Overview</a></li>
+      <li><a href="#section-setup" data-tooltip="Lab Setup" aria-label="Lab Setup">Setup</a></li>
+      <li><a href="#section-task1" data-tooltip="Task 1 – Document Current Config" aria-label="Task 1 – Document Current Config">Task 1</a></li>
+      <li><a href="#section-task2" data-tooltip="Task 2 – Static IP Configuration" aria-label="Task 2 – Static IP Configuration">Task 2</a></li>
+      <li><a href="#section-task3" data-tooltip="Task 3 – Connectivity Testing" aria-label="Task 3 – Connectivity Testing">Task 3</a></li>
+      <li><a href="#section-task4" data-tooltip="Task 4 – DNS Diagnostics" aria-label="Task 4 – DNS Diagnostics">Task 4</a></li>
+      <li><a href="#section-task5" data-tooltip="Task 5 – Troubleshooting Scenarios" aria-label="Task 5 – Troubleshooting Scenarios">Task 5</a></li>
+      <li><a href="#section-rubric" data-tooltip="Grading Rubric" aria-label="Grading Rubric">Rubric</a></li>
+    </ul>
+    <a href="#main-content" class="nav-top-link" aria-label="Back to top">↑ Top</a>
+  </div>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main id="main-content" class="main-content" role="main">
+
+  <!-- ===== Student Name & PDF Bar (Top) ===== -->
+  <div class="pdf-bar" id="pdf-bar-top">
+    <div class="form-group">
+      <label for="student-last-name">Last Name</label>
+      <input type="text" id="student-last-name" placeholder="e.g., Smith" autocomplete="family-name">
+    </div>
+    <div class="form-group">
+      <label for="student-first-name">First Name</label>
+      <input type="text" id="student-first-name" placeholder="e.g., Jane" autocomplete="given-name">
+    </div>
+    <button type="button" class="btn btn-lg btn-success btn-pdf-trigger" onclick="savePDF()">
+      📄 Save as PDF
+    </button>
+  </div>
+
+  <!-- ===== §0: Overview ===== -->
+  <section id="section-overview" class="section">
+    <h2>Lab Overview &amp; Learning Objectives</h2>
+
+    <div class="callout callout-accent">
+      <div class="callout-title">🎯 CSLO 3</div>
+      <p><strong>Configure systems for network connectivity, including physical and logical elements.</strong></p>
+      <p>This lab directly assesses your ability to configure and verify network settings on both Linux and Windows Server systems — a core competency for CSLO 3 and a prerequisite for Project 2.</p>
+    </div>
+
+    <h3>Lab Description</h3>
+    <p>In this extra credit lab, you will perform hands-on network configuration and diagnostic tasks in your Proxmox lab environment. You will work with both your <strong>Linux VM</strong> (Ubuntu Server or Rocky Linux) and your <strong>Windows Server VM</strong> to document current network settings, configure static IP addresses, test connectivity using standard diagnostic tools, and troubleshoot common network misconfigurations.</p>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠ Extra Credit Lab</div>
+      <p>Lab 8 is an <strong>optional extra credit assignment worth 30 points</strong>. It is strongly recommended because the hands-on skills practiced here directly transfer to <strong>Project 2 Parts A and D</strong>. Students who complete Lab 8 will have a significant head start on Project 2.</p>
+    </div>
+
+    <h3>Learning Objectives</h3>
+    <p>By completing this lab, you will be able to:</p>
+    <ol>
+      <li>View and document current IP address, subnet mask, default gateway, and DNS configuration on both Linux and Windows</li>
+      <li>Configure a static IP address on a Linux VM using Netplan or <code>nmcli</code></li>
+      <li>Configure a static IP address on a Windows Server VM using both GUI and PowerShell</li>
+      <li>Verify network connectivity using <code>ping</code>, <code>traceroute</code>/<code>tracert</code>, <code>nslookup</code>/<code>dig</code>, and <code>ip</code>/<code>ipconfig</code></li>
+      <li>Diagnose and resolve common network misconfigurations (wrong gateway, incorrect DNS, etc.)</li>
+      <li>Document network configurations and troubleshooting steps professionally</li>
+    </ol>
+
+    <h3>Prerequisite Knowledge</h3>
+    <ul>
+      <li><strong>Module 8.1:</strong> IP addressing, subnetting, CIDR notation</li>
+      <li><strong>Module 8.2:</strong> Static and DHCP interface configuration on Linux and Windows</li>
+      <li><strong>Module 8.3:</strong> DNS client configuration and hostname resolution</li>
+      <li><strong>Module 8.4:</strong> Network diagnostic tools and structured troubleshooting methodology</li>
+      <li><strong>Weeks 5–7:</strong> Command-line proficiency (Bash and PowerShell), <code>sudo</code> usage, file editing</li>
+    </ul>
+
+    <h3>Submission Instructions</h3>
+    <ol>
+      <li>Complete all tasks below, filling in every form field with your observations, command outputs, and answers.</li>
+      <li>Use the <strong>"Save as PDF"</strong> button at the top or bottom of this page to generate your submission file.</li>
+      <li>The PDF will be named <code>LastName_FirstName_Lab8.pdf</code> based on the name fields above.</li>
+      <li>Upload the PDF to the <strong>Lab 8</strong> assignment in Canvas by <strong>Sunday, March 15, 2026, 11:59 PM</strong>.</li>
+    </ol>
+  </section>
+
+  <!-- ===== Lab Setup ===== -->
+  <section id="section-setup" class="section">
+    <h2>Lab Setup</h2>
+
+    <p>Before beginning the tasks, ensure your Proxmox lab environment is ready:</p>
+
+    <div class="callout callout-info">
+      <div class="callout-title">🖥️ Required VMs</div>
+      <ul class="mb-0">
+        <li><strong>Linux VM:</strong> Ubuntu Server or Rocky Linux (configured in previous weeks)</li>
+        <li><strong>Windows Server VM:</strong> Windows Server 2022 or 2025 (configured in previous weeks)</li>
+      </ul>
+    </div>
+
+    <h3>Pre-Lab Checklist</h3>
+    <div class="checkbox-group">
+      <label><input type="checkbox"> Both VMs are powered on and accessible via console or SSH/RDP</label>
+      <label><input type="checkbox"> I have root/administrator access on both VMs</label>
+      <label><input type="checkbox"> I have completed Modules 8.1–8.4 readings</label>
+      <label><input type="checkbox"> I understand the structured troubleshooting methodology (physical → data link → network → transport → application)</label>
+    </div>
+
+    <div class="form-group">
+      <label for="setup-notes">Setup Notes (any issues getting your environment ready, VM names, etc.):</label>
+      <textarea id="setup-notes" rows="3" placeholder="e.g., Linux VM: ubuntu-srv-01, Windows VM: win-srv-01. Both accessible via Proxmox console."></textarea>
+    </div>
+  </section>
+
+  <!-- ===== TASK 1 ===== -->
+  <section id="section-task1" class="section">
+    <h2>Task 1 — Document Current Network Configuration</h2>
+
+    <p>In this task, you will examine and record the current network configuration of both your Linux and Windows Server VMs. Accurate documentation is a foundational skill for all network administration work and is required for Project 2.</p>
+
+    <!-- Task 1A: Linux -->
+    <div class="task-box">
+      <span class="task-num">Task 1A</span>
+      <h4>Linux VM: View Current IP Configuration</h4>
+
+      <p>Run the following commands on your Linux VM and paste the output into the fields below:</p>
+
+      <h4>Step 1: Display IP address and interface information</h4>
+      <div class="code-label">Linux Terminal</div>
+      <pre><code>ip addr show</code></pre>
+
+      <div class="form-group">
+        <label for="t1a-ip-addr">Paste the output of <code>ip addr show</code>:</label>
+        <textarea id="t1a-ip-addr" rows="8" placeholder="Paste full command output here..."></textarea>
+      </div>
+
+      <h4>Step 2: Display the routing table (default gateway)</h4>
+      <div class="code-label">Linux Terminal</div>
+      <pre><code>ip route show</code></pre>
+
+      <div class="form-group">
+        <label for="t1a-ip-route">Paste the output of <code>ip route show</code>:</label>
+        <textarea id="t1a-ip-route" rows="4" placeholder="Paste full command output here..."></textarea>
+      </div>
+
+      <h4>Step 3: Display DNS resolver configuration</h4>
+      <div class="code-label">Linux Terminal</div>
+      <pre><code>cat /etc/resolv.conf</code></pre>
+
+      <div class="form-group">
+        <label for="t1a-resolv">Paste the output of <code>cat /etc/resolv.conf</code>:</label>
+        <textarea id="t1a-resolv" rows="4" placeholder="Paste full command output here..."></textarea>
+      </div>
+
+      <h4>Step 4: Summarize the Linux VM configuration</h4>
+      <div class="form-group-inline">
+        <div class="form-group">
+          <label for="t1a-iface">Interface name:</label>
+          <input type="text" id="t1a-iface" placeholder="e.g., ens18 or eth0">
+        </div>
+        <div class="form-group">
+          <label for="t1a-ipv4">IPv4 address:</label>
+          <input type="text" id="t1a-ipv4" placeholder="e.g., 10.0.1.10">
+        </div>
+        <div class="form-group">
+          <label for="t1a-mask">Subnet mask / CIDR:</label>
+          <input type="text" id="t1a-mask" placeholder="e.g., /24 or 255.255.255.0">
+        </div>
+        <div class="form-group">
+          <label for="t1a-gw">Default gateway:</label>
+          <input type="text" id="t1a-gw" placeholder="e.g., 10.0.1.1">
+        </div>
+        <div class="form-group">
+          <label for="t1a-dns">DNS server(s):</label>
+          <input type="text" id="t1a-dns" placeholder="e.g., 8.8.8.8, 8.8.4.4">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="t1a-dhcp-static">Is this interface configured via DHCP or static? How can you tell?</label>
+        <textarea id="t1a-dhcp-static" rows="3" placeholder="Explain how you determined whether the address was assigned by DHCP or configured statically. Reference the Netplan YAML file or nmcli output if applicable."></textarea>
+      </div>
+    </div>
+
+    <!-- Task 1B: Windows -->
+    <div class="task-box">
+      <span class="task-num">Task 1B</span>
+      <h4>Windows Server VM: View Current IP Configuration</h4>
+
+      <p>Run the following command in an elevated PowerShell or Command Prompt window:</p>
+
+      <div class="code-label">PowerShell / CMD</div>
+      <pre><code>ipconfig /all</code></pre>
+
+      <div class="form-group">
+        <label for="t1b-ipconfig">Paste the output of <code>ipconfig /all</code>:</label>
+        <textarea id="t1b-ipconfig" rows="12" placeholder="Paste full command output here..."></textarea>
+      </div>
+
+      <h4>Summarize the Windows Server VM configuration</h4>
+      <div class="form-group-inline">
+        <div class="form-group">
+          <label for="t1b-adapter">Adapter name:</label>
+          <input type="text" id="t1b-adapter" placeholder="e.g., Ethernet0">
+        </div>
+        <div class="form-group">
+          <label for="t1b-ipv4">IPv4 address:</label>
+          <input type="text" id="t1b-ipv4" placeholder="e.g., 10.0.1.20">
+        </div>
+        <div class="form-group">
+          <label for="t1b-mask">Subnet mask:</label>
+          <input type="text" id="t1b-mask" placeholder="e.g., 255.255.255.0">
+        </div>
+        <div class="form-group">
+          <label for="t1b-gw">Default gateway:</label>
+          <input type="text" id="t1b-gw" placeholder="e.g., 10.0.1.1">
+        </div>
+        <div class="form-group">
+          <label for="t1b-dns">DNS server(s):</label>
+          <input type="text" id="t1b-dns" placeholder="e.g., 8.8.8.8">
+        </div>
+        <div class="form-group">
+          <label for="t1b-dhcp">DHCP Enabled (Yes/No):</label>
+          <input type="text" id="t1b-dhcp" placeholder="e.g., Yes">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="t1b-compare">Compare the Linux and Windows outputs. What similarities and differences do you observe in how the two operating systems display network configuration?</label>
+        <textarea id="t1b-compare" rows="4" placeholder="Discuss at least two similarities and two differences in the output format, information shown, or terminology used."></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TASK 2 ===== -->
+  <section id="section-task2" class="section">
+    <h2>Task 2 — Configure Static IP Addresses</h2>
+
+    <p>In this task, you will configure static IP addresses on both VMs. This is a critical skill for Project 2, where every server VM must have a predictable, static address on its designated subnet.</p>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">⚠ Important: Record Your Original Settings First</div>
+      <p>Before making any changes, ensure you have documented your current configuration in Task 1. If something goes wrong, you will need those values to restore connectivity. You may also want to take a <strong>VM snapshot</strong> in Proxmox before proceeding.</p>
+    </div>
+
+    <!-- Task 2A: Linux Static IP -->
+    <div class="task-box">
+      <span class="task-num">Task 2A</span>
+      <h4>Linux VM: Configure a Static IP Address</h4>
+
+      <p>Choose a static IP address on the same subnet as your current address. Configure it using <strong>Netplan</strong> (Ubuntu) or <strong>nmcli</strong> (Rocky Linux).</p>
+
+      <h4>For Ubuntu Server (Netplan):</h4>
+      <div class="code-label">Linux Terminal</div>
+      <pre><code># 1. Edit the Netplan configuration file
+sudo nano /etc/netplan/00-installer-config.yaml
+
+# 2. Example static IP configuration:
+network:
+  version: 2
+  ethernets:
+    ens18:
+      dhcp4: false
+      addresses:
+        - 10.0.1.50/24
+      routes:
+        - to: default
+          via: 10.0.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 8.8.4.4
+
+# 3. Apply the configuration
+sudo netplan apply
+
+# 4. Verify
+ip addr show ens18
+ip route show</code></pre>
+
+      <h4>For Rocky Linux (nmcli):</h4>
+      <div class="code-label">Linux Terminal</div>
+      <pre><code># 1. Set static IP
+sudo nmcli con mod "System ens18" ipv4.method manual \
+  ipv4.addresses 10.0.1.50/24 \
+  ipv4.gateway 10.0.1.1 \
+  ipv4.dns "8.8.8.8 8.8.4.4"
+
+# 2. Restart the connection
+sudo nmcli con up "System ens18"
+
+# 3. Verify
+ip addr show ens18
+ip route show</code></pre>
+
+      <div class="form-group">
+        <label for="t2a-method">Which method did you use (Netplan or nmcli)?</label>
+        <input type="text" id="t2a-method" placeholder="e.g., Netplan (Ubuntu Server)">
+      </div>
+
+      <div class="form-group">
+        <label for="t2a-config">Paste the contents of your configuration file or the nmcli commands you ran:</label>
+        <textarea id="t2a-config" rows="10" placeholder="Paste your Netplan YAML or nmcli commands here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t2a-static-ip">Static IP address you configured:</label>
+        <input type="text" id="t2a-static-ip" placeholder="e.g., 10.0.1.50/24">
+      </div>
+
+      <div class="form-group">
+        <label for="t2a-verify">Paste the output of <code>ip addr show</code> after applying the static IP:</label>
+        <textarea id="t2a-verify" rows="6" placeholder="Paste verification output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t2a-persistent">Explain the difference between a <em>persistent</em> configuration change (survives reboot) and a <em>runtime</em> change (lost on reboot). Which type did you make?</label>
+        <textarea id="t2a-persistent" rows="3" placeholder="Explain the difference and identify which type your method creates..."></textarea>
+      </div>
+    </div>
+
+    <!-- Task 2B: Windows Static IP -->
+    <div class="task-box">
+      <span class="task-num">Task 2B</span>
+      <h4>Windows Server VM: Configure a Static IP Address via PowerShell</h4>
+
+      <p>Use PowerShell to assign a static IP address to your Windows Server VM. Run the following commands (adjust values for your environment):</p>
+
+      <div class="code-label">PowerShell (Run as Administrator)</div>
+      <pre><code># 1. View current adapter information
+Get-NetIPConfiguration
+
+# 2. Find your adapter's interface index
+Get-NetAdapter
+
+# 3. Remove existing DHCP-assigned address (if applicable)
+Remove-NetIPAddress -InterfaceAlias "Ethernet0" -Confirm:$false
+Remove-NetRoute -InterfaceAlias "Ethernet0" -Confirm:$false
+
+# 4. Set static IP address
+New-NetIPAddress -InterfaceAlias "Ethernet0" `
+  -IPAddress 10.0.1.60 `
+  -PrefixLength 24 `
+  -DefaultGateway 10.0.1.1
+
+# 5. Set DNS server
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" `
+  -ServerAddresses 8.8.8.8,8.8.4.4
+
+# 6. Verify
+Get-NetIPConfiguration
+ipconfig /all</code></pre>
+
+      <div class="form-group">
+        <label for="t2b-commands">Paste the exact PowerShell commands you ran (with your actual values):</label>
+        <textarea id="t2b-commands" rows="8" placeholder="Paste your PowerShell commands here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t2b-static-ip">Static IP address you configured:</label>
+        <input type="text" id="t2b-static-ip" placeholder="e.g., 10.0.1.60">
+      </div>
+
+      <div class="form-group">
+        <label for="t2b-verify">Paste the output of <code>ipconfig /all</code> after configuring the static IP:</label>
+        <textarea id="t2b-verify" rows="10" placeholder="Paste verification output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t2b-gui-vs-ps">Briefly describe how you would accomplish the same static IP configuration using the Windows GUI (Network and Sharing Center). What are the advantages of using PowerShell instead?</label>
+        <textarea id="t2b-gui-vs-ps" rows="4" placeholder="Describe the GUI method and compare it to PowerShell..."></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TASK 3 ===== -->
+  <section id="section-task3" class="section">
+    <h2>Task 3 — Connectivity Testing</h2>
+
+    <p>Now that both VMs have static IP addresses, verify connectivity using standard diagnostic tools. Follow the structured troubleshooting methodology: test from the inside out (local → gateway → remote by IP → remote by name).</p>
+
+    <!-- Task 3A: Ping Tests -->
+    <div class="task-box">
+      <span class="task-num">Task 3A</span>
+      <h4>Ping Tests (ICMP Connectivity)</h4>
+
+      <p>Run the following ping tests from your <strong>Linux VM</strong> and record the results:</p>
+
+      <div class="code-label">Linux Terminal</div>
+      <pre><code># 1. Ping your own IP (loopback sanity check)
+ping -c 4 127.0.0.1
+
+# 2. Ping your default gateway
+ping -c 4 &lt;your-gateway-ip&gt;
+
+# 3. Ping the other VM (Windows Server)
+ping -c 4 &lt;windows-server-ip&gt;
+
+# 4. Ping an external IP (Google DNS)
+ping -c 4 8.8.8.8
+
+# 5. Ping an external hostname
+ping -c 4 google.com</code></pre>
+
+      <div class="form-group">
+        <label for="t3a-ping-gw">Ping to default gateway — paste output:</label>
+        <textarea id="t3a-ping-gw" rows="5" placeholder="Paste ping output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t3a-ping-other">Ping to other VM (Windows Server) — paste output:</label>
+        <textarea id="t3a-ping-other" rows="5" placeholder="Paste ping output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t3a-ping-ext-ip">Ping to 8.8.8.8 — paste output:</label>
+        <textarea id="t3a-ping-ext-ip" rows="5" placeholder="Paste ping output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t3a-ping-ext-name">Ping to google.com — paste output:</label>
+        <textarea id="t3a-ping-ext-name" rows="5" placeholder="Paste ping output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t3a-analysis">Analyze your results: If any ping failed, at which layer of the troubleshooting methodology does the failure occur? If all succeeded, what does each successful test confirm?</label>
+        <textarea id="t3a-analysis" rows="4" placeholder="Explain what each test verifies (e.g., gateway ping confirms Layer 3 local connectivity, external IP confirms routing works, hostname confirms DNS resolution works)..."></textarea>
+      </div>
+    </div>
+
+    <!-- Task 3B: Traceroute -->
+    <div class="task-box">
+      <span class="task-num">Task 3B</span>
+      <h4>Path Analysis with Traceroute</h4>
+
+      <p>Run a traceroute from both VMs to an external destination:</p>
+
+      <div class="code-label">Linux Terminal</div>
+      <pre><code>traceroute 8.8.8.8</code></pre>
+
+      <div class="code-label">PowerShell / CMD (Windows)</div>
+      <pre><code>tracert 8.8.8.8</code></pre>
+
+      <div class="form-group">
+        <label for="t3b-linux-trace">Linux <code>traceroute</code> output:</label>
+        <textarea id="t3b-linux-trace" rows="8" placeholder="Paste traceroute output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t3b-win-trace">Windows <code>tracert</code> output:</label>
+        <textarea id="t3b-win-trace" rows="8" placeholder="Paste tracert output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t3b-analysis">How many hops does each trace show? What is the first hop (and what device does it represent)? Are the paths the same or different?</label>
+        <textarea id="t3b-analysis" rows="4" placeholder="Analyze the traceroute results..."></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TASK 4 ===== -->
+  <section id="section-task4" class="section">
+    <h2>Task 4 — DNS Diagnostics</h2>
+
+    <p>Test and document DNS name resolution using multiple tools. Understanding DNS resolution is essential for Project 2 Part B (DNS server configuration).</p>
+
+    <div class="task-box">
+      <span class="task-num">Task 4A</span>
+      <h4>DNS Resolution with nslookup and dig</h4>
+
+      <p>From your <strong>Linux VM</strong>, run the following commands:</p>
+
+      <div class="code-label">Linux Terminal</div>
+      <pre><code># 1. nslookup (basic query)
+nslookup www.mendocino.edu
+
+# 2. dig (detailed query)
+dig www.mendocino.edu
+
+# 3. Reverse lookup (PTR record)
+nslookup 8.8.8.8
+
+# 4. Query a specific DNS server
+nslookup www.mendocino.edu 1.1.1.1</code></pre>
+
+      <div class="form-group">
+        <label for="t4a-nslookup">Paste the output of <code>nslookup www.mendocino.edu</code>:</label>
+        <textarea id="t4a-nslookup" rows="6" placeholder="Paste nslookup output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t4a-dig">Paste the output of <code>dig www.mendocino.edu</code>:</label>
+        <textarea id="t4a-dig" rows="10" placeholder="Paste dig output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t4a-reverse">Paste the output of the reverse lookup (<code>nslookup 8.8.8.8</code>):</label>
+        <textarea id="t4a-reverse" rows="4" placeholder="Paste reverse lookup output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t4a-analysis">What information does <code>dig</code> provide that <code>nslookup</code> does not? Identify at least two additional details from the <code>dig</code> output (e.g., query time, AUTHORITY section, TTL values).</label>
+        <textarea id="t4a-analysis" rows="4" placeholder="Compare the two tools..."></textarea>
+      </div>
+    </div>
+
+    <div class="task-box">
+      <span class="task-num">Task 4B</span>
+      <h4>Windows DNS Diagnostics</h4>
+
+      <p>From your <strong>Windows Server VM</strong>, run the following:</p>
+
+      <div class="code-label">PowerShell</div>
+      <pre><code># 1. nslookup
+nslookup www.mendocino.edu
+
+# 2. PowerShell Resolve-DnsName
+Resolve-DnsName -Name www.mendocino.edu -Type A
+
+# 3. Display DNS client cache
+Get-DnsClientCache | Select-Object -First 10</code></pre>
+
+      <div class="form-group">
+        <label for="t4b-nslookup">Paste the output of <code>nslookup www.mendocino.edu</code> (Windows):</label>
+        <textarea id="t4b-nslookup" rows="5" placeholder="Paste nslookup output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t4b-resolve">Paste the output of <code>Resolve-DnsName</code>:</label>
+        <textarea id="t4b-resolve" rows="5" placeholder="Paste Resolve-DnsName output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t4b-cache">Paste the output of <code>Get-DnsClientCache</code>:</label>
+        <textarea id="t4b-cache" rows="5" placeholder="Paste DNS cache output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t4b-hosts-file">On your Linux VM, add a static entry to <code>/etc/hosts</code> mapping <code>myserver.lab.local</code> to your Windows Server's IP address. Then test with <code>ping myserver.lab.local</code>. Paste the hosts file entry and the ping output:</label>
+        <textarea id="t4b-hosts-file" rows="5" placeholder="Show the /etc/hosts entry and the ping result..."></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TASK 5 ===== -->
+  <section id="section-task5" class="section">
+    <h2>Task 5 — Troubleshooting Scenarios</h2>
+
+    <p>In this task, you will analyze network misconfigurations and apply the <strong>structured troubleshooting methodology</strong> from Module 8.4. For each scenario, identify the problem, explain how you would diagnose it, and describe the fix.</p>
+
+    <div class="callout callout-info">
+      <div class="callout-title">📋 Troubleshooting Methodology Reminder</div>
+      <ol class="mb-0">
+        <li><strong>Step 1:</strong> Verify physical/virtual connectivity (link state)</li>
+        <li><strong>Step 2:</strong> Verify IP configuration (correct address, mask, gateway)</li>
+        <li><strong>Step 3:</strong> Verify local connectivity (ping gateway)</li>
+        <li><strong>Step 4:</strong> Verify remote connectivity (ping external host by IP)</li>
+        <li><strong>Step 5:</strong> Verify name resolution (ping external host by name)</li>
+        <li><strong>Step 6:</strong> Verify application-layer connectivity (specific port/service)</li>
+      </ol>
+    </div>
+
+    <!-- Scenario 1 -->
+    <div class="task-box">
+      <span class="task-num">Scenario 1</span>
+      <h4>Wrong Default Gateway</h4>
+
+      <p>A Linux server has the following configuration:</p>
+      <ul>
+        <li>IP Address: <code>192.168.1.50/24</code></li>
+        <li>Default Gateway: <code>192.168.1.200</code> (but the actual gateway is <code>192.168.1.1</code>)</li>
+        <li>DNS Server: <code>8.8.8.8</code></li>
+      </ul>
+      <p>The administrator reports: <em>"I can ping other machines on the 192.168.1.0/24 network, but I cannot reach any external websites or IP addresses."</em></p>
+
+      <div class="form-group">
+        <label for="t5-s1-layer">At which step in the troubleshooting methodology would this failure be detected?</label>
+        <input type="text" id="t5-s1-layer" placeholder="e.g., Step 4 – Verify remote connectivity">
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s1-diagnose">What diagnostic command(s) would you run to confirm the problem? What output would you expect?</label>
+        <textarea id="t5-s1-diagnose" rows="4" placeholder="List the commands and expected output that would reveal the misconfiguration..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s1-fix">How would you fix this issue? Provide the specific command(s) for Linux.</label>
+        <textarea id="t5-s1-fix" rows="4" placeholder="Provide the exact commands to correct the gateway..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s1-explain">Explain <em>why</em> local pings succeed but external pings fail when the gateway is wrong.</label>
+        <textarea id="t5-s1-explain" rows="3" placeholder="Explain the networking concept behind this behavior..."></textarea>
+      </div>
+    </div>
+
+    <!-- Scenario 2 -->
+    <div class="task-box">
+      <span class="task-num">Scenario 2</span>
+      <h4>DNS Misconfiguration</h4>
+
+      <p>A Windows Server has the following configuration:</p>
+      <ul>
+        <li>IP Address: <code>10.0.2.25/24</code></li>
+        <li>Default Gateway: <code>10.0.2.1</code></li>
+        <li>DNS Server: <code>10.0.2.99</code> (this server does not exist on the network)</li>
+      </ul>
+      <p>The administrator reports: <em>"I can ping 8.8.8.8 successfully, but I cannot browse to any website by name. <code>ping google.com</code> fails with 'could not find host'."</em></p>
+
+      <div class="form-group">
+        <label for="t5-s2-layer">At which step in the troubleshooting methodology would this failure be detected?</label>
+        <input type="text" id="t5-s2-layer" placeholder="e.g., Step 5 – Verify name resolution">
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s2-diagnose">What diagnostic command(s) would confirm that DNS is the issue (not routing)?</label>
+        <textarea id="t5-s2-diagnose" rows="4" placeholder="Describe the commands and expected results..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s2-fix">How would you fix this issue? Provide the specific PowerShell command(s).</label>
+        <textarea id="t5-s2-fix" rows="3" placeholder="Provide the exact PowerShell commands to correct the DNS settings..."></textarea>
+      </div>
+    </div>
+
+    <!-- Scenario 3 -->
+    <div class="task-box">
+      <span class="task-num">Scenario 3</span>
+      <h4>APIPA Address (DHCP Failure)</h4>
+
+      <p>A Linux workstation is configured for DHCP, but the administrator notices the following when running <code>ip addr show</code>:</p>
+
+      <pre><code>inet 169.254.47.132/16 scope link ens18</code></pre>
+
+      <div class="form-group">
+        <label for="t5-s3-identify">What does the <code>169.254.x.x</code> address indicate? What is this address range called?</label>
+        <textarea id="t5-s3-identify" rows="3" placeholder="Identify the address range and explain what it means..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s3-causes">List at least three possible causes for this issue.</label>
+        <textarea id="t5-s3-causes" rows="4" placeholder="1. ...\n2. ...\n3. ..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s3-steps">Describe the troubleshooting steps you would take, in order, to resolve this issue.</label>
+        <textarea id="t5-s3-steps" rows="5" placeholder="List your troubleshooting steps from most basic to more advanced..."></textarea>
+      </div>
+    </div>
+
+    <!-- Scenario 4: Hands-On (Optional Bonus) -->
+    <div class="task-box">
+      <span class="task-num">Scenario 4 (Bonus)</span>
+      <h4>Hands-On: Intentional Misconfiguration &amp; Recovery</h4>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠ Take a VM Snapshot First!</div>
+        <p>Before attempting this scenario, take a snapshot of your Linux VM in Proxmox so you can easily revert if needed.</p>
+      </div>
+
+      <p>On your <strong>Linux VM</strong>, intentionally misconfigure the DNS server to a non-existent address (e.g., <code>10.0.0.99</code>). Then:</p>
+      <ol>
+        <li>Attempt to ping <code>google.com</code> — document the error</li>
+        <li>Ping <code>8.8.8.8</code> — document the result</li>
+        <li>Use <code>nslookup</code> to confirm DNS is the issue</li>
+        <li>Fix the DNS configuration and verify resolution works again</li>
+      </ol>
+
+      <div class="form-group">
+        <label for="t5-s4-error">Paste the error output when pinging google.com with bad DNS:</label>
+        <textarea id="t5-s4-error" rows="3" placeholder="Paste the error message here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s4-ip-ping">Paste the result of pinging 8.8.8.8 (should succeed):</label>
+        <textarea id="t5-s4-ip-ping" rows="3" placeholder="Paste ping output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s4-nslookup">Paste the nslookup output showing the DNS failure:</label>
+        <textarea id="t5-s4-nslookup" rows="4" placeholder="Paste nslookup output here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="t5-s4-fix">Describe and paste the commands you used to fix the DNS and verify the fix:</label>
+        <textarea id="t5-s4-fix" rows="5" placeholder="Show your fix commands and verification output..."></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TASK 6: Reflection ===== -->
+  <section id="section-reflection" class="section">
+    <h2>Lab Reflection</h2>
+
+    <div class="task-box">
+      <span class="task-num">Reflection</span>
+      <h4>Summary &amp; Project 2 Connection</h4>
+
+      <div class="form-group">
+        <label for="reflect-learned">What were the two most important things you learned in this lab? How will they help you with Project 2?</label>
+        <textarea id="reflect-learned" rows="4" placeholder="Reflect on your key takeaways and their connection to Project 2..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="reflect-challenges">What challenges did you encounter? How did you resolve them?</label>
+        <textarea id="reflect-challenges" rows="4" placeholder="Describe any difficulties and your problem-solving approach..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="reflect-methodology">How did the structured troubleshooting methodology (from Module 8.4) help you approach the troubleshooting scenarios? Would you use this approach in a real-world situation?</label>
+        <textarea id="reflect-methodology" rows="4" placeholder="Evaluate the usefulness of the structured methodology..."></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RUBRIC ===== -->
+  <section id="section-rubric" class="section">
+    <h2>Grading Rubric — 30 Points (Extra Credit)</h2>
+
+    <div class="callout callout-info">
+      <div class="callout-title">📋 Grading Criteria</div>
+      <p>This lab is graded holistically across four criteria. The instructor will evaluate the completeness, accuracy, and quality of your work across all tasks.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Lab 8 Grading Rubric (30 Points Total)</caption>
+        <thead>
+          <tr>
+            <th scope="col">Criterion</th>
+            <th scope="col">Weight</th>
+            <th scope="col">Points</th>
+            <th scope="col">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Completion of Required Tasks</strong></td>
+            <td>40%</td>
+            <td>12</td>
+            <td>All tasks attempted and completed. Command outputs provided for each step. Static IPs configured on both Linux and Windows. Connectivity tests performed. All troubleshooting scenarios answered.</td>
+          </tr>
+          <tr>
+            <td><strong>Documentation Quality &amp; Completeness</strong></td>
+            <td>30%</td>
+            <td>9</td>
+            <td>Clear, organized responses. Complete command outputs (not truncated). Thoughtful analysis and comparison answers. Professional presentation. Configuration summaries accurately filled in.</td>
+          </tr>
+          <tr>
+            <td><strong>Troubleshooting &amp; Problem-Solving</strong></td>
+            <td>20%</td>
+            <td>6</td>
+            <td>Correct identification of failure layers in troubleshooting scenarios. Appropriate diagnostic commands selected. Logical, step-by-step troubleshooting approach demonstrated. Bonus scenario attempted (if applicable).</td>
+          </tr>
+          <tr>
+            <td><strong>Technical Accuracy</strong></td>
+            <td>10%</td>
+            <td>3</td>
+            <td>IP addresses, subnet masks, and CIDR notation used correctly. Commands are syntactically correct. Explanations demonstrate understanding of networking concepts (not just copied text).</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row" colspan="2"><strong>Total</strong></th>
+            <td><strong>30</strong></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="accordion" id="accordion-rubric">
+      <div class="accordion-item">
+        <button class="accordion-btn" aria-expanded="false" aria-controls="acc-rubric-detail" id="acc-rubric-detail-btn">
+          <svg class="accordion-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><polygon points="6,4 16,10 6,16"/></svg>
+          Detailed Scoring Guide (Expand for Full Breakdown)
+        </button>
+        <div class="accordion-panel" id="acc-rubric-detail" role="region" aria-labelledby="acc-rubric-detail-btn" aria-hidden="true">
+
+          <h4>Completion of Required Tasks (12 points)</h4>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Score Range</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>10–12</td><td>All tasks completed with full command outputs. Both Linux and Windows configurations documented. All troubleshooting scenarios answered.</td></tr>
+                <tr><td>7–9</td><td>Most tasks completed. Minor gaps in command outputs or one task section incomplete.</td></tr>
+                <tr><td>4–6</td><td>Several tasks incomplete or missing significant command outputs.</td></tr>
+                <tr><td>0–3</td><td>Minimal effort. Most tasks not attempted.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Documentation Quality &amp; Completeness (9 points)</h4>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Score Range</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>8–9</td><td>Exceptionally clear documentation. Complete, untruncated outputs. Thoughtful analysis with specific details. Professional presentation.</td></tr>
+                <tr><td>5–7</td><td>Good documentation with minor gaps. Most outputs complete. Analysis shows understanding.</td></tr>
+                <tr><td>3–4</td><td>Adequate documentation but outputs truncated or analysis is superficial.</td></tr>
+                <tr><td>0–2</td><td>Poor documentation. Outputs missing or incomplete. Minimal analysis.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Troubleshooting &amp; Problem-Solving (6 points)</h4>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Score Range</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>5–6</td><td>Correct failure layer identification for all scenarios. Appropriate diagnostic commands. Clear fix procedures. Bonus scenario attempted.</td></tr>
+                <tr><td>3–4</td><td>Mostly correct troubleshooting. Minor errors in layer identification or fix commands.</td></tr>
+                <tr><td>1–2</td><td>Some troubleshooting attempted but significant conceptual errors.</td></tr>
+                <tr><td>0</td><td>Troubleshooting scenarios not attempted.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Technical Accuracy (3 points)</h4>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Score Range</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>3</td><td>All IP addresses, masks, and commands are correct. Explanations show deep understanding.</td></tr>
+                <tr><td>2</td><td>Minor technical errors that do not indicate fundamental misunderstanding.</td></tr>
+                <tr><td>1</td><td>Several technical errors or conceptual misunderstandings.</td></tr>
+                <tr><td>0</td><td>Pervasive technical errors throughout.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PDF Bar (Bottom) ===== -->
+  <div class="pdf-bar" id="pdf-bar-bottom">
+    <div class="form-group">
+      <label for="student-last-name-bottom">Last Name</label>
+      <input type="text" id="student-last-name-bottom" placeholder="e.g., Smith" autocomplete="family-name">
+    </div>
+    <div class="form-group">
+      <label for="student-first-name-bottom">First Name</label>
+      <input type="text" id="student-first-name-bottom" placeholder="e.g., Jane" autocomplete="given-name">
+    </div>
+    <button type="button" class="btn btn-lg btn-success btn-pdf-trigger" onclick="savePDF()">
+      📄 Save as PDF
+    </button>
+  </div>
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer" role="contentinfo">
+  <p>CSC 152 — Network Operating Systems and Administration · Mendocino College · Spring 2026</p>
+  <p>Instructor: David Pai · <a href="#">Course Home in Canvas</a></p>
+  <p>Lab aligned with <strong>CSLO 3:</strong> Configure systems for network connectivity, including physical and logical elements.</p>
+</footer>
+
+<!-- ===== html2pdf.js from CDN ===== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" integrity="sha512-MpDFImlYBCwV1VwOmOhN8UD4k4Ow9FMWLXE0BqbhMEMPB6MDOSGNPe8RUOacYsMLDrlBDgL+WMHB1iFq7kkQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+(function() {
+  'use strict';
+
+  /* ===== Sync name fields between top and bottom bars ===== */
+  var lastTop = document.getElementById('student-last-name');
+  var lastBot = document.getElementById('student-last-name-bottom');
+  var firstTop = document.getElementById('student-first-name');
+  var firstBot = document.getElementById('student-first-name-bottom');
+
+  function syncNames(sourceFirst, sourceLast, targetFirst, targetLast) {
+    targetFirst.value = sourceFirst.value;
+    targetLast.value = sourceLast.value;
+  }
+
+  lastTop.addEventListener('input', function() { lastBot.value = lastTop.value; });
+  lastBot.addEventListener('input', function() { lastTop.value = lastBot.value; });
+  firstTop.addEventListener('input', function() { firstBot.value = firstTop.value; });
+  firstBot.addEventListener('input', function() { firstTop.value = firstBot.value; });
+
+  /* ===== Accordion Logic ===== */
+  document.querySelectorAll('.accordion-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      var panel = document.getElementById(this.getAttribute('aria-controls'));
+      this.setAttribute('aria-expanded', String(!expanded));
+      panel.setAttribute('aria-hidden', String(expanded));
+    });
+    btn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.click();
+      }
+    });
+  });
+
+  /* ===== Section Nav Active State ===== */
+  var navLinks = document.querySelectorAll('#section-nav a');
+  var sections = [];
+  navLinks.forEach(function(link) {
+    var target = document.querySelector(link.getAttribute('href'));
+    if (target) sections.push({ link: link, el: target });
+  });
+
+  function updateActiveNav() {
+    var scrollY = window.scrollY || window.pageYOffset;
+    var current = sections[0];
+    for (var i = 0; i < sections.length; i++) {
+      if (sections[i].el.offsetTop <= scrollY + 120) {
+        current = sections[i];
+      }
+    }
+    navLinks.forEach(function(l) { l.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+
+  var scrollTimer;
+  window.addEventListener('scroll', function() {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(updateActiveNav, 60);
+  }, { passive: true });
+  updateActiveNav();
+
+  /* ===== Save as PDF ===== */
+  window.savePDF = function() {
+    var lastName = (lastTop.value || lastBot.value || 'LastName').trim();
+    var firstName = (firstTop.value || firstBot.value || 'FirstName').trim();
+    var filename = lastName + '_' + firstName + '_Lab8.pdf';
+
+    if (!lastName || lastName === 'LastName' || !firstName || firstName === 'FirstName') {
+      alert('Please enter your first and last name before saving the PDF.');
+      lastTop.focus();
+      return;
+    }
+
+    /* Bake form field values into the DOM so html2pdf captures them */
+    var inputs = document.querySelectorAll('input[type="text"], textarea');
+    inputs.forEach(function(el) {
+      el.setAttribute('value', el.value);
+      if (el.tagName === 'TEXTAREA') {
+        el.textContent = el.value;
+      }
+    });
+
+    /* Bake checkbox states */
+    var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(function(cb) {
+      if (cb.checked) {
+        cb.setAttribute('checked', 'checked');
+      } else {
+        cb.removeAttribute('checked');
+      }
+    });
+
+    /* Expand all accordions for PDF */
+    var accordionBtns = document.querySelectorAll('.accordion-btn');
+    var accordionStates = [];
+    accordionBtns.forEach(function(btn) {
+      var panel = document.getElementById(btn.getAttribute('aria-controls'));
+      accordionStates.push({
+        btn: btn,
+        panel: panel,
+        wasExpanded: btn.getAttribute('aria-expanded') === 'true'
+      });
+      btn.setAttribute('aria-expanded', 'true');
+      if (panel) panel.setAttribute('aria-hidden', 'false');
+    });
+
+    /* Hide PDF buttons during capture */
+    var pdfButtons = document.querySelectorAll('.btn-pdf-trigger');
+    pdfButtons.forEach(function(b) { b.style.display = 'none'; });
+
+    var element = document.body;
+    var opt = {
+      margin: [0.5, 0.5, 0.5, 0.5],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+        windowWidth: document.documentElement.scrollWidth,
+        windowHeight: document.documentElement.scrollHeight
+      },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(element).save().then(function() {
+      /* Restore accordion states */
+      accordionStates.forEach(function(state) {
+        if (!state.wasExpanded) {
+          state.btn.setAttribute('aria-expanded', 'false');
+          if (state.panel) state.panel.setAttribute('aria-hidden', 'true');
+        }
+      });
+      /* Restore PDF buttons */
+      pdfButtons.forEach(function(b) { b.style.display = ''; });
+    }).catch(function() {
+      /* Restore on error too */
+      accordionStates.forEach(function(state) {
+        if (!state.wasExpanded) {
+          state.btn.setAttribute('aria-expanded', 'false');
+          if (state.panel) state.panel.setAttribute('aria-hidden', 'true');
+        }
+      });
+      pdfButtons.forEach(function(b) { b.style.display = ''; });
+      alert('There was an error generating the PDF. Try using your browser\'s Print → Save as PDF feature instead (Ctrl+P / Cmd+P).');
+    });
+  };
+
+})();
+</script>
+</body>
+</html>
