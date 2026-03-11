@@ -575,21 +575,6 @@ code {
 <!-- ===== MAIN CONTENT ===== -->
 <main id="main-content" class="main-content" role="main">
 
-  <!-- ===== Student Name & PDF Bar (Top) ===== -->
-  <div class="pdf-bar" id="pdf-bar-top">
-    <div class="form-group">
-      <label for="student-last-name">Last Name</label>
-      <input type="text" id="student-last-name" placeholder="e.g., Smith" autocomplete="family-name">
-    </div>
-    <div class="form-group">
-      <label for="student-first-name">First Name</label>
-      <input type="text" id="student-first-name" placeholder="e.g., Jane" autocomplete="given-name">
-    </div>
-    <button type="button" class="btn btn-lg btn-success btn-pdf-trigger" onclick="savePDF()">
-      📄 Save as PDF
-    </button>
-  </div>
-
   <!-- ===== §0: Overview ===== -->
   <section id="section-overview" class="section">
     <h2>Lab Overview &amp; Learning Objectives</h2>
@@ -1439,22 +1424,6 @@ Get-DnsClientCache | Select-Object -First 10</code></pre>
 (function() {
   'use strict';
 
-  /* ===== Sync name fields between top and bottom bars ===== */
-  var lastTop = document.getElementById('student-last-name');
-  var lastBot = document.getElementById('student-last-name-bottom');
-  var firstTop = document.getElementById('student-first-name');
-  var firstBot = document.getElementById('student-first-name-bottom');
-
-  function syncNames(sourceFirst, sourceLast, targetFirst, targetLast) {
-    targetFirst.value = sourceFirst.value;
-    targetLast.value = sourceLast.value;
-  }
-
-  lastTop.addEventListener('input', function() { lastBot.value = lastTop.value; });
-  lastBot.addEventListener('input', function() { lastTop.value = lastBot.value; });
-  firstTop.addEventListener('input', function() { firstBot.value = firstTop.value; });
-  firstBot.addEventListener('input', function() { firstTop.value = firstBot.value; });
-
   /* ===== Accordion Logic ===== */
   document.querySelectorAll('.accordion-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -1500,19 +1469,14 @@ Get-DnsClientCache | Select-Object -First 10</code></pre>
 
   /* ===== Save as PDF ===== */
   window.savePDF = function() {
-    var lastName = (lastTop.value || lastBot.value || 'LastName').trim();
-    var firstName = (firstTop.value || firstBot.value || 'FirstName').trim();
-    var filename = lastName + '_' + firstName + '_Lab8.pdf';
+    var lastInput  = document.getElementById('student-last-name-bottom');
+    var firstInput = document.getElementById('student-first-name-bottom');
+    var lastName   = (lastInput  && lastInput.value.trim())  || 'Student';
+    var firstName  = (firstInput && firstInput.value.trim()) || 'Submission';
+    var filename   = lastName + '_' + firstName + '_Lab8.pdf';
 
-    if (!lastName || lastName === 'LastName' || !firstName || firstName === 'FirstName') {
-      alert('Please enter your first and last name before saving the PDF.');
-      lastTop.focus();
-      return;
-    }
-
-    /* Bake form field values into the DOM so html2pdf captures them */
-    var inputs = document.querySelectorAll('input[type="text"], textarea');
-    inputs.forEach(function(el) {
+    /* Bake current form values into DOM attributes so html2pdf captures them */
+    document.querySelectorAll('input[type="text"], textarea').forEach(function(el) {
       el.setAttribute('value', el.value);
       if (el.tagName === 'TEXTAREA') {
         el.textContent = el.value;
@@ -1520,34 +1484,46 @@ Get-DnsClientCache | Select-Object -First 10</code></pre>
     });
 
     /* Bake checkbox states */
-    var checkboxes = document.querySelectorAll('input[type="checkbox"]');
-    checkboxes.forEach(function(cb) {
-      if (cb.checked) {
-        cb.setAttribute('checked', 'checked');
-      } else {
-        cb.removeAttribute('checked');
-      }
+    document.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+      if (cb.checked) cb.setAttribute('checked', 'checked');
+      else cb.removeAttribute('checked');
     });
 
-    /* Expand all accordions for PDF */
-    var accordionBtns = document.querySelectorAll('.accordion-btn');
+    /* Expand all accordions so rubric detail is included in the PDF */
     var accordionStates = [];
-    accordionBtns.forEach(function(btn) {
+    document.querySelectorAll('.accordion-btn').forEach(function(btn) {
       var panel = document.getElementById(btn.getAttribute('aria-controls'));
       accordionStates.push({
-        btn: btn,
-        panel: panel,
+        btn: btn, panel: panel,
         wasExpanded: btn.getAttribute('aria-expanded') === 'true'
       });
       btn.setAttribute('aria-expanded', 'true');
       if (panel) panel.setAttribute('aria-hidden', 'false');
     });
 
-    /* Hide PDF buttons during capture */
+    /* Hide the Save button during capture so it is not printed */
     var pdfButtons = document.querySelectorAll('.btn-pdf-trigger');
     pdfButtons.forEach(function(b) { b.style.display = 'none'; });
 
-    var element = document.body;
+    /* Always-run cleanup — called after success, failure, or exception */
+    function restoreUI() {
+      accordionStates.forEach(function(state) {
+        if (!state.wasExpanded) {
+          state.btn.setAttribute('aria-expanded', 'false');
+          if (state.panel) state.panel.setAttribute('aria-hidden', 'true');
+        }
+      });
+      pdfButtons.forEach(function(b) { b.style.display = ''; });
+    }
+
+    /* If the CDN library never loaded, fall back to the browser print dialog */
+    if (typeof html2pdf === 'undefined') {
+      restoreUI();
+      alert('The PDF library could not be loaded (you may be offline or in a restricted environment).\n\nOpening the print dialog instead — choose "Save as PDF" from the printer list.');
+      window.print();
+      return;
+    }
+
     var opt = {
       margin: [0.5, 0.5, 0.5, 0.5],
       filename: filename,
@@ -1563,27 +1539,19 @@ Get-DnsClientCache | Select-Object -First 10</code></pre>
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
-    html2pdf().set(opt).from(element).save().then(function() {
-      /* Restore accordion states */
-      accordionStates.forEach(function(state) {
-        if (!state.wasExpanded) {
-          state.btn.setAttribute('aria-expanded', 'false');
-          if (state.panel) state.panel.setAttribute('aria-hidden', 'true');
-        }
-      });
-      /* Restore PDF buttons */
-      pdfButtons.forEach(function(b) { b.style.display = ''; });
-    }).catch(function() {
-      /* Restore on error too */
-      accordionStates.forEach(function(state) {
-        if (!state.wasExpanded) {
-          state.btn.setAttribute('aria-expanded', 'false');
-          if (state.panel) state.panel.setAttribute('aria-hidden', 'true');
-        }
-      });
-      pdfButtons.forEach(function(b) { b.style.display = ''; });
-      alert('There was an error generating the PDF. Try using your browser\'s Print → Save as PDF feature instead (Ctrl+P / Cmd+P).');
-    });
+    try {
+      html2pdf().set(opt).from(document.body).save()
+        .then(restoreUI)
+        .catch(function(err) {
+          console.error('html2pdf error:', err);
+          restoreUI();
+          alert('PDF generation failed.\n\nTry using Ctrl+P (Cmd+P on Mac) and choosing "Save as PDF" from the printer list.');
+        });
+    } catch (err) {
+      console.error('html2pdf exception:', err);
+      restoreUI();
+      alert('PDF generation failed.\n\nTry using Ctrl+P (Cmd+P on Mac) and choosing "Save as PDF" from the printer list.');
+    }
   };
 
 })();
