@@ -1,0 +1,2571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 9.2 – DNS Server Concepts &amp; Zone Configuration | CSC 152</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f6f9;
+    color: #1a1a2e;
+    line-height: 1.7;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute; top: -100%; left: 1rem;
+    background: #1a3a5c; color: #fff; padding: 0.5rem 1rem;
+    border-radius: 0 0 4px 4px; font-weight: 700; z-index: 9999;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Navigation ── */
+  nav#main-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #1a3a5c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  nav#main-nav .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.25rem; padding: 0.5rem 1rem;
+  }
+  nav#main-nav .nav-brand {
+    color: #f0c040; font-weight: 700; font-size: 0.85rem;
+    margin-right: 0.75rem; white-space: nowrap;
+  }
+  nav#main-nav a {
+    color: #cfe2ff; text-decoration: none;
+    font-size: 0.82rem; font-weight: 700;
+    min-width: 1.9rem; height: 1.9rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+  }
+  nav#main-nav a:hover { background: #2e5f8a; color: #fff; }
+  nav#main-nav a:focus-visible {
+    outline: 3px solid #f0c040; outline-offset: 2px;
+    background: #2e5f8a; color: #fff;
+  }
+  nav#main-nav a[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute; top: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: #0d2137; color: #fff;
+    font-size: 0.72rem; font-weight: 500;
+    white-space: nowrap; padding: 0.3rem 0.6rem;
+    border-radius: 4px; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; z-index: 200;
+  }
+  nav#main-nav a[data-tooltip]:hover::after,
+  nav#main-nav a[data-tooltip]:focus-visible::after { opacity: 1; }
+
+  /* ── Page Layout ── */
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── Module Header ── */
+  .module-header {
+    background: linear-gradient(135deg, #1a3a5c 0%, #2e5f8a 100%);
+    color: #fff; border-radius: 10px; padding: 2rem 2rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .module-header .badge {
+    display: inline-block; background: #f0c040; color: #1a1a2e;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+  .module-header h1 { font-size: 1.75rem; line-height: 1.25; margin-bottom: 0.5rem; }
+  .module-header .meta {
+    font-size: 0.85rem; opacity: 0.85; display: flex; flex-wrap: wrap; gap: 1rem;
+    margin-top: 0.75rem;
+  }
+  .module-header .meta span::before { content: "• "; }
+  .module-header .meta span:first-child::before { content: ""; }
+
+  /* ── Progress Bar ── */
+  .progress-container {
+    background: #dde3ec; border-radius: 8px; padding: 1rem 1.25rem;
+    margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;
+  }
+  .progress-label { font-size: 0.82rem; font-weight: 600; white-space: nowrap; color: #1a3a5c; }
+  .progress-bar-outer {
+    flex: 1; height: 10px; background: #b8c4d4; border-radius: 10px; overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%; width: 0%; background: #2e7d32;
+    border-radius: 10px; transition: width 0.4s ease;
+  }
+  .progress-count { font-size: 0.82rem; font-weight: 700; color: #1a3a5c; white-space: nowrap; }
+
+  /* ── Section Anchors ── */
+  .section-anchor {
+    display: block; height: 0; visibility: hidden;
+    margin-top: -70px; padding-top: 70px;
+  }
+
+  /* ── Content Sections ── */
+  .content-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 1.75rem; overflow: hidden;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.5rem; cursor: pointer;
+    background: #f0f4fa; border-bottom: 2px solid #dde3ec;
+    user-select: none;
+  }
+  .section-header:hover { background: #e4ecf7; }
+  .section-header:focus-visible { outline: 3px solid #1a3a5c; outline-offset: -3px; }
+  .section-header h2 {
+    font-size: 1.1rem; color: #1a3a5c; display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-icon { font-size: 1.2rem; }
+  .toggle-btn {
+    background: none; border: none; cursor: pointer;
+    color: #1a3a5c; font-size: 1.2rem; padding: 0.25rem;
+    border-radius: 4px; transition: transform 0.25s; line-height: 1;
+  }
+  .toggle-btn:focus-visible { outline: 3px solid #1a3a5c; outline-offset: 2px; }
+  .toggle-btn.open { transform: rotate(180deg); }
+  .section-body { padding: 1.5rem; display: none; }
+  .section-body.open { display: block; }
+
+  /* ── Completion Checkbox ── */
+  .completion-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #eee;
+  }
+  .completion-row input[type="checkbox"] {
+    width: 1.1rem; height: 1.1rem; accent-color: #2e7d32; cursor: pointer;
+  }
+  .completion-row label { font-size: 0.85rem; color: #444; cursor: pointer; }
+
+  /* ── Typography ── */
+  h3 { font-size: 1rem; color: #1a3a5c; margin: 1.25rem 0 0.5rem; }
+  h4 { font-size: 0.92rem; color: #2e5f8a; margin: 1rem 0 0.4rem; }
+  p { margin-bottom: 0.85rem; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 0.85rem; }
+  li { margin-bottom: 0.3rem; }
+  strong { color: #1a1a2e; }
+  code {
+    background: #eef2f7; color: #c0392b;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 3px;
+  }
+
+  /* ── Callout Boxes ── */
+  .callout {
+    border-left: 4px solid; border-radius: 0 6px 6px 0;
+    padding: 0.85rem 1rem; margin: 1rem 0; font-size: 0.92rem;
+  }
+  .callout-info     { border-color: #2e5f8a; background: #eef4fb; }
+  .callout-tip      { border-color: #2e7d32; background: #edf7ee; }
+  .callout-warning  { border-color: #e65100; background: #fff3e0; }
+  .callout-security { border-color: #6a1b9a; background: #f3e5f5; }
+  .callout-title { font-weight: 700; margin-bottom: 0.3rem; }
+
+  /* ── Code Block ── */
+  .code-block {
+    background: #1e2a3a; color: #cdd9e5;
+    border-radius: 8px; padding: 1.1rem 1.25rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.82rem; line-height: 1.65;
+    overflow-x: auto; margin: 0.85rem 0; tab-size: 4;
+  }
+  .code-block .cm { color: #8fa8c8; font-style: italic; }
+  .code-block .kw { color: #79b8ff; }
+  .code-block .st { color: #85e89d; }
+  .code-block .nm { color: #f0c040; }
+  .code-block .op { color: #ffab70; }
+
+  /* ── Step List ── */
+  .step-list { list-style: none; padding: 0; margin: 0.85rem 0; }
+  .step-list li { display: flex; gap: 0.85rem; align-items: flex-start; margin-bottom: 0.85rem; }
+  .step-num {
+    flex-shrink: 0; width: 1.8rem; height: 1.8rem;
+    background: #1a3a5c; color: #f0c040;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.8rem;
+  }
+  .step-content { flex: 1; padding-top: 0.15rem; }
+
+  /* ── Tables ── */
+  .options-table {
+    width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.85rem 0;
+  }
+  .options-table th {
+    background: #1a3a5c; color: #fff; text-align: left;
+    padding: 0.6rem 0.85rem; font-size: 0.82rem;
+  }
+  .options-table td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #eee; }
+  .options-table tr:nth-child(even) td { background: #f8fafc; }
+  .options-table tr:hover td { background: #eef4fb; }
+
+  /* ── Tabs ── */
+  .tab-group { margin: 1rem 0; }
+  .tab-buttons {
+    display: flex; gap: 0; border-bottom: 2px solid #1a3a5c; flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: #eef2f7; border: none; cursor: pointer;
+    padding: 0.55rem 1.1rem; font-size: 0.88rem; font-weight: 600;
+    color: #1a3a5c; border-radius: 6px 6px 0 0;
+    border: 1px solid #dde3ec; border-bottom: none;
+    margin-right: 3px; transition: background 0.15s;
+  }
+  .tab-btn:hover { background: #d6e4f5; }
+  .tab-btn.active { background: #1a3a5c; color: #f0c040; border-color: #1a3a5c; }
+  .tab-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .tab-panel {
+    display: none; padding: 1.25rem; background: #fff;
+    border: 1px solid #dde3ec; border-top: none; border-radius: 0 0 6px 6px;
+  }
+  .tab-panel.active { display: block; }
+
+  /* ── DNS Hierarchy Diagram ── */
+  .dns-hierarchy {
+    margin: 1.25rem 0; font-size: 0.88rem;
+  }
+  .dns-level {
+    display: flex; align-items: stretch; border-radius: 8px;
+    overflow: hidden; margin-bottom: 0; border: 1px solid #dde3ec;
+    border-bottom: none;
+  }
+  .dns-level:last-child { border-bottom: 1px solid #dde3ec; border-radius: 0 0 8px 8px; }
+  .dns-level:first-child { border-radius: 8px 8px 0 0; }
+  .dns-level-num {
+    width: 2.5rem; flex-shrink: 0;
+    background: #1a3a5c; color: #f0c040;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.85rem;
+  }
+  .dns-level-name {
+    width: 11rem; flex-shrink: 0; font-weight: 700;
+    padding: 0.75rem 0.85rem; display: flex; align-items: center;
+    font-size: 0.88rem;
+  }
+  .dns-level-example {
+    width: 10rem; flex-shrink: 0;
+    padding: 0.75rem 0.85rem; display: flex; align-items: center;
+    font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.8rem;
+    color: #c0392b;
+  }
+  .dns-level-desc {
+    flex: 1; padding: 0.75rem 0.85rem; display: flex; align-items: center;
+    color: #333; font-size: 0.83rem;
+  }
+  .dns-l1 { background: #e3f2fd; } .dns-l1 .dns-level-name { color: #1565c0; }
+  .dns-l2 { background: #e8f5e9; } .dns-l2 .dns-level-name { color: #2e7d32; }
+  .dns-l3 { background: #fff3e0; } .dns-l3 .dns-level-name { color: #e65100; }
+  .dns-l4 { background: #f3e5f5; } .dns-l4 .dns-level-name { color: #6a1b9a; }
+  .dns-l5 { background: #fce4ec; } .dns-l5 .dns-level-name { color: #880e4f; }
+
+  .dns-arrow {
+    text-align: center; font-size: 1.3rem; color: #2e5f8a;
+    line-height: 1; padding: 0.1rem 0;
+  }
+
+  /* ── Zone Type Cards ── */
+  .zone-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem; margin: 1rem 0;
+  }
+  .zone-card {
+    border-radius: 8px; border: 2px solid; padding: 1rem;
+    font-size: 0.88rem;
+  }
+  .zone-card-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.4rem; }
+  .zone-primary   { border-color: #1565c0; background: #e3f2fd; }
+  .zone-primary   .zone-card-title { color: #1565c0; }
+  .zone-secondary { border-color: #2e7d32; background: #e8f5e9; }
+  .zone-secondary .zone-card-title { color: #2e7d32; }
+  .zone-stub      { border-color: #e65100; background: #fff3e0; }
+  .zone-stub      .zone-card-title { color: #e65100; }
+  .zone-forward   { border-color: #6a1b9a; background: #f3e5f5; }
+  .zone-forward   .zone-card-title { color: #6a1b9a; }
+
+  /* ── Mini-Case ── */
+  .mini-case {
+    background: #fff8e1; border: 2px solid #f0c040;
+    border-radius: 8px; padding: 1.25rem; margin: 1rem 0;
+  }
+  .mini-case-header { font-weight: 700; color: #e65100; margin-bottom: 0.75rem; font-size: 1rem; }
+  .scenario-box {
+    background: #fff; border-left: 4px solid #e65100;
+    padding: 0.85rem 1rem; border-radius: 0 6px 6px 0;
+    margin-bottom: 1rem; font-size: 0.92rem;
+  }
+  .case-question { margin: 0.75rem 0; }
+  .case-question p { font-weight: 600; margin-bottom: 0.35rem; font-size: 0.92rem; }
+  .reveal-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-size: 0.82rem;
+    font-weight: 600; transition: background 0.15s;
+  }
+  .reveal-btn:hover { background: #2e5f8a; }
+  .reveal-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .model-answer {
+    display: none; background: #e8f5e9; border-left: 4px solid #2e7d32;
+    padding: 0.75rem 1rem; margin-top: 0.5rem; border-radius: 0 6px 6px 0;
+    font-size: 0.88rem;
+  }
+  .model-answer.visible { display: block; }
+
+  /* ── Knowledge Check ── */
+  .kc-wrap { margin: 0.85rem 0; }
+  .kc-question {
+    background: #f0f4fa; border-radius: 8px; padding: 1.1rem 1.25rem;
+    margin-bottom: 1.25rem; border: 1px solid #dde3ec;
+  }
+  .kc-question p.q-text { font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem; }
+  .kc-options { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .kc-options li label {
+    display: flex; align-items: center; gap: 0.6rem;
+    cursor: pointer; padding: 0.45rem 0.75rem;
+    border-radius: 5px; border: 1px solid #cdd5e0;
+    background: #fff; font-size: 0.9rem; transition: background 0.12s;
+  }
+  .kc-options li label:hover { background: #eef4fb; }
+  .kc-options li input[type="radio"] { accent-color: #1a3a5c; }
+  .kc-text-input {
+    width: 100%; max-width: 480px; padding: 0.45rem 0.75rem;
+    border: 1px solid #cdd5e0; border-radius: 5px;
+    font-size: 0.9rem; margin-bottom: 0.5rem; font-family: inherit;
+  }
+  .kc-text-input:focus { outline: 2px solid #1a3a5c; }
+  .kc-submit-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.45rem 1.1rem; border-radius: 5px; font-size: 0.88rem;
+    font-weight: 600; transition: background 0.15s; margin-top: 0.5rem;
+  }
+  .kc-submit-btn:hover { background: #2e5f8a; }
+  .kc-submit-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .kc-feedback {
+    display: none; margin-top: 0.65rem; padding: 0.65rem 0.9rem;
+    border-radius: 6px; font-size: 0.88rem; font-weight: 500;
+  }
+  .kc-feedback.correct   { background: #e8f5e9; color: #1b5e20; border-left: 4px solid #2e7d32; display: block; }
+  .kc-feedback.incorrect { background: #ffebee; color: #b71c1c; border-left: 4px solid #c62828; display: block; }
+  .kc-score-summary {
+    display: none; background: #1a3a5c; color: #fff;
+    border-radius: 8px; padding: 1rem 1.25rem; margin-top: 0.5rem;
+    text-align: center; font-size: 1rem;
+  }
+  .kc-score-summary.visible { display: block; }
+  .kc-score-summary .score-big { font-size: 2rem; font-weight: 900; color: #f0c040; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .module-header h1 { font-size: 1.35rem; }
+    .dns-level-example { display: none; }
+    .dns-level-name { width: 8rem; }
+    .zone-cards { grid-template-columns: 1fr; }
+    nav#main-nav .nav-inner { gap: 0.15rem; }
+    nav#main-nav a { font-size: 0.72rem; padding: 0.25rem 0.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ══════════════════════════════════════════════
+     TOP NAVIGATION
+══════════════════════════════════════════════ -->
+<nav id="main-nav" aria-label="Module sections">
+  <div class="nav-inner">
+    <span class="nav-brand">9.2 DNS Server</span>
+    <a href="#sec-why"       data-tooltip="Why DNS Servers Matter"            aria-label="Section 1: Why DNS Servers Matter">1</a>
+    <a href="#sec-hierarchy" data-tooltip="DNS Hierarchy"                     aria-label="Section 2: DNS Hierarchy">2</a>
+    <a href="#sec-zones"     data-tooltip="Zone Types"                        aria-label="Section 3: Zone Types">3</a>
+    <a href="#sec-records"   data-tooltip="Resource Record Types"             aria-label="Section 4: Resource Record Types">4</a>
+    <a href="#sec-fwdrev"    data-tooltip="Forward &amp; Reverse Lookup Zones" aria-label="Section 5: Forward and Reverse Lookup Zones">5</a>
+    <a href="#sec-linux"     data-tooltip="Configuring DNS on Linux (BIND9)"  aria-label="Section 6: Configuring DNS on Linux (BIND9)">6</a>
+    <a href="#sec-windows"   data-tooltip="Configuring DNS on Windows Server" aria-label="Section 7: Configuring DNS on Windows Server">7</a>
+    <a href="#sec-security"  data-tooltip="DNS Security Overview"             aria-label="Section 8: DNS Security Overview">8</a>
+    <a href="#sec-case"      data-tooltip="Mini-Case: Why Can't I Reach the File Server?" aria-label="Section 9: Mini-Case">9</a>
+    <a href="#sec-kc"        data-tooltip="Knowledge Check"                   aria-label="Section 10: Knowledge Check">10</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════ -->
+<main id="main-content" class="page-wrap">
+
+  <!-- Module Header -->
+  <header class="module-header" role="banner">
+    <div class="badge">CSC 152 · Week 9 · Module 9.2</div>
+    <h1>DNS Server Concepts &amp; Zone Configuration</h1>
+    <p style="opacity:0.9;font-size:0.95rem;margin-top:0.5rem;">
+      Move from DNS <em>client</em> (Week 8) to deploying and managing a DNS
+      <em>server</em> — learn the hierarchy, zone types, resource records, and
+      configure forward and reverse lookup zones on both BIND9 (Linux) and
+      Windows Server DNS Manager.
+    </p>
+    <div class="meta">
+      <span>Week 9 · March 16–22, 2026</span>
+      <span>Estimated time: ~2.0 hours</span>
+      <span>CSLO 3 · Week 9 Objective 2</span>
+      <span>Supports: Quiz 9 · Lab 9 EC · Project 2 Part B</span>
+    </div>
+  </header>
+
+  <!-- Progress Bar -->
+  <div class="progress-container" role="region" aria-label="Section completion progress">
+    <span class="progress-label">Sections completed:</span>
+    <div class="progress-bar-outer" role="progressbar" aria-valuemin="0" aria-valuemax="10"
+         aria-valuenow="0" aria-label="Progress" id="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar"></div>
+    </div>
+    <span class="progress-count" id="progress-count">0 / 10</span>
+  </div>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 1 – Why DNS Servers Matter
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-why" aria-hidden="true"></span>
+  <article class="content-section" id="article-1">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="true" aria-controls="body-1"
+         onclick="toggleSection(1)" onkeydown="keyToggle(event,1)">
+      <h2><span class="section-icon" aria-hidden="true">🌐</span>
+          1 · Why DNS Servers Matter</h2>
+      <button class="toggle-btn open" id="toggle-1" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body open" id="body-1">
+
+      <p>
+        In <strong>Week 8 (Module 8.3)</strong> you configured systems as DNS
+        <em>clients</em> — you pointed <code>/etc/resolv.conf</code> or the
+        Windows DNS client settings at a resolver and used <code>nslookup</code>
+        and <code>dig</code> to query it. This week you become the administrator
+        who <em>runs</em> that resolver and the authoritative zones behind it.
+      </p>
+
+      <h3>The Client vs. Server Perspective</h3>
+      <table class="options-table" aria-label="DNS client vs server comparison">
+        <thead>
+          <tr><th>Perspective</th><th>Role</th><th>What it does</th><th>Week covered</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>DNS Client</td>
+            <td>Every networked device</td>
+            <td>Sends queries to a resolver; uses answers to connect to services</td>
+            <td>Week 8 (Module 8.3)</td>
+          </tr>
+          <tr>
+            <td>DNS Resolver (Recursive)</td>
+            <td>Caching/forwarding server</td>
+            <td>Receives client queries; walks the hierarchy to find answers; caches results</td>
+            <td>Week 9 (this module)</td>
+          </tr>
+          <tr>
+            <td>DNS Authoritative Server</td>
+            <td>Zone owner</td>
+            <td>Holds the definitive records for a zone; answers with authority</td>
+            <td>Week 9 (this module)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Why Run Your Own DNS Server?</h3>
+      <p>
+        In a lab or enterprise environment, a locally-hosted DNS server provides
+        several critical capabilities that public resolvers (like
+        <code>8.8.8.8</code>) cannot:
+      </p>
+      <ul>
+        <li><strong>Internal name resolution:</strong> Hostnames like
+          <code>fileserver.lab.local</code> only exist inside your network.
+          A public DNS server has no knowledge of them.</li>
+        <li><strong>Reverse lookups:</strong> Mapping IP addresses back to
+          hostnames (PTR records) for logging, monitoring, and Active Directory
+          authentication requires a locally-managed reverse zone.</li>
+        <li><strong>Split-horizon DNS:</strong> Returning different answers
+          for internal vs. external clients (e.g., internal users reach a
+          server at its private IP; external users reach the same name via
+          a public IP).</li>
+        <li><strong>Performance:</strong> A local caching resolver reduces
+          latency for repeated queries and reduces external DNS traffic.</li>
+        <li><strong>Control:</strong> You decide which names exist, which
+          records they point to, and how long they are cached.</li>
+      </ul>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Project 2 Connection</div>
+        Project 2 Part B requires you to configure a DNS server with forward
+        and reverse lookup zones for your internal <code>lab.local</code>
+        domain. Every concept in this module directly supports that deliverable.
+        The DHCP server you configured in Module 9.1 will distribute your
+        DNS server's IP address to clients via Option 6 — completing the
+        name resolution chain.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-1" onchange="updateProgress()">
+        <label for="chk-1">I have read and understood Section 1.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 2 – DNS Hierarchy
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-hierarchy" aria-hidden="true"></span>
+  <article class="content-section" id="article-2">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-2"
+         onclick="toggleSection(2)" onkeydown="keyToggle(event,2)">
+      <h2><span class="section-icon" aria-hidden="true">🏛️</span>
+          2 · The DNS Hierarchy</h2>
+      <button class="toggle-btn" id="toggle-2" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-2">
+
+      <p>
+        DNS is a <strong>distributed, hierarchical database</strong>. No single
+        server knows every hostname on the internet. Instead, the namespace is
+        divided into a tree of zones, each managed by a different authority.
+        A recursive resolver navigates this tree — starting at the top — to
+        answer any query.
+      </p>
+
+      <h3>The Five Levels of the DNS Hierarchy</h3>
+
+      <!-- DNS Hierarchy Diagram -->
+      <div class="dns-hierarchy" role="table" aria-label="DNS hierarchy levels">
+        <div class="dns-level dns-l1" role="row">
+          <div class="dns-level-num" role="cell">1</div>
+          <div class="dns-level-name" role="cell">Root Zone</div>
+          <div class="dns-level-example" role="cell">.</div>
+          <div class="dns-level-desc" role="cell">
+            The top of the DNS tree, represented by a single dot (<code>.</code>).
+            Managed by ICANN/IANA. 13 sets of root server addresses (A–M)
+            distributed globally via anycast. Root servers know the addresses
+            of all TLD nameservers.
+          </div>
+        </div>
+        <div class="dns-arrow" aria-hidden="true">▼</div>
+        <div class="dns-level dns-l2" role="row">
+          <div class="dns-level-num" role="cell">2</div>
+          <div class="dns-level-name" role="cell">TLD Servers</div>
+          <div class="dns-level-example" role="cell">.com .edu .org .net</div>
+          <div class="dns-level-desc" role="cell">
+            Top-Level Domain servers manage all domains directly beneath them.
+            Generic TLDs (.com, .org, .net) are managed by registries like
+            Verisign. Country-code TLDs (.uk, .ca, .jp) are managed by national
+            authorities. TLD servers know the authoritative nameservers for
+            every registered domain.
+          </div>
+        </div>
+        <div class="dns-arrow" aria-hidden="true">▼</div>
+        <div class="dns-level dns-l3" role="row">
+          <div class="dns-level-num" role="cell">3</div>
+          <div class="dns-level-name" role="cell">Authoritative NS</div>
+          <div class="dns-level-example" role="cell">example.com</div>
+          <div class="dns-level-desc" role="cell">
+            The authoritative nameserver holds the actual DNS records
+            (A, MX, CNAME, etc.) for a specific domain. This is the server
+            you configure when you run your own DNS zone. It answers queries
+            with the <strong>AA (Authoritative Answer)</strong> flag set.
+          </div>
+        </div>
+        <div class="dns-arrow" aria-hidden="true">▼</div>
+        <div class="dns-level dns-l4" role="row">
+          <div class="dns-level-num" role="cell">4</div>
+          <div class="dns-level-name" role="cell">Recursive Resolver</div>
+          <div class="dns-level-example" role="cell">8.8.8.8 / ISP DNS</div>
+          <div class="dns-level-desc" role="cell">
+            The recursive resolver (also called a <em>full-service resolver</em>
+            or <em>caching resolver</em>) does the work of walking the hierarchy
+            on behalf of clients. It caches results for the TTL period to avoid
+            repeating the full lookup. Your local DNS server in Project 2 acts
+            as a recursive resolver for internal clients.
+          </div>
+        </div>
+        <div class="dns-arrow" aria-hidden="true">▼</div>
+        <div class="dns-level dns-l5" role="row">
+          <div class="dns-level-num" role="cell">5</div>
+          <div class="dns-level-name" role="cell">DNS Client (Stub)</div>
+          <div class="dns-level-example" role="cell">Your workstation</div>
+          <div class="dns-level-desc" role="cell">
+            The client (stub resolver) sends a simple query to its configured
+            resolver and waits for a complete answer. It does not walk the
+            hierarchy itself. This is the DNS client behavior you configured
+            in Week 8.
+          </div>
+        </div>
+      </div>
+
+      <h3>How a Full DNS Resolution Works: Step by Step</h3>
+      <p>
+        When a client queries <code>www.example.com</code> for the first time
+        (no cached answer available):
+      </p>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Client → Recursive Resolver:</strong> The workstation's
+            stub resolver sends a query for <code>www.example.com</code>
+            to its configured DNS server (e.g., your lab DNS server or
+            <code>8.8.8.8</code>).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Resolver → Root Server:</strong> The recursive resolver
+            asks a root server: "Who handles <code>.com</code>?" The root
+            server responds with the addresses of the <code>.com</code>
+            TLD nameservers.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Resolver → TLD Server:</strong> The resolver asks a
+            <code>.com</code> TLD server: "Who is authoritative for
+            <code>example.com</code>?" The TLD server responds with the
+            NS records pointing to <code>example.com</code>'s authoritative
+            nameservers.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Resolver → Authoritative Server:</strong> The resolver
+            asks the authoritative nameserver for <code>example.com</code>:
+            "What is the A record for <code>www.example.com</code>?" The
+            authoritative server responds with the IP address and the AA
+            flag set.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Resolver → Client:</strong> The resolver returns the
+            answer to the client and caches it for the duration of the
+            record's TTL. Subsequent queries for the same name are answered
+            from cache without repeating steps 2–4.
+          </div>
+        </li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Internal DNS and Forwarding</div>
+        In your Project 2 lab, your internal DNS server handles queries for
+        <code>lab.local</code> authoritatively. For all other names (like
+        <code>google.com</code>), it <em>forwards</em> the query to an
+        upstream resolver (e.g., <code>8.8.8.8</code>) rather than walking
+        the root hierarchy itself. This is called a <strong>forwarder</strong>
+        configuration and is standard practice for internal DNS servers.
+      </div>
+
+      <h3>Key DNS Terminology</h3>
+      <table class="options-table" aria-label="DNS terminology reference">
+        <thead>
+          <tr><th>Term</th><th>Definition</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Zone</strong></td><td>An administrative unit of the DNS namespace managed by a specific nameserver. A zone contains resource records for a domain or subdomain.</td></tr>
+          <tr><td><strong>TTL (Time to Live)</strong></td><td>How long (in seconds) a resolver may cache a DNS record before it must re-query the authoritative server.</td></tr>
+          <tr><td><strong>FQDN</strong></td><td>Fully Qualified Domain Name — the complete domain name including all labels from the host to the root, e.g., <code>server1.lab.local.</code> (note the trailing dot).</td></tr>
+          <tr><td><strong>Delegation</strong></td><td>The process by which a parent zone hands off authority for a subdomain to a different nameserver, enabling the distributed hierarchy.</td></tr>
+          <tr><td><strong>Glue Record</strong></td><td>An A record provided by a parent zone for a nameserver that is within the delegated zone itself, breaking the circular dependency.</td></tr>
+          <tr><td><strong>Forwarder</strong></td><td>An upstream DNS server to which a resolver sends queries it cannot answer from its own zones or cache.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-2" onchange="updateProgress()">
+        <label for="chk-2">I have read and understood Section 2.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 3 – Zone Types
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-zones" aria-hidden="true"></span>
+  <article class="content-section" id="article-3">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-3"
+         onclick="toggleSection(3)" onkeydown="keyToggle(event,3)">
+      <h2><span class="section-icon" aria-hidden="true">📂</span>
+          3 · Zone Types</h2>
+      <button class="toggle-btn" id="toggle-3" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-3">
+
+      <p>
+        A <strong>zone</strong> is the unit of administrative authority in DNS.
+        DNS servers can host different <em>types</em> of zones, each serving
+        a distinct purpose. Understanding zone types is essential before
+        configuring BIND9 or Windows Server DNS.
+      </p>
+
+      <div class="zone-cards" role="list" aria-label="DNS zone types">
+
+        <div class="zone-card zone-primary" role="listitem">
+          <div class="zone-card-title">🔵 Primary Zone</div>
+          <p>
+            The <strong>read/write master copy</strong> of a zone's data.
+            All DNS record changes (adds, edits, deletes) are made on the
+            primary zone. The primary zone file is stored locally on the
+            primary nameserver.
+          </p>
+          <p style="margin-bottom:0;">
+            <strong>When to use:</strong> Your authoritative DNS server
+            for <code>lab.local</code> in Project 2 will host a primary zone.
+          </p>
+        </div>
+
+        <div class="zone-card zone-secondary" role="listitem">
+          <div class="zone-card-title">🟢 Secondary Zone</div>
+          <p>
+            A <strong>read-only copy</strong> of a primary zone, obtained
+            via a <em>zone transfer</em> (AXFR/IXFR) from the primary server.
+            Secondary zones provide redundancy and load distribution —
+            if the primary server is unavailable, clients can still resolve
+            names from the secondary.
+          </p>
+          <p style="margin-bottom:0;">
+            <strong>When to use:</strong> Enterprise environments with
+            multiple DNS servers for fault tolerance.
+          </p>
+        </div>
+
+        <div class="zone-card zone-stub" role="listitem">
+          <div class="zone-card-title">🟠 Stub Zone</div>
+          <p>
+            Contains only the <strong>NS records and SOA</strong> for a
+            remote zone — not the full record set. A stub zone tells the
+            local server where to find the authoritative nameservers for
+            a delegated domain, without maintaining a full secondary copy.
+          </p>
+          <p style="margin-bottom:0;">
+            <strong>When to use:</strong> Multi-domain environments where
+            you need to keep NS delegations current automatically.
+          </p>
+        </div>
+
+        <div class="zone-card zone-forward" role="listitem">
+          <div class="zone-card-title">🟣 Forward Zone</div>
+          <p>
+            Not a zone in the traditional sense — a <strong>forward zone</strong>
+            (or <em>conditional forwarder</em>) instructs the DNS server to
+            forward all queries for a specific domain to a designated
+            upstream server, rather than resolving them locally or via
+            the root hierarchy.
+          </p>
+          <p style="margin-bottom:0;">
+            <strong>When to use:</strong> Forwarding queries for a partner
+            organization's domain or for split-horizon DNS configurations.
+          </p>
+        </div>
+
+      </div>
+
+      <h3>Active Directory-Integrated Zones (Windows)</h3>
+      <p>
+        In Windows Server environments joined to an Active Directory domain,
+        DNS zones can be stored in the <strong>Active Directory database</strong>
+        rather than flat zone files. AD-integrated zones provide:
+      </p>
+      <ul>
+        <li><strong>Multi-master replication:</strong> Any domain controller
+          running DNS can accept record updates (no single primary bottleneck).</li>
+        <li><strong>Secure dynamic updates:</strong> Only authenticated
+          domain members can register or update their DNS records.</li>
+        <li><strong>Automatic replication:</strong> Zone data replicates
+          via AD replication, not zone transfers.</li>
+      </ul>
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Lab Scope</div>
+        For Project 2, you will create a <strong>primary zone</strong> for
+        <code>lab.local</code> (forward lookup) and a corresponding
+        <strong>primary reverse zone</strong>. Secondary, stub, and
+        AD-integrated zones are covered here for awareness and Quiz 9
+        preparation.
+      </div>
+
+      <h3>Zone Transfer Security</h3>
+      <p>
+        Zone transfers copy the entire contents of a zone from a primary to a
+        secondary server. If left unrestricted, an attacker can perform an
+        unauthorized zone transfer (<code>dig axfr @nameserver domain</code>)
+        and enumerate every hostname and IP address in your network.
+      </p>
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Best Practice: Restrict Zone Transfers</div>
+        Always configure zone transfers to be permitted only to known secondary
+        server IP addresses. In BIND9 this is the <code>allow-transfer</code>
+        directive. In Windows Server DNS, right-click the zone →
+        Properties → Zone Transfers tab → allow only to listed servers.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-3" onchange="updateProgress()">
+        <label for="chk-3">I have read and understood Section 3.</label>
+      </div>
+    </div>
+  </article>
+
+<!-- ═══════════════════════════════════════════
+     END OF PART 1  (Sections 1–3 + head/nav)
+     JavaScript is in Part 3.
+═══════════════════════════════════════════ -->
+
+  <!-- ─────────────────────────────────────────
+       SECTION 4 – Resource Record Types
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-records" aria-hidden="true"></span>
+  <article class="content-section" id="article-4">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-4"
+         onclick="toggleSection(4)" onkeydown="keyToggle(event,4)">
+      <h2><span class="section-icon" aria-hidden="true">📝</span>
+          4 · Resource Record Types</h2>
+      <button class="toggle-btn" id="toggle-4" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-4">
+
+      <p>
+        A DNS zone file is made up of <strong>resource records (RRs)</strong> —
+        individual entries that map names to data. Each record has a type that
+        defines what kind of information it carries. Knowing the common record
+        types is essential for both configuring DNS servers and troubleshooting
+        name resolution problems.
+      </p>
+
+      <h3>Resource Record Format</h3>
+      <p>
+        Every resource record follows this general structure in a zone file:
+      </p>
+      <div class="code-block"><span class="cm">;  name          TTL    class  type   rdata</span>
+<span class="st">server1</span>        <span class="op">3600</span>   <span class="kw">IN</span>     <span class="nm">A</span>      <span class="st">192.168.10.20</span>
+<span class="st">@</span>              <span class="op">3600</span>   <span class="kw">IN</span>     <span class="nm">MX</span>     <span class="op">10</span> <span class="st">mail.lab.local.</span></div>
+      <ul>
+        <li><strong>name:</strong> The hostname or owner of the record.
+          <code>@</code> refers to the zone apex (the domain itself).</li>
+        <li><strong>TTL:</strong> Time to Live in seconds. If omitted,
+          the zone's <code>$TTL</code> default is used.</li>
+        <li><strong>class:</strong> Almost always <code>IN</code> (Internet).</li>
+        <li><strong>type:</strong> The record type (A, MX, CNAME, etc.).</li>
+        <li><strong>rdata:</strong> The record data — the answer to the query.</li>
+      </ul>
+
+      <h3>The Eight Essential Record Types</h3>
+
+      <!-- Tabs for record types -->
+      <div class="tab-group" role="tablist" aria-label="DNS resource record types">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-rr-a" id="tbtn-rr-a"
+                  onclick="switchTab('rr-a')" onkeydown="keyTab(event,'rr-a')">A / AAAA</button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-rr-ptr" id="tbtn-rr-ptr"
+                  onclick="switchTab('rr-ptr')" onkeydown="keyTab(event,'rr-ptr')">PTR</button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-rr-mx" id="tbtn-rr-mx"
+                  onclick="switchTab('rr-mx')" onkeydown="keyTab(event,'rr-mx')">MX</button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-rr-cname" id="tbtn-rr-cname"
+                  onclick="switchTab('rr-cname')" onkeydown="keyTab(event,'rr-cname')">CNAME</button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-rr-ns" id="tbtn-rr-ns"
+                  onclick="switchTab('rr-ns')" onkeydown="keyTab(event,'rr-ns')">NS</button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-rr-soa" id="tbtn-rr-soa"
+                  onclick="switchTab('rr-soa')" onkeydown="keyTab(event,'rr-soa')">SOA</button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-rr-srv" id="tbtn-rr-srv"
+                  onclick="switchTab('rr-srv')" onkeydown="keyTab(event,'rr-srv')">SRV</button>
+        </div>
+
+        <!-- A / AAAA -->
+        <div class="tab-panel active" id="tab-rr-a" role="tabpanel" aria-labelledby="tbtn-rr-a">
+          <h4>A Record — IPv4 Address Mapping</h4>
+          <p>
+            The <strong>A record</strong> (Address record) maps a hostname to an
+            <strong>IPv4 address</strong>. It is the most fundamental record type
+            and the one you will create most often. When a client queries
+            <code>server1.lab.local</code>, the DNS server returns the A record
+            containing the IPv4 address.
+          </p>
+          <div class="code-block"><span class="cm">; A records — hostname to IPv4</span>
+<span class="st">server1</span>     <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">A</span>  <span class="st">192.168.10.20</span>
+<span class="st">fileserver</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">A</span>  <span class="st">192.168.10.21</span>
+<span class="st">webserver</span>   <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">A</span>  <span class="st">192.168.10.22</span></div>
+
+          <h4>AAAA Record — IPv6 Address Mapping</h4>
+          <p>
+            The <strong>AAAA record</strong> (quad-A record) does the same job
+            as an A record but maps a hostname to an <strong>IPv6 address</strong>.
+            The name comes from the fact that IPv6 is 128 bits — four times the
+            32 bits of IPv4, hence four A's.
+          </p>
+          <div class="code-block"><span class="cm">; AAAA record — hostname to IPv6</span>
+<span class="st">server1</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">AAAA</span>  <span class="st">2001:db8::10:20</span></div>
+          <div class="callout callout-tip">
+            <div class="callout-title">💡 Quiz 9 Focus</div>
+            The Knowledge Check and Quiz 9 will ask you to identify which record
+            maps a hostname to an IPv4 address. The answer is the
+            <strong>A record</strong>. AAAA is IPv6; PTR is the reverse
+            (IP → hostname).
+          </div>
+        </div>
+
+        <!-- PTR -->
+        <div class="tab-panel" id="tab-rr-ptr" role="tabpanel" aria-labelledby="tbtn-rr-ptr">
+          <h4>PTR Record — Reverse Lookup (IP → Hostname)</h4>
+          <p>
+            The <strong>PTR record</strong> (Pointer record) is the reverse of
+            an A record — it maps an <strong>IP address back to a hostname</strong>.
+            PTR records live in a special <em>reverse lookup zone</em> (covered
+            in Section 5) and are queried when a system needs to resolve an IP
+            address to a name — for example, in mail server validation, logging,
+            and Active Directory authentication.
+          </p>
+          <p>
+            The IP address is written in <strong>reverse octet order</strong>
+            with the suffix <code>.in-addr.arpa.</code> appended:
+          </p>
+          <div class="code-block"><span class="cm">; PTR record in the 10.168.192.in-addr.arpa. reverse zone</span>
+<span class="cm">; IP 192.168.10.20 → reverse notation: 20.10.168.192.in-addr.arpa.</span>
+<span class="st">20</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">PTR</span>  <span class="st">server1.lab.local.</span>
+<span class="st">21</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">PTR</span>  <span class="st">fileserver.lab.local.</span></div>
+          <div class="callout callout-info">
+            <div class="callout-title">📌 Trailing Dot</div>
+            Notice the trailing dot after <code>lab.local.</code> — this marks
+            the name as a <strong>Fully Qualified Domain Name (FQDN)</strong>.
+            Without it, the DNS server appends the zone name, creating an
+            incorrect result. Always use the trailing dot in PTR record targets
+            and NS record targets.
+          </div>
+        </div>
+
+        <!-- MX -->
+        <div class="tab-panel" id="tab-rr-mx" role="tabpanel" aria-labelledby="tbtn-rr-mx">
+          <h4>MX Record — Mail Exchanger</h4>
+          <p>
+            The <strong>MX record</strong> (Mail Exchanger) specifies the mail
+            server responsible for accepting email for a domain. When another
+            mail server needs to deliver email to <code>user@lab.local</code>,
+            it queries the MX record for <code>lab.local</code> to find the
+            correct mail server.
+          </p>
+          <p>
+            MX records include a <strong>priority value</strong> (lower number =
+            higher priority). Multiple MX records provide redundancy — if the
+            primary mail server is unavailable, the sending server tries the
+            next-lowest priority.
+          </p>
+          <div class="code-block"><span class="cm">; MX records — mail routing for lab.local</span>
+<span class="cm">; @ refers to the zone apex (lab.local itself)</span>
+<span class="st">@</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">MX</span>  <span class="op">10</span>  <span class="st">mail1.lab.local.</span>   <span class="cm"># primary (priority 10)</span>
+<span class="st">@</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">MX</span>  <span class="op">20</span>  <span class="st">mail2.lab.local.</span>   <span class="cm"># backup  (priority 20)</span></div>
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ MX Must Point to an A Record</div>
+            An MX record must point to a hostname that has an A (or AAAA) record.
+            It cannot point directly to an IP address. If <code>mail1.lab.local</code>
+            has no A record, email delivery will fail even if the MX record
+            exists.
+          </div>
+        </div>
+
+        <!-- CNAME -->
+        <div class="tab-panel" id="tab-rr-cname" role="tabpanel" aria-labelledby="tbtn-rr-cname">
+          <h4>CNAME Record — Canonical Name (Alias)</h4>
+          <p>
+            The <strong>CNAME record</strong> (Canonical Name) creates an
+            <strong>alias</strong> — it maps one hostname to another hostname
+            (not directly to an IP address). The resolver follows the CNAME
+            chain until it reaches an A record.
+          </p>
+          <p>
+            Common uses include:
+          </p>
+          <ul>
+            <li>Creating friendly names (<code>www</code> → actual server name)</li>
+            <li>Pointing multiple service names at one host</li>
+            <li>Allowing a hostname to move without updating every service</li>
+          </ul>
+          <div class="code-block"><span class="cm">; CNAME records — aliases</span>
+<span class="st">www</span>     <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">CNAME</span>  <span class="st">webserver.lab.local.</span>
+<span class="st">files</span>   <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">CNAME</span>  <span class="st">fileserver.lab.local.</span>
+<span class="st">intranet</span> <span class="op">3600</span> <span class="kw">IN</span>  <span class="nm">CNAME</span>  <span class="st">webserver.lab.local.</span></div>
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ CNAME Restrictions</div>
+            A CNAME record cannot coexist with other records for the same name.
+            In particular, you <strong>cannot</strong> create a CNAME for the
+            zone apex (<code>@</code> / the domain itself) — that name must have
+            an SOA and NS record. Never point an MX record target at a CNAME.
+          </div>
+        </div>
+
+        <!-- NS -->
+        <div class="tab-panel" id="tab-rr-ns" role="tabpanel" aria-labelledby="tbtn-rr-ns">
+          <h4>NS Record — Nameserver</h4>
+          <p>
+            The <strong>NS record</strong> (Nameserver record) identifies which
+            DNS servers are authoritative for a zone. Every zone must have at
+            least one NS record at the zone apex. NS records are also used in
+            <strong>delegation</strong> — a parent zone uses NS records to hand
+            off authority for a subdomain to a child nameserver.
+          </p>
+          <div class="code-block"><span class="cm">; NS records — authoritative nameservers for lab.local</span>
+<span class="st">@</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">NS</span>  <span class="st">ns1.lab.local.</span>
+<span class="st">@</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">NS</span>  <span class="st">ns2.lab.local.</span>
+
+<span class="cm">; Corresponding A records (glue records) for the nameservers</span>
+<span class="st">ns1</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">A</span>  <span class="st">192.168.10.10</span>
+<span class="st">ns2</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">A</span>  <span class="st">192.168.10.11</span></div>
+          <p>
+            In your Project 2 lab, you will have a single nameserver. Your zone
+            file will have one NS record pointing to that server's hostname, plus
+            an A record for that hostname.
+          </p>
+        </div>
+
+        <!-- SOA -->
+        <div class="tab-panel" id="tab-rr-soa" role="tabpanel" aria-labelledby="tbtn-rr-soa">
+          <h4>SOA Record — Start of Authority</h4>
+          <p>
+            The <strong>SOA record</strong> (Start of Authority) is the first
+            record in every zone file. It identifies the zone's
+            <strong>primary nameserver</strong>, the
+            <strong>responsible party's email address</strong>, and several
+            timing parameters that control zone replication and caching behavior.
+          </p>
+          <div class="code-block"><span class="cm">; SOA record — must be the first record in the zone file</span>
+<span class="st">@</span>  <span class="kw">IN</span>  <span class="nm">SOA</span>  <span class="st">ns1.lab.local.</span>  <span class="st">admin.lab.local.</span>  <span class="op">(</span>
+           <span class="op">2026031601</span>  <span class="cm">; Serial  — YYYYMMDDNN (increment on every change)</span>
+           <span class="op">3600</span>        <span class="cm">; Refresh — how often secondary checks for updates (1 hr)</span>
+           <span class="op">900</span>         <span class="cm">; Retry   — how often secondary retries after failure (15 min)</span>
+           <span class="op">604800</span>      <span class="cm">; Expire  — how long secondary serves data without refresh (7 days)</span>
+           <span class="op">300</span>         <span class="cm">; Minimum TTL / negative cache TTL (5 min)</span>
+<span class="op">)</span></div>
+          <table class="options-table" aria-label="SOA record fields explained">
+            <thead>
+              <tr><th>Field</th><th>Purpose</th><th>Typical Value</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>MNAME</strong></td><td>Primary nameserver hostname</td><td><code>ns1.lab.local.</code></td></tr>
+              <tr><td><strong>RNAME</strong></td><td>Admin email (first dot = @)</td><td><code>admin.lab.local.</code> = admin@lab.local</td></tr>
+              <tr><td><strong>Serial</strong></td><td>Version number — must increment on every change</td><td><code>YYYYMMDDNN</code> format</td></tr>
+              <tr><td><strong>Refresh</strong></td><td>How often secondary polls primary for updates</td><td>3600 (1 hour)</td></tr>
+              <tr><td><strong>Retry</strong></td><td>How often secondary retries after a failed refresh</td><td>900 (15 min)</td></tr>
+              <tr><td><strong>Expire</strong></td><td>How long secondary serves zone data if primary unreachable</td><td>604800 (7 days)</td></tr>
+              <tr><td><strong>Minimum TTL</strong></td><td>Default TTL for records; also the negative cache TTL</td><td>300 (5 min)</td></tr>
+            </tbody>
+          </table>
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ Always Increment the Serial</div>
+            When you modify a zone file, you <strong>must</strong> increment the
+            serial number. Secondary nameservers compare the serial to decide
+            whether to request a zone transfer. If the serial does not increase,
+            secondaries will not pick up your changes.
+          </div>
+        </div>
+
+        <!-- SRV -->
+        <div class="tab-panel" id="tab-rr-srv" role="tabpanel" aria-labelledby="tbtn-rr-srv">
+          <h4>SRV Record — Service Location</h4>
+          <p>
+            The <strong>SRV record</strong> (Service record) specifies the
+            hostname and port of a server providing a specific service. It is
+            used by applications to automatically discover service endpoints
+            without hardcoded IP addresses or port numbers.
+          </p>
+          <p>
+            SRV records are heavily used by:
+          </p>
+          <ul>
+            <li><strong>Active Directory:</strong> Clients find domain
+              controllers, Kerberos servers, and LDAP servers via SRV records
+              in the <code>_msdcs</code> subdomain.</li>
+            <li><strong>VoIP (SIP):</strong> Phones discover SIP proxy servers.</li>
+            <li><strong>XMPP/Jabber:</strong> Chat clients find messaging servers.</li>
+          </ul>
+          <div class="code-block"><span class="cm">; SRV record format:</span>
+<span class="cm">; _service._protocol.name  TTL  IN  SRV  priority  weight  port  target</span>
+<span class="st">_ldap._tcp.lab.local.</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">SRV</span>  <span class="op">0</span>  <span class="op">100</span>  <span class="op">389</span>  <span class="st">dc1.lab.local.</span>
+<span class="st">_kerberos._tcp.lab.local.</span>  <span class="op">3600</span>  <span class="kw">IN</span>  <span class="nm">SRV</span>  <span class="op">0</span>  <span class="op">100</span>  <span class="op">88</span>  <span class="st">dc1.lab.local.</span></div>
+          <div class="callout callout-info">
+            <div class="callout-title">📌 SRV and Active Directory</div>
+            When you promote a Windows Server to a domain controller in a later
+            week, the DNS server is automatically populated with dozens of SRV
+            records. This is how domain-joined clients find authentication
+            services — pure DNS-based service discovery.
+          </div>
+        </div>
+
+      </div><!-- end tab-group -->
+
+      <h3>Quick Reference: All Eight Record Types</h3>
+      <table class="options-table" aria-label="DNS resource record quick reference">
+        <thead>
+          <tr><th>Type</th><th>Full Name</th><th>Maps / Purpose</th><th>Example Query</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>A</strong></td><td>Address</td><td>Hostname → IPv4 address</td><td><code>server1.lab.local → 192.168.10.20</code></td></tr>
+          <tr><td><strong>AAAA</strong></td><td>IPv6 Address</td><td>Hostname → IPv6 address</td><td><code>server1.lab.local → 2001:db8::10:20</code></td></tr>
+          <tr><td><strong>PTR</strong></td><td>Pointer</td><td>IP address → Hostname (reverse)</td><td><code>192.168.10.20 → server1.lab.local</code></td></tr>
+          <tr><td><strong>MX</strong></td><td>Mail Exchanger</td><td>Domain → mail server hostname + priority</td><td><code>lab.local → mail1.lab.local (pri 10)</code></td></tr>
+          <tr><td><strong>CNAME</strong></td><td>Canonical Name</td><td>Alias hostname → canonical hostname</td><td><code>www → webserver.lab.local</code></td></tr>
+          <tr><td><strong>NS</strong></td><td>Nameserver</td><td>Zone → authoritative nameserver hostname</td><td><code>lab.local → ns1.lab.local</code></td></tr>
+          <tr><td><strong>SOA</strong></td><td>Start of Authority</td><td>Zone metadata: primary NS, admin, timing</td><td>First record in every zone file</td></tr>
+          <tr><td><strong>SRV</strong></td><td>Service</td><td>Service name → server hostname + port</td><td><code>_ldap._tcp.lab.local → dc1:389</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-4" onchange="updateProgress()">
+        <label for="chk-4">I have read and understood Section 4.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 5 – Forward and Reverse Lookup Zones
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-fwdrev" aria-hidden="true"></span>
+  <article class="content-section" id="article-5">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-5"
+         onclick="toggleSection(5)" onkeydown="keyToggle(event,5)">
+      <h2><span class="section-icon" aria-hidden="true">↔️</span>
+          5 · Forward and Reverse Lookup Zones</h2>
+      <button class="toggle-btn" id="toggle-5" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-5">
+
+      <p>
+        DNS lookups travel in two directions. A
+        <strong>forward lookup</strong> resolves a name to an address; a
+        <strong>reverse lookup</strong> resolves an address back to a name.
+        Each direction requires its own zone.
+      </p>
+
+      <div class="tab-group" role="tablist" aria-label="Forward and reverse lookup zones">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-fwd" id="tbtn-fwd"
+                  onclick="switchTab('fwd')" onkeydown="keyTab(event,'fwd')">
+            Forward Lookup Zone
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-rev" id="tbtn-rev"
+                  onclick="switchTab('rev')" onkeydown="keyTab(event,'rev')">
+            Reverse Lookup Zone
+          </button>
+        </div>
+
+        <div class="tab-panel active" id="tab-fwd" role="tabpanel" aria-labelledby="tbtn-fwd">
+          <h3>Forward Lookup Zone</h3>
+          <p>
+            A <strong>forward lookup zone</strong> maps
+            <strong>hostnames → IP addresses</strong>. It is the standard zone
+            type that most people think of when they hear "DNS zone." The zone
+            is named after the domain it serves (e.g., <code>lab.local</code>).
+          </p>
+          <p>
+            A complete forward zone file for <code>lab.local</code> looks like this:
+          </p>
+          <div class="code-block"><span class="cm">; /etc/bind/zones/db.lab.local — Forward lookup zone for lab.local</span>
+<span class="nm">$TTL</span>    <span class="op">3600</span>
+<span class="st">@</span>  <span class="kw">IN</span>  <span class="nm">SOA</span>  <span class="st">ns1.lab.local.</span>  <span class="st">admin.lab.local.</span>  <span class="op">(</span>
+               <span class="op">2026031601</span>  <span class="cm">; Serial</span>
+               <span class="op">3600</span>        <span class="cm">; Refresh</span>
+               <span class="op">900</span>         <span class="cm">; Retry</span>
+               <span class="op">604800</span>      <span class="cm">; Expire</span>
+               <span class="op">300</span>         <span class="cm">; Minimum TTL</span>
+<span class="op">)</span>
+
+<span class="cm">; Nameserver records</span>
+<span class="st">@</span>           <span class="kw">IN</span>  <span class="nm">NS</span>   <span class="st">ns1.lab.local.</span>
+
+<span class="cm">; A records — hostname to IPv4</span>
+<span class="st">ns1</span>         <span class="kw">IN</span>  <span class="nm">A</span>    <span class="st">192.168.10.10</span>
+<span class="st">server1</span>     <span class="kw">IN</span>  <span class="nm">A</span>    <span class="st">192.168.10.20</span>
+<span class="st">fileserver</span>  <span class="kw">IN</span>  <span class="nm">A</span>    <span class="st">192.168.10.21</span>
+<span class="st">webserver</span>   <span class="kw">IN</span>  <span class="nm">A</span>    <span class="st">192.168.10.22</span>
+
+<span class="cm">; CNAME alias</span>
+<span class="st">www</span>         <span class="kw">IN</span>  <span class="nm">CNAME</span>  <span class="st">webserver.lab.local.</span>
+
+<span class="cm">; MX record for mail</span>
+<span class="st">@</span>           <span class="kw">IN</span>  <span class="nm">MX</span>  <span class="op">10</span>  <span class="st">mail.lab.local.</span>
+<span class="st">mail</span>        <span class="kw">IN</span>  <span class="nm">A</span>    <span class="st">192.168.10.25</span></div>
+          <div class="callout callout-tip">
+            <div class="callout-title">💡 Verification Command</div>
+            After creating a forward zone, test resolution from a client with:<br>
+            <code>nslookup server1.lab.local &lt;dns-server-ip&gt;</code><br>
+            or on Linux: <code>dig @192.168.10.10 server1.lab.local A</code>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-rev" role="tabpanel" aria-labelledby="tbtn-rev">
+          <h3>Reverse Lookup Zone</h3>
+          <p>
+            A <strong>reverse lookup zone</strong> maps
+            <strong>IP addresses → hostnames</strong> using PTR records. The
+            zone name is derived from the network address, written in
+            <strong>reverse octet order</strong>, with <code>.in-addr.arpa</code>
+            appended.
+          </p>
+          <p>
+            For the <code>192.168.10.0/24</code> network:
+          </p>
+          <ul>
+            <li>Network: <code>192.168.10.0/24</code></li>
+            <li>Reverse zone name: <code>10.168.192.in-addr.arpa</code></li>
+            <li>Zone file: <code>/etc/bind/zones/db.192.168.10</code> (by convention)</li>
+          </ul>
+          <div class="code-block"><span class="cm">; /etc/bind/zones/db.192.168.10 — Reverse lookup zone</span>
+<span class="nm">$TTL</span>    <span class="op">3600</span>
+<span class="st">@</span>  <span class="kw">IN</span>  <span class="nm">SOA</span>  <span class="st">ns1.lab.local.</span>  <span class="st">admin.lab.local.</span>  <span class="op">(</span>
+               <span class="op">2026031601</span>  <span class="cm">; Serial</span>
+               <span class="op">3600</span>        <span class="cm">; Refresh</span>
+               <span class="op">900</span>         <span class="cm">; Retry</span>
+               <span class="op">604800</span>      <span class="cm">; Expire</span>
+               <span class="op">300</span>         <span class="cm">; Minimum TTL</span>
+<span class="op">)</span>
+
+<span class="cm">; Nameserver for this reverse zone</span>
+<span class="st">@</span>   <span class="kw">IN</span>  <span class="nm">NS</span>   <span class="st">ns1.lab.local.</span>
+
+<span class="cm">; PTR records — last octet only (zone supplies the rest)</span>
+<span class="st">10</span>  <span class="kw">IN</span>  <span class="nm">PTR</span>  <span class="st">ns1.lab.local.</span>
+<span class="st">20</span>  <span class="kw">IN</span>  <span class="nm">PTR</span>  <span class="st">server1.lab.local.</span>
+<span class="st">21</span>  <span class="kw">IN</span>  <span class="nm">PTR</span>  <span class="st">fileserver.lab.local.</span>
+<span class="st">22</span>  <span class="kw">IN</span>  <span class="nm">PTR</span>  <span class="st">webserver.lab.local.</span></div>
+          <div class="callout callout-tip">
+            <div class="callout-title">💡 Verification Command</div>
+            Test a reverse lookup with:<br>
+            <code>nslookup 192.168.10.20 &lt;dns-server-ip&gt;</code><br>
+            or: <code>dig @192.168.10.10 -x 192.168.10.20</code><br>
+            A successful result returns the PTR record pointing to
+            <code>server1.lab.local.</code>
+          </div>
+          <div class="callout callout-info">
+            <div class="callout-title">📌 Why Reverse Zones Matter</div>
+            Reverse lookup zones are required for:
+            <ul style="margin-top:0.4rem;">
+              <li>Active Directory domain join and authentication</li>
+              <li>Mail server spam validation (PTR record must match the sending server's hostname)</li>
+              <li>Security logging (log entries show hostnames, not just IP addresses)</li>
+              <li>Some monitoring and management tools that perform reverse lookups on discovered hosts</li>
+            </ul>
+          </div>
+        </div>
+      </div><!-- end tab-group -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-5" onchange="updateProgress()">
+        <label for="chk-5">I have read and understood Section 5.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 6 – Configuring DNS on Linux (BIND9)
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-linux" aria-hidden="true"></span>
+  <article class="content-section" id="article-6">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-6"
+         onclick="toggleSection(6)" onkeydown="keyToggle(event,6)">
+      <h2><span class="section-icon" aria-hidden="true">🐧</span>
+          6 · Configuring DNS on Linux (BIND9)</h2>
+      <button class="toggle-btn" id="toggle-6" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-6">
+
+      <p>
+        <strong>BIND9</strong> (Berkeley Internet Name Domain, version 9) is the
+        most widely deployed DNS server software in the world. On Ubuntu Server
+        it is packaged as <code>bind9</code> and is the standard choice for
+        authoritative and recursive DNS in enterprise Linux environments.
+      </p>
+
+      <h3>BIND9 Configuration File Structure</h3>
+      <p>
+        BIND9 uses several key files, all located under <code>/etc/bind/</code>:
+      </p>
+      <table class="options-table" aria-label="BIND9 configuration files">
+        <thead>
+          <tr><th>File</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>/etc/bind/named.conf</code></td><td>Main entry point — includes the other config files</td></tr>
+          <tr><td><code>/etc/bind/named.conf.options</code></td><td>Global server options: forwarders, recursion, listen addresses</td></tr>
+          <tr><td><code>/etc/bind/named.conf.local</code></td><td>Your custom zone declarations (this is where you add your zones)</td></tr>
+          <tr><td><code>/etc/bind/named.conf.default-zones</code></td><td>Built-in zones: root hints, localhost, loopback reverse</td></tr>
+          <tr><td><code>/etc/bind/zones/db.lab.local</code></td><td>Your forward zone file (created by you)</td></tr>
+          <tr><td><code>/etc/bind/zones/db.192.168.10</code></td><td>Your reverse zone file (created by you)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Step-by-Step: Installing and Configuring BIND9</h3>
+
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Install BIND9</strong>
+            <div class="code-block"><span class="kw">sudo</span> apt update
+<span class="kw">sudo</span> apt install -y bind9 bind9utils bind9-doc dnsutils</div>
+            <code>bind9utils</code> provides <code>named-checkconf</code> and
+            <code>named-checkzone</code> — essential syntax-checking tools.
+            <code>dnsutils</code> provides <code>dig</code> and <code>nslookup</code>
+            for testing.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Configure global options in <code>named.conf.options</code></strong>
+            <div class="code-block"><span class="kw">sudo</span> nano /etc/bind/named.conf.options</div>
+            <div class="code-block"><span class="cm">// /etc/bind/named.conf.options</span>
+<span class="kw">options</span> {
+    <span class="nm">directory</span>        <span class="st">"/var/cache/bind"</span>;
+
+    <span class="cm">// Forward unresolved queries to upstream resolvers</span>
+    <span class="nm">forwarders</span> {
+        <span class="st">8.8.8.8</span>;
+        <span class="st">8.8.4.4</span>;
+    };
+    <span class="nm">forward only</span>;    <span class="cm">// Use forwarders exclusively (don't walk the root)</span>
+
+    <span class="cm">// Allow recursive queries from internal networks only</span>
+    <span class="nm">recursion</span>        <span class="st">yes</span>;
+    <span class="nm">allow-recursion</span>  { <span class="st">192.168.0.0/16</span>; <span class="st">127.0.0.1</span>; };
+
+    <span class="cm">// Listen on the server's internal IP and loopback</span>
+    <span class="nm">listen-on</span>        { <span class="st">127.0.0.1</span>; <span class="st">192.168.10.10</span>; };
+
+    <span class="cm">// Disable zone transfers to everyone by default</span>
+    <span class="nm">allow-transfer</span>   { <span class="st">none</span>; };
+
+    <span class="nm">dnssec-validation</span> <span class="st">auto</span>;
+};</div>
+            <div class="callout callout-warning" style="margin-top:0.75rem;">
+              <div class="callout-title">⚠️ Restrict Recursion</div>
+              Setting <code>allow-recursion</code> to your internal subnets only
+              prevents your server from becoming an
+              <strong>open resolver</strong> — a server that answers recursive
+              queries from anyone on the internet, which is commonly abused in
+              DNS amplification DDoS attacks.
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Declare your zones in <code>named.conf.local</code></strong>
+            <div class="code-block"><span class="kw">sudo</span> nano /etc/bind/named.conf.local</div>
+            <div class="code-block"><span class="cm">// /etc/bind/named.conf.local</span>
+
+<span class="cm">// Forward lookup zone</span>
+<span class="kw">zone</span> <span class="st">"lab.local"</span> {
+    <span class="nm">type</span>      <span class="st">master</span>;
+    <span class="nm">file</span>      <span class="st">"/etc/bind/zones/db.lab.local"</span>;
+    <span class="nm">allow-transfer</span> { <span class="st">none</span>; };   <span class="cm">// No secondary servers in this lab</span>
+};
+
+<span class="cm">// Reverse lookup zone for 192.168.10.0/24</span>
+<span class="kw">zone</span> <span class="st">"10.168.192.in-addr.arpa"</span> {
+    <span class="nm">type</span>      <span class="st">master</span>;
+    <span class="nm">file</span>      <span class="st">"/etc/bind/zones/db.192.168.10"</span>;
+    <span class="nm">allow-transfer</span> { <span class="st">none</span>; };
+};</div>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Create the zones directory and zone files</strong>
+            <div class="code-block"><span class="kw">sudo</span> mkdir -p /etc/bind/zones</div>
+            Create the forward zone file (content from Section 5):
+            <div class="code-block"><span class="kw">sudo</span> nano /etc/bind/zones/db.lab.local</div>
+            Create the reverse zone file:
+            <div class="code-block"><span class="kw">sudo</span> nano /etc/bind/zones/db.192.168.10</div>
+            Use the zone file examples from Section 5 as your templates.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Check configuration and zone file syntax</strong>
+            <div class="code-block"><span class="cm"># Check named.conf syntax</span>
+<span class="kw">sudo</span> named-checkconf
+
+<span class="cm"># Check forward zone file syntax</span>
+<span class="kw">sudo</span> named-checkzone lab.local /etc/bind/zones/db.lab.local
+
+<span class="cm"># Check reverse zone file syntax</span>
+<span class="kw">sudo</span> named-checkzone 10.168.192.in-addr.arpa /etc/bind/zones/db.192.168.10</div>
+            If no errors are reported, the syntax is valid. Both
+            <code>named-checkzone</code> commands should end with
+            <code>OK</code>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <strong>Start and enable BIND9</strong>
+            <div class="code-block"><span class="kw">sudo</span> systemctl start  bind9
+<span class="kw">sudo</span> systemctl enable bind9
+<span class="kw">sudo</span> systemctl status bind9</div>
+            Look for <code>active (running)</code>. If the service fails,
+            check the log with <code>sudo journalctl -u bind9 -n 30</code>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">7</div>
+          <div class="step-content">
+            <strong>Test resolution from a client</strong>
+            <div class="code-block"><span class="cm"># Forward lookup — should return 192.168.10.20</span>
+<span class="kw">dig</span> @192.168.10.10 server1.lab.local A
+
+<span class="cm"># Reverse lookup — should return server1.lab.local</span>
+<span class="kw">dig</span> @192.168.10.10 -x 192.168.10.20
+
+<span class="cm"># Using nslookup (cross-platform)</span>
+<span class="kw">nslookup</span> server1.lab.local 192.168.10.10
+<span class="kw">nslookup</span> 192.168.10.20 192.168.10.10
+
+<span class="cm"># Verify external forwarding works</span>
+<span class="kw">dig</span> @192.168.10.10 google.com A</div>
+          </div>
+        </li>
+      </ol>
+
+      <h3>Common BIND9 Troubleshooting Commands</h3>
+      <table class="options-table" aria-label="BIND9 troubleshooting commands">
+        <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>sudo named-checkconf</code></td><td>Validate named.conf syntax (no output = OK)</td></tr>
+          <tr><td><code>sudo named-checkzone &lt;zone&gt; &lt;file&gt;</code></td><td>Validate a zone file's syntax and records</td></tr>
+          <tr><td><code>sudo systemctl restart bind9</code></td><td>Restart after config changes</td></tr>
+          <tr><td><code>sudo journalctl -u bind9 -n 50</code></td><td>Last 50 log lines</td></tr>
+          <tr><td><code>sudo rndc reload</code></td><td>Reload zone data without full restart</td></tr>
+          <tr><td><code>sudo rndc flush</code></td><td>Flush the DNS cache</td></tr>
+          <tr><td><code>sudo ss -ulnp | grep :53</code></td><td>Confirm BIND9 is listening on UDP port 53</td></tr>
+          <tr><td><code>dig @127.0.0.1 lab.local SOA</code></td><td>Query SOA record to verify zone is loaded</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Project 2 / Lab 9 Connection</div>
+        Lab 9 Part B asks you to configure BIND9 on your Ubuntu Server VM,
+        create a forward zone for <code>lab.local</code>, and verify resolution
+        with <code>nslookup</code> and <code>dig</code>. Project 2 Part B
+        requires the same DNS server to serve both forward and reverse zones.
+        The steps above are your direct guide for both deliverables.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-6" onchange="updateProgress()">
+        <label for="chk-6">I have read and understood Section 6.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 7 – Configuring DNS on Windows Server
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-windows" aria-hidden="true"></span>
+  <article class="content-section" id="article-7">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-7"
+         onclick="toggleSection(7)" onkeydown="keyToggle(event,7)">
+      <h2><span class="section-icon" aria-hidden="true">🪟</span>
+          7 · Configuring DNS on Windows Server</h2>
+      <button class="toggle-btn" id="toggle-7" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-7">
+
+      <p>
+        On Windows Server, DNS is a <strong>server role</strong> installed
+        through Server Manager and managed through the
+        <strong>DNS Manager</strong> console (<code>dnsmgmt.msc</code>).
+        The GUI-driven workflow makes zone creation straightforward, and
+        Windows DNS integrates tightly with Active Directory when the server
+        is a domain controller.
+      </p>
+
+      <h3>Step 1: Install the DNS Server Role</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            Open <strong>Server Manager</strong> → click
+            <em>Manage</em> → <em>Add Roles and Features</em>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            Confirm the server has a <strong>static IP address</strong> before
+            proceeding. A DNS server must not use DHCP for its own address.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            Select <em>Role-based or feature-based installation</em> →
+            choose your server → on the <em>Server Roles</em> page check
+            <strong>DNS Server</strong> → click <em>Add Features</em> →
+            click through to <em>Install</em>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            After installation, open the <strong>DNS Manager</strong>:
+            Server Manager → Tools → DNS.
+          </div>
+        </li>
+      </ol>
+
+      <h3>Step 2: Create a Forward Lookup Zone</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            In DNS Manager, expand your server name →
+            right-click <strong>Forward Lookup Zones</strong> →
+            <em>New Zone…</em>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Zone Type:</strong> Select <em>Primary zone</em>.
+            (Uncheck "Store the zone in Active Directory" if the server is
+            not a domain controller.)
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Zone Name:</strong> Enter <code>lab.local</code>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Zone File:</strong> Accept the default filename
+            (<code>lab.local.dns</code>) → click through to <em>Finish</em>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Add A records:</strong> Right-click the new
+            <code>lab.local</code> zone → <em>New Host (A or AAAA)…</em>
+            <ul style="margin-top:0.4rem;">
+              <li>Name: <code>server1</code> | IP: <code>192.168.10.20</code>
+                → check <em>Create associated PTR record</em> → <em>Add Host</em></li>
+              <li>Repeat for each server in your lab</li>
+            </ul>
+            <div class="callout callout-tip" style="margin-top:0.75rem;">
+              <div class="callout-title">💡 Create PTR Records Automatically</div>
+              Checking <em>Create associated PTR record</em> when adding an A
+              record will automatically add the corresponding PTR record to the
+              reverse lookup zone — but only if that reverse zone already exists.
+              Create the reverse zone first (Step 3 below), then add your A records.
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <h3>Step 3: Create a Reverse Lookup Zone</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            Right-click <strong>Reverse Lookup Zones</strong> →
+            <em>New Zone…</em> → <em>Primary zone</em>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Reverse Lookup Zone Name:</strong> Select
+            <em>IPv4 Reverse Lookup Zone</em> → enter the
+            <strong>Network ID</strong>: <code>192.168.10</code>.
+            Windows automatically constructs the zone name
+            <code>10.168.192.in-addr.arpa</code>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            Accept the default zone file name → click through to
+            <em>Finish</em>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Add PTR records manually</strong> (if not created
+            automatically): Right-click the reverse zone →
+            <em>New Pointer (PTR)…</em> → enter the host IP (last octet only,
+            e.g., <code>20</code>) and the FQDN
+            (<code>server1.lab.local</code>).
+          </div>
+        </li>
+      </ol>
+
+      <h3>Step 4: Configure a Conditional Forwarder</h3>
+      <p>
+        A <strong>conditional forwarder</strong> tells Windows DNS to forward
+        queries for a specific domain to a designated server, rather than
+        resolving them via the root hierarchy. This is useful when you have
+        multiple DNS domains in your environment (e.g., forwarding queries for
+        a partner's domain to their DNS server).
+      </p>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            In DNS Manager, right-click <strong>Conditional Forwarders</strong>
+            → <em>New Conditional Forwarder…</em>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>DNS Domain:</strong> Enter the domain to forward
+            (e.g., <code>partner.local</code>).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>IP addresses of the master servers:</strong> Enter the
+            IP of the DNS server authoritative for that domain. Click
+            <em>OK</em>.
+          </div>
+        </li>
+      </ol>
+
+      <h3>Step 5: Configure General Forwarders</h3>
+      <p>
+        General forwarders handle all queries that do not match a local zone
+        or conditional forwarder — typically internet names.
+      </p>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            Right-click your <strong>server name</strong> in DNS Manager →
+            <em>Properties</em> → <em>Forwarders</em> tab.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            Click <em>Edit…</em> → add forwarder IP addresses
+            (e.g., <code>8.8.8.8</code> and <code>8.8.4.4</code>) →
+            click <em>OK</em>.
+          </div>
+        </li>
+      </ol>
+
+      <h3>Step 6: Verify with nslookup</h3>
+      <div class="code-block"><span class="cm">REM From a Windows command prompt or PowerShell on the DNS server</span>
+
+<span class="cm">REM Forward lookup</span>
+<span class="kw">nslookup</span> <span class="st">server1.lab.local</span> <span class="st">192.168.10.10</span>
+
+<span class="cm">REM Reverse lookup</span>
+<span class="kw">nslookup</span> <span class="st">192.168.10.20</span> <span class="st">192.168.10.10</span>
+
+<span class="cm">REM PowerShell alternative</span>
+<span class="kw">Resolve-DnsName</span> <span class="st">server1.lab.local</span> <span class="nm">-Server</span> <span class="st">192.168.10.10</span>
+<span class="kw">Resolve-DnsName</span> <span class="st">192.168.10.20</span>  <span class="nm">-Server</span> <span class="st">192.168.10.10</span> <span class="nm">-Type</span> <span class="st">PTR</span></div>
+
+      <h3>Windows DNS vs. BIND9 — Quick Comparison</h3>
+      <table class="options-table" aria-label="Windows DNS vs BIND9 comparison">
+        <thead>
+          <tr><th>Feature</th><th>Windows Server DNS</th><th>BIND9 (Linux)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Management interface</td><td>GUI (DNS Manager) + PowerShell</td><td>Config files + CLI tools</td></tr>
+          <tr><td>Zone storage</td><td>Zone files or AD database</td><td>Zone files</td></tr>
+          <tr><td>AD integration</td><td>Native (required for AD DS)</td><td>Not native</td></tr>
+          <tr><td>Dynamic updates</td><td>Secure (AD) or unsecured</td><td>Configurable (TSIG)</td></tr>
+          <tr><td>Conditional forwarders</td><td>GUI wizard</td><td><code>zone</code> block with <code>type forward</code></td></tr>
+          <tr><td>Syntax checking</td><td>GUI validates on save</td><td><code>named-checkconf</code> / <code>named-checkzone</code></td></tr>
+          <tr><td>Common in</td><td>Windows-centric enterprise environments</td><td>Linux/mixed environments, ISPs, internet infrastructure</td></tr>
+        </tbody>
+      </table>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-7" onchange="updateProgress()">
+        <label for="chk-7">I have read and understood Section 7.</label>
+      </div>
+    </div>
+  </article>
+
+<!-- ═══════════════════════════════════════════
+     END OF PART 2  (Sections 4–7)
+     Continue with Part 3: Sections 8–10 + JavaScript
+═══════════════════════════════════════════ -->
+  <!-- ─────────────────────────────────────────
+       SECTION 8 – DNS Security Overview
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-security" aria-hidden="true"></span>
+  <article class="content-section" id="article-8">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-8"
+         onclick="toggleSection(8)" onkeydown="keyToggle(event,8)">
+      <h2><span class="section-icon" aria-hidden="true">🔒</span>
+          8 · DNS Security Overview</h2>
+      <button class="toggle-btn" id="toggle-8" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-8">
+
+      <p>
+        DNS was designed in the early 1980s for a small, trusted academic
+        network. Security was not a primary concern. As the internet grew,
+        attackers discovered that manipulating DNS responses is one of the
+        most effective ways to redirect users to malicious destinations
+        without their knowledge. Two topics are essential for every DNS
+        administrator: <strong>DNS cache poisoning</strong> and
+        <strong>DNSSEC</strong>.
+      </p>
+
+      <div class="tab-group" role="tablist" aria-label="DNS security topics">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-sec-poison" id="tbtn-sec-poison"
+                  onclick="switchTab('sec-poison')" onkeydown="keyTab(event,'sec-poison')">
+            DNS Cache Poisoning
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-sec-dnssec" id="tbtn-sec-dnssec"
+                  onclick="switchTab('sec-dnssec')" onkeydown="keyTab(event,'sec-dnssec')">
+            DNSSEC
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-sec-other" id="tbtn-sec-other"
+                  onclick="switchTab('sec-other')" onkeydown="keyTab(event,'sec-other')">
+            Other DNS Threats
+          </button>
+        </div>
+
+        <!-- Cache Poisoning -->
+        <div class="tab-panel active" id="tab-sec-poison" role="tabpanel" aria-labelledby="tbtn-sec-poison">
+          <h3>DNS Cache Poisoning (DNS Spoofing)</h3>
+          <p>
+            <strong>DNS cache poisoning</strong> (also called DNS spoofing)
+            is an attack in which an attacker injects fraudulent DNS records
+            into a resolver's cache. Once poisoned, the resolver returns the
+            attacker's fake IP address for a legitimate domain name — silently
+            redirecting users to a malicious server without any visible warning.
+          </p>
+
+          <h4>How It Works</h4>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                The attacker sends a query to the target recursive resolver
+                for a domain they control (e.g., <code>evil.com</code>),
+                triggering the resolver to send a query to the authoritative
+                server.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                Before the legitimate response arrives, the attacker floods
+                the resolver with forged responses claiming to be from the
+                authoritative server for a <em>different</em> domain
+                (e.g., <code>bank.com</code>), containing a malicious IP.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                If the forged response matches the resolver's transaction ID
+                and source port (both guessable in older implementations),
+                the resolver accepts and caches the fraudulent record.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <div class="step-content">
+                All clients using that resolver are now directed to the
+                attacker's server when they query <code>bank.com</code>,
+                for the duration of the poisoned record's TTL.
+              </div>
+            </li>
+          </ol>
+
+          <h4>The Kaminsky Attack (2008)</h4>
+          <p>
+            Security researcher Dan Kaminsky discovered a critical
+            amplification of the poisoning technique in 2008 — by querying
+            random subdomains of the target domain, an attacker could
+            continuously attempt poisoning without waiting for TTL expiry,
+            making the attack practical against most resolvers of the era.
+            The disclosure led to emergency patches across the DNS ecosystem
+            and accelerated adoption of source port randomization.
+          </p>
+
+          <h4>Mitigations</h4>
+          <ul>
+            <li><strong>Source port randomization:</strong> Using a random
+              UDP source port (rather than a fixed port 53) for outgoing
+              queries dramatically increases the difficulty of guessing the
+              correct transaction ID + port combination. Modern resolvers
+              implement this by default.</li>
+            <li><strong>DNSSEC:</strong> Cryptographic signing of DNS
+              responses makes forged records detectable (covered in the
+              next tab).</li>
+            <li><strong>0x20 encoding:</strong> Randomizing the case of
+              query letters (e.g., <code>BaNk.CoM</code>) and requiring
+              responses to mirror the same case adds another layer of
+              verification.</li>
+            <li><strong>DNS over HTTPS (DoH) / DNS over TLS (DoT):</strong>
+              Encrypting DNS queries in transit prevents eavesdropping and
+              man-in-the-middle injection, though they do not directly
+              address cache poisoning of the resolver itself.</li>
+          </ul>
+
+          <div class="callout callout-security">
+            <div class="callout-title">🔒 CSLO 2 Connection</div>
+            DNS cache poisoning is a network data security threat. Mitigations
+            (source port randomization, DNSSEC, DoH/DoT) are network data
+            security techniques — directly aligned with CSLO 2: Apply physical
+            and network data security techniques.
+          </div>
+        </div>
+
+        <!-- DNSSEC -->
+        <div class="tab-panel" id="tab-sec-dnssec" role="tabpanel" aria-labelledby="tbtn-sec-dnssec">
+          <h3>DNSSEC — DNS Security Extensions</h3>
+          <p>
+            <strong>DNSSEC</strong> (DNS Security Extensions) adds
+            <strong>cryptographic signatures</strong> to DNS records,
+            allowing resolvers to verify that responses are authentic and
+            have not been tampered with in transit. DNSSEC does not encrypt
+            DNS traffic — it authenticates it.
+          </p>
+
+          <h4>How DNSSEC Works</h4>
+          <p>
+            DNSSEC uses <strong>public-key cryptography</strong>. The zone
+            owner generates a key pair:
+          </p>
+          <ul>
+            <li><strong>Zone Signing Key (ZSK):</strong> Signs the individual
+              resource records in the zone.</li>
+            <li><strong>Key Signing Key (KSK):</strong> Signs the ZSK itself,
+              creating a chain of trust.</li>
+          </ul>
+          <p>
+            Each signed record set (RRset) is accompanied by an
+            <strong>RRSIG</strong> record containing the digital signature.
+            A resolver that supports DNSSEC validation can verify the
+            signature against the public key published in the zone's
+            <strong>DNSKEY</strong> record.
+          </p>
+
+          <h4>The Chain of Trust</h4>
+          <p>
+            DNSSEC validation relies on a chain of trust from the root zone
+            downward:
+          </p>
+          <ol style="margin-bottom:0.85rem;">
+            <li>The <strong>root zone</strong> is signed with a well-known
+              root key (the Root Trust Anchor, managed by ICANN).</li>
+            <li>Each TLD zone (<code>.com</code>, <code>.org</code>) is
+              signed and its key is validated by the root.</li>
+            <li>Each domain zone (<code>example.com</code>) is signed and
+              its key is validated by the TLD.</li>
+            <li>A DNSSEC-validating resolver can follow this chain from root
+              to the queried domain, rejecting any response whose signature
+              does not verify.</li>
+          </ol>
+
+          <h4>New Record Types Introduced by DNSSEC</h4>
+          <table class="options-table" aria-label="DNSSEC record types">
+            <thead>
+              <tr><th>Record Type</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>RRSIG</strong></td><td>Digital signature for a resource record set</td></tr>
+              <tr><td><strong>DNSKEY</strong></td><td>Public key used to verify RRSIG signatures</td></tr>
+              <tr><td><strong>DS</strong></td><td>Delegation Signer — links a child zone's key to the parent zone</td></tr>
+              <tr><td><strong>NSEC / NSEC3</strong></td><td>Authenticated denial of existence — proves a name does not exist</td></tr>
+            </tbody>
+          </table>
+
+          <h4>DNSSEC in BIND9</h4>
+          <p>
+            In BIND9, enabling DNSSEC validation in <code>named.conf.options</code>
+            is straightforward:
+          </p>
+          <div class="code-block"><span class="cm">// In named.conf.options — enable DNSSEC validation</span>
+<span class="nm">dnssec-validation</span> <span class="st">auto</span>;   <span class="cm">// Uses built-in root trust anchors</span></div>
+          <p>
+            The <code>auto</code> setting uses BIND's built-in root trust
+            anchor, so no manual key configuration is needed for validation.
+            Signing your own zones requires additional steps (key generation
+            with <code>dnssec-keygen</code>, zone signing with
+            <code>dnssec-signzone</code>) that are beyond the scope of this
+            module but are covered in advanced DNS administration resources.
+          </p>
+
+          <div class="callout callout-tip">
+            <div class="callout-title">💡 Lab Scope</div>
+            For Lab 9 Part B and Project 2 Part B, you are <strong>not</strong>
+            required to sign your zones with DNSSEC. You should, however,
+            ensure <code>dnssec-validation auto;</code> is present in your
+            <code>named.conf.options</code> so your server can validate
+            responses from DNSSEC-signed external zones.
+          </div>
+        </div>
+
+        <!-- Other DNS Threats -->
+        <div class="tab-panel" id="tab-sec-other" role="tabpanel" aria-labelledby="tbtn-sec-other">
+          <h3>Other DNS Security Threats</h3>
+
+          <h4>DNS Amplification (DDoS)</h4>
+          <p>
+            DNS amplification attacks exploit <strong>open resolvers</strong>
+            — DNS servers that answer recursive queries from any source IP.
+            An attacker sends small queries with a spoofed source IP (the
+            victim's IP) to many open resolvers, asking for large record
+            sets (e.g., <code>ANY</code> queries or DNSSEC-signed zones).
+            The resolvers send large responses to the victim, amplifying
+            the traffic volume by a factor of 50–100×.
+          </p>
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ Mitigation: Never Run an Open Resolver</div>
+            Always restrict recursion to your internal networks using
+            <code>allow-recursion</code> in BIND9 (as shown in Section 6).
+            An open resolver is both a security liability and a potential
+            instrument of DDoS attacks against others.
+          </div>
+
+          <h4>DNS Hijacking</h4>
+          <p>
+            DNS hijacking redirects DNS queries to a malicious resolver.
+            This can happen at multiple levels:
+          </p>
+          <ul>
+            <li><strong>Router hijacking:</strong> Attacker changes the DNS
+              server setting on a home or office router, redirecting all
+              clients on that network.</li>
+            <li><strong>Registrar hijacking:</strong> Attacker gains access
+              to a domain registrar account and changes the NS records,
+              redirecting all DNS for a domain to attacker-controlled
+              servers.</li>
+            <li><strong>ISP-level interception:</strong> Some ISPs intercept
+              DNS queries and redirect NXDOMAIN (non-existent domain)
+              responses to search or advertising pages.</li>
+          </ul>
+
+          <h4>DNS Tunneling</h4>
+          <p>
+            <strong>DNS tunneling</strong> encodes data inside DNS query
+            and response packets to exfiltrate data or establish covert
+            command-and-control channels through firewalls that permit DNS
+            traffic. Because DNS (port 53) is almost universally allowed
+            outbound, it is a common data exfiltration vector.
+          </p>
+          <p>
+            Detection methods include monitoring for:
+          </p>
+          <ul>
+            <li>Unusually long or high-entropy subdomain labels</li>
+            <li>High query volume from a single host to a single domain</li>
+            <li>Queries for rare or non-existent TLDs</li>
+          </ul>
+
+          <h4>DNS Security Best Practices Summary</h4>
+          <table class="options-table" aria-label="DNS security best practices">
+            <thead>
+              <tr><th>Threat</th><th>Primary Mitigation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Cache poisoning</td><td>DNSSEC validation; source port randomization</td></tr>
+              <tr><td>Open resolver abuse / amplification</td><td>Restrict <code>allow-recursion</code> to internal networks only</td></tr>
+              <tr><td>Unauthorized zone transfers</td><td>Restrict <code>allow-transfer</code> to known secondary IPs</td></tr>
+              <tr><td>DNS hijacking</td><td>Strong registrar account security; monitor NS record changes</td></tr>
+              <tr><td>DNS tunneling</td><td>DNS query monitoring; anomaly detection (e.g., Splunk)</td></tr>
+              <tr><td>Eavesdropping on queries</td><td>DNS over TLS (DoT) or DNS over HTTPS (DoH)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- end tab-group -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-8" onchange="updateProgress()">
+        <label for="chk-8">I have read and understood Section 8.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 9 – Mini-Case: Why Can't I Reach the File Server?
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-case" aria-hidden="true"></span>
+  <article class="content-section" id="article-9">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-9"
+         onclick="toggleSection(9)" onkeydown="keyToggle(event,9)">
+      <h2><span class="section-icon" aria-hidden="true">🚨</span>
+          9 · Mini-Case: Why Can't I Reach the File Server?</h2>
+      <button class="toggle-btn" id="toggle-9" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-9">
+
+      <div class="mini-case" role="region" aria-label="Mini-case scenario">
+        <div class="mini-case-header">🚨 Scenario: Tuesday Morning at Mendocino Tech</div>
+
+        <div class="scenario-box">
+          <p>
+            It is Tuesday morning at Mendocino Tech's main office. The helpdesk
+            receives three tickets in quick succession — users in the
+            <em>Servers</em> subnet cannot reach the company file server by
+            name. The complaints all look the same:
+          </p>
+          <ul>
+            <li>Attempting to connect to <code>\\fileserver</code> or
+              <code>\\fileserver.lab.local</code> in Windows Explorer
+              returns: <em>"Windows cannot access \\fileserver"</em></li>
+            <li>Attempting <code>ssh fileserver.lab.local</code> from a
+              Linux workstation returns:
+              <em>"ssh: Could not resolve hostname fileserver.lab.local:
+              Name or service not known"</em></li>
+          </ul>
+          <p>
+            A network technician sits down at one of the affected workstations
+            and runs a quick diagnostic sequence:
+          </p>
+          <div style="background:#1e2a3a;color:#cdd9e5;border-radius:8px;padding:1rem 1.25rem;font-family:'SFMono-Regular',Consolas,monospace;font-size:0.82rem;line-height:1.65;overflow-x:auto;margin:0.75rem 0;">
+<span style="color:#8fa8c8;font-style:italic"># Step 1: Can we reach the file server by IP?</span>
+C:\&gt; ping 192.168.10.21
+Reply from 192.168.10.21: bytes=32 time=1ms TTL=128  <span style="color:#85e89d">✓ SUCCESS</span>
+
+<span style="color:#8fa8c8;font-style:italic"># Step 2: Can we resolve the hostname?</span>
+C:\&gt; nslookup fileserver.lab.local
+Server:  192.168.10.10
+Address: 192.168.10.10
+
+<span style="color:#ffab70">*** 192.168.10.10 can't find fileserver.lab.local: Non-existent domain</span>  <span style="color:#ffab70">✗ FAIL</span>
+
+<span style="color:#8fa8c8;font-style:italic"># Step 3: Is the DNS server responding at all?</span>
+C:\&gt; nslookup server1.lab.local
+Server:  192.168.10.10
+Address: 192.168.10.10
+
+Name:    server1.lab.local
+Address: 192.168.10.20  <span style="color:#85e89d">✓ server1 resolves fine</span>
+
+<span style="color:#8fa8c8;font-style:italic"># Step 4: Check the DNS zone for the missing record</span>
+C:\&gt; nslookup -type=A fileserver.lab.local 192.168.10.10
+<span style="color:#ffab70">*** 192.168.10.10 can't find fileserver.lab.local: Non-existent domain</span>
+          </div>
+          <p>
+            The DNS server at <code>192.168.10.10</code> is responding —
+            it resolves <code>server1.lab.local</code> correctly. But it
+            has no record for <code>fileserver.lab.local</code>, even
+            though the file server at <code>192.168.10.21</code> is
+            clearly online and reachable by IP.
+          </p>
+        </div>
+
+        <!-- Question 1 -->
+        <div class="case-question">
+          <p>❓ Question 1: What is the root cause of this problem?
+            Be specific about which DNS component is missing and where.</p>
+          <button class="reveal-btn" onclick="revealAnswer('dns-ans1')"
+                  aria-expanded="false" aria-controls="dns-ans1">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="dns-ans1" role="region" aria-label="Model answer 1">
+            <strong>Root Cause — Missing A Record:</strong> The forward
+            lookup zone for <code>lab.local</code> on the DNS server at
+            <code>192.168.10.10</code> does not contain an
+            <strong>A record</strong> for <code>fileserver</code>. The
+            file server exists on the network (it responds to ping by IP),
+            but DNS has no mapping from the hostname
+            <code>fileserver.lab.local</code> to the IP address
+            <code>192.168.10.21</code>. The DNS server correctly returns
+            an NXDOMAIN (Non-Existent Domain) response because the record
+            was never created — possibly because the server was added to the
+            network after the zone was initially configured, or the A record
+            was accidentally deleted.
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="case-question">
+          <p>❓ Question 2: Walk through the exact steps to fix this problem
+            on both a BIND9 (Linux) DNS server and a Windows Server DNS
+            server.</p>
+          <button class="reveal-btn" onclick="revealAnswer('dns-ans2')"
+                  aria-expanded="false" aria-controls="dns-ans2">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="dns-ans2" role="region" aria-label="Model answer 2">
+            <strong>Fix on BIND9 (Linux):</strong>
+            <ol style="margin-top:0.5rem;">
+              <li>Open the forward zone file:
+                <code>sudo nano /etc/bind/zones/db.lab.local</code></li>
+              <li>Add the missing A record:
+                <code>fileserver&nbsp;&nbsp;&nbsp;IN&nbsp;&nbsp;A&nbsp;&nbsp;192.168.10.21</code></li>
+              <li><strong>Increment the serial number</strong> in the SOA
+                record (e.g., <code>2026031601</code> →
+                <code>2026031602</code>). This step is mandatory — without
+                it, secondary servers will not pick up the change.</li>
+              <li>Check the zone file syntax:
+                <code>sudo named-checkzone lab.local /etc/bind/zones/db.lab.local</code></li>
+              <li>Reload the zone (no full restart needed):
+                <code>sudo rndc reload</code></li>
+              <li>Verify:
+                <code>dig @192.168.10.10 fileserver.lab.local A</code>
+                — should return <code>192.168.10.21</code>.</li>
+            </ol>
+            <strong style="display:block;margin-top:0.75rem;">Fix on Windows Server DNS Manager:</strong>
+            <ol style="margin-top:0.5rem;">
+              <li>Open DNS Manager → expand your server →
+                expand <strong>Forward Lookup Zones</strong> →
+                click <code>lab.local</code>.</li>
+              <li>Right-click in the right pane →
+                <em>New Host (A or AAAA)…</em></li>
+              <li>Name: <code>fileserver</code> | IP address:
+                <code>192.168.10.21</code></li>
+              <li>Check <em>Create associated PTR record</em> if the
+                reverse zone exists.</li>
+              <li>Click <em>Add Host</em> → <em>Done</em>.</li>
+              <li>Verify: <code>nslookup fileserver.lab.local
+                192.168.10.10</code> — should return
+                <code>192.168.10.21</code>.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="case-question">
+          <p>❓ Question 3: After adding the A record, a second technician
+            reports that <code>nslookup fileserver.lab.local</code> still
+            fails on their workstation even after the fix was applied
+            five minutes ago. What is the most likely explanation, and
+            how do you resolve it?</p>
+          <button class="reveal-btn" onclick="revealAnswer('dns-ans3')"
+                  aria-expanded="false" aria-controls="dns-ans3">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="dns-ans3" role="region" aria-label="Model answer 3">
+            <strong>Most Likely Explanation — Negative Cache TTL:</strong>
+            When the workstation previously queried
+            <code>fileserver.lab.local</code> and received an NXDOMAIN
+            response, the resolver cached that <em>negative</em> result
+            for the duration of the zone's Minimum TTL (the last field
+            in the SOA record — typically 300 seconds / 5 minutes in our
+            example zone). Even though the A record now exists, the
+            workstation's local resolver is still serving the cached
+            NXDOMAIN from before the fix.
+            <br><br>
+            <strong>Resolution options:</strong>
+            <ul style="margin-top:0.4rem;">
+              <li><strong>Windows:</strong>
+                <code>ipconfig /flushdns</code> — clears the local DNS
+                resolver cache immediately. Then retry
+                <code>nslookup fileserver.lab.local</code>.</li>
+              <li><strong>Linux:</strong>
+                <code>sudo systemd-resolve --flush-caches</code>
+                (if using systemd-resolved) or
+                <code>sudo rndc flush</code> on the DNS server itself
+                to flush the server-side cache.</li>
+              <li><strong>Wait:</strong> The negative cache entry will
+                expire on its own after the Minimum TTL period. For
+                production environments, consider setting a low Minimum
+                TTL (e.g., 300 seconds) to limit the impact of NXDOMAIN
+                caching.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="case-question">
+          <p>❓ Question 4: The file server is now reachable by hostname.
+            However, a security audit tool reports that the reverse lookup
+            for <code>192.168.10.21</code> fails. What additional record
+            is missing, and why does it matter?</p>
+          <button class="reveal-btn" onclick="revealAnswer('dns-ans4')"
+                  aria-expanded="false" aria-controls="dns-ans4">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="dns-ans4" role="region" aria-label="Model answer 4">
+            <strong>Missing Record — PTR Record in the Reverse Zone:</strong>
+            The reverse lookup zone (<code>10.168.192.in-addr.arpa</code>)
+            is missing a <strong>PTR record</strong> for the last octet
+            <code>21</code>, mapping it back to
+            <code>fileserver.lab.local.</code>
+            <br><br>
+            <strong>Why it matters:</strong>
+            <ul style="margin-top:0.4rem;">
+              <li><strong>Security logging:</strong> Log entries that show
+                IP addresses are harder to read and correlate than those
+                showing hostnames. A missing PTR record means log analysis
+                tools (including Splunk) display raw IPs instead of
+                meaningful hostnames.</li>
+              <li><strong>Active Directory:</strong> Some AD operations
+                and Kerberos authentication checks perform reverse lookups;
+                a missing PTR record can cause intermittent authentication
+                failures.</li>
+              <li><strong>Email:</strong> If the file server ever sends
+                email, receiving mail servers check that the sending IP
+                resolves to a hostname via PTR — missing PTR records
+                cause mail to be flagged as spam.</li>
+            </ul>
+            <strong>Fix (BIND9):</strong> Add to the reverse zone file
+            (<code>db.192.168.10</code>):
+            <code>21&nbsp;&nbsp;IN&nbsp;&nbsp;PTR&nbsp;&nbsp;fileserver.lab.local.</code>
+            Increment the SOA serial, then run
+            <code>sudo rndc reload</code>.
+          </div>
+        </div>
+
+      </div><!-- end mini-case -->
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Project 2 / Lab 9 Connection</div>
+        This exact scenario — a server reachable by IP but not by hostname —
+        is one of the most common DNS issues you will encounter during
+        Project 2 Part B testing and Lab 9 Part B verification. Use the
+        diagnostic sequence from this case (ping by IP → nslookup by name →
+        check zone file → add missing record → reload → flush cache →
+        verify) as your standard DNS troubleshooting workflow.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-9" onchange="updateProgress()">
+        <label for="chk-9">I have read and understood Section 9.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 10 – Knowledge Check
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-kc" aria-hidden="true"></span>
+  <article class="content-section" id="article-10">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-10"
+         onclick="toggleSection(10)" onkeydown="keyToggle(event,10)">
+      <h2><span class="section-icon" aria-hidden="true">✅</span>
+          10 · Knowledge Check (Ungraded)</h2>
+      <button class="toggle-btn" id="toggle-10" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-10">
+
+      <p style="font-size:0.92rem;margin-bottom:1rem;">
+        Three questions to check your understanding before Quiz 9.
+        These are <strong>not graded</strong> — answer honestly and read
+        the explanatory feedback carefully. You may re-attempt by
+        refreshing the page.
+      </p>
+
+      <div class="kc-wrap" id="kc-form">
+
+        <!-- Q1: Which record maps a hostname to an IPv4 address? (MC) -->
+        <div class="kc-question" id="kc-q1">
+          <p class="q-text">
+            Q1 · Which DNS record type maps a hostname to an
+            <strong>IPv4</strong> address?
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="a">
+                AAAA
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="b">
+                PTR
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="c">
+                A
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="d">
+                MX
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ1()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q1" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q2: Reverse lookup zones — True/False -->
+        <div class="kc-question" id="kc-q2">
+          <p class="q-text">
+            Q2 · True or False: A reverse lookup zone resolves
+            <strong>IP addresses to hostnames</strong> using PTR records,
+            and the zone name is derived from the network address written
+            in reverse octet order with <code>.in-addr.arpa</code> appended.
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="true">
+                True
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="false">
+                False
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ2()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q2" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q3: Purpose of the SOA record (short answer) -->
+        <div class="kc-question" id="kc-q3">
+          <p class="q-text">
+            Q3 · In your own words, what is the primary purpose of the
+            <strong>SOA (Start of Authority)</strong> record in a DNS zone
+            file? What critical field must you update every time you make
+            a change to a zone file?
+            <br><small style="font-weight:400;color:#555;">
+              (There is no single exact answer — your response will be
+              compared to key concepts. Type at least one sentence.)
+            </small>
+          </p>
+          <textarea class="kc-text-input" id="kc3-input"
+                    rows="3"
+                    style="width:100%;max-width:560px;resize:vertical;"
+                    placeholder="The SOA record…"
+                    aria-label="SOA record purpose answer"></textarea>
+          <br>
+          <button class="kc-submit-btn" onclick="checkQ3()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q3" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Score summary -->
+        <div class="kc-score-summary" id="kc-score" role="region" aria-live="polite">
+          <div>Your Score</div>
+          <div class="score-big" id="score-display">–</div>
+          <div id="score-msg" style="font-size:0.9rem;margin-top:0.4rem;"></div>
+        </div>
+
+      </div><!-- end kc-wrap -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-10" onchange="updateProgress()">
+        <label for="chk-10">I have completed the Knowledge Check.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ── Footer ── -->
+  <footer style="text-align:center;font-size:0.78rem;color:#666;margin-top:2rem;padding-top:1rem;border-top:1px solid #dde3ec;">
+    CSC 152 · Network Operating Systems and Administration · Mendocino College<br>
+    Module 9.2 · Week 9 · March 16–22, 2026 · Instructor: David Pai<br>
+    <em>Supports: Quiz 9 · Lab 9 EC (Part B) · Project 2 Part B</em>
+  </footer>
+
+</main><!-- end .page-wrap -->
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+  /* ── Section Toggle ── */
+  function toggleSection(n) {
+    const body   = document.getElementById('body-' + n);
+    const btn    = document.getElementById('toggle-' + n);
+    const header = body.previousElementSibling;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    header.setAttribute('aria-expanded', String(!isOpen));
+  }
+
+  function keyToggle(e, n) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleSection(n);
+    }
+  }
+
+  /* ── Tab Switcher ── */
+  function switchTab(id) {
+    const allPanels  = document.querySelectorAll('.tab-panel');
+    const allButtons = document.querySelectorAll('.tab-btn');
+    allPanels.forEach(p  => p.classList.remove('active'));
+    allButtons.forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    const activePanel = document.getElementById('tab-' + id);
+    const activeBtn   = document.getElementById('tbtn-' + id);
+    if (activePanel) activePanel.classList.add('active');
+    if (activeBtn) {
+      activeBtn.classList.add('active');
+      activeBtn.setAttribute('aria-selected', 'true');
+    }
+  }
+
+  function keyTab(e, id) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      switchTab(id);
+    }
+  }
+
+  /* ── Reveal Answer (Mini-Case) ── */
+  function revealAnswer(id) {
+    const el  = document.getElementById(id);
+    const btn = el.previousElementSibling;
+    el.classList.toggle('visible');
+    const visible = el.classList.contains('visible');
+    btn.textContent = visible ? 'Hide Model Answer' : 'Show Model Answer';
+    btn.setAttribute('aria-expanded', String(visible));
+  }
+
+  /* ── Progress Tracker ── */
+  function updateProgress() {
+    const total   = 10;
+    const checked = document.querySelectorAll(
+      'input[type="checkbox"][id^="chk-"]:checked'
+    ).length;
+    const pct   = Math.round((checked / total) * 100);
+    const bar   = document.getElementById('progress-bar');
+    const outer = document.getElementById('progress-bar-outer');
+    const count = document.getElementById('progress-count');
+    bar.style.width = pct + '%';
+    outer.setAttribute('aria-valuenow', checked);
+    count.textContent = checked + ' / ' + total;
+  }
+
+  /* ── Knowledge Check ── */
+  let kcScore    = 0;
+  let kcAnswered = [false, false, false];
+
+  function showFeedback(fbId, correct, message) {
+    const el = document.getElementById(fbId);
+    el.className = 'kc-feedback ' + (correct ? 'correct' : 'incorrect');
+    el.innerHTML = (correct ? '✅ ' : '❌ ') + message;
+  }
+
+  function maybeShowScore() {
+    if (!kcAnswered.every(Boolean)) return;
+    const summary = document.getElementById('kc-score');
+    const display = document.getElementById('score-display');
+    const msg     = document.getElementById('score-msg');
+    summary.classList.add('visible');
+    display.textContent = kcScore + ' / 3';
+    const msgs = [
+      'Keep reviewing — re-read the sections and try again after a refresh.',
+      'Good effort! Review the sections for the questions you missed.',
+      'Almost there! Double-check the one you missed.',
+      '🎉 Perfect score! You are ready for the DNS questions on Quiz 9.'
+    ];
+    msg.textContent = msgs[kcScore] || '';
+  }
+
+  /* Q1 — Multiple choice: A record */
+  function checkQ1() {
+    if (kcAnswered[0]) return;
+    const sel = document.querySelector('input[name="kc1"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'c';
+    kcAnswered[0] = true;
+    if (correct) kcScore++;
+    showFeedback('fb-q1', correct,
+      correct
+        ? 'Correct! The <strong>A record</strong> (Address record) maps a hostname to an IPv4 address. AAAA maps to IPv6, PTR is the reverse lookup (IP → hostname), and MX identifies mail servers.'
+        : 'Not quite. The correct answer is the <strong>A record</strong>. Remember: A = IPv4 address, AAAA = IPv6 address, PTR = reverse lookup (IP → hostname), MX = mail server. The A record is the most fundamental record type in DNS.'
+    );
+    document.querySelectorAll('input[name="kc1"]').forEach(r => r.disabled = true);
+    maybeShowScore();
+  }
+
+  /* Q2 — True/False: reverse lookup zones */
+  function checkQ2() {
+    if (kcAnswered[1]) return;
+    const sel = document.querySelector('input[name="kc2"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'true';
+    kcAnswered[1] = true;
+    if (correct) kcScore++;
+    showFeedback('fb-q2', correct,
+      correct
+        ? 'Correct! The statement is <strong>True</strong>. A reverse lookup zone maps IP addresses → hostnames using PTR records. For the <code>192.168.10.0/24</code> network, the reverse zone is named <code>10.168.192.in-addr.arpa</code> — the network octets written in reverse order with <code>.in-addr.arpa</code> appended.'
+        : 'Incorrect. The statement is <strong>True</strong>. Reverse lookup zones use PTR records to map IP addresses back to hostnames. The zone name is the network address in reverse octet order with <code>.in-addr.arpa</code> appended — for example, <code>192.168.10.0/24</code> becomes <code>10.168.192.in-addr.arpa</code>.'
+    );
+    document.querySelectorAll('input[name="kc2"]').forEach(r => r.disabled = true);
+    maybeShowScore();
+  }
+
+  /* Q3 — Short answer: SOA record purpose */
+  function checkQ3() {
+    if (kcAnswered[2]) return;
+    const textarea = document.getElementById('kc3-input');
+    const val = textarea.value.trim().toLowerCase();
+    if (val.length < 10) {
+      alert('Please type at least one sentence before checking.');
+      return;
+    }
+    kcAnswered[2] = true;
+    textarea.disabled = true;
+
+    /* Keyword scoring — award credit if key concepts are present */
+    const keywords = [
+      ['serial', 'version'],
+      ['primary', 'authoritative', 'authority', 'nameserver', 'master'],
+      ['zone', 'metadata', 'timing', 'refresh', 'expire', 'ttl']
+    ];
+    let hits = 0;
+    keywords.forEach(group => {
+      if (group.some(kw => val.includes(kw))) hits++;
+    });
+    const correct = hits >= 2;
+    if (correct) kcScore++;
+
+    showFeedback('fb-q3', correct,
+      correct
+        ? 'Good answer! The <strong>SOA (Start of Authority)</strong> record is the first record in every zone file. It identifies the <strong>primary nameserver</strong> for the zone, the administrator\'s email address, and critical timing parameters (Refresh, Retry, Expire, Minimum TTL). The field you <strong>must</strong> increment on every change is the <strong>Serial number</strong> — secondary servers compare serials to decide whether to request a zone transfer. Without incrementing the serial, your changes will not propagate.'
+        : 'Not quite — here is the full answer: The <strong>SOA record</strong> is the first record in every zone file. It identifies the zone\'s <strong>primary nameserver</strong>, the admin email, and timing parameters (Refresh, Retry, Expire, Minimum TTL) that control replication and caching. The critical field you must update on every change is the <strong>Serial number</strong> (commonly in YYYYMMDDNN format). Secondary DNS servers compare the serial number to decide whether to request a zone transfer — if the serial does not increase, secondaries ignore your changes.'
+    );
+    maybeShowScore();
+  }
+</script>
+</body>
+</html>
