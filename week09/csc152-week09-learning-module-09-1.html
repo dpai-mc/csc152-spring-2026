@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 9.1 – DHCP Server Concepts &amp; Configuration | CSC 152</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f6f9;
+    color: #1a1a2e;
+    line-height: 1.7;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute; top: -100%; left: 1rem;
+    background: #1a3a5c; color: #fff; padding: 0.5rem 1rem;
+    border-radius: 0 0 4px 4px; font-weight: 700; z-index: 9999;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Navigation ── */
+  nav#main-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #1a3a5c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  nav#main-nav .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.25rem; padding: 0.5rem 1rem;
+  }
+  nav#main-nav .nav-brand {
+    color: #f0c040; font-weight: 700; font-size: 0.85rem;
+    margin-right: 0.75rem; white-space: nowrap;
+  }
+  nav#main-nav a {
+    color: #cfe2ff; text-decoration: none;
+    font-size: 0.82rem; font-weight: 700;
+    min-width: 1.9rem; height: 1.9rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+  }
+  nav#main-nav a:hover { background: #2e5f8a; color: #fff; }
+  nav#main-nav a:focus-visible {
+    outline: 3px solid #f0c040; outline-offset: 2px;
+    background: #2e5f8a; color: #fff;
+  }
+
+  /* ── Page Layout ── */
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── Module Header ── */
+  .module-header {
+    background: linear-gradient(135deg, #1a3a5c 0%, #2e5f8a 100%);
+    color: #fff; border-radius: 10px; padding: 2rem 2rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .module-header .badge {
+    display: inline-block; background: #f0c040; color: #1a1a2e;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+  .module-header h1 { font-size: 1.75rem; line-height: 1.25; margin-bottom: 0.5rem; }
+  .module-header .meta {
+    font-size: 0.85rem; opacity: 0.85; display: flex; flex-wrap: wrap; gap: 1rem;
+    margin-top: 0.75rem;
+  }
+  .module-header .meta span::before { content: "• "; }
+  .module-header .meta span:first-child::before { content: ""; }
+
+  /* ── Progress Bar ── */
+  .progress-container {
+    background: #dde3ec; border-radius: 8px; padding: 1rem 1.25rem;
+    margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;
+  }
+  .progress-label { font-size: 0.82rem; font-weight: 600; white-space: nowrap; color: #1a3a5c; }
+  .progress-bar-outer {
+    flex: 1; height: 10px; background: #b8c4d4; border-radius: 10px; overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%; width: 0%; background: #2e7d32;
+    border-radius: 10px; transition: width 0.4s ease;
+  }
+  .progress-count { font-size: 0.82rem; font-weight: 700; color: #1a3a5c; white-space: nowrap; }
+
+  /* ── Section Anchors (offset for sticky nav) ── */
+  .section-anchor {
+    display: block;
+    height: 0;
+    visibility: hidden;
+    /* pushes scroll target below the sticky nav (~56px) */
+    margin-top: -70px;
+    padding-top: 70px;
+  }
+
+  /* ── Content Sections ── */
+  .content-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 1.75rem; overflow: hidden;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.5rem; cursor: pointer;
+    background: #f0f4fa; border-bottom: 2px solid #dde3ec;
+    user-select: none;
+  }
+  .section-header:hover { background: #e4ecf7; }
+  .section-header:focus-visible {
+    outline: 3px solid #1a3a5c; outline-offset: -3px;
+  }
+  .section-header h2 {
+    font-size: 1.1rem; color: #1a3a5c; display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-icon { font-size: 1.2rem; }
+  .toggle-btn {
+    background: none; border: none; cursor: pointer;
+    color: #1a3a5c; font-size: 1.2rem; padding: 0.25rem;
+    border-radius: 4px; transition: transform 0.25s;
+    line-height: 1;
+  }
+  .toggle-btn:focus-visible { outline: 3px solid #1a3a5c; outline-offset: 2px; }
+  .toggle-btn.open { transform: rotate(180deg); }
+  .section-body { padding: 1.5rem; display: none; }
+  .section-body.open { display: block; }
+
+  /* ── Completion Checkbox ── */
+  .completion-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-top: 1.25rem; padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+  .completion-row input[type="checkbox"] {
+    width: 1.1rem; height: 1.1rem; accent-color: #2e7d32; cursor: pointer;
+  }
+  .completion-row label { font-size: 0.85rem; color: #444; cursor: pointer; }
+
+  /* ── Typography Helpers ── */
+  h3 { font-size: 1rem; color: #1a3a5c; margin: 1.25rem 0 0.5rem; }
+  h4 { font-size: 0.92rem; color: #2e5f8a; margin: 1rem 0 0.4rem; }
+  p { margin-bottom: 0.85rem; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 0.85rem; }
+  li { margin-bottom: 0.3rem; }
+  strong { color: #1a1a2e; }
+  code {
+    background: #eef2f7; color: #c0392b; font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 3px;
+  }
+
+  /* ── Callout Boxes ── */
+  .callout {
+    border-left: 4px solid; border-radius: 0 6px 6px 0;
+    padding: 0.85rem 1rem; margin: 1rem 0; font-size: 0.92rem;
+  }
+  .callout-info    { border-color: #2e5f8a; background: #eef4fb; }
+  .callout-tip     { border-color: #2e7d32; background: #edf7ee; }
+  .callout-warning { border-color: #e65100; background: #fff3e0; }
+  .callout-security{ border-color: #6a1b9a; background: #f3e5f5; }
+  .callout-title { font-weight: 700; margin-bottom: 0.3rem; }
+
+  /* ── DORA Diagram ── */
+  .dora-diagram {
+    display: flex; flex-direction: column; gap: 0;
+    margin: 1.25rem 0; border-radius: 8px; overflow: hidden;
+    border: 1px solid #dde3ec;
+  }
+  .dora-step {
+    display: grid; grid-template-columns: 2.5rem 1fr 1fr 1fr;
+    align-items: stretch; border-bottom: 1px solid #dde3ec;
+  }
+  .dora-step:last-child { border-bottom: none; }
+  .dora-num {
+    background: #1a3a5c; color: #f0c040;
+    font-weight: 800; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0.75rem 0;
+  }
+  .dora-letter {
+    font-size: 1.5rem; font-weight: 900; padding: 0.75rem 1rem;
+    display: flex; align-items: center;
+  }
+  .dora-name {
+    font-weight: 700; font-size: 0.92rem; padding: 0.75rem 0.5rem;
+    display: flex; align-items: center;
+  }
+  .dora-desc {
+    font-size: 0.83rem; padding: 0.75rem 0.75rem 0.75rem 0.5rem;
+    display: flex; align-items: center; color: #333;
+  }
+  .dora-d { background: #e3f2fd; } .dora-d .dora-letter { color: #1565c0; }
+  .dora-o { background: #e8f5e9; } .dora-o .dora-letter { color: #2e7d32; }
+  .dora-r { background: #fff3e0; } .dora-r .dora-letter { color: #e65100; }
+  .dora-a { background: #f3e5f5; } .dora-a .dora-letter { color: #6a1b9a; }
+
+  /* ── Arrow Flow ── */
+  .flow-arrow {
+    text-align: center; font-size: 1.4rem; color: #2e5f8a;
+    margin: 0.1rem 0; line-height: 1;
+  }
+
+  /* ── Scope Diagram ── */
+  .scope-diagram {
+    background: #f8fafc; border: 1px solid #dde3ec;
+    border-radius: 8px; padding: 1.25rem; margin: 1rem 0;
+    font-size: 0.85rem;
+  }
+  .scope-pool {
+    background: #e3f2fd; border: 2px solid #1565c0;
+    border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.75rem;
+  }
+  .scope-pool-title { font-weight: 700; color: #1565c0; margin-bottom: 0.4rem; }
+  .scope-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem; }
+  .addr-block {
+    padding: 0.2rem 0.5rem; border-radius: 4px;
+    font-family: monospace; font-size: 0.8rem; font-weight: 600;
+  }
+  .addr-available { background: #c8e6c9; color: #1b5e20; border: 1px solid #81c784; }
+  .addr-excluded  { background: #ffcdd2; color: #b71c1c; border: 1px solid #e57373; text-decoration: line-through; }
+  .addr-reserved  { background: #fff9c4; color: #f57f17; border: 1px solid #ffd54f; }
+  .scope-legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-size: 0.78rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+
+  /* ── Code Block ── */
+  .code-block {
+    background: #1e2a3a; color: #cdd9e5;
+    border-radius: 8px; padding: 1.1rem 1.25rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.82rem; line-height: 1.65;
+    overflow-x: auto; margin: 0.85rem 0;
+    tab-size: 4;
+  }
+  .code-block .cm { color: #8fa8c8; font-style: italic; }
+  .code-block .kw { color: #79b8ff; }
+  .code-block .st { color: #85e89d; }
+  .code-block .nm { color: #f0c040; }
+  .code-block .op { color: #ffab70; }
+
+  /* ── Step List ── */
+  .step-list { list-style: none; padding: 0; margin: 0.85rem 0; }
+  .step-list li {
+    display: flex; gap: 0.85rem; align-items: flex-start;
+    margin-bottom: 0.85rem;
+  }
+  .step-num {
+    flex-shrink: 0; width: 1.8rem; height: 1.8rem;
+    background: #1a3a5c; color: #f0c040;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.8rem;
+  }
+  .step-content { flex: 1; padding-top: 0.15rem; }
+
+  /* ── Options Table ── */
+  .options-table {
+    width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.85rem 0;
+  }
+  .options-table th {
+    background: #1a3a5c; color: #fff; text-align: left;
+    padding: 0.6rem 0.85rem; font-size: 0.82rem;
+  }
+  .options-table td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #eee; }
+  .options-table tr:nth-child(even) td { background: #f8fafc; }
+  .options-table tr:hover td { background: #eef4fb; }
+
+  /* ── Tabs ── */
+  .tab-group { margin: 1rem 0; }
+  .tab-buttons {
+    display: flex; gap: 0; border-bottom: 2px solid #1a3a5c; flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: #eef2f7; border: none; cursor: pointer;
+    padding: 0.55rem 1.1rem; font-size: 0.88rem; font-weight: 600;
+    color: #1a3a5c; border-radius: 6px 6px 0 0;
+    border: 1px solid #dde3ec; border-bottom: none;
+    margin-right: 3px; transition: background 0.15s;
+  }
+  .tab-btn:hover { background: #d6e4f5; }
+  .tab-btn.active { background: #1a3a5c; color: #f0c040; border-color: #1a3a5c; }
+  .tab-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .tab-panel { display: none; padding: 1.25rem; background: #fff; border: 1px solid #dde3ec; border-top: none; border-radius: 0 0 6px 6px; }
+  .tab-panel.active { display: block; }
+
+  /* ── Mini-Case ── */
+  .mini-case {
+    background: #fff8e1; border: 2px solid #f0c040;
+    border-radius: 8px; padding: 1.25rem; margin: 1rem 0;
+  }
+  .mini-case-header { font-weight: 700; color: #e65100; margin-bottom: 0.75rem; font-size: 1rem; }
+  .scenario-box {
+    background: #fff; border-left: 4px solid #e65100;
+    padding: 0.85rem 1rem; border-radius: 0 6px 6px 0;
+    margin-bottom: 1rem; font-size: 0.92rem;
+  }
+  .case-question { margin: 0.75rem 0; }
+  .case-question p { font-weight: 600; margin-bottom: 0.35rem; font-size: 0.92rem; }
+  .reveal-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-size: 0.82rem;
+    font-weight: 600; transition: background 0.15s;
+  }
+  .reveal-btn:hover { background: #2e5f8a; }
+  .reveal-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .model-answer {
+    display: none; background: #e8f5e9; border-left: 4px solid #2e7d32;
+    padding: 0.75rem 1rem; margin-top: 0.5rem; border-radius: 0 6px 6px 0;
+    font-size: 0.88rem;
+  }
+  .model-answer.visible { display: block; }
+
+  /* ── Knowledge Check ── */
+  .kc-wrap { margin: 0.85rem 0; }
+  .kc-question {
+    background: #f0f4fa; border-radius: 8px; padding: 1.1rem 1.25rem;
+    margin-bottom: 1.25rem; border: 1px solid #dde3ec;
+  }
+  .kc-question p.q-text { font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem; }
+  .kc-options { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .kc-options li label {
+    display: flex; align-items: center; gap: 0.6rem;
+    cursor: pointer; padding: 0.45rem 0.75rem;
+    border-radius: 5px; border: 1px solid #cdd5e0;
+    background: #fff; font-size: 0.9rem;
+    transition: background 0.12s;
+  }
+  .kc-options li label:hover { background: #eef4fb; }
+  .kc-options li input[type="radio"],
+  .kc-options li input[type="text"] { accent-color: #1a3a5c; }
+  .kc-text-input {
+    width: 100%; max-width: 420px; padding: 0.45rem 0.75rem;
+    border: 1px solid #cdd5e0; border-radius: 5px;
+    font-size: 0.9rem; margin-bottom: 0.5rem;
+    font-family: inherit;
+  }
+  .kc-text-input:focus { outline: 2px solid #1a3a5c; }
+  .kc-submit-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.45rem 1.1rem; border-radius: 5px; font-size: 0.88rem;
+    font-weight: 600; transition: background 0.15s; margin-top: 0.5rem;
+  }
+  .kc-submit-btn:hover { background: #2e5f8a; }
+  .kc-submit-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .kc-feedback {
+    display: none; margin-top: 0.65rem; padding: 0.65rem 0.9rem;
+    border-radius: 6px; font-size: 0.88rem; font-weight: 500;
+  }
+  .kc-feedback.correct   { background: #e8f5e9; color: #1b5e20; border-left: 4px solid #2e7d32; display: block; }
+  .kc-feedback.incorrect { background: #ffebee; color: #b71c1c; border-left: 4px solid #c62828; display: block; }
+  .kc-score-summary {
+    display: none; background: #1a3a5c; color: #fff;
+    border-radius: 8px; padding: 1rem 1.25rem; margin-top: 0.5rem;
+    text-align: center; font-size: 1rem;
+  }
+  .kc-score-summary.visible { display: block; }
+  .kc-score-summary .score-big { font-size: 2rem; font-weight: 900; color: #f0c040; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .module-header h1 { font-size: 1.35rem; }
+    .dora-step { grid-template-columns: 2rem 2rem 1fr; }
+    .dora-desc { display: none; }
+    .dora-name { font-size: 0.82rem; }
+    nav#main-nav .nav-inner { gap: 0.15rem; }
+    nav#main-nav a { font-size: 0.72rem; padding: 0.25rem 0.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ══════════════════════════════════════════════
+     TOP NAVIGATION
+══════════════════════════════════════════════ -->
+<nav id="main-nav" aria-label="Module sections">
+  <div class="nav-inner">
+    <span class="nav-brand">9.1 DHCP Server</span>
+    <a href="#sec-what-is" title="What is a DHCP Server?">1</a>
+    <a href="#sec-dora" title="The DORA Process">2</a>
+    <a href="#sec-scopes" title="Scopes, Pools, Exclusions &amp; Reservations">3</a>
+    <a href="#sec-options" title="DHCP Options">4</a>
+    <a href="#sec-linux" title="Linux DHCP Configuration">5</a>
+    <a href="#sec-windows" title="Windows Server DHCP Configuration">6</a>
+    <a href="#sec-virtual" title="DHCP in Virtualized Environments &amp; pfSense">7</a>
+    <a href="#sec-rogue" title="Mini-Case: The Rogue DHCP Problem">8</a>
+    <a href="#sec-kc" title="Knowledge Check">9</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════ -->
+<main id="main-content" class="page-wrap">
+
+  <!-- Module Header -->
+  <header class="module-header" role="banner">
+    <div class="badge">CSC 152 · Week 9 · Module 9.1</div>
+    <h1>DHCP Server Concepts &amp; Configuration</h1>
+    <p style="opacity:0.9;font-size:0.95rem;margin-top:0.5rem;">
+      Move from DHCP <em>client</em> (Week 8) to deploying and managing a DHCP
+      <em>server</em> on Linux and Windows Server — and understand how pfSense
+      provides DHCP for your Project 2 client subnet.
+    </p>
+    <div class="meta">
+      <span>Week 9 · March 16–22, 2026</span>
+      <span>Estimated time: ~2.0 hours</span>
+      <span>CSLO 3 · Week 9 Objective 1</span>
+      <span>Supports: Quiz 9 · Lab 9 EC · Project 2 Parts A &amp; B</span>
+    </div>
+  </header>
+
+  <!-- Progress Bar -->
+  <div class="progress-container" role="region" aria-label="Section completion progress">
+    <span class="progress-label">Sections completed:</span>
+    <div class="progress-bar-outer" role="progressbar" aria-valuemin="0" aria-valuemax="9"
+         aria-valuenow="0" aria-label="Progress" id="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar"></div>
+    </div>
+    <span class="progress-count" id="progress-count">0 / 9</span>
+  </div>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 1 – What is a DHCP Server?
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-what-is" aria-hidden="true"></span>
+  <article class="content-section" id="article-1">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="true" aria-controls="body-1"
+         onclick="toggleSection(1)" onkeydown="keyToggle(event,1)">
+      <h2><span class="section-icon" aria-hidden="true">🖥️</span>
+          1 · What is a DHCP Server?</h2>
+      <button class="toggle-btn open" id="toggle-1" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body open" id="body-1">
+
+      <p>
+        <strong>Dynamic Host Configuration Protocol (DHCP)</strong> is a network
+        management protocol that automatically assigns IP addresses and other
+        network configuration parameters to devices on a network. Without DHCP,
+        an administrator would need to manually configure the IP address, subnet
+        mask, default gateway, and DNS servers on every single device — a process
+        that is error-prone and does not scale.
+      </p>
+
+      <h3>Client Side vs. Server Side</h3>
+      <p>
+        In <strong>Week 8</strong> you configured systems as DHCP <em>clients</em>
+        — you told Linux and Windows Server to <em>request</em> an address from
+        whatever DHCP server was available on the network. This week you become
+        the administrator who <em>runs</em> that server.
+      </p>
+
+      <div class="options-table" style="overflow-x:auto;">
+        <table class="options-table" aria-label="DHCP client vs server comparison">
+          <thead>
+            <tr><th>Perspective</th><th>Role</th><th>What it does</th><th>Week covered</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>DHCP Client</td><td>End device / server NIC</td><td>Broadcasts a request; accepts an IP lease</td><td>Week 8 (Module 8.2)</td></tr>
+            <tr><td>DHCP Server</td><td>Dedicated service on a host</td><td>Listens for requests; manages pools; issues leases</td><td>Week 9 (this module)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Why DHCP Servers Matter in Enterprise Networks</h3>
+      <ul>
+        <li><strong>Scale:</strong> A single DHCP server can serve hundreds or thousands of devices automatically.</li>
+        <li><strong>Consistency:</strong> All clients receive correct gateway and DNS settings from one authoritative source.</li>
+        <li><strong>Mobility:</strong> Laptops and phones obtain valid addresses whenever they connect, regardless of subnet.</li>
+        <li><strong>Auditability:</strong> Lease logs record which MAC address held which IP at what time — valuable for security investigations.</li>
+        <li><strong>Change management:</strong> Updating the DNS server address in one DHCP scope propagates to all clients at their next renewal.</li>
+      </ul>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Project 2 Connection</div>
+        In Project 2 Part A you will configure pfSense to act as the DHCP server
+        for your <em>Clients</em> subnet. Everything in this module builds the
+        conceptual foundation for that task. In Project 2 Part B you will also
+        ensure that DNS information is distributed through DHCP options.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-1" onchange="updateProgress()">
+        <label for="chk-1">I have read and understood Section 1.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 2 – The DORA Process
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-dora" aria-hidden="true"></span>
+  <article class="content-section" id="article-2">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-2"
+         onclick="toggleSection(2)" onkeydown="keyToggle(event,2)">
+      <h2><span class="section-icon" aria-hidden="true">🔄</span>
+          2 · The DORA Process</h2>
+      <button class="toggle-btn" id="toggle-2" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-2">
+
+      <p>
+        When a device needs an IP address it follows a four-step exchange with
+        the DHCP server. The acronym <strong>DORA</strong> describes these four
+        messages: <strong>D</strong>iscover → <strong>O</strong>ffer →
+        <strong>R</strong>equest → <strong>A</strong>cknowledge.
+      </p>
+
+      <!-- DORA Annotated Diagram -->
+      <div class="dora-diagram" role="table" aria-label="DORA process step-by-step">
+        <div class="dora-step dora-d" role="row">
+          <div class="dora-num" role="cell">1</div>
+          <div class="dora-letter" role="cell">D</div>
+          <div class="dora-name" role="cell">DISCOVER</div>
+          <div class="dora-desc" role="cell">
+            Client has no IP. It broadcasts a <code>DHCPDISCOVER</code> message
+            (UDP src 0.0.0.0:68 → dst 255.255.255.255:67) asking
+            "Is there a DHCP server out there?"
+          </div>
+        </div>
+        <div class="dora-step dora-o" role="row">
+          <div class="dora-num" role="cell">2</div>
+          <div class="dora-letter" role="cell">O</div>
+          <div class="dora-name" role="cell">OFFER</div>
+          <div class="dora-desc" role="cell">
+            Server responds with a <code>DHCPOFFER</code> — a proposed IP
+            address, subnet mask, lease time, and options (gateway, DNS).
+            May be unicast or broadcast depending on client flags.
+          </div>
+        </div>
+        <div class="dora-step dora-r" role="row">
+          <div class="dora-num" role="cell">3</div>
+          <div class="dora-letter" role="cell">R</div>
+          <div class="dora-name" role="cell">REQUEST</div>
+          <div class="dora-desc" role="cell">
+            Client broadcasts a <code>DHCPREQUEST</code> formally accepting
+            the offered address (and implicitly declining offers from any
+            other DHCP servers that may have responded).
+          </div>
+        </div>
+        <div class="dora-step dora-a" role="row">
+          <div class="dora-num" role="cell">4</div>
+          <div class="dora-letter" role="cell">A</div>
+          <div class="dora-name" role="cell">ACKNOWLEDGE</div>
+          <div class="dora-desc" role="cell">
+            Server confirms with a <code>DHCPACK</code>, finalizing the
+            lease. The client now configures its interface with the assigned
+            address and options. A <code>DHCPNAK</code> is sent if the
+            address is no longer available.
+          </div>
+        </div>
+      </div>
+
+      <h3>Key DORA Details</h3>
+      <ul>
+        <li><strong>Transport:</strong> DHCP uses <strong>UDP</strong> — port <strong>67</strong> (server) and port <strong>68</strong> (client).</li>
+        <li><strong>Broadcast-based:</strong> Discover and Request messages are broadcast because the client has no IP yet and does not know the server's address.</li>
+        <li><strong>Lease renewal:</strong> At 50% of the lease time the client sends a unicast <code>DHCPREQUEST</code> directly to the server to renew. At 87.5% it falls back to broadcast if the server did not respond.</li>
+        <li><strong>Release:</strong> A client can send <code>DHCPRELEASE</code> to return its address early (e.g., on shutdown with <code>dhclient -r</code>).</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Exam Tip</div>
+        Quiz 9 will ask about the DORA acronym. Remember the order:
+        <strong>D</strong>iscover (client → broadcast),
+        <strong>O</strong>ffer (server → client),
+        <strong>R</strong>equest (client → broadcast),
+        <strong>A</strong>cknowledge (server → client).
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-2" onchange="updateProgress()">
+        <label for="chk-2">I have read and understood Section 2.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 3 – Scopes, Pools & Reservations
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-scopes" aria-hidden="true"></span>
+  <article class="content-section" id="article-3">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-3"
+         onclick="toggleSection(3)" onkeydown="keyToggle(event,3)">
+      <h2><span class="section-icon" aria-hidden="true">📋</span>
+          3 · Scopes, Pools, Exclusions &amp; Reservations</h2>
+      <button class="toggle-btn" id="toggle-3" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-3">
+
+      <h3>Scope</h3>
+      <p>
+        A <strong>scope</strong> is the administrative definition of a range of
+        IP addresses that a DHCP server can manage for a specific subnet. Each
+        scope is tied to one subnet. A server can host multiple scopes for
+        different subnets (using DHCP relay agents to reach remote subnets).
+      </p>
+      <p>Example: Scope for the <em>Clients</em> subnet in Project 2 might cover
+        <code>192.168.30.0/24</code> with an address pool of
+        <code>192.168.30.100 – 192.168.30.200</code>.</p>
+
+      <h3>Address Pool</h3>
+      <p>
+        The <strong>address pool</strong> (or <em>dynamic range</em>) is the
+        contiguous block of addresses within the scope that the server will
+        actually hand out to clients. Addresses outside the pool but within the
+        subnet can be used for static assignments without conflicting with DHCP.
+      </p>
+
+      <h3>Exclusions</h3>
+      <p>
+        An <strong>exclusion</strong> removes specific addresses (or a sub-range)
+        from the pool so the DHCP server will never assign them dynamically.
+        Use exclusions for addresses you intend to assign statically to servers,
+        printers, or network equipment — but that fall within the pool range.
+      </p>
+
+      <h3>Reservations</h3>
+      <p>
+        A <strong>reservation</strong> binds a specific IP address to a specific
+        device by its <strong>MAC address</strong>. When that device sends a
+        DHCPDISCOVER, the server always responds with the same reserved address.
+        The device still goes through the full DORA process — it just always
+        receives the same IP.
+      </p>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Reservation vs. Static IP</div>
+        A reservation is <em>not</em> the same as a static IP configured on the
+        device itself. With a reservation, the device still uses DHCP — the
+        server simply guarantees a consistent address. With a true static IP,
+        the device never contacts DHCP at all. Reservations are preferred for
+        managed environments because the gateway and DNS options are still
+        distributed centrally.
+      </div>
+
+      <h3>Lease Duration</h3>
+      <p>
+        Every DHCP assignment is a <strong>lease</strong> — a temporary grant
+        of an address for a defined period. Common defaults:
+      </p>
+      <ul>
+        <li><strong>8 hours</strong> — typical for high-turnover environments (coffee shops, labs)</li>
+        <li><strong>24 hours</strong> — common default for enterprise LANs</li>
+        <li><strong>7–14 days</strong> — used for stable environments with few devices</li>
+      </ul>
+      <p>
+        Shorter leases reclaim addresses faster but increase DHCP traffic.
+        Longer leases reduce traffic but can exhaust the pool if devices leave
+        the network without releasing their address.
+      </p>
+
+      <!-- Scope Diagram -->
+      <h3>Visual: Scope, Pool, Exclusions, and Reservations</h3>
+      <div class="scope-diagram" role="region" aria-label="DHCP scope diagram">
+        <div class="scope-pool">
+          <div class="scope-pool-title">Scope: 192.168.30.0/24 — Pool: .100 to .120</div>
+          <div class="scope-row">
+            <span class="addr-block addr-excluded">.100</span>
+            <span class="addr-block addr-excluded">.101</span>
+            <span class="addr-block addr-reserved">.102</span>
+            <span class="addr-block addr-available">.103</span>
+            <span class="addr-block addr-available">.104</span>
+            <span class="addr-block addr-available">.105</span>
+            <span class="addr-block addr-available">.106</span>
+            <span class="addr-block addr-available">.107</span>
+            <span class="addr-block addr-available">…</span>
+            <span class="addr-block addr-available">.120</span>
+          </div>
+        </div>
+        <div class="scope-legend">
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#c8e6c9;border:1px solid #81c784;"></div>
+            Available for dynamic assignment
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#ffcdd2;border:1px solid #e57373;"></div>
+            Excluded (.100–.101: router, switch)
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch" style="background:#fff9c4;border:1px solid #ffd54f;"></div>
+            Reserved (.102: printer, always same IP)
+          </div>
+        </div>
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-3" onchange="updateProgress()">
+        <label for="chk-3">I have read and understood Section 3.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 4 – DHCP Options
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-options" aria-hidden="true"></span>
+  <article class="content-section" id="article-4">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-4"
+         onclick="toggleSection(4)" onkeydown="keyToggle(event,4)">
+      <h2><span class="section-icon" aria-hidden="true">⚙️</span>
+          4 · DHCP Options</h2>
+      <button class="toggle-btn" id="toggle-4" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-4">
+
+      <p>
+        A DHCP server does more than assign an IP address. It also distributes
+        <strong>options</strong> — additional configuration parameters that tell
+        the client how to use the network. Options are identified by
+        <strong>option codes</strong> defined in RFC 2132.
+      </p>
+
+      <table class="options-table" aria-label="Common DHCP options">
+        <thead>
+          <tr>
+            <th>Option Code</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Example Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>3</td>
+            <td>Default Gateway (Router)</td>
+            <td>The IP address of the default gateway clients should use to reach other networks.</td>
+            <td><code>192.168.30.1</code></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>DNS Server(s)</td>
+            <td>One or more DNS server addresses for hostname resolution. Listed in preference order.</td>
+            <td><code>192.168.10.10, 8.8.8.8</code></td>
+          </tr>
+          <tr>
+            <td>15</td>
+            <td>Domain Name</td>
+            <td>The DNS domain suffix appended to unqualified hostnames (e.g., <code>server1</code> → <code>server1.lab.local</code>).</td>
+            <td><code>lab.local</code></td>
+          </tr>
+          <tr>
+            <td>42</td>
+            <td>NTP Server(s)</td>
+            <td>Network Time Protocol servers for clock synchronization.</td>
+            <td><code>192.168.10.1</code></td>
+          </tr>
+          <tr>
+            <td>51</td>
+            <td>Lease Time</td>
+            <td>Duration (in seconds) of the IP address lease.</td>
+            <td><code>86400</code> (24 hours)</td>
+          </tr>
+          <tr>
+            <td>66</td>
+            <td>TFTP Server</td>
+            <td>Used for PXE boot environments to direct clients to a boot server.</td>
+            <td><code>192.168.10.20</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Scope Options vs. Server Options</h3>
+      <p>
+        In Windows Server DHCP, options can be set at three levels:
+      </p>
+      <ul>
+        <li><strong>Server Options:</strong> Apply to all scopes on the server.</li>
+        <li><strong>Scope Options:</strong> Apply only to clients in a specific scope (override server options).</li>
+        <li><strong>Reservation Options:</strong> Apply only to a specific reserved client (highest priority).</li>
+      </ul>
+      <p>
+        In <code>isc-dhcp-server</code> the same hierarchy exists through
+        global declarations, subnet blocks, and host blocks in
+        <code>/etc/dhcp/dhcpd.conf</code>.
+      </p>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Project 2 Tip</div>
+        For your Project 2 Clients subnet, you will need to configure at minimum
+        Option 3 (gateway = pfSense LAN interface IP) and Option 6 (DNS server
+        you configure in Module 9.2). Option 15 (domain name) is recommended
+        for full name resolution to work correctly.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-4" onchange="updateProgress()">
+        <label for="chk-4">I have read and understood Section 4.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 5 – Configuring DHCP on Linux
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-linux" aria-hidden="true"></span>
+  <article class="content-section" id="article-5">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-5"
+         onclick="toggleSection(5)" onkeydown="keyToggle(event,5)">
+      <h2><span class="section-icon" aria-hidden="true">🐧</span>
+          5 · Configuring DHCP on Linux</h2>
+      <button class="toggle-btn" id="toggle-5" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-5">
+
+      <p>
+        Two common tools are used to deploy a DHCP server on Linux:
+        <strong>isc-dhcp-server</strong> (the traditional, feature-rich choice
+        for Ubuntu Server) and <strong>dnsmasq</strong> (a lightweight combined
+        DHCP + DNS server popular in small networks and embedded systems). This
+        walk-through focuses on <code>isc-dhcp-server</code> since it maps most
+        directly to enterprise practice and Project 2 concepts.
+      </p>
+
+      <!-- Tabs: isc-dhcp-server vs dnsmasq -->
+      <div class="tab-group" role="tablist" aria-label="Linux DHCP server options">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-isc" id="tbtn-isc"
+                  onclick="switchTab('isc')" onkeydown="keyTab(event,'isc')">
+            isc-dhcp-server (Ubuntu)
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-dnsmasq" id="tbtn-dnsmasq"
+                  onclick="switchTab('dnsmasq')" onkeydown="keyTab(event,'dnsmasq')">
+            dnsmasq (lightweight)
+          </button>
+        </div>
+
+        <!-- isc-dhcp-server Panel -->
+        <div class="tab-panel active" id="tab-isc" role="tabpanel" aria-labelledby="tbtn-isc">
+          <h3>Step-by-Step: isc-dhcp-server on Ubuntu Server</h3>
+
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <strong>Install the package</strong>
+                <div class="code-block"><span class="kw">sudo</span> apt update &amp;&amp; <span class="kw">sudo</span> apt install -y isc-dhcp-server</div>
+                After installation the service will attempt to start and
+                <em>fail</em> because no scope is configured yet. That is
+                expected.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <strong>Specify the listening interface</strong><br>
+                Edit <code>/etc/default/isc-dhcp-server</code> and set the
+                interface on which the server should listen:
+                <div class="code-block"><span class="cm"># /etc/default/isc-dhcp-server</span>
+<span class="nm">INTERFACESv4</span>=<span class="st">"ens18"</span>   <span class="cm"># replace with your interface name</span></div>
+                Use <code>ip link show</code> to confirm your interface name.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <strong>Configure the scope in <code>/etc/dhcp/dhcpd.conf</code></strong><br>
+                This is the primary configuration file. Open it with:
+                <div class="code-block"><span class="kw">sudo</span> nano /etc/dhcp/dhcpd.conf</div>
+                A minimal working configuration for a <code>192.168.30.0/24</code>
+                Clients subnet looks like this:
+                <div class="code-block"><span class="cm"># /etc/dhcp/dhcpd.conf — Minimal example for CSC 152 Project 2 Clients subnet</span>
+
+<span class="cm"># Global settings</span>
+<span class="nm">default-lease-time</span> <span class="op">86400</span>;     <span class="cm"># 24 hours</span>
+<span class="nm">max-lease-time</span>     <span class="op">172800</span>;    <span class="cm"># 48 hours</span>
+<span class="nm">authoritative</span>;                  <span class="cm"># This server is THE authority for its subnets</span>
+
+<span class="cm"># Subnet declaration</span>
+<span class="kw">subnet</span> <span class="st">192.168.30.0</span> <span class="kw">netmask</span> <span class="st">255.255.255.0</span> {
+  <span class="nm">range</span> <span class="st">192.168.30.100 192.168.30.200</span>;
+  <span class="nm">option routers</span>             <span class="st">192.168.30.1</span>;    <span class="cm"># Option 3: default gateway</span>
+  <span class="nm">option domain-name-servers</span> <span class="st">192.168.10.10</span>;  <span class="cm"># Option 6: DNS server</span>
+  <span class="nm">option domain-name</span>         <span class="st">"lab.local"</span>;    <span class="cm"># Option 15: domain suffix</span>
+}
+
+<span class="cm"># Reservation example (printer at .102)</span>
+<span class="kw">host</span> <span class="st">printer-01</span> {
+  <span class="nm">hardware ethernet</span> <span class="st">aa:bb:cc:dd:ee:ff</span>;
+  <span class="nm">fixed-address</span>     <span class="st">192.168.30.102</span>;
+}</div>
+                <div class="callout callout-warning" style="margin-top:0.75rem;">
+                  <div class="callout-title">⚠️ authoritative Directive</div>
+                  Always include <code>authoritative;</code> on a production DHCP
+                  server. Without it, the server will not send
+                  <code>DHCPNAK</code> messages to clients that have stale leases
+                  from another server, causing address conflicts.
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <strong>Test the configuration syntax</strong>
+                <div class="code-block"><span class="kw">sudo</span> dhcpd -t -cf /etc/dhcp/dhcpd.conf</div>
+                If no errors are reported, the file is syntactically valid.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">5</div>
+              <div class="step-content">
+                <strong>Start and enable the service</strong>
+                <div class="code-block"><span class="kw">sudo</span> systemctl start  isc-dhcp-server
+<span class="kw">sudo</span> systemctl enable isc-dhcp-server
+<span class="kw">sudo</span> systemctl status isc-dhcp-server</div>
+                Look for <code>active (running)</code> in the status output.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">6</div>
+              <div class="step-content">
+                <strong>Verify leases</strong>
+                <div class="code-block"><span class="kw">cat</span> /var/lib/dhcp/dhcpd.leases</div>
+                After a client connects, its lease entry will appear here with
+                the assigned IP, MAC address, lease start, and expiry times.
+                You can also watch the DHCP log in real time:
+                <div class="code-block"><span class="kw">sudo</span> journalctl -u isc-dhcp-server -f</div>
+              </div>
+            </li>
+          </ol>
+
+          <h4>Common Troubleshooting Commands</h4>
+          <table class="options-table" aria-label="isc-dhcp-server troubleshooting commands">
+            <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><code>sudo dhcpd -t -cf /etc/dhcp/dhcpd.conf</code></td><td>Syntax check without starting service</td></tr>
+              <tr><td><code>sudo systemctl restart isc-dhcp-server</code></td><td>Restart after config changes</td></tr>
+              <tr><td><code>sudo journalctl -u isc-dhcp-server -n 50</code></td><td>Last 50 log lines</td></tr>
+              <tr><td><code>cat /var/lib/dhcp/dhcpd.leases</code></td><td>View current lease database</td></tr>
+              <tr><td><code>sudo ss -ulnp | grep :67</code></td><td>Confirm server is listening on UDP port 67</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- dnsmasq Panel -->
+        <div class="tab-panel" id="tab-dnsmasq" role="tabpanel" aria-labelledby="tbtn-dnsmasq">
+          <h3>dnsmasq: Lightweight DHCP + DNS</h3>
+          <p>
+            <strong>dnsmasq</strong> is a single lightweight daemon that provides
+            both DHCP and DNS caching/forwarding. It is commonly used in:
+          </p>
+          <ul>
+            <li>Home routers and embedded Linux (OpenWrt)</li>
+            <li>Small office networks needing a simple combined service</li>
+            <li>Lab environments and virtual network setups</li>
+            <li>pfSense uses dnsmasq (or Unbound) internally for DNS forwarding</li>
+          </ul>
+
+          <h4>Basic Installation and Configuration</h4>
+          <div class="code-block"><span class="kw">sudo</span> apt install -y dnsmasq</div>
+
+          <p>The primary config file is <code>/etc/dnsmasq.conf</code>. A minimal DHCP-only configuration:</p>
+          <div class="code-block"><span class="cm"># /etc/dnsmasq.conf — minimal DHCP example</span>
+
+<span class="cm"># Listen on this interface only</span>
+<span class="nm">interface</span>=<span class="st">ens18</span>
+
+<span class="cm"># DHCP range: start, end, lease duration</span>
+<span class="nm">dhcp-range</span>=<span class="st">192.168.30.100,192.168.30.200,24h</span>
+
+<span class="cm"># Default gateway (option 3)</span>
+<span class="nm">dhcp-option</span>=<span class="st">3,192.168.30.1</span>
+
+<span class="cm"># DNS server (option 6)</span>
+<span class="nm">dhcp-option</span>=<span class="st">6,192.168.10.10</span>
+
+<span class="cm"># Static reservation by MAC address</span>
+<span class="nm">dhcp-host</span>=<span class="st">aa:bb:cc:dd:ee:ff,printer-01,192.168.30.102</span></div>
+
+          <h4>isc-dhcp-server vs. dnsmasq — Quick Comparison</h4>
+          <table class="options-table" aria-label="isc-dhcp-server vs dnsmasq comparison">
+            <thead><tr><th>Feature</th><th>isc-dhcp-server</th><th>dnsmasq</th></tr></thead>
+            <tbody>
+              <tr><td>Config file</td><td><code>/etc/dhcp/dhcpd.conf</code></td><td><code>/etc/dnsmasq.conf</code></td></tr>
+              <tr><td>Combined DHCP + DNS</td><td>No (DHCP only)</td><td>Yes</td></tr>
+              <tr><td>Enterprise features</td><td>Full (failover, classes, DDNS)</td><td>Limited</td></tr>
+              <tr><td>Resource footprint</td><td>Moderate</td><td>Very low</td></tr>
+              <tr><td>Best for</td><td>Enterprise / lab servers</td><td>Small nets / embedded</td></tr>
+            </tbody>
+          </table>
+
+          <div class="callout callout-info">
+            <div class="callout-title">📌 Course Focus</div>
+            Lab 9 (EC) and Project 2 use <strong>isc-dhcp-server</strong> on Ubuntu
+            Server as the primary Linux DHCP implementation. dnsmasq is presented
+            here for awareness and because pfSense uses it internally.
+          </div>
+        </div>
+      </div><!-- end tab-group -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-5" onchange="updateProgress()">
+        <label for="chk-5">I have read and understood Section 5.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 6 – Configuring DHCP on Windows Server
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-windows" aria-hidden="true"></span>
+  <article class="content-section" id="article-6">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-6"
+         onclick="toggleSection(6)" onkeydown="keyToggle(event,6)">
+      <h2><span class="section-icon" aria-hidden="true">🪟</span>
+          6 · Configuring DHCP on Windows Server</h2>
+      <button class="toggle-btn" id="toggle-6" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-6">
+
+      <p>
+        On Windows Server, DHCP is a <strong>server role</strong> installed and
+        managed through <strong>Server Manager</strong>. The GUI-based scope
+        wizard makes initial setup straightforward, and the DHCP console provides
+        ongoing management of scopes, reservations, and options.
+      </p>
+
+      <h3>Step-by-Step: Adding the DHCP Server Role</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Open Server Manager</strong> → click
+            <em>Manage</em> → <em>Add Roles and Features</em>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Before You Begin</strong> — confirm the server has a
+            <em>static IP address</em> configured. A DHCP server must not
+            itself be a DHCP client (its address must not change).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            Select <em>Role-based or feature-based installation</em> →
+            choose your server → on the <em>Server Roles</em> page check
+            <strong>DHCP Server</strong> → click <em>Add Features</em> when
+            prompted → click through to <em>Install</em>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            After installation, click the <strong>notification flag</strong>
+            in Server Manager and select
+            <em>Complete DHCP configuration</em>. This post-install wizard
+            creates the DHCP Administrators security group and authorizes the
+            server in Active Directory (if domain-joined).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Open the DHCP console:</strong> Tools → DHCP.
+            Expand your server name → expand <em>IPv4</em>.
+          </div>
+        </li>
+      </ol>
+
+      <h3>Step-by-Step: Creating a Scope with the Scope Wizard</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            Right-click <strong>IPv4</strong> → <em>New Scope…</em>
+            The New Scope Wizard opens.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Scope Name:</strong> Enter a descriptive name
+            (e.g., <em>Clients-Subnet-30</em>) and an optional description.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>IP Address Range:</strong> Enter the start and end of
+            your pool (e.g., <code>192.168.30.100</code> to
+            <code>192.168.30.200</code>) and the subnet mask
+            (<code>255.255.255.0</code>).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Add Exclusions and Delay:</strong> Enter any IP addresses
+            or ranges within the pool that should <em>not</em> be assigned
+            dynamically (e.g., <code>192.168.30.100</code> if you reserve
+            it for a router).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Lease Duration:</strong> Set the lease time. The default
+            is 8 days; adjust based on your environment (e.g., 24 hours for
+            a lab).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <strong>Configure DHCP Options — Yes, I want to configure
+            these options now.</strong> Proceed through:
+            <ul style="margin-top:0.4rem;">
+              <li>Router (default gateway): <code>192.168.30.1</code></li>
+              <li>DNS Servers: your internal DNS server IP</li>
+              <li>Domain Name: <code>lab.local</code></li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">7</div>
+          <div class="step-content">
+            <strong>Activate Scope — Yes, I want to activate this scope
+            now.</strong> Click Finish.
+          </div>
+        </li>
+      </ol>
+
+      <h3>Adding a Reservation</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            Expand your scope → right-click <strong>Reservations</strong>
+            → <em>New Reservation…</em>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            Enter a <em>Reservation name</em>, the
+            <em>IP address</em> to reserve, and the device's
+            <em>MAC address</em> (without dashes or colons, e.g.,
+            <code>AABBCCDDEEFF</code>). Select <em>Both</em> for
+            supported types. Click <em>Add</em>.
+          </div>
+        </li>
+      </ol>
+
+      <h3>Viewing Active Leases</h3>
+      <p>
+        In the DHCP console, expand your scope and click
+        <strong>Address Leases</strong>. You will see all currently active
+        leases with the client IP, name, lease expiry, and MAC address.
+        Right-clicking a lease allows you to delete it or convert it to a
+        reservation.
+      </p>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Authorization Requirement</div>
+        In an Active Directory domain, a Windows DHCP server must be
+        <strong>authorized</strong> in AD before it will issue leases. This
+        is a built-in rogue DHCP protection mechanism — only explicitly
+        authorized servers can operate. In a workgroup (non-domain)
+        environment, authorization is not required.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-6" onchange="updateProgress()">
+        <label for="chk-6">I have read and understood Section 6.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 7 – DHCP in Virtualized Environments
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-virtual" aria-hidden="true"></span>
+  <article class="content-section" id="article-7">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-7"
+         onclick="toggleSection(7)" onkeydown="keyToggle(event,7)">
+      <h2><span class="section-icon" aria-hidden="true">🌐</span>
+          7 · DHCP in Virtualized Environments &amp; pfSense</h2>
+      <button class="toggle-btn" id="toggle-7" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-7">
+
+      <p>
+        Virtualized environments introduce additional DHCP considerations
+        because multiple virtual networks can exist on the same physical host,
+        each potentially needing its own DHCP service.
+      </p>
+
+      <h3>Proxmox and Virtual Networks</h3>
+      <p>
+        In Proxmox, each VM is connected to a <strong>virtual bridge</strong>
+        (e.g., <code>vmbr0</code>, <code>vmbr1</code>). VMs on the same bridge
+        are on the same Layer 2 segment and will receive DHCP from whatever
+        server is reachable on that bridge. Key rules:
+      </p>
+      <ul>
+        <li>Only <strong>one active DHCP server</strong> should exist per
+          Layer 2 segment. Multiple servers on the same segment create a
+          "rogue DHCP" situation (see Section 8).</li>
+        <li>Proxmox itself does <em>not</em> provide DHCP by default for VM
+          networks — you must deploy a DHCP server VM or use pfSense.</li>
+        <li>If the Proxmox management interface uses a separate bridge, VMs on
+          lab bridges are isolated from the management DHCP server.</li>
+      </ul>
+
+      <h3>pfSense as a DHCP Server</h3>
+      <p>
+        pfSense includes a built-in DHCP server (powered by dnsmasq/ISC DHCP
+        internally) that can be enabled per interface through the web UI.
+        This is the approach you will use in <strong>Project 2</strong>.
+      </p>
+
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            Log in to the pfSense web UI → navigate to
+            <strong>Services → DHCP Server</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            Select the interface tab for your <em>Clients</em> subnet
+            (e.g., <strong>OPT2</strong> or whatever you name it).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            Check <strong>Enable DHCP server on [interface] interface</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            Set the <strong>Address Pool Range</strong> (From / To).
+            The subnet and gateway are automatically inferred from the
+            pfSense interface IP.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            Under <strong>Servers</strong>, enter your DNS server address.
+            Optionally set the domain name.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">6</div>
+          <div class="step-content">
+            Click <strong>Save</strong>. pfSense will immediately begin
+            serving DHCP on that interface.
+          </div>
+        </li>
+      </ol>
+
+      <h3>DHCP Relay Agents</h3>
+      <p>
+        DHCP Discover messages are broadcasts and do not cross router
+        boundaries. In a multi-subnet environment, a
+        <strong>DHCP relay agent</strong> (also called a DHCP helper) is
+        configured on the router/firewall to forward DHCP broadcasts as
+        unicast packets to a central DHCP server. pfSense supports DHCP
+        relay under <em>Services → DHCP Relay</em>. For Project 2, since
+        pfSense <em>is</em> the DHCP server for the Clients subnet and
+        directly connects to that segment, a relay is not needed.
+      </p>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Project 2 Architecture</div>
+        In your Project 2 topology, pfSense connects directly to three
+        internal subnets (Management, Servers, Clients). You will enable
+        the pfSense DHCP server on the <em>Clients</em> interface only.
+        The Management and Servers subnets use static IP addressing, so
+        no DHCP is needed there.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-7" onchange="updateProgress()">
+        <label for="chk-7">I have read and understood Section 7.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 8 – Mini-Case: The Rogue DHCP Problem
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-rogue" aria-hidden="true"></span>
+  <article class="content-section" id="article-8">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-8"
+         onclick="toggleSection(8)" onkeydown="keyToggle(event,8)">
+      <h2><span class="section-icon" aria-hidden="true">🚨</span>
+          8 · Mini-Case: The Rogue DHCP Problem</h2>
+      <button class="toggle-btn" id="toggle-8" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-8">
+
+      <div class="mini-case" role="region" aria-label="Mini-case scenario">
+        <div class="mini-case-header">🚨 Scenario: Monday Morning at Mendocino Tech</div>
+
+        <div class="scenario-box">
+          <p>
+            It's Monday morning at Mendocino Tech's main office. The helpdesk
+            starts receiving calls at 8:05 AM — users on the second floor cannot
+            reach the internet, internal file servers, or the company intranet.
+            Users on the first floor are unaffected.
+          </p>
+          <p>
+            A network technician runs <code>ipconfig /all</code> on an affected
+            workstation and notices something odd:
+          </p>
+          <ul>
+            <li>IP Address: <code>192.168.30.147</code> ✓ (correct subnet)</li>
+            <li>Subnet Mask: <code>255.255.255.0</code> ✓</li>
+            <li>Default Gateway: <code>192.168.30.254</code> ✗
+              <strong>(should be 192.168.30.1)</strong></li>
+            <li>DNS Servers: <code>8.8.8.8, 8.8.4.4</code> ✗
+              <strong>(should be internal DNS 192.168.10.10)</strong></li>
+            <li>DHCP Server: <code>192.168.30.87</code> ✗
+              <strong>(the authorized server is 192.168.10.5)</strong></li>
+          </ul>
+          <p>
+            The technician checks the authorized DHCP server's lease log and
+            confirms it has issued <em>no</em> leases to second-floor clients
+            since 7:50 AM. Something on the network answered DHCP Discover
+            messages before the legitimate server could respond.
+          </p>
+        </div>
+
+        <!-- Question 1 -->
+        <div class="case-question">
+          <p>❓ Question 1: What is happening here, and what is the root cause?</p>
+          <button class="reveal-btn" onclick="revealAnswer('ans1')"
+                  aria-expanded="false" aria-controls="ans1">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="ans1" role="region" aria-label="Model answer 1">
+            <strong>Root Cause — Rogue DHCP Server:</strong> An unauthorized
+            DHCP server at IP <code>192.168.30.87</code> has appeared on the
+            second-floor network segment. It is responding to DHCP Discover
+            broadcasts <em>faster</em> than the legitimate server, so affected
+            clients accept its DHCP Offer first (DORA — first offer wins). The
+            rogue server is distributing a wrong default gateway
+            (<code>192.168.30.254</code> — likely a non-existent or attacker-
+            controlled device) and external DNS servers. As a result, clients
+            have no path to internal resources. This could be an accidentally
+            connected consumer router, a misconfigured VM, or a deliberate
+            man-in-the-middle attack.
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="case-question">
+          <p>❓ Question 2: What are the immediate steps to restore service?</p>
+          <button class="reveal-btn" onclick="revealAnswer('ans2')"
+                  aria-expanded="false" aria-controls="ans2">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="ans2" role="region" aria-label="Model answer 2">
+            <strong>Immediate Remediation:</strong>
+            <ol style="margin-top:0.5rem;">
+              <li><strong>Identify the rogue device:</strong> Use the switch's
+                ARP table or MAC address table to find which port
+                <code>192.168.30.87</code>'s MAC address is connected to:
+                <code>show mac address-table | include [MAC]</code> on a
+                managed switch.</li>
+              <li><strong>Isolate the port:</strong> Administratively shut down
+                the switch port to stop the rogue server immediately.</li>
+              <li><strong>Force lease renewal on clients:</strong> Run
+                <code>ipconfig /release</code> then <code>ipconfig /renew</code>
+                (Windows) or <code>sudo dhclient -r &amp;&amp; sudo dhclient</code>
+                (Linux) on affected machines to obtain correct settings from
+                the legitimate server.</li>
+              <li><strong>Investigate the device:</strong> Physically locate
+                the device on the identified port and remove or reconfigure it.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="case-question">
+          <p>❓ Question 3: What long-term controls prevent this from happening again?
+            (Connect to at least one Module 9.3 concept.)</p>
+          <button class="reveal-btn" onclick="revealAnswer('ans3')"
+                  aria-expanded="false" aria-controls="ans3">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="ans3" role="region" aria-label="Model answer 3">
+            <strong>Prevention Controls:</strong>
+            <ul style="margin-top:0.5rem;">
+              <li><strong>DHCP Snooping (Layer 2 switch feature):</strong>
+                Configures switch ports as "trusted" (uplinks to authorized
+                DHCP servers) or "untrusted" (access ports). DHCP Offer and
+                Acknowledge messages arriving on untrusted ports are
+                silently dropped, blocking rogue servers at the switch level.</li>
+              <li><strong>Active Directory DHCP Authorization:</strong>
+                In Windows domains, only AD-authorized DHCP servers can
+                operate. A rogue Windows DHCP server will detect the
+                authorized server and shut itself down.</li>
+              <li><strong>Firewall rules (Module 9.3):</strong> pfSense or
+                perimeter firewall rules can block DHCP traffic (UDP ports
+                67–68) from unauthorized source IPs or MAC addresses,
+                preventing rogue servers from reaching clients across
+                routed segments.</li>
+              <li><strong>Network Access Control (NAC):</strong> 802.1X
+                port authentication prevents unauthorized devices from
+                connecting to the network at all — the rogue device would
+                never get a switch port if NAC were enforced.</li>
+              <li><strong>Monitoring:</strong> DHCP server logs and a SIEM
+                (like Splunk — see Module 9.5) can alert on unexpected
+                DHCP Offer messages from unknown source IPs.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div><!-- end mini-case -->
+
+      <div class="callout callout-security">
+        <div class="callout-title">🔒 CSLO 2 Connection</div>
+        The Rogue DHCP scenario directly illustrates CSLO 2 — Apply physical
+        and network data security techniques. DHCP is a critical infrastructure
+        service; unauthorized servers represent both a denial-of-service risk
+        and a potential man-in-the-middle attack vector. The mitigations
+        (DHCP snooping, firewall rules, NAC) are all network security techniques.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-8" onchange="updateProgress()">
+        <label for="chk-8">I have read and understood Section 8.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 9 – Knowledge Check
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-kc" aria-hidden="true"></span>
+  <article class="content-section" id="article-9">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-9"
+         onclick="toggleSection(9)" onkeydown="keyToggle(event,9)">
+      <h2><span class="section-icon" aria-hidden="true">✅</span>
+          9 · Knowledge Check (Ungraded)</h2>
+      <button class="toggle-btn" id="toggle-9" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-9">
+
+      <p style="font-size:0.92rem;margin-bottom:1rem;">
+        Three quick questions to check your understanding before Quiz 9.
+        These are <strong>not graded</strong> — answer honestly and read
+        the explanatory feedback carefully. You may re-attempt by
+        refreshing the section.
+      </p>
+
+      <div class="kc-wrap" id="kc-form">
+
+        <!-- Q1: What does "O" in DORA stand for? (Multiple choice) -->
+        <div class="kc-question" id="kc-q1">
+          <p class="q-text">
+            Q1 · What does the "<strong>O</strong>" in the DORA acronym
+            stand for?
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="a">
+                Originate
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="b">
+                Offer
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="c">
+                Open
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="d">
+                Obtain
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ1()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q1" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q2: DHCP reservation true/false -->
+        <div class="kc-question" id="kc-q2">
+          <p class="q-text">
+            Q2 · True or False: A DHCP reservation ensures that a specific
+            device always receives the same IP address, and the device
+            does <em>not</em> go through the DORA process — it receives
+            its address without sending a Discover message.
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="true">
+                True
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="false">
+                False
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ2()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q2" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q3: isc-dhcp-server config file path (short answer) -->
+        <div class="kc-question" id="kc-q3">
+          <p class="q-text">
+            Q3 · What is the full path to the primary configuration file
+            for <code>isc-dhcp-server</code> on Ubuntu Server?
+            <br><small style="font-weight:400;color:#555;">(Type the exact path, e.g., /etc/example/file.conf)</small>
+          </p>
+          <input type="text" class="kc-text-input" id="kc3-input"
+                 placeholder="/etc/…" aria-label="Config file path answer"
+                 onkeydown="if(event.key==='Enter') checkQ3()">
+          <br>
+          <button class="kc-submit-btn" onclick="checkQ3()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q3" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Score summary -->
+        <div class="kc-score-summary" id="kc-score" role="region" aria-live="polite">
+          <div>Your Score</div>
+          <div class="score-big" id="score-display">–</div>
+          <div id="score-msg" style="font-size:0.9rem;margin-top:0.4rem;"></div>
+        </div>
+
+      </div><!-- end kc-wrap -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-9" onchange="updateProgress()">
+        <label for="chk-9">I have completed the Knowledge Check.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ── Footer ── -->
+  <footer style="text-align:center;font-size:0.78rem;color:#666;margin-top:2rem;padding-top:1rem;border-top:1px solid #dde3ec;">
+    CSC 152 · Network Operating Systems and Administration · Mendocino College<br>
+    Module 9.1 · Week 9 · March 16–22, 2026 · Instructor: David Pai<br>
+    <em>This module is part of the Week 9 template. Sections 9.2–9.5 follow the same layout.</em>
+  </footer>
+
+</main><!-- end .page-wrap -->
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+  /* ── Section Toggle ── */
+  function toggleSection(n) {
+    const body    = document.getElementById('body-' + n);
+    const btn     = document.getElementById('toggle-' + n);
+    const header  = body.previousElementSibling;
+    const isOpen  = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    header.setAttribute('aria-expanded', String(!isOpen));
+  }
+
+  function keyToggle(e, n) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleSection(n);
+    }
+  }
+
+  /* ── Tab Switcher ── */
+  function switchTab(id) {
+    const panels  = document.querySelectorAll('.tab-panel');
+    const buttons = document.querySelectorAll('.tab-btn');
+    panels.forEach(p  => p.classList.remove('active'));
+    buttons.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    const activePanel = document.getElementById('tab-' + id);
+    const activeBtn   = document.getElementById('tbtn-' + id);
+    if (activePanel) activePanel.classList.add('active');
+    if (activeBtn)   { activeBtn.classList.add('active'); activeBtn.setAttribute('aria-selected','true'); }
+  }
+
+  function keyTab(e, id) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab(id); }
+  }
+
+  /* ── Reveal Answer (Mini-Case) ── */
+  function revealAnswer(id) {
+    const el  = document.getElementById(id);
+    const btn = el.previousElementSibling;
+    el.classList.toggle('visible');
+    const visible = el.classList.contains('visible');
+    btn.textContent = visible ? 'Hide Model Answer' : 'Show Model Answer';
+    btn.setAttribute('aria-expanded', String(visible));
+  }
+
+  /* ── Progress Tracker ── */
+  function updateProgress() {
+    const total    = 9;
+    const checked  = document.querySelectorAll('input[type="checkbox"][id^="chk-"]:checked').length;
+    const pct      = Math.round((checked / total) * 100);
+    const bar      = document.getElementById('progress-bar');
+    const outer    = document.getElementById('progress-bar-outer');
+    const count    = document.getElementById('progress-count');
+    bar.style.width = pct + '%';
+    outer.setAttribute('aria-valuenow', checked);
+    count.textContent = checked + ' / ' + total;
+  }
+
+  /* ── Knowledge Check ── */
+  let kcScore = 0;
+  let kcAnswered = [false, false, false];
+
+  function showFeedback(fbId, correct, message) {
+    const el = document.getElementById(fbId);
+    el.className = 'kc-feedback ' + (correct ? 'correct' : 'incorrect');
+    el.innerHTML = (correct ? '✅ ' : '❌ ') + message;
+  }
+
+  function maybeShowScore() {
+    if (kcAnswered.every(Boolean)) {
+      const summary = document.getElementById('kc-score');
+      const display = document.getElementById('score-display');
+      const msg     = document.getElementById('score-msg');
+      summary.classList.add('visible');
+      display.textContent = kcScore + ' / 3';
+      const msgs = [
+        'Keep reviewing — re-read the sections and try again after a refresh.',
+        'Good effort! Review the sections for the questions you missed.',
+        'Almost there! Double-check the one you missed.',
+        '🎉 Perfect score! You are ready for Quiz 9 DHCP questions.'
+      ];
+      msg.textContent = msgs[kcScore] || '';
+    }
+  }
+
+  function checkQ1() {
+    if (kcAnswered[0]) return;
+    const sel = document.querySelector('input[name="kc1"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'b';
+    kcAnswered[0] = true;
+    if (correct) kcScore++;
+    showFeedback('fb-q1', correct,
+      correct
+        ? 'Correct! <strong>O = Offer.</strong> The server sends a DHCPOFFER message proposing an IP address, lease time, and options to the client.'
+        : 'Not quite. The correct answer is <strong>Offer</strong>. After receiving a Discover broadcast, the DHCP server responds with an Offer containing a proposed IP address and configuration options.'
+    );
+    document.querySelectorAll('input[name="kc1"]').forEach(r => r.disabled = true);
+    maybeShowScore();
+  }
+
+  function checkQ2() {
+    if (kcAnswered[1]) return;
+    const sel = document.querySelector('input[name="kc2"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'false';
+    kcAnswered[1] = true;
+    if (correct) kcScore++;
+    showFeedback('fb-q2', correct,
+      correct
+        ? 'Correct! The statement is <strong>False</strong>. A reserved device still goes through the full DORA process — it still sends a Discover. The difference is that the DHCP server always responds with the same reserved IP address for that device\'s MAC address.'
+        : 'Incorrect. The statement is <strong>False</strong>. A reservation does <em>not</em> bypass DORA. The device still broadcasts a Discover; the server simply guarantees it always receives the same pre-assigned address based on its MAC address.'
+    );
+    document.querySelectorAll('input[name="kc2"]').forEach(r => r.disabled = true);
+    maybeShowScore();
+  }
+
+  function checkQ3() {
+    if (kcAnswered[2]) return;
+    const input = document.getElementById('kc3-input');
+    const val   = input.value.trim().toLowerCase().replace(/\s+/g, '');
+    const correct = val === '/etc/dhcp/dhcpd.conf';
+    kcAnswered[2] = true;
+    if (correct) kcScore++;
+    input.disabled = true;
+    showFeedback('fb-q3', correct,
+      correct
+        ? 'Correct! The primary configuration file for <code>isc-dhcp-server</code> on Ubuntu is <strong>/etc/dhcp/dhcpd.conf</strong>. This is where you define subnets, pools, exclusions, reservations, and options.'
+        : 'Not quite. The correct answer is <strong>/etc/dhcp/dhcpd.conf</strong>. Remember: the service is controlled via <code>systemctl</code>, the listening interface is set in <code>/etc/default/isc-dhcp-server</code>, and the scope configuration lives in <code>/etc/dhcp/dhcpd.conf</code>.'
+    );
+    maybeShowScore();
+  }
+</script>
+</body>
+</html>
