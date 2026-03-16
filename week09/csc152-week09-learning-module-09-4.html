@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 9.4 – Protocols, Ports &amp; Network Security | CSC 152</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f6f9;
+    color: #1a1a2e;
+    line-height: 1.7;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute; top: -100%; left: 1rem;
+    background: #1a3a5c; color: #fff; padding: 0.5rem 1rem;
+    border-radius: 0 0 4px 4px; font-weight: 700; z-index: 9999;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Navigation ── */
+  nav#main-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #1a3a5c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  nav#main-nav .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.25rem; padding: 0.5rem 1rem;
+  }
+  nav#main-nav .nav-brand {
+    color: #f0c040; font-weight: 700; font-size: 0.85rem;
+    margin-right: 0.75rem; white-space: nowrap;
+  }
+  nav#main-nav a {
+    color: #cfe2ff; text-decoration: none;
+    font-size: 0.82rem; font-weight: 700;
+    min-width: 1.9rem; height: 1.9rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+  }
+  nav#main-nav a:hover { background: #2e5f8a; color: #fff; }
+  nav#main-nav a:focus-visible {
+    outline: 3px solid #f0c040; outline-offset: 2px;
+    background: #2e5f8a; color: #fff;
+  }
+  nav#main-nav a[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute; top: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: #0d2137; color: #fff;
+    font-size: 0.72rem; font-weight: 500;
+    white-space: nowrap; padding: 0.3rem 0.6rem;
+    border-radius: 4px; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; z-index: 200;
+  }
+  nav#main-nav a[data-tooltip]:hover::after,
+  nav#main-nav a[data-tooltip]:focus-visible::after { opacity: 1; }
+
+  /* ── Page Layout ── */
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── Module Header ── */
+  .module-header {
+    background: linear-gradient(135deg, #1a3a5c 0%, #2e5f8a 100%);
+    color: #fff; border-radius: 10px; padding: 2rem 2rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .module-header .badge {
+    display: inline-block; background: #f0c040; color: #1a1a2e;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+  .module-header h1 { font-size: 1.75rem; line-height: 1.25; margin-bottom: 0.5rem; }
+  .module-header .meta {
+    font-size: 0.85rem; opacity: 0.85; display: flex; flex-wrap: wrap; gap: 1rem;
+    margin-top: 0.75rem;
+  }
+  .module-header .meta span::before { content: "• "; }
+  .module-header .meta span:first-child::before { content: ""; }
+
+  /* ── Progress Bar ── */
+  .progress-container {
+    background: #dde3ec; border-radius: 8px; padding: 1rem 1.25rem;
+    margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;
+  }
+  .progress-label { font-size: 0.82rem; font-weight: 600; white-space: nowrap; color: #1a3a5c; }
+  .progress-bar-outer {
+    flex: 1; height: 10px; background: #b8c4d4; border-radius: 10px; overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%; width: 0%; background: #2e7d32;
+    border-radius: 10px; transition: width 0.4s ease;
+  }
+  .progress-count { font-size: 0.82rem; font-weight: 700; color: #1a3a5c; white-space: nowrap; }
+
+  /* ── Section Anchors ── */
+  .section-anchor {
+    display: block; height: 0; visibility: hidden;
+    margin-top: -70px; padding-top: 70px;
+  }
+
+  /* ── Content Sections ── */
+  .content-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 1.75rem; overflow: hidden;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.5rem; cursor: pointer;
+    background: #f0f4fa; border-bottom: 2px solid #dde3ec;
+    user-select: none;
+  }
+  .section-header:hover { background: #e4ecf7; }
+  .section-header:focus-visible { outline: 3px solid #1a3a5c; outline-offset: -3px; }
+  .section-header h2 {
+    font-size: 1.1rem; color: #1a3a5c; display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-icon { font-size: 1.2rem; }
+  .toggle-btn {
+    background: none; border: none; cursor: pointer;
+    color: #1a3a5c; font-size: 1.2rem; padding: 0.25rem;
+    border-radius: 4px; transition: transform 0.25s; line-height: 1;
+  }
+  .toggle-btn:focus-visible { outline: 3px solid #1a3a5c; outline-offset: 2px; }
+  .toggle-btn.open { transform: rotate(180deg); }
+  .section-body { padding: 1.5rem; display: none; }
+  .section-body.open { display: block; }
+
+  /* ── Completion Checkbox ── */
+  .completion-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-top: 1.25rem; padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+  .completion-row input[type="checkbox"] {
+    width: 1.1rem; height: 1.1rem; accent-color: #2e7d32; cursor: pointer;
+  }
+  .completion-row label { font-size: 0.85rem; color: #444; cursor: pointer; }
+
+  /* ── Typography ── */
+  h3 { font-size: 1rem; color: #1a3a5c; margin: 1.25rem 0 0.5rem; }
+  h4 { font-size: 0.92rem; color: #2e5f8a; margin: 1rem 0 0.4rem; }
+  p { margin-bottom: 0.85rem; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 0.85rem; }
+  li { margin-bottom: 0.3rem; }
+  strong { color: #1a1a2e; }
+  code {
+    background: #eef2f7; color: #c0392b;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 3px;
+  }
+
+  /* ── Callout Boxes ── */
+  .callout {
+    border-left: 4px solid; border-radius: 0 6px 6px 0;
+    padding: 0.85rem 1rem; margin: 1rem 0; font-size: 0.92rem;
+  }
+  .callout-info     { border-color: #2e5f8a; background: #eef4fb; }
+  .callout-tip      { border-color: #2e7d32; background: #edf7ee; }
+  .callout-warning  { border-color: #e65100; background: #fff3e0; }
+  .callout-security { border-color: #6a1b9a; background: #f3e5f5; }
+  .callout-exam     { border-color: #f0c040; background: #fffde7; }
+  .callout-title { font-weight: 700; margin-bottom: 0.3rem; }
+
+  /* ── Data Tables ── */
+  .data-table-wrap { overflow-x: auto; margin: 0.85rem 0; }
+  .data-table {
+    width: 100%; border-collapse: collapse; font-size: 0.88rem;
+  }
+  .data-table th {
+    background: #1a3a5c; color: #fff; text-align: left;
+    padding: 0.6rem 0.85rem; font-size: 0.82rem;
+  }
+  .data-table td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  .data-table tr:nth-child(even) td { background: #f8fafc; }
+  .data-table tr:hover td { background: #eef4fb; }
+  .badge-tcp  { background: #dbeafe; color: #1e40af; font-size: 0.75rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 10px; white-space: nowrap; }
+  .badge-udp  { background: #fef9c3; color: #854d0e; font-size: 0.75rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 10px; white-space: nowrap; }
+  .badge-both { background: #ede9fe; color: #5b21b6; font-size: 0.75rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 10px; white-space: nowrap; }
+  .risk-high   { color: #b91c1c; font-weight: 700; }
+  .risk-med    { color: #b45309; font-weight: 600; }
+  .risk-low    { color: #166534; }
+
+  /* ── Port Range Visual ── */
+  .port-range-diagram {
+    display: flex; gap: 0; margin: 1rem 0; border-radius: 8px; overflow: hidden;
+    border: 1px solid #dde3ec;
+  }
+  .port-range-block {
+    flex: 1; padding: 1rem 0.75rem; text-align: center;
+  }
+  .port-range-block .range-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; margin-bottom: 0.35rem;
+  }
+  .port-range-block .range-nums {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem;
+  }
+  .port-range-block .range-desc { font-size: 0.75rem; line-height: 1.4; }
+  .pr-wellknown  { background: #dbeafe; border-right: 2px solid #93c5fd; }
+  .pr-wellknown  .range-label { color: #1e40af; }
+  .pr-registered { background: #fef9c3; border-right: 2px solid #fde047; }
+  .pr-registered .range-label { color: #854d0e; }
+  .pr-ephemeral  { background: #dcfce7; }
+  .pr-ephemeral  .range-label { color: #166534; }
+
+  /* ── TCP vs UDP Comparison ── */
+  .compare-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;
+  }
+  .compare-card {
+    border-radius: 8px; padding: 1rem 1.1rem; border: 2px solid;
+  }
+  .compare-card.tcp-card { border-color: #1e40af; background: #eff6ff; }
+  .compare-card.udp-card { border-color: #854d0e; background: #fefce8; }
+  .compare-card h4 { margin-top: 0; font-size: 1rem; }
+  .compare-card.tcp-card h4 { color: #1e40af; }
+  .compare-card.udp-card h4 { color: #854d0e; }
+  .compare-card ul { font-size: 0.88rem; margin-bottom: 0; }
+
+  /* ── Attack Surface Visual ── */
+  .attack-surface-wrap {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;
+  }
+  .server-vis {
+    border-radius: 8px; padding: 1rem; border: 2px solid;
+    font-size: 0.82rem;
+  }
+  .server-vis.exposed  { border-color: #b91c1c; background: #fef2f2; }
+  .server-vis.hardened { border-color: #166534; background: #f0fdf4; }
+  .server-vis .sv-title {
+    font-weight: 700; font-size: 0.88rem; margin-bottom: 0.6rem;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .server-vis.exposed  .sv-title { color: #b91c1c; }
+  .server-vis.hardened .sv-title { color: #166534; }
+  .port-pill {
+    display: inline-block; margin: 0.15rem; padding: 0.15rem 0.5rem;
+    border-radius: 12px; font-family: monospace; font-size: 0.78rem; font-weight: 600;
+  }
+  .port-open       { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .port-open-ok    { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .port-closed     { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; text-decoration: line-through; }
+
+  /* ── Code Block ── */
+  .code-block {
+    background: #1e2a3a; color: #cdd9e5;
+    border-radius: 8px; padding: 1.1rem 1.25rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.82rem; line-height: 1.65;
+    overflow-x: auto; margin: 0.85rem 0; tab-size: 4;
+  }
+  .code-block .cm { color: #8fa8c8; font-style: italic; }
+  .code-block .kw { color: #79b8ff; }
+  .code-block .st { color: #85e89d; }
+  .code-block .nm { color: #f0c040; }
+  .code-block .op { color: #ffab70; }
+  .code-block .hi { color: #ff7b72; }
+
+  /* ── Tabs ── */
+  .tab-group { margin: 1rem 0; }
+  .tab-buttons {
+    display: flex; gap: 0; border-bottom: 2px solid #1a3a5c; flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: #eef2f7; border: none; cursor: pointer;
+    padding: 0.55rem 1.1rem; font-size: 0.88rem; font-weight: 600;
+    color: #1a3a5c; border-radius: 6px 6px 0 0;
+    border: 1px solid #dde3ec; border-bottom: none;
+    margin-right: 3px; transition: background 0.15s;
+  }
+  .tab-btn:hover { background: #d6e4f5; }
+  .tab-btn.active { background: #1a3a5c; color: #f0c040; border-color: #1a3a5c; }
+  .tab-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .tab-panel { display: none; padding: 1.25rem; background: #fff; border: 1px solid #dde3ec; border-top: none; border-radius: 0 0 6px 6px; }
+  .tab-panel.active { display: block; }
+
+  /* ── Step List ── */
+  .step-list { list-style: none; padding: 0; margin: 0.85rem 0; }
+  .step-list li { display: flex; gap: 0.85rem; align-items: flex-start; margin-bottom: 0.85rem; }
+  .step-num {
+    flex-shrink: 0; width: 1.8rem; height: 1.8rem;
+    background: #1a3a5c; color: #f0c040;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.8rem;
+  }
+  .step-content { flex: 1; padding-top: 0.15rem; }
+
+  /* ── Mini-Case ── */
+  .mini-case {
+    background: #fff8e1; border: 2px solid #f0c040;
+    border-radius: 8px; padding: 1.25rem; margin: 1rem 0;
+  }
+  .mini-case-header { font-weight: 700; color: #e65100; margin-bottom: 0.75rem; font-size: 1rem; }
+  .scenario-box {
+    background: #fff; border-left: 4px solid #e65100;
+    padding: 0.85rem 1rem; border-radius: 0 6px 6px 0;
+    margin-bottom: 1rem; font-size: 0.92rem;
+  }
+  .case-question { margin: 0.75rem 0; }
+  .case-question p { font-weight: 600; margin-bottom: 0.35rem; font-size: 0.92rem; }
+  .reveal-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-size: 0.82rem;
+    font-weight: 600; transition: background 0.15s;
+  }
+  .reveal-btn:hover { background: #2e5f8a; }
+  .reveal-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .model-answer {
+    display: none; background: #e8f5e9; border-left: 4px solid #2e7d32;
+    padding: 0.75rem 1rem; margin-top: 0.5rem; border-radius: 0 6px 6px 0;
+    font-size: 0.88rem;
+  }
+  .model-answer.visible { display: block; }
+
+  /* ── Discussion Block ── */
+  .discussion-block {
+    background: #f3e5f5; border: 2px solid #7b1fa2;
+    border-radius: 8px; padding: 1.25rem; margin: 1rem 0;
+  }
+  .discussion-header {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-weight: 700; font-size: 1rem; color: #4a148c; margin-bottom: 0.85rem;
+  }
+  .discussion-meta {
+    display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.85rem;
+  }
+  .discussion-meta .dmeta-item {
+    background: #7b1fa2; color: #fff;
+    font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.65rem;
+    border-radius: 12px;
+  }
+  .discussion-prompt {
+    background: #fff; border-left: 4px solid #7b1fa2;
+    padding: 0.85rem 1rem; border-radius: 0 6px 6px 0;
+    font-size: 0.92rem; line-height: 1.7;
+  }
+  .discussion-prompt p { margin-bottom: 0.65rem; }
+  .discussion-prompt p:last-child { margin-bottom: 0; }
+  .discussion-deadlines {
+    margin-top: 0.85rem; background: #ede7f6;
+    border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.88rem;
+  }
+  .discussion-deadlines ul { margin: 0.35rem 0 0; }
+
+  /* ── Knowledge Check ── */
+  .kc-wrap { margin: 0.85rem 0; }
+  .kc-question {
+    background: #f0f4fa; border-radius: 8px; padding: 1.1rem 1.25rem;
+    margin-bottom: 1.25rem; border: 1px solid #dde3ec;
+  }
+  .kc-question p.q-text { font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem; }
+  .kc-options { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .kc-options li label {
+    display: flex; align-items: center; gap: 0.6rem;
+    cursor: pointer; padding: 0.45rem 0.75rem;
+    border-radius: 5px; border: 1px solid #cdd5e0;
+    background: #fff; font-size: 0.9rem; transition: background 0.12s;
+  }
+  .kc-options li label:hover { background: #eef4fb; }
+  .kc-options li input[type="radio"] { accent-color: #1a3a5c; }
+  .kc-text-input {
+    width: 100%; max-width: 420px; padding: 0.45rem 0.75rem;
+    border: 1px solid #cdd5e0; border-radius: 5px;
+    font-size: 0.9rem; margin-bottom: 0.5rem; font-family: inherit;
+  }
+  .kc-text-input:focus { outline: 2px solid #1a3a5c; }
+  .kc-submit-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.45rem 1.1rem; border-radius: 5px; font-size: 0.88rem;
+    font-weight: 600; transition: background 0.15s; margin-top: 0.5rem;
+  }
+  .kc-submit-btn:hover { background: #2e5f8a; }
+  .kc-submit-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .kc-feedback {
+    display: none; margin-top: 0.65rem; padding: 0.65rem 0.9rem;
+    border-radius: 6px; font-size: 0.88rem; font-weight: 500;
+  }
+  .kc-feedback.correct   { background: #e8f5e9; color: #1b5e20; border-left: 4px solid #2e7d32; display: block; }
+  .kc-feedback.incorrect { background: #ffebee; color: #b71c1c; border-left: 4px solid #c62828; display: block; }
+  .kc-score-summary {
+    display: none; background: #1a3a5c; color: #fff;
+    border-radius: 8px; padding: 1rem 1.25rem; margin-top: 0.5rem;
+    text-align: center; font-size: 1rem;
+  }
+  .kc-score-summary.visible { display: block; }
+  .kc-score-summary .score-big { font-size: 2rem; font-weight: 900; color: #f0c040; }
+
+  /* ── Responsive ── */
+  @media (max-width: 680px) {
+    .module-header h1 { font-size: 1.35rem; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .attack-surface-wrap { grid-template-columns: 1fr; }
+    .port-range-diagram { flex-direction: column; }
+    .pr-wellknown  { border-right: none; border-bottom: 2px solid #93c5fd; }
+    .pr-registered { border-right: none; border-bottom: 2px solid #fde047; }
+    nav#main-nav a { font-size: 0.72rem; padding: 0.25rem 0.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ══════════════════════════════════════════════
+     TOP NAVIGATION
+══════════════════════════════════════════════ -->
+<nav id="main-nav" aria-label="Module sections">
+  <div class="nav-inner">
+    <span class="nav-brand">9.4 Protocols &amp; Ports</span>
+    <a href="#sec-tcpudp"    data-tooltip="TCP vs. UDP"                   aria-label="Section 1: TCP vs. UDP">1</a>
+    <a href="#sec-ranges"    data-tooltip="Port Number Ranges"            aria-label="Section 2: Port Number Ranges">2</a>
+    <a href="#sec-table"     data-tooltip="Protocol &amp; Port Reference" aria-label="Section 3: Protocol &amp; Port Reference Table">3</a>
+    <a href="#sec-scanning"  data-tooltip="Port Scanning &amp; nmap"      aria-label="Section 4: Port Scanning &amp; nmap">4</a>
+    <a href="#sec-exposure"  data-tooltip="Principle of Least Exposure"   aria-label="Section 5: Principle of Least Exposure">5</a>
+    <a href="#sec-attacks"   data-tooltip="Common Attack Vectors"         aria-label="Section 6: Common Attack Vectors">6</a>
+    <a href="#sec-minicase"  data-tooltip="Mini-Case: The Port Audit"     aria-label="Section 7: Mini-Case: The Port Audit">7</a>
+    <a href="#sec-disc5"     data-tooltip="Discussion 5"                  aria-label="Section 8: Discussion 5">8</a>
+    <a href="#sec-kc"        data-tooltip="Knowledge Check"               aria-label="Section 9: Knowledge Check">9</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════ -->
+<main id="main-content" class="page-wrap">
+
+  <!-- Module Header -->
+  <header class="module-header" role="banner">
+    <div class="badge">CSC 152 · Week 9 · Module 9.4</div>
+    <h1>Protocols, Ports &amp; Network Security</h1>
+    <p style="opacity:0.9;font-size:0.95rem;margin-top:0.5rem;">
+      Build your port and protocol reference knowledge, connect it to firewall
+      rule design, and learn to recognize the attack surface created by
+      unnecessary open ports.
+    </p>
+    <div class="meta">
+      <span>Week 9 · March 16–22, 2026</span>
+      <span>Estimated time: ~1.5 hours</span>
+      <span>CSLO 2 · CSLO 3 · Week 9 Objective 3</span>
+      <span>Supports: Quiz 9 · Discussion 5 · Project 2 Part B · Final Exam</span>
+    </div>
+  </header>
+
+  <!-- Progress Bar -->
+  <div class="progress-container" role="region" aria-label="Section completion progress">
+    <span class="progress-label">Sections completed:</span>
+    <div class="progress-bar-outer" role="progressbar" aria-valuemin="0" aria-valuemax="9"
+         aria-valuenow="0" aria-label="Progress" id="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar"></div>
+    </div>
+    <span class="progress-count" id="progress-count">0 / 9</span>
+  </div>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 1 – TCP vs. UDP
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-tcpudp" aria-hidden="true"></span>
+  <article class="content-section" id="article-1">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="true" aria-controls="body-1"
+         onclick="toggleSection(1)" onkeydown="keyToggle(event,1)">
+      <h2><span class="section-icon" aria-hidden="true">🔀</span>
+          1 · TCP vs. UDP — When Each Is Used &amp; Why It Matters</h2>
+      <button class="toggle-btn open" id="toggle-1" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body open" id="body-1">
+
+      <p>
+        Every network service communicates using one of two transport-layer
+        protocols: <strong>TCP (Transmission Control Protocol)</strong> or
+        <strong>UDP (User Datagram Protocol)</strong>. Understanding the
+        difference is not just academic — it directly determines how you write
+        firewall rules, because a rule that specifies TCP will not catch
+        UDP traffic on the same port number, and vice versa.
+      </p>
+
+      <div class="compare-grid">
+        <div class="compare-card tcp-card">
+          <h4>🔵 TCP — Connection-Oriented</h4>
+          <ul>
+            <li><strong>Establishes a connection</strong> via a three-way handshake (SYN → SYN-ACK → ACK) before any data is sent.</li>
+            <li><strong>Guarantees delivery:</strong> lost packets are detected and retransmitted.</li>
+            <li><strong>Ordered delivery:</strong> data arrives in the sequence it was sent.</li>
+            <li><strong>Flow control &amp; congestion control</strong> built in.</li>
+            <li><strong>Higher overhead</strong> — connection setup and acknowledgment traffic add latency.</li>
+            <li><strong>Used by:</strong> HTTP, HTTPS, SSH, FTP, SMTP, RDP, SMB — any service where data integrity is critical.</li>
+          </ul>
+        </div>
+        <div class="compare-card udp-card">
+          <h4>🟡 UDP — Connectionless</h4>
+          <ul>
+            <li><strong>No handshake:</strong> packets are sent immediately without establishing a connection first.</li>
+            <li><strong>No guaranteed delivery:</strong> packets can be lost, duplicated, or arrive out of order.</li>
+            <li><strong>No retransmission</strong> — the application layer must handle errors if needed.</li>
+            <li><strong>Very low overhead</strong> — minimal header, no connection state.</li>
+            <li><strong>Used by:</strong> DNS queries, DHCP, TFTP, SNMP, syslog, VoIP, video streaming — services where speed matters more than perfection.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Why This Matters for Firewall Rules</h3>
+      <p>
+        Firewall rules specify <em>protocol</em> (TCP, UDP, or both) as part of
+        the rule definition. Specifying the wrong protocol means the rule will
+        silently fail to match real traffic. Consider DNS: it uses
+        <strong>both TCP and UDP on port 53</strong>. A firewall rule that
+        only allows <code>UDP 53</code> will block large DNS responses that
+        fall back to TCP, causing intermittent name resolution failures that
+        are notoriously difficult to diagnose.
+      </p>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Common Firewall Mistake</div>
+        Writing a rule for <code>TCP port 53</code> without a matching
+        <code>UDP port 53</code> rule (or vice versa) will cause partial DNS
+        failures. Always check the transport protocol column in the port
+        reference table before writing a firewall rule.
+      </div>
+
+      <h3>Stateful vs. Stateless Inspection — A Quick Reminder</h3>
+      <p>
+        pfSense (and most modern firewalls) use <strong>stateful inspection</strong>:
+        they track the state of TCP connections and automatically permit the
+        return traffic for an established session. This means you typically only
+        need to write an <em>outbound</em> allow rule — the firewall knows to
+        let the reply back in. Stateless firewalls (like basic <code>iptables</code>
+        without the <code>conntrack</code> module) require explicit rules for
+        both directions.
+      </p>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Ephemeral Ports and Return Traffic</div>
+        When a client opens a TCP connection to a server's well-known port
+        (e.g., port 443), the client's OS picks a random
+        <strong>ephemeral source port</strong> (typically 49152–65535) for
+        that session. A stateful firewall tracks this tuple
+        (src IP, src port, dst IP, dst port, protocol) and permits the
+        server's reply automatically. You do not need a rule allowing
+        inbound traffic on all ephemeral ports.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-1" onchange="updateProgress()">
+        <label for="chk-1">I have read and understood Section 1.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 2 – Port Number Ranges
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-ranges" aria-hidden="true"></span>
+  <article class="content-section" id="article-2">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-2"
+         onclick="toggleSection(2)" onkeydown="keyToggle(event,2)">
+      <h2><span class="section-icon" aria-hidden="true">🔢</span>
+          2 · Port Number Ranges</h2>
+      <button class="toggle-btn" id="toggle-2" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-2">
+
+      <p>
+        Port numbers are 16-bit unsigned integers, giving a range of
+        <strong>0 to 65,535</strong>. The Internet Assigned Numbers Authority
+        (IANA) divides this range into three categories, each with a distinct
+        administrative meaning.
+      </p>
+
+      <div class="port-range-diagram" role="region" aria-label="Port number range diagram">
+        <div class="port-range-block pr-wellknown">
+          <div class="range-label">Well-Known Ports</div>
+          <div class="range-nums">0 – 1,023</div>
+          <div class="range-desc">
+            Assigned to core internet services by IANA. Binding to these ports
+            typically requires root/administrator privileges on the server OS.
+            Examples: HTTP (80), HTTPS (443), SSH (22), DNS (53).
+          </div>
+        </div>
+        <div class="port-range-block pr-registered">
+          <div class="range-label">Registered Ports</div>
+          <div class="range-nums">1,024 – 49,151</div>
+          <div class="range-desc">
+            Registered by IANA for specific applications but do not require
+            elevated privileges to bind. Examples: RDP (3389), MySQL (3306),
+            Splunk Web (8000), Splunk HEC (8088).
+          </div>
+        </div>
+        <div class="port-range-block pr-ephemeral">
+          <div class="range-label">Dynamic / Ephemeral</div>
+          <div class="range-nums">49,152 – 65,535</div>
+          <div class="range-desc">
+            Assigned automatically by the OS as temporary source ports for
+            outbound connections. Not bound to specific services; you will
+            see these as client-side ports in network captures.
+          </div>
+        </div>
+      </div>
+
+      <h3>Administrative Significance</h3>
+      <ul>
+        <li>
+          <strong>Well-known port binding requires root:</strong> On Linux, a
+          process must run as root (or have <code>CAP_NET_BIND_SERVICE</code>)
+          to listen on ports below 1024. This is a security control — it
+          prevents unprivileged users from impersonating core services.
+        </li>
+        <li>
+          <strong>Registered ports in firewall rules:</strong> Services like
+          RDP (3389) and Splunk (8000, 8088, 9997) fall in the registered
+          range. These must be explicitly allowed in firewall rules — they
+          are not automatically open.
+        </li>
+        <li>
+          <strong>Ephemeral ports and stateful firewalls:</strong> You should
+          never need to write explicit allow rules for the ephemeral range
+          on a stateful firewall. If you find yourself doing so, reconsider
+          the rule design.
+        </li>
+        <li>
+          <strong>Non-standard ports:</strong> Administrators sometimes run
+          services on non-standard ports (e.g., SSH on port 2222 instead of
+          22) as a minor obscurity measure. This is <em>not</em> a security
+          control — port scanners find these trivially — but it does reduce
+          automated brute-force noise in logs.
+        </li>
+      </ul>
+
+      <div class="callout callout-exam">
+        <div class="callout-title">📝 Quiz 9 &amp; Final Exam Note</div>
+        Port number ranges are directly tested. Know the three ranges, their
+        numeric boundaries, and one or two examples from each. The well-known
+        range (0–1023) and the specific ports in Section 3 are the highest
+        priority for both Quiz 9 and the final exam.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-2" onchange="updateProgress()">
+        <label for="chk-2">I have read and understood Section 2.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 3 – Protocol & Port Reference Table
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-table" aria-hidden="true"></span>
+  <article class="content-section" id="article-3">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-3"
+         onclick="toggleSection(3)" onkeydown="keyToggle(event,3)">
+      <h2><span class="section-icon" aria-hidden="true">📋</span>
+          3 · Protocol &amp; Port Reference Table</h2>
+      <button class="toggle-btn" id="toggle-3" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-3">
+
+      <p>
+        The table below covers every protocol you are expected to know for
+        Quiz 9, the final exam, and Project 2 firewall rule design. The
+        <strong>Security Note</strong> column highlights protocols that
+        introduce risk and should be treated with caution or avoided in
+        production environments.
+      </p>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 How to Use This Table</div>
+        Use the tabs below to view protocols grouped by category, or view the
+        full table. The full table is sorted by port number for quick scanning
+        during Quiz 9 (open-note/open-book format).
+      </div>
+
+      <!-- Tabs for protocol categories -->
+      <div class="tab-group" role="tablist" aria-label="Protocol reference views">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-full" id="tbtn-full"
+                  onclick="switchTab('full')" onkeydown="keyTab(event,'full')">
+            Full Table (by port)
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-remote" id="tbtn-remote"
+                  onclick="switchTab('remote')" onkeydown="keyTab(event,'remote')">
+            Remote Access
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-infra" id="tbtn-infra"
+                  onclick="switchTab('infra')" onkeydown="keyTab(event,'infra')">
+            Infrastructure
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-web" id="tbtn-web"
+                  onclick="switchTab('web')" onkeydown="keyTab(event,'web')">
+            Web &amp; Email
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-splunk" id="tbtn-splunk"
+                  onclick="switchTab('splunk')" onkeydown="keyTab(event,'splunk')">
+            Splunk
+          </button>
+        </div>
+
+        <!-- FULL TABLE -->
+        <div class="tab-panel active" id="tab-full" role="tabpanel" aria-labelledby="tbtn-full">
+          <div class="data-table-wrap">
+            <table class="data-table" aria-label="Full protocol and port reference table sorted by port number">
+              <thead>
+                <tr>
+                  <th>Port(s)</th>
+                  <th>Transport</th>
+                  <th>Protocol / Service</th>
+                  <th>Category</th>
+                  <th>Security Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>20, 21</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>FTP</strong> — File Transfer Protocol (20: data, 21: control)</td>
+                  <td>File Transfer</td>
+                  <td class="risk-high">⚠️ Transmits credentials and data in <strong>cleartext</strong>. Use SFTP (port 22) or FTPS instead. Block in production unless absolutely required.</td>
+                </tr>
+                <tr>
+                  <td><strong>22</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>SSH</strong> — Secure Shell (remote access, SFTP, SCP)</td>
+                  <td>Remote Access</td>
+                  <td class="risk-low">✅ Encrypted. Preferred for remote administration. Restrict to management subnet; use key-based authentication.</td>
+                </tr>
+                <tr>
+                  <td><strong>23</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>Telnet</strong> — Unencrypted remote terminal</td>
+                  <td>Remote Access</td>
+                  <td class="risk-high">🚫 Transmits <strong>all data including passwords in cleartext</strong>. Should never be used on any network. Replace with SSH.</td>
+                </tr>
+                <tr>
+                  <td><strong>25</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>SMTP</strong> — Simple Mail Transfer Protocol (email sending)</td>
+                  <td>Email</td>
+                  <td class="risk-med">⚠️ Unauthenticated SMTP (port 25) is exploited for spam relay. Block outbound port 25 from client subnets; allow only from mail servers.</td>
+                </tr>
+                <tr>
+                  <td><strong>53</strong></td>
+                  <td><span class="badge-both">TCP/UDP</span></td>
+                  <td><strong>DNS</strong> — Domain Name System</td>
+                  <td>Infrastructure</td>
+                  <td class="risk-med">⚠️ UDP for queries; TCP for large responses and zone transfers. DNS tunneling is a known exfiltration vector. Monitor for unusual query volumes.</td>
+                </tr>
+                <tr>
+                  <td><strong>67, 68</strong></td>
+                  <td><span class="badge-udp">UDP</span></td>
+                  <td><strong>DHCP</strong> — Dynamic Host Configuration Protocol (67: server, 68: client)</td>
+                  <td>Infrastructure</td>
+                  <td class="risk-med">⚠️ Rogue DHCP servers are a significant threat (see Module 9.1). Use DHCP snooping on managed switches.</td>
+                </tr>
+                <tr>
+                  <td><strong>80</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>HTTP</strong> — Hypertext Transfer Protocol (unencrypted web)</td>
+                  <td>Web</td>
+                  <td class="risk-high">⚠️ Transmits web content in <strong>cleartext</strong>. Credentials entered on HTTP sites are exposed. Redirect all traffic to HTTPS (443).</td>
+                </tr>
+                <tr>
+                  <td><strong>110</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>POP3</strong> — Post Office Protocol v3 (email retrieval)</td>
+                  <td>Email</td>
+                  <td class="risk-high">⚠️ Cleartext credentials. Use POP3S (port 995) with TLS. Largely superseded by IMAP in enterprise environments.</td>
+                </tr>
+                <tr>
+                  <td><strong>143</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>IMAP</strong> — Internet Message Access Protocol (email retrieval)</td>
+                  <td>Email</td>
+                  <td class="risk-med">⚠️ Cleartext by default. Use IMAPS (port 993) with TLS. Preferred over POP3 for multi-device access.</td>
+                </tr>
+                <tr>
+                  <td><strong>389</strong></td>
+                  <td><span class="badge-both">TCP/UDP</span></td>
+                  <td><strong>LDAP</strong> — Lightweight Directory Access Protocol</td>
+                  <td>Directory</td>
+                  <td class="risk-high">⚠️ Cleartext directory queries. Use LDAPS (port 636) with TLS. Exposure of LDAP can leak user account information.</td>
+                </tr>
+                <tr>
+                  <td><strong>443</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>HTTPS</strong> — HTTP over TLS/SSL (encrypted web)</td>
+                  <td>Web</td>
+                  <td class="risk-low">✅ Encrypted. Standard for all web services. Ensure valid certificates; watch for certificate errors that may indicate MITM attacks.</td>
+                </tr>
+                <tr>
+                  <td><strong>445</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>SMB</strong> — Server Message Block (Windows file/printer sharing)</td>
+                  <td>File Transfer</td>
+                  <td class="risk-high">⚠️ High-value attack target (EternalBlue/WannaCry exploited SMB). <strong>Never expose port 445 to the internet.</strong> Restrict to internal subnets only.</td>
+                </tr>
+                <tr>
+                  <td><strong>3389</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>RDP</strong> — Remote Desktop Protocol (Windows remote desktop)</td>
+                  <td>Remote Access</td>
+                  <td class="risk-high">⚠️ Extremely high attack volume. <strong>Never expose RDP directly to the internet.</strong> Restrict to management subnet or VPN only.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- REMOTE ACCESS TAB -->
+        <div class="tab-panel" id="tab-remote" role="tabpanel" aria-labelledby="tbtn-remote">
+          <h4>Remote Access Protocols</h4>
+          <p style="font-size:0.88rem;margin-bottom:0.75rem;">These protocols allow administrators or users to control systems remotely. Security posture varies dramatically between them.</p>
+          <div class="data-table-wrap">
+            <table class="data-table" aria-label="Remote access protocols">
+              <thead>
+                <tr><th>Port</th><th>Transport</th><th>Protocol</th><th>Encrypted?</th><th>Recommendation</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>22</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>SSH</strong></td>
+                  <td>✅ Yes (always)</td>
+                  <td>Use for all Linux remote administration. Prefer key-based auth over passwords. Restrict source IPs in firewall rules.</td>
+                </tr>
+                <tr>
+                  <td><strong>23</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>Telnet</strong></td>
+                  <td>🚫 No — cleartext</td>
+                  <td>Do not use. Block at firewall. Replace with SSH.</td>
+                </tr>
+                <tr>
+                  <td><strong>3389</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>RDP</strong></td>
+                  <td>✅ Yes (TLS)</td>
+                  <td>Restrict to management subnet only. Consider RDP gateway or VPN requirement. Enable Network Level Authentication (NLA).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout-security">
+            <div class="callout-title">🔒 Project 2 Firewall Rule Implication</div>
+            In your Project 2 firewall rules, SSH (22) should be allowed from the
+            Management subnet to the Servers subnet. RDP (3389) may be needed
+            for Windows Server access from Management. Neither should be reachable
+            from the Clients subnet or the WAN interface.
+          </div>
+        </div>
+
+        <!-- INFRASTRUCTURE TAB -->
+        <div class="tab-panel" id="tab-infra" role="tabpanel" aria-labelledby="tbtn-infra">
+          <h4>Infrastructure Protocols</h4>
+          <p style="font-size:0.88rem;margin-bottom:0.75rem;">These protocols keep the network running. They are often overlooked in firewall rule design but are critical to both function and security.</p>
+          <div class="data-table-wrap">
+            <table class="data-table" aria-label="Infrastructure protocols">
+              <thead>
+                <tr><th>Port(s)</th><th>Transport</th><th>Protocol</th><th>Notes</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>53</strong></td>
+                  <td><span class="badge-both">TCP/UDP</span></td>
+                  <td><strong>DNS</strong></td>
+                  <td>UDP for standard queries (&lt;512 bytes). TCP for large responses, DNSSEC, and zone transfers. <strong>Allow both TCP and UDP 53</strong> in firewall rules.</td>
+                </tr>
+                <tr>
+                  <td><strong>67</strong> (server)<br><strong>68</strong> (client)</td>
+                  <td><span class="badge-udp">UDP</span></td>
+                  <td><strong>DHCP</strong></td>
+                  <td>Broadcast-based; does not cross routers without a relay agent. Covered in depth in Module 9.1.</td>
+                </tr>
+                <tr>
+                  <td><strong>389</strong></td>
+                  <td><span class="badge-both">TCP/UDP</span></td>
+                  <td><strong>LDAP</strong></td>
+                  <td>Directory access for Active Directory and other LDAP directories. Cleartext — use LDAPS (636) in production.</td>
+                </tr>
+                <tr>
+                  <td><strong>445</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>SMB</strong></td>
+                  <td>Windows file sharing, Active Directory replication, DFS. Restrict to internal segments only. Never expose to WAN.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- WEB & EMAIL TAB -->
+        <div class="tab-panel" id="tab-web" role="tabpanel" aria-labelledby="tbtn-web">
+          <h4>Web &amp; Email Protocols</h4>
+          <div class="data-table-wrap">
+            <table class="data-table" aria-label="Web and email protocols">
+              <thead>
+                <tr><th>Port</th><th>Transport</th><th>Protocol</th><th>Function</th><th>Secure Alternative</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>25</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>SMTP</strong></td>
+                  <td>Mail server-to-server delivery</td>
+                  <td>SMTPS port 465 / STARTTLS on 587</td>
+                </tr>
+                <tr>
+                  <td><strong>80</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>HTTP</strong></td>
+                  <td>Unencrypted web traffic</td>
+                  <td>HTTPS port 443 — redirect all HTTP to HTTPS</td>
+                </tr>
+                <tr>
+                  <td><strong>110</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>POP3</strong></td>
+                  <td>Email retrieval (downloads and deletes from server)</td>
+                  <td>POP3S port 995</td>
+                </tr>
+                <tr>
+                  <td><strong>143</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>IMAP</strong></td>
+                  <td>Email retrieval (leaves mail on server; multi-device sync)</td>
+                  <td>IMAPS port 993</td>
+                </tr>
+                <tr>
+                  <td><strong>443</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>HTTPS</strong></td>
+                  <td>Encrypted web traffic (TLS)</td>
+                  <td>Already secure — this is the standard</td>
+                </tr>
+                <tr>
+                  <td><strong>20, 21</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td><strong>FTP</strong></td>
+                  <td>File transfer (21: control, 20: data in active mode)</td>
+                  <td>SFTP (SSH port 22) or FTPS (port 990)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SPLUNK TAB -->
+        <div class="tab-panel" id="tab-splunk" role="tabpanel" aria-labelledby="tbtn-splunk">
+          <h4>Splunk Ports</h4>
+          <p style="font-size:0.88rem;margin-bottom:0.75rem;">
+            These ports are relevant to Module 9.5 (Splunk Introduction) and
+            Project 3. You will need to allow them in firewall rules when
+            deploying Splunk in your lab environment.
+          </p>
+          <div class="data-table-wrap">
+            <table class="data-table" aria-label="Splunk ports">
+              <thead>
+                <tr><th>Port</th><th>Transport</th><th>Splunk Component</th><th>Purpose</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>8000</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td>Splunk Web (Search Head)</td>
+                  <td>Browser-based UI — the port you navigate to when accessing the Splunk dashboard (e.g., <code>http://splunk-server:8000</code>).</td>
+                </tr>
+                <tr>
+                  <td><strong>8088</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td>HTTP Event Collector (HEC)</td>
+                  <td>Receives events pushed via HTTP/HTTPS from applications and scripts. Used for programmatic log ingestion.</td>
+                </tr>
+                <tr>
+                  <td><strong>9997</strong></td>
+                  <td><span class="badge-tcp">TCP</span></td>
+                  <td>Splunk Forwarder → Indexer</td>
+                  <td>Universal Forwarders send compressed, encrypted log data to the Splunk Indexer on this port. Required for all forwarder deployments in Project 3.</td>
+                </tr>
+                <tr>
+                  <td><strong>514</strong></td>
+                  <td><span class="badge-both">TCP/UDP</span></td>
+                  <td>Syslog (input to Splunk)</td>
+                  <td>Standard syslog port. pfSense and other network devices send syslog events here. Splunk can be configured to listen on port 514 as a syslog receiver.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout-info">
+            <div class="callout-title">📌 Module 9.5 Connection</div>
+            In Module 9.5 you will configure pfSense to forward syslog
+            (UDP/TCP 514) to the instructor-hosted Splunk instance. The
+            Splunk Web interface (port 8000) is where you will run SPL
+            searches. Forwarder port 9997 becomes relevant in Project 3
+            when you deploy your own Splunk instance.
+          </div>
+        </div>
+      </div><!-- end tab-group -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-3" onchange="updateProgress()">
+        <label for="chk-3">I have read and understood Section 3.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 4 – Port Scanning & nmap
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-scanning" aria-hidden="true"></span>
+  <article class="content-section" id="article-4">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-4"
+         onclick="toggleSection(4)" onkeydown="keyToggle(event,4)">
+      <h2><span class="section-icon" aria-hidden="true">🔍</span>
+          4 · Port Scanning &amp; nmap</h2>
+      <button class="toggle-btn" id="toggle-4" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-4">
+
+      <p>
+        <strong>Port scanning</strong> is the process of probing a host or
+        network to discover which TCP and UDP ports are open — and therefore
+        which services are running and potentially reachable. It is one of the
+        most fundamental tools in both network administration and attacker
+        reconnaissance.
+      </p>
+
+      <h3>What nmap Does</h3>
+      <p>
+        <strong>nmap</strong> (Network Mapper) is the industry-standard open-source
+        port scanner. At its core, nmap sends specially crafted packets to a
+        target host and analyzes the responses to determine port state:
+      </p>
+      <ul>
+        <li><strong>Open:</strong> A service is listening and accepting connections on this port.</li>
+        <li><strong>Closed:</strong> The port is reachable but no service is listening (the OS replied with a TCP RST).</li>
+        <li><strong>Filtered:</strong> A firewall is blocking the probe — nmap received no response or an ICMP unreachable message.</li>
+      </ul>
+
+      <h3>Common nmap Scan Types</h3>
+      <div class="data-table-wrap">
+        <table class="data-table" aria-label="Common nmap scan types">
+          <thead>
+            <tr><th>Scan Type</th><th>Flag</th><th>How It Works</th><th>Use Case</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>TCP SYN Scan</strong> (Stealth)</td>
+              <td><code>-sS</code></td>
+              <td>Sends SYN; open port replies SYN-ACK; nmap sends RST (never completes handshake). Faster and less likely to be logged by the target application.</td>
+              <td>Default scan; requires root. Standard for most admin use.</td>
+            </tr>
+            <tr>
+              <td><strong>TCP Connect Scan</strong></td>
+              <td><code>-sT</code></td>
+              <td>Completes the full three-way TCP handshake. Slower; more likely to appear in application logs.</td>
+              <td>When root is not available; more compatible with some targets.</td>
+            </tr>
+            <tr>
+              <td><strong>UDP Scan</strong></td>
+              <td><code>-sU</code></td>
+              <td>Sends UDP packets; listens for ICMP port-unreachable (closed) or application response (open). Very slow.</td>
+              <td>Finding UDP services like DNS, DHCP, SNMP.</td>
+            </tr>
+            <tr>
+              <td><strong>Service Version Detection</strong></td>
+              <td><code>-sV</code></td>
+              <td>Probes open ports to identify the running service and version (e.g., <em>OpenSSH 8.9</em>).</td>
+              <td>Vulnerability assessment — knowing the version reveals known CVEs.</td>
+            </tr>
+            <tr>
+              <td><strong>OS Detection</strong></td>
+              <td><code>-O</code></td>
+              <td>Analyzes TCP/IP stack behavior to guess the target OS.</td>
+              <td>Asset inventory; attacker reconnaissance.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Example nmap Commands</h3>
+      <div class="code-block" aria-label="Example nmap commands">
+<span class="cm"># Scan the most common 1000 TCP ports on a single host</span>
+<span class="kw">nmap</span> <span class="st">192.168.30.50</span>
+
+<span class="cm"># SYN scan with service version detection on a specific host</span>
+<span class="kw">nmap</span> <span class="nm">-sS -sV</span> <span class="st">192.168.30.50</span>
+
+<span class="cm"># Scan all 65535 TCP ports (thorough but slow)</span>
+<span class="kw">nmap</span> <span class="nm">-p-</span> <span class="st">192.168.30.50</span>
+
+<span class="cm"># Scan a specific set of ports</span>
+<span class="kw">nmap</span> <span class="nm">-p</span> <span class="op">22,80,443,3389</span> <span class="st">192.168.30.50</span>
+
+<span class="cm"># Scan an entire subnet (use with permission only)</span>
+<span class="kw">nmap</span> <span class="nm">-sn</span> <span class="st">192.168.30.0/24</span>   <span class="cm"># ping sweep (host discovery only)</span>
+
+<span class="cm"># Save output to a file for documentation</span>
+<span class="kw">nmap</span> <span class="nm">-sV -oN</span> <span class="st">scan-results.txt</span> <span class="st">192.168.30.50</span>
+      </div>
+
+      <h3>Legitimate Administrative Use vs. Attack Reconnaissance</h3>
+      <p>
+        The same tool and the same commands serve both purposes. The difference
+        is <strong>authorization and intent</strong>.
+      </p>
+
+      <div class="data-table-wrap">
+        <table class="data-table" aria-label="Legitimate vs malicious port scanning">
+          <thead>
+            <tr><th>Dimension</th><th>Legitimate Administrative Use</th><th>Attack Reconnaissance</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Authorization</strong></td>
+              <td>Scanning systems you own or have explicit written permission to scan.</td>
+              <td>Scanning systems without permission — illegal in most jurisdictions under computer fraud laws.</td>
+            </tr>
+            <tr>
+              <td><strong>Purpose</strong></td>
+              <td>Verify firewall rules are working; audit open ports; identify misconfigured services; asset inventory.</td>
+              <td>Identify vulnerable services; find attack entry points; map the network before an intrusion attempt.</td>
+            </tr>
+            <tr>
+              <td><strong>Scope</strong></td>
+              <td>Defined, documented scope — specific hosts or subnets.</td>
+              <td>Often broad — scanning large IP ranges looking for any open port.</td>
+            </tr>
+            <tr>
+              <td><strong>Documentation</strong></td>
+              <td>Results documented, compared to expected baseline, and used to close unnecessary ports.</td>
+              <td>Results used to select targets and exploit vulnerabilities.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Legal and Ethical Notice</div>
+        Port scanning systems you do not own or do not have explicit written
+        permission to scan may violate the Computer Fraud and Abuse Act (CFAA)
+        and equivalent laws in other jurisdictions. In this course, you are
+        authorized to scan only the virtual machines in your own Proxmox lab
+        environment. Do not scan Mendocino College network infrastructure or
+        any external hosts.
+      </div>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 The Port Audit Workflow</div>
+        A professional port audit uses nmap to establish a baseline of open
+        ports, compares that baseline to the expected service profile of the
+        server, identifies any unexpected open ports, and closes them via
+        firewall rules or by disabling the service. This is exactly what you
+        will practice in the Mini-Case in Section 7.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-4" onchange="updateProgress()">
+        <label for="chk-4">I have read and understood Section 4.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 5 – Principle of Least Exposure
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-exposure" aria-hidden="true"></span>
+  <article class="content-section" id="article-5">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-5"
+         onclick="toggleSection(5)" onkeydown="keyToggle(event,5)">
+      <h2><span class="section-icon" aria-hidden="true">🛡️</span>
+          5 · Principle of Least Exposure</h2>
+      <button class="toggle-btn" id="toggle-5" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-5">
+
+      <p>
+        The <strong>principle of least exposure</strong> (also called
+        <em>minimal attack surface</em>) states that a system should expose
+        only the ports, protocols, and services strictly required for its
+        stated function — and nothing more. Every additional open port is an
+        additional potential entry point for an attacker.
+      </p>
+
+      <h3>The Attack Surface Visualized</h3>
+      <p>
+        The two server profiles below illustrate the difference between an
+        over-exposed server and a properly hardened one. Both servers are
+        intended to serve only web traffic (HTTP/HTTPS) and allow SSH
+        administration.
+      </p>
+
+      <div class="attack-surface-wrap" role="region" aria-label="Attack surface comparison">
+        <div class="server-vis exposed">
+          <div class="sv-title">🔴 Over-Exposed Web Server</div>
+          <p style="font-size:0.8rem;margin-bottom:0.5rem;">12 open ports found by nmap — most are unnecessary:</p>
+          <span class="port-pill port-open">21 FTP</span>
+          <span class="port-pill port-open-ok">22 SSH</span>
+          <span class="port-pill port-open">23 Telnet</span>
+          <span class="port-pill port-open">25 SMTP</span>
+          <span class="port-pill port-open">53 DNS</span>
+          <span class="port-pill port-open-ok">80 HTTP</span>
+          <span class="port-pill port-open">110 POP3</span>
+          <span class="port-pill port-open">143 IMAP</span>
+          <span class="port-pill port-open">389 LDAP</span>
+          <span class="port-pill port-open-ok">443 HTTPS</span>
+          <span class="port-pill port-open">445 SMB</span>
+          <span class="port-pill port-open">3389 RDP</span>
+          <p style="font-size:0.78rem;margin-top:0.5rem;color:#b91c1c;">
+            9 of 12 open ports are unnecessary. Each is a potential attack vector.
+          </p>
+        </div>
+        <div class="server-vis hardened">
+          <div class="sv-title">🟢 Hardened Web Server</div>
+          <p style="font-size:0.8rem;margin-bottom:0.5rem;">Only required ports open — all others closed or filtered:</p>
+          <span class="port-pill port-closed">21 FTP</span>
+          <span class="port-pill port-open-ok">22 SSH</span>
+          <span class="port-pill port-closed">23 Telnet</span>
+          <span class="port-pill port-closed">25 SMTP</span>
+          <span class="port-pill port-closed">53 DNS</span>
+          <span class="port-pill port-open-ok">80 HTTP</span>
+          <span class="port-pill port-closed">110 POP3</span>
+          <span class="port-pill port-closed">143 IMAP</span>
+          <span class="port-pill port-closed">389 LDAP</span>
+          <span class="port-pill port-open-ok">443 HTTPS</span>
+          <span class="port-pill port-closed">445 SMB</span>
+          <span class="port-pill port-closed">3389 RDP</span>
+          <p style="font-size:0.78rem;margin-top:0.5rem;color:#166534;">
+            Only 3 ports open — exactly what the stated role (web + SSH) requires.
+          </p>
+        </div>
+      </div>
+
+      <h3>Applying Least Exposure in Practice</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Define the server's role precisely.</strong>
+            "Web server" means HTTP (80) and HTTPS (443). "Web server with
+            SSH administration" adds port 22. Nothing else is implied.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Start with a deny-all policy.</strong>
+            pfSense OPT interfaces start with no rules (implicit deny). This
+            is the correct default. Add only what is explicitly needed.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Add rules one service at a time</strong>, documenting
+            the business justification for each. If you cannot explain
+            why a port needs to be open, it should be closed.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Restrict source as well as destination.</strong>
+            SSH (22) should not be allowed from the internet or the client
+            subnet — only from the management subnet. A rule that allows
+            SSH from <em>any</em> source is significantly weaker than one
+            that restricts it to a specific management IP range.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Audit periodically.</strong>
+            Services are installed and forgotten. Run a port scan against
+            your own servers on a regular schedule to verify that the
+            open port profile matches what you expect.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <strong>Disable the service, not just the port.</strong>
+            Closing a firewall port hides a service from external access
+            but does not stop it from running. A compromised host on the
+            same subnet can still reach an unneeded service that is running
+            locally. Disable or uninstall services you do not need.
+          </div>
+        </li>
+      </ol>
+
+      <div class="callout callout-security">
+        <div class="callout-title">🔒 CSLO 2 Connection</div>
+        The principle of least exposure is a foundational network data
+        security technique (CSLO 2). In Project 2, your firewall rule set
+        will be evaluated partly on whether it correctly implements this
+        principle — allowing only the traffic required for each subnet's
+        stated function and blocking everything else.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-5" onchange="updateProgress()">
+        <label for="chk-5">I have read and understood Section 5.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 6 – Common Attack Vectors
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-attacks" aria-hidden="true"></span>
+  <article class="content-section" id="article-6">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-6"
+         onclick="toggleSection(6)" onkeydown="keyToggle(event,6)">
+      <h2><span class="section-icon" aria-hidden="true">⚠️</span>
+          6 · Common Attack Vectors</h2>
+      <button class="toggle-btn" id="toggle-6" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-6">
+
+      <p>
+        Understanding how attackers exploit open ports and insecure protocols
+        helps you make better decisions about what to allow in firewall rules
+        and which services to harden or replace. The following attack vectors
+        are directly connected to the protocols in Section 3.
+      </p>
+
+      <!-- Tabs for attack categories -->
+      <div class="tab-group" role="tablist" aria-label="Attack vector categories">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-atk-cleartext" id="tbtn-atk-cleartext"
+                  onclick="switchTab('atk-cleartext')" onkeydown="keyTab(event,'atk-cleartext')">
+            Cleartext Protocols
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-atk-openport" id="tbtn-atk-openport"
+                  onclick="switchTab('atk-openport')" onkeydown="keyTab(event,'atk-openport')">
+            Open Port Exploitation
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-atk-downgrade" id="tbtn-atk-downgrade"
+                  onclick="switchTab('atk-downgrade')" onkeydown="keyTab(event,'atk-downgrade')">
+            Protocol Downgrade
+          </button>
+        </div>
+
+        <!-- CLEARTEXT PROTOCOLS -->
+        <div class="tab-panel active" id="tab-atk-cleartext" role="tabpanel" aria-labelledby="tbtn-atk-cleartext">
+          <h4>Cleartext Credential Exposure</h4>
+          <p>
+            Several protocols transmit usernames, passwords, and data with
+            <strong>no encryption</strong>. Anyone with the ability to capture
+            network traffic on the same segment (or on any router between the
+            client and server) can read these credentials directly.
+          </p>
+          <div class="data-table-wrap">
+            <table class="data-table" aria-label="Cleartext protocol risks">
+              <thead>
+                <tr><th>Protocol</th><th>Port</th><th>What Is Exposed</th><th>Mitigation</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Telnet</strong></td>
+                  <td>23</td>
+                  <td>Everything — username, password, every command typed, every response. A network capture shows the entire session in plain text.</td>
+                  <td>Replace with SSH (port 22). Disable Telnet service. Block port 23 at the firewall.</td>
+                </tr>
+                <tr>
+                  <td><strong>FTP</strong></td>
+                  <td>20, 21</td>
+                  <td>Username and password sent in cleartext during the control connection (port 21). File contents also transmitted unencrypted.</td>
+                  <td>Use SFTP (over SSH, port 22) or FTPS (FTP over TLS, port 990). Block ports 20/21 at the firewall.</td>
+                </tr>
+                <tr>
+                  <td><strong>HTTP</strong></td>
+                  <td>80</td>
+                  <td>All web content — including form submissions, login credentials, session cookies, and any data the user sends or receives.</td>
+                  <td>Redirect all HTTP to HTTPS. Use HSTS headers. Block or redirect port 80 to 443 at the firewall or web server.</td>
+                </tr>
+                <tr>
+                  <td><strong>POP3 / IMAP</strong></td>
+                  <td>110, 143</td>
+                  <td>Email credentials and message content in cleartext.</td>
+                  <td>Use POP3S (995) or IMAPS (993) with TLS. Disable plaintext variants on the mail server.</td>
+                </tr>
+                <tr>
+                  <td><strong>LDAP</strong></td>
+                  <td>389</td>
+                  <td>Directory queries and bind (authentication) credentials in cleartext.</td>
+                  <td>Use LDAPS (port 636) with TLS. Configure Active Directory to require LDAP signing and channel binding.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ Why This Matters on Internal Networks Too</div>
+            Many administrators assume cleartext protocols are acceptable on
+            internal networks because "attackers can't get in." This is a
+            dangerous assumption. An attacker who has compromised a single
+            internal host (via phishing, a vulnerable service, or a rogue
+            device) can passively capture all cleartext traffic on the same
+            VLAN or subnet. Defense in depth requires encrypting sensitive
+            traffic <em>everywhere</em>, not just at the perimeter.
+          </div>
+        </div>
+
+        <!-- OPEN PORT EXPLOITATION -->
+        <div class="tab-panel" id="tab-atk-openport" role="tabpanel" aria-labelledby="tbtn-atk-openport">
+          <h4>Open Port Exploitation</h4>
+          <p>
+            An open port is an invitation. When a service is listening on a
+            port, attackers can interact with it directly — probing for
+            vulnerabilities, attempting authentication, or exploiting known
+            software flaws.
+          </p>
+
+          <h4>RDP Brute Force (Port 3389)</h4>
+          <p>
+            RDP is one of the most heavily attacked services on the internet.
+            Servers with port 3389 exposed to the internet receive automated
+            brute-force login attempts within minutes of going online. Several
+            high-profile ransomware campaigns gained initial access exclusively
+            through exposed RDP.
+          </p>
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ Firewall Rule: RDP</div>
+            In pfSense, RDP (TCP 3389) should <strong>never</strong> be
+            allowed from the WAN interface. Allow it only from the Management
+            subnet to specific Windows Server VMs. This is a required
+            constraint in Project 2.
+          </div>
+
+          <h4>SMB Exploitation (Port 445)</h4>
+          <p>
+            The 2017 WannaCry ransomware and NotPetya attacks spread globally
+            by exploiting a vulnerability (EternalBlue / MS17-010) in the
+            Windows SMB service on port 445. Organizations with port 445
+            exposed to the internet were devastated. Even internally, SMB
+            should be restricted to subnets that genuinely need file sharing.
+          </p>
+
+          <h4>SSH Brute Force (Port 22)</h4>
+          <p>
+            SSH is secure by design but is frequently targeted by automated
+            password-guessing attacks. Mitigations include:
+          </p>
+          <ul>
+            <li>Disable password authentication; require SSH key pairs.</li>
+            <li>Restrict source IPs in firewall rules (allow only from management subnet).</li>
+            <li>Use <code>fail2ban</code> to automatically block IPs after repeated failed attempts.</li>
+            <li>Consider moving SSH to a non-standard port as a noise reduction measure (not a security control).</li>
+          </ul>
+        </div>
+
+        <!-- PROTOCOL DOWNGRADE -->
+        <div class="tab-panel" id="tab-atk-downgrade" role="tabpanel" aria-labelledby="tbtn-atk-downgrade">
+          <h4>Protocol Downgrade Attacks</h4>
+          <p>
+            A <strong>protocol downgrade attack</strong> tricks a client and
+            server into negotiating a weaker, older version of a protocol —
+            one that has known vulnerabilities or weaker encryption — even
+            when both endpoints support a more secure version.
+          </p>
+
+          <h4>TLS Downgrade (HTTPS)</h4>
+          <p>
+            TLS (Transport Layer Security) has evolved through versions 1.0,
+            1.1, 1.2, and 1.3. Older versions (TLS 1.0, 1.1) have known
+            weaknesses. A man-in-the-middle attacker who can intercept the
+            TLS handshake may force the negotiation to fall back to TLS 1.0,
+            then exploit those weaknesses. Mitigations:
+          </p>
+          <ul>
+            <li>Configure web servers to support only TLS 1.2 and TLS 1.3.</li>
+            <li>Disable TLS 1.0 and 1.1 in server configuration (<code>ssl_protocols TLSv1.2 TLSv1.3;</code> in nginx).</li>
+            <li>Implement HTTP Strict Transport Security (HSTS) to prevent browsers from accepting HTTP connections.</li>
+          </ul>
+
+          <h4>SMB Protocol Downgrade</h4>
+          <p>
+            Windows supports multiple versions of SMB (SMBv1, SMBv2, SMBv3).
+            SMBv1 is ancient, has no encryption, and is the version exploited
+            by EternalBlue. An attacker on the network may force a
+            downgrade to SMBv1 if it is still enabled. Mitigation: disable
+            SMBv1 on all Windows systems via PowerShell:
+          </p>
+          <div class="code-block">
+<span class="cm"># Disable SMBv1 on Windows Server (run as Administrator)</span>
+<span class="kw">Set-SmbServerConfiguration</span> <span class="nm">-EnableSMB1Protocol</span> <span class="op">$false</span> <span class="nm">-Force</span>
+<span class="kw">Set-SmbClientConfiguration</span> <span class="nm">-EnableSMB1Protocol</span> <span class="op">$false</span> <span class="nm">-Force</span>
+          </div>
+
+          <h4>The Common Thread</h4>
+          <p>
+            All downgrade attacks share a common theme: they exploit
+            <em>backward compatibility</em>. Systems that support both old and
+            new protocol versions to maintain compatibility with legacy clients
+            create an attack surface. The mitigation is always the same:
+            <strong>disable old protocol versions</strong> and enforce the use
+            of current, secure versions.
+          </p>
+
+          <div class="callout callout-security">
+            <div class="callout-title">🔒 Defense in Depth</div>
+            No single control stops all attacks. Layered defenses — firewall
+            rules that restrict port access, protocol hardening that disables
+            weak versions, and encryption that protects data in transit —
+            work together. This is the concept of <strong>defense in depth</strong>,
+            which underpins CSLO 2 throughout this course.
+          </div>
+        </div>
+      </div><!-- end attack tab-group -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-6" onchange="updateProgress()">
+        <label for="chk-6">I have read and understood Section 6.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 7 – Mini-Case: The Port Audit
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-minicase" aria-hidden="true"></span>
+  <article class="content-section" id="article-7">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-7"
+         onclick="toggleSection(7)" onkeydown="keyToggle(event,7)">
+      <h2><span class="section-icon" aria-hidden="true">🔎</span>
+          7 · Mini-Case: The Port Audit</h2>
+      <button class="toggle-btn" id="toggle-7" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-7">
+
+      <div class="mini-case" role="region" aria-label="Mini-case: The Port Audit">
+        <div class="mini-case-header">🔎 Scenario: Mendocino Tech — Quarterly Port Audit</div>
+
+        <div class="scenario-box">
+          <p>
+            You are a junior network administrator at Mendocino Tech. As part
+            of a quarterly security review, you have been asked to audit a
+            server named <strong>web-prod-01</strong>. According to the server
+            inventory, this server has a single stated role:
+            <strong>public-facing web server with SSH administrative access</strong>.
+            It runs Ubuntu Server 22.04, hosts the company's public website
+            over HTTPS, and is managed via SSH from the Management subnet only.
+          </p>
+          <p>
+            You run the following nmap scan from within the Management subnet:
+          </p>
+          <div class="code-block" aria-label="nmap scan output for web-prod-01">
+<span class="kw">$</span> nmap -sV -p- 192.168.10.50
+
+Starting Nmap 7.94 ( https://nmap.org )
+Nmap scan report for web-prod-01 (192.168.10.50)
+Host is up (0.0012s latency).
+
+PORT      STATE  SERVICE        VERSION
+<span class="hi">21/tcp    open   ftp            vsftpd 3.0.5</span>
+<span class="st">22/tcp    open   ssh            OpenSSH 8.9p1 Ubuntu</span>
+<span class="hi">23/tcp    open   telnet         Linux telnetd</span>
+<span class="hi">25/tcp    open   smtp           Postfix smtpd</span>
+<span class="hi">53/tcp    open   domain         ISC BIND 9.18.12</span>
+<span class="st">80/tcp    open   http           Apache httpd 2.4.52</span>
+<span class="hi">110/tcp   open   pop3           Dovecot pop3d</span>
+<span class="hi">143/tcp   open   imap           Dovecot imapd</span>
+<span class="hi">389/tcp   open   ldap           OpenLDAP 2.6.3</span>
+<span class="st">443/tcp   open   https          Apache httpd 2.4.52</span>
+<span class="hi">445/tcp   open   microsoft-ds   Samba smbd 4.15.13</span>
+<span class="hi">3389/tcp  open   ms-wbt-server  xrdp 0.9.21</span>
+
+12 ports open.
+          </div>
+          <p>
+            Green lines are expected. Red lines are unexpected for a server
+            whose role is <em>web + SSH only</em>.
+          </p>
+        </div>
+
+        <!-- Question 1 -->
+        <div class="case-question">
+          <p>❓ Question 1: Which ports are unnecessary for this server's stated role? List them and explain why each one should not be open.</p>
+          <button class="reveal-btn" onclick="revealAnswer('pa-ans1')"
+                  aria-expanded="false" aria-controls="pa-ans1">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="pa-ans1" role="region" aria-label="Model answer 1">
+            <strong>Unnecessary Open Ports (9 of 12):</strong>
+            <ul style="margin-top:0.5rem;">
+              <li><strong>Port 21 (FTP / vsftpd):</strong> File transfer is not part of the server's role. FTP transmits credentials in cleartext. Should be disabled and removed.</li>
+              <li><strong>Port 23 (Telnet):</strong> Unencrypted remote access. SSH (already open on 22) is the correct tool. Telnet should never be running on any production server.</li>
+              <li><strong>Port 25 (SMTP / Postfix):</strong> This server is not a mail server. An open SMTP service could be exploited for spam relay or as a pivot point.</li>
+              <li><strong>Port 53 (DNS / BIND):</strong> This server is not a DNS server. An open DNS service exposes the server to DNS amplification abuse and zone transfer attempts.</li>
+              <li><strong>Port 110 (POP3 / Dovecot):</strong> No mail retrieval role. Cleartext protocol. Should not be running.</li>
+              <li><strong>Port 143 (IMAP / Dovecot):</strong> Same as POP3 — no mail role. Cleartext by default.</li>
+              <li><strong>Port 389 (LDAP / OpenLDAP):</strong> No directory service role. Exposes directory data in cleartext. Should not be running.</li>
+              <li><strong>Port 445 (SMB / Samba):</strong> No file sharing role. SMB is a high-value attack target (EternalBlue). Should be disabled immediately.</li>
+              <li><strong>Port 3389 (RDP / xrdp):</strong> Linux server managed via SSH — RDP is not needed. xrdp running on a public-facing server is a significant risk.</li>
+            </ul>
+            <p style="margin-top:0.5rem;">
+              <strong>Ports that are correct and expected:</strong>
+              22 (SSH — management access), 80 (HTTP — redirect to HTTPS), 443 (HTTPS — web service).
+            </p>
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="case-question">
+          <p>❓ Question 2: Write a brief remediation plan. What are the two types of actions you should take for each unnecessary service, and why are both needed?</p>
+          <button class="reveal-btn" onclick="revealAnswer('pa-ans2')"
+                  aria-expanded="false" aria-controls="pa-ans2">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="pa-ans2" role="region" aria-label="Model answer 2">
+            <strong>Remediation Plan — Two Required Actions Per Service:</strong>
+            <ol style="margin-top:0.5rem;">
+              <li>
+                <strong>Action 1 — Disable and uninstall the service:</strong>
+                Stop the service, disable it from starting on boot, and
+                uninstall the package if it is not needed elsewhere.
+                Example for vsftpd (FTP):
+                <div class="code-block" style="margin:0.4rem 0;">
+<span class="kw">sudo</span> systemctl stop vsftpd
+<span class="kw">sudo</span> systemctl disable vsftpd
+<span class="kw">sudo</span> apt remove --purge vsftpd
+                </div>
+                <em>Why this is necessary:</em> A firewall rule only hides the
+                port from external access. The service is still running and
+                reachable from any host on the same subnet that has already
+                been compromised. Disabling the service eliminates the
+                vulnerability entirely.
+              </li>
+              <li>
+                <strong>Action 2 — Add a firewall rule to block the port:</strong>
+                Even after disabling the service, add an explicit deny rule
+                in pfSense (or <code>ufw</code> / <code>iptables</code>) to
+                block the port. This provides defense in depth — if the service
+                is accidentally re-enabled in the future, the firewall rule
+                prevents exposure.
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="case-question">
+          <p>❓ Question 3: Write the pfSense firewall rules needed to enforce the correct port profile for web-prod-01. The server is on the Servers subnet (192.168.10.0/24). Management subnet is 192.168.1.0/24. The server should be reachable by the public internet (WAN) on ports 80 and 443 only.</p>
+          <button class="reveal-btn" onclick="revealAnswer('pa-ans3')"
+                  aria-expanded="false" aria-controls="pa-ans3">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="pa-ans3" role="region" aria-label="Model answer 3">
+            <strong>pfSense Firewall Rules for web-prod-01:</strong>
+            <p style="margin-top:0.5rem;font-size:0.85rem;">
+              In pfSense, rules are written on the <em>interface where traffic enters</em>
+              (not exits). Rules are evaluated top-to-bottom; first match wins.
+            </p>
+            <div class="data-table-wrap" style="margin-top:0.5rem;">
+              <table class="data-table" aria-label="pfSense firewall rules for web-prod-01">
+                <thead>
+                  <tr><th>#</th><th>Interface</th><th>Action</th><th>Protocol</th><th>Source</th><th>Destination</th><th>Port(s)</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>WAN</td>
+                    <td>Pass</td>
+                    <td>TCP</td>
+                    <td>any</td>
+                    <td>192.168.10.50</td>
+                    <td>80</td>
+                    <td>Allow public HTTP to web-prod-01</td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>WAN</td>
+                    <td>Pass</td>
+                    <td>TCP</td>
+                    <td>any</td>
+                    <td>192.168.10.50</td>
+                    <td>443</td>
+                    <td>Allow public HTTPS to web-prod-01</td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td>WAN</td>
+                    <td>Block</td>
+                    <td>any</td>
+                    <td>any</td>
+                    <td>192.168.10.50</td>
+                    <td>any</td>
+                    <td>Block all other WAN traffic to web-prod-01 (explicit; logged)</td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td>Management</td>
+                    <td>Pass</td>
+                    <td>TCP</td>
+                    <td>192.168.1.0/24</td>
+                    <td>192.168.10.50</td>
+                    <td>22</td>
+                    <td>Allow SSH from Management subnet only</td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td>Management</td>
+                    <td>Block</td>
+                    <td>any</td>
+                    <td>any</td>
+                    <td>192.168.10.50</td>
+                    <td>any</td>
+                    <td>Block all other Management traffic to web-prod-01</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p style="font-size:0.85rem;margin-top:0.5rem;">
+              <strong>Note:</strong> The implicit deny-all at the end of each
+              interface ruleset in pfSense means Rule 3 and Rule 5 are
+              technically redundant — but adding them explicitly enables
+              <em>logging</em> of blocked attempts, which is valuable for
+              security monitoring in Splunk (Module 9.5).
+            </p>
+          </div>
+        </div>
+
+      </div><!-- end mini-case -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-7" onchange="updateProgress()">
+        <label for="chk-7">I have read and understood Section 7.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 8 – Discussion 5 (Read-Only)
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-disc5" aria-hidden="true"></span>
+  <article class="content-section" id="article-8">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-8"
+         onclick="toggleSection(8)" onkeydown="keyToggle(event,8)">
+      <h2><span class="section-icon" aria-hidden="true">💬</span>
+          8 · Discussion 5: Network Service Failures</h2>
+      <button class="toggle-btn" id="toggle-8" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-8">
+
+      <p>
+        The graded Discussion 5 assignment is launched from this module. Read
+        the prompt below carefully before posting. Submit your response in the
+        <strong>Discussion 5: Network Service Failures</strong> activity in
+        Canvas — not on this page.
+      </p>
+
+      <div class="discussion-block" role="region" aria-label="Discussion 5 prompt">
+        <div class="discussion-header">
+          <span aria-hidden="true">💬</span>
+          Discussion 5: Network Service Failures
+        </div>
+
+        <div class="discussion-meta">
+          <span class="dmeta-item">12.5 Points</span>
+          <span class="dmeta-item">Required</span>
+          <span class="dmeta-item">CSLO 2 · CSLO 3</span>
+          <span class="dmeta-item">Week 9</span>
+        </div>
+
+        <div class="discussion-prompt">
+          <p>
+            Network services like DHCP and DNS are often invisible to end users
+            until they fail. Describe a real or realistic scenario where a DHCP
+            or DNS service failure caused a significant problem in an
+            organization. What were the symptoms? How was the root cause
+            identified? What steps were taken (or should have been taken) to
+            restore service and prevent recurrence?
+          </p>
+          <p>
+            In your response, connect the failure to at least one concept from
+            Week 9 — such as DHCP server configuration, DNS zone management,
+            firewall rules, or port and protocol management. Be specific: if
+            you reference a firewall rule, describe what it would look like. If
+            you reference a DNS record type, name it.
+          </p>
+          <p>
+            You may draw on personal experience, a news event, a case study,
+            or a realistic hypothetical scenario you construct yourself. If
+            using a hypothetical, make it plausible and detailed enough to
+            demonstrate your understanding of the underlying concepts.
+          </p>
+        </div>
+
+        <div class="discussion-deadlines">
+          <strong>Deadlines and Requirements:</strong>
+          <ul>
+            <li><strong>Initial post:</strong> Minimum 150 words — due <strong>Wednesday, March 18, 2026 by 11:59 PM</strong></li>
+            <li><strong>Peer responses:</strong> Reply to at least 2 classmates (minimum 50 words each) — due <strong>Sunday, March 22, 2026 by 11:59 PM</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Where to Submit</div>
+        Submit your Discussion 5 post in Canvas using the
+        <strong>Discussion 5: Network Service Failures</strong> activity.
+        This page is read-only — it displays the prompt for reference only.
+        No submission is made here.
+      </div>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Connecting to This Module</div>
+        This discussion is intentionally placed after the protocol and port
+        content in this module. Consider connecting your scenario to a specific
+        protocol (e.g., DNS uses both TCP and UDP on port 53 — a firewall rule
+        that only allows UDP 53 could cause intermittent failures), a cleartext
+        risk, or the principle of least exposure. Strong posts make these
+        connections explicit.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-8" onchange="updateProgress()">
+        <label for="chk-8">I have read the Discussion 5 prompt and understand the requirements.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 9 – Knowledge Check
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-kc" aria-hidden="true"></span>
+  <article class="content-section" id="article-9">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-9"
+         onclick="toggleSection(9)" onkeydown="keyToggle(event,9)">
+      <h2><span class="section-icon" aria-hidden="true">✅</span>
+          9 · Knowledge Check (Ungraded)</h2>
+      <button class="toggle-btn" id="toggle-9" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-9">
+
+      <p style="font-size:0.92rem;margin-bottom:1rem;">
+        Three questions to check your understanding before Quiz 9. These are
+        <strong>not graded</strong> — answer honestly and read the explanatory
+        feedback. The port/protocol content tested here is high-frequency on
+        both Quiz 9 and the final exam.
+      </p>
+
+      <div class="kc-wrap" id="kc-form">
+
+        <!-- Q1: DNS transport protocol (Multiple choice) -->
+        <div class="kc-question" id="kc-q1">
+          <p class="q-text">
+            Q1 · DNS uses port 53. Which transport protocol(s) does DNS use?
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="a">
+                TCP only — DNS always uses TCP for reliability
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="b">
+                UDP only — DNS uses UDP because it is faster
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="c">
+                Both TCP and UDP — UDP for standard queries, TCP for large responses and zone transfers
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="d">
+                Neither — DNS uses its own custom transport layer
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ1()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q1" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q2: RDP port number (Short answer) -->
+        <div class="kc-question" id="kc-q2">
+          <p class="q-text">
+            Q2 · What port number does RDP (Remote Desktop Protocol) use?
+            <br><small style="font-weight:400;color:#555;">(Enter the port number only, e.g., 443)</small>
+          </p>
+          <input type="text" class="kc-text-input" id="kc2-input"
+                 placeholder="Port number…" aria-label="RDP port number answer"
+                 onkeydown="if(event.key==='Enter') checkQ2()">
+          <br>
+          <button class="kc-submit-btn" onclick="checkQ2()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q2" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q3: Principle of least exposure (True/False) -->
+        <div class="kc-question" id="kc-q3">
+          <p class="q-text">
+            Q3 · True or False: The principle of least exposure means opening
+            all ports on a server to maximize flexibility, then using application-layer
+            controls to restrict access to specific services.
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc3" value="true">
+                True
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc3" value="false">
+                False
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ3()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q3" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Score Summary -->
+        <div class="kc-score-summary" id="kc-score" role="region" aria-live="polite">
+          <div>Your Score</div>
+          <div class="score-big" id="score-display">–</div>
+          <div id="score-msg" style="font-size:0.9rem;margin-top:0.4rem;"></div>
+        </div>
+
+      </div><!-- end kc-wrap -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-9" onchange="updateProgress()">
+        <label for="chk-9">I have completed the Knowledge Check.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ── Footer ── -->
+  <footer style="text-align:center;font-size:0.78rem;color:#666;margin-top:2rem;padding-top:1rem;border-top:1px solid #dde3ec;">
+    CSC 152 · Network Operating Systems and Administration · Mendocino College<br>
+    Module 9.4 · Week 9 · March 16–22, 2026 · Instructor: David Pai<br>
+    <em>Ungraded knowledge checks are for self-assessment only and do not affect your course grade.</em>
+  </footer>
+
+</main>
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+  /* ── Section Toggle ── */
+  function toggleSection(n) {
+    const body   = document.getElementById('body-' + n);
+    const btn    = document.getElementById('toggle-' + n);
+    const header = body.previousElementSibling;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    header.setAttribute('aria-expanded', String(!isOpen));
+  }
+  function keyToggle(e, n) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(n); }
+  }
+
+  /* ── Tab Switcher ── */
+  function switchTab(id) {
+    const panels  = document.querySelectorAll('.tab-panel');
+    const buttons = document.querySelectorAll('.tab-btn');
+    panels.forEach(p  => p.classList.remove('active'));
+    buttons.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    const ap = document.getElementById('tab-' + id);
+    const ab = document.getElementById('tbtn-' + id);
+    if (ap) ap.classList.add('active');
+    if (ab) { ab.classList.add('active'); ab.setAttribute('aria-selected','true'); }
+  }
+  function keyTab(e, id) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab(id); }
+  }
+
+  /* ── Reveal Answer (Mini-Case) ── */
+  function revealAnswer(id) {
+    const el  = document.getElementById(id);
+    const btn = el.previousElementSibling;
+    el.classList.toggle('visible');
+    const visible = el.classList.contains('visible');
+    btn.textContent = visible ? 'Hide Model Answer' : 'Show Model Answer';
+    btn.setAttribute('aria-expanded', String(visible));
+  }
+
+  /* ── Progress Tracker ── */
+  function updateProgress() {
+    const total   = 9;
+    const checked = document.querySelectorAll('input[type="checkbox"][id^="chk-"]:checked').length;
+    const pct     = Math.round((checked / total) * 100);
+    const bar     = document.getElementById('progress-bar');
+    const outer   = document.getElementById('progress-bar-outer');
+    const count   = document.getElementById('progress-count');
+    bar.style.width = pct + '%';
+    outer.setAttribute('aria-valuenow', checked);
+    count.textContent = checked + ' / ' + total;
+  }
+
+  /* ── Knowledge Check ── */
+  let kcScore    = 0;
+  let kcAnswered = [false, false, false];
+
+  function showFeedback(fbId, correct, message) {
+    const el = document.getElementById(fbId);
+    el.className = 'kc-feedback ' + (correct ? 'correct' : 'incorrect');
+    el.innerHTML = (correct ? '✅ ' : '❌ ') + message;
+  }
+
+  function maybeShowScore() {
+    if (!kcAnswered.every(Boolean)) return;
+    const summary = document.getElementById('kc-score');
+    const display = document.getElementById('score-display');
+    const msg     = document.getElementById('score-msg');
+    summary.classList.add('visible');
+    display.textContent = kcScore + ' / 3';
+    const msgs = [
+      'Keep reviewing — re-read Sections 1, 3, and 5 and try again after a refresh.',
+      'Good effort! Review the sections for the questions you missed.',
+      'Almost there! Double-check the one you missed.',
+      '🎉 Perfect score! You are ready for the Quiz 9 protocol and port questions.'
+    ];
+    msg.textContent = msgs[kcScore] || '';
+  }
+
+  function checkQ1() {
+    if (kcAnswered[0]) return;
+    const sel = document.querySelector('input[name="kc1"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'c';
+    kcAnswered[0] = true;
+    if (correct) kcScore++;
+    showFeedback('fb-q1', correct,
+      correct
+        ? 'Correct! DNS uses <strong>both TCP and UDP on port 53</strong>. UDP is used for standard queries (responses under 512 bytes). TCP is used when a response exceeds 512 bytes, for DNSSEC, and for zone transfers between DNS servers. Firewall rules must allow <em>both</em> to avoid intermittent DNS failures.'
+        : 'Not quite. The correct answer is <strong>Both TCP and UDP</strong>. DNS defaults to UDP for efficiency, but falls back to TCP for large responses and always uses TCP for zone transfers. A firewall rule that allows only UDP 53 will cause hard-to-diagnose intermittent failures.'
+    );
+    document.querySelectorAll('input[name="kc1"]').forEach(r => r.disabled = true);
+    maybeShowScore();
+  }
+
+  function checkQ2() {
+    if (kcAnswered[1]) return;
+    const input = document.getElementById('kc2-input');
+    const val   = input.value.trim().replace(/\s+/g, '');
+    const correct = val === '3389';
+    kcAnswered[1] = true;
+    if (correct) kcScore++;
+    input.disabled = true;
+    showFeedback('fb-q2', correct,
+      correct
+        ? 'Correct! RDP (Remote Desktop Protocol) uses <strong>TCP port 3389</strong>. This is a registered port (above 1023). Because RDP is a high-value attack target, it should <strong>never</strong> be exposed to the internet — allow it only from the Management subnet in your firewall rules.'
+        : 'Not quite. RDP uses <strong>TCP port 3389</strong>. This is one of the most important ports to know for both Quiz 9 and the final exam. Remember: RDP = 3389, SSH = 22, HTTPS = 443, SMB = 445.'
+    );
+    maybeShowScore();
+  }
+
+  function checkQ3() {
+    if (kcAnswered[2]) return;
+    const sel = document.querySelector('input[name="kc3"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'false';
+    kcAnswered[2] = true;
+    if (correct) kcScore++;
+    showFeedback('fb-q3', correct,
+      correct
+        ? 'Correct! The statement is <strong>False</strong>. The principle of least exposure is the <em>opposite</em> of opening all ports. It means opening <strong>only the ports required for the server\'s stated function</strong> and blocking everything else. Every unnecessary open port is an additional attack surface. Start with a deny-all policy and add only what is explicitly needed.'
+        : 'Incorrect. The statement is <strong>False</strong>. The principle of least exposure means minimizing the attack surface by opening <em>only</em> the ports required for a service\'s stated function. Opening all ports and relying on application-layer controls is the opposite of this principle — it creates a large attack surface and violates defense-in-depth.'
+    );
+    document.querySelectorAll('input[name="kc3"]').forEach(r => r.disabled = true);
+    maybeShowScore();
+  }
+</script>
+</body>
+</html>

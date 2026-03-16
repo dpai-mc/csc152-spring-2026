@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 9.5 – Splunk Introduction &amp; pfSense Log Forwarding | CSC 152</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f6f9;
+    color: #1a1a2e;
+    line-height: 1.7;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute; top: -100%; left: 1rem;
+    background: #1a3a5c; color: #fff; padding: 0.5rem 1rem;
+    border-radius: 0 0 4px 4px; font-weight: 700; z-index: 9999;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Navigation ── */
+  nav#main-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #1a3a5c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  nav#main-nav .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.25rem; padding: 0.5rem 1rem;
+  }
+  nav#main-nav .nav-brand {
+    color: #f0c040; font-weight: 700; font-size: 0.85rem;
+    margin-right: 0.75rem; white-space: nowrap;
+  }
+  nav#main-nav a {
+    color: #cfe2ff; text-decoration: none;
+    font-size: 0.82rem; font-weight: 700;
+    min-width: 1.9rem; height: 1.9rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+  }
+  nav#main-nav a:hover { background: #2e5f8a; color: #fff; }
+  nav#main-nav a:focus-visible {
+    outline: 3px solid #f0c040; outline-offset: 2px;
+    background: #2e5f8a; color: #fff;
+  }
+  nav#main-nav a[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute; top: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: #0d2137; color: #fff;
+    font-size: 0.72rem; font-weight: 500;
+    white-space: nowrap; padding: 0.3rem 0.6rem;
+    border-radius: 4px; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; z-index: 200;
+  }
+  nav#main-nav a[data-tooltip]:hover::after,
+  nav#main-nav a[data-tooltip]:focus-visible::after { opacity: 1; }
+
+  /* ── Page Layout ── */
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── Module Header ── */
+  .module-header {
+    background: linear-gradient(135deg, #1a3a5c 0%, #2e5f8a 100%);
+    color: #fff; border-radius: 10px; padding: 2rem 2rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .module-header .badge {
+    display: inline-block; background: #f0c040; color: #1a1a2e;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+  .module-header h1 { font-size: 1.75rem; line-height: 1.25; margin-bottom: 0.5rem; }
+  .module-header .meta {
+    font-size: 0.85rem; opacity: 0.85; display: flex; flex-wrap: wrap; gap: 1rem;
+    margin-top: 0.75rem;
+  }
+  .module-header .meta span::before { content: "• "; }
+  .module-header .meta span:first-child::before { content: ""; }
+
+  /* ── Progress Bar ── */
+  .progress-container {
+    background: #dde3ec; border-radius: 8px; padding: 1rem 1.25rem;
+    margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;
+  }
+  .progress-label { font-size: 0.82rem; font-weight: 600; white-space: nowrap; color: #1a3a5c; }
+  .progress-bar-outer {
+    flex: 1; height: 10px; background: #b8c4d4; border-radius: 10px; overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%; width: 0%; background: #2e7d32;
+    border-radius: 10px; transition: width 0.4s ease;
+  }
+  .progress-count { font-size: 0.82rem; font-weight: 700; color: #1a3a5c; white-space: nowrap; }
+
+  /* ── Section Anchors ── */
+  .section-anchor {
+    display: block; height: 0; visibility: hidden;
+    margin-top: -70px; padding-top: 70px;
+  }
+
+  /* ── Content Sections ── */
+  .content-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 1.75rem; overflow: hidden;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.5rem; cursor: pointer;
+    background: #f0f4fa; border-bottom: 2px solid #dde3ec;
+    user-select: none;
+  }
+  .section-header:hover { background: #e4ecf7; }
+  .section-header:focus-visible { outline: 3px solid #1a3a5c; outline-offset: -3px; }
+  .section-header h2 {
+    font-size: 1.1rem; color: #1a3a5c; display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-icon { font-size: 1.2rem; }
+  .toggle-btn {
+    background: none; border: none; cursor: pointer;
+    color: #1a3a5c; font-size: 1.2rem; padding: 0.25rem;
+    border-radius: 4px; transition: transform 0.25s; line-height: 1;
+  }
+  .toggle-btn:focus-visible { outline: 3px solid #1a3a5c; outline-offset: 2px; }
+  .toggle-btn.open { transform: rotate(180deg); }
+  .section-body { padding: 1.5rem; display: none; }
+  .section-body.open { display: block; }
+
+  /* ── Completion Checkbox ── */
+  .completion-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #eee;
+  }
+  .completion-row input[type="checkbox"] {
+    width: 1.1rem; height: 1.1rem; accent-color: #2e7d32; cursor: pointer;
+  }
+  .completion-row label { font-size: 0.85rem; color: #444; cursor: pointer; }
+
+  /* ── Typography ── */
+  h3 { font-size: 1rem; color: #1a3a5c; margin: 1.25rem 0 0.5rem; }
+  h4 { font-size: 0.92rem; color: #2e5f8a; margin: 1rem 0 0.4rem; }
+  p { margin-bottom: 0.85rem; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 0.85rem; }
+  li { margin-bottom: 0.3rem; }
+  strong { color: #1a1a2e; }
+  code {
+    background: #eef2f7; color: #c0392b;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 3px;
+  }
+
+  /* ── Callout Boxes ── */
+  .callout {
+    border-left: 4px solid; border-radius: 0 6px 6px 0;
+    padding: 0.85rem 1rem; margin: 1rem 0; font-size: 0.92rem;
+  }
+  .callout-info     { border-color: #2e5f8a; background: #eef4fb; }
+  .callout-tip      { border-color: #2e7d32; background: #edf7ee; }
+  .callout-warning  { border-color: #e65100; background: #fff3e0; }
+  .callout-security { border-color: #6a1b9a; background: #f3e5f5; }
+  .callout-access   { border-color: #f0c040; background: #fffde7; }
+  .callout-title { font-weight: 700; margin-bottom: 0.3rem; }
+
+  /* ── Code Block ── */
+  .code-block {
+    background: #1e2a3a; color: #cdd9e5;
+    border-radius: 8px; padding: 1.1rem 1.25rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.82rem; line-height: 1.65;
+    overflow-x: auto; margin: 0.85rem 0; tab-size: 4;
+  }
+  .code-block .cm { color: #8fa8c8; font-style: italic; }
+  .code-block .kw { color: #79b8ff; }
+  .code-block .st { color: #85e89d; }
+  .code-block .nm { color: #f0c040; }
+  .code-block .op { color: #ffab70; }
+  .code-block .pipe { color: #f97583; }
+
+  /* ── Step List ── */
+  .step-list { list-style: none; padding: 0; margin: 0.85rem 0; }
+  .step-list li { display: flex; gap: 0.85rem; align-items: flex-start; margin-bottom: 0.85rem; }
+  .step-num {
+    flex-shrink: 0; width: 1.8rem; height: 1.8rem;
+    background: #1a3a5c; color: #f0c040;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.8rem;
+  }
+  .step-content { flex: 1; padding-top: 0.15rem; }
+
+  /* ── Tables ── */
+  .data-table {
+    width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.85rem 0;
+  }
+  .data-table th {
+    background: #1a3a5c; color: #fff; text-align: left;
+    padding: 0.6rem 0.85rem; font-size: 0.82rem;
+  }
+  .data-table td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #eee; }
+  .data-table tr:nth-child(even) td { background: #f8fafc; }
+  .data-table tr:hover td { background: #eef4fb; }
+
+  /* ── Architecture Flow Diagram ── */
+  .arch-flow {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 0; margin: 1.25rem 0; justify-content: center;
+  }
+  .arch-node {
+    background: #1a3a5c; color: #fff;
+    border-radius: 8px; padding: 0.75rem 1rem;
+    text-align: center; min-width: 120px;
+  }
+  .arch-node .node-icon { font-size: 1.5rem; display: block; margin-bottom: 0.25rem; }
+  .arch-node .node-label { font-size: 0.78rem; font-weight: 700; }
+  .arch-node .node-sub { font-size: 0.7rem; opacity: 0.8; margin-top: 0.15rem; }
+  .arch-node.highlight { background: #2e7d32; }
+  .arch-node.accent { background: #6a1b9a; }
+  .arch-arrow {
+    font-size: 1.5rem; color: #2e5f8a; padding: 0 0.4rem;
+    display: flex; align-items: center;
+  }
+  .arch-label {
+    font-size: 0.7rem; color: #555; text-align: center;
+    padding: 0 0.2rem; max-width: 80px;
+  }
+
+  /* ── SPL Block ── */
+  .spl-block {
+    background: #0d1f2d; border: 1px solid #2e5f8a;
+    border-radius: 8px; overflow: hidden; margin: 0.85rem 0;
+  }
+  .spl-header {
+    background: #1a3a5c; color: #f0c040;
+    font-size: 0.75rem; font-weight: 700;
+    padding: 0.35rem 1rem; letter-spacing: 0.05em;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .spl-body {
+    padding: 0.9rem 1.1rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.84rem; line-height: 1.7; color: #cdd9e5;
+    overflow-x: auto;
+  }
+  .spl-body .s-index  { color: #79b8ff; }
+  .spl-body .s-field  { color: #f0c040; }
+  .spl-body .s-value  { color: #85e89d; }
+  .spl-body .s-cmd    { color: #f97583; }
+  .spl-body .s-func   { color: #ffab70; }
+  .spl-body .s-pipe   { color: #b392f0; font-weight: 700; }
+  .spl-body .s-comment{ color: #8fa8c8; font-style: italic; }
+
+  /* ── Exercise Card ── */
+  .exercise-card {
+    border: 2px solid #2e5f8a; border-radius: 8px;
+    overflow: hidden; margin: 1.25rem 0;
+  }
+  .exercise-header {
+    background: #2e5f8a; color: #fff;
+    padding: 0.6rem 1rem; font-weight: 700; font-size: 0.9rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .exercise-body { padding: 1.1rem 1.25rem; }
+  .exercise-goal {
+    background: #eef4fb; border-left: 3px solid #2e5f8a;
+    padding: 0.5rem 0.85rem; margin-bottom: 0.85rem;
+    font-size: 0.88rem; border-radius: 0 4px 4px 0;
+  }
+
+  /* ── Tabs ── */
+  .tab-group { margin: 1rem 0; }
+  .tab-buttons {
+    display: flex; gap: 0; border-bottom: 2px solid #1a3a5c; flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: #eef2f7; border: none; cursor: pointer;
+    padding: 0.55rem 1.1rem; font-size: 0.88rem; font-weight: 600;
+    color: #1a3a5c; border-radius: 6px 6px 0 0;
+    border: 1px solid #dde3ec; border-bottom: none;
+    margin-right: 3px; transition: background 0.15s;
+  }
+  .tab-btn:hover { background: #d6e4f5; }
+  .tab-btn.active { background: #1a3a5c; color: #f0c040; border-color: #1a3a5c; }
+  .tab-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .tab-panel { display: none; padding: 1.25rem; background: #fff; border: 1px solid #dde3ec; border-top: none; border-radius: 0 0 6px 6px; }
+  .tab-panel.active { display: block; }
+
+  /* ── Mini-Case ── */
+  .mini-case {
+    background: #fff8e1; border: 2px solid #f0c040;
+    border-radius: 8px; padding: 1.25rem; margin: 1rem 0;
+  }
+  .mini-case-header { font-weight: 700; color: #e65100; margin-bottom: 0.75rem; font-size: 1rem; }
+  .scenario-box {
+    background: #fff; border-left: 4px solid #e65100;
+    padding: 0.85rem 1rem; border-radius: 0 6px 6px 0;
+    margin-bottom: 1rem; font-size: 0.92rem;
+  }
+  .case-question { margin: 0.75rem 0; }
+  .case-question p { font-weight: 600; margin-bottom: 0.35rem; font-size: 0.92rem; }
+  .reveal-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-size: 0.82rem;
+    font-weight: 600; transition: background 0.15s;
+  }
+  .reveal-btn:hover { background: #2e5f8a; }
+  .reveal-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .model-answer {
+    display: none; background: #e8f5e9; border-left: 4px solid #2e7d32;
+    padding: 0.75rem 1rem; margin-top: 0.5rem; border-radius: 0 6px 6px 0;
+    font-size: 0.88rem;
+  }
+  .model-answer.visible { display: block; }
+
+  /* ── Timechart Visual ── */
+  .timechart-visual {
+    background: #1e2a3a; border-radius: 8px; padding: 1.25rem;
+    margin: 1rem 0; position: relative; overflow: hidden;
+  }
+  .tc-title { color: #cdd9e5; font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem; }
+  .tc-bars { display: flex; align-items: flex-end; gap: 4px; height: 100px; }
+  .tc-bar {
+    flex: 1; border-radius: 3px 3px 0 0; min-width: 8px;
+    transition: opacity 0.2s;
+  }
+  .tc-bar.normal { background: #2e5f8a; }
+  .tc-bar.spike  { background: #f97583; }
+  .tc-axis {
+    display: flex; justify-content: space-between;
+    color: #8fa8c8; font-size: 0.68rem; margin-top: 4px;
+    font-family: monospace;
+  }
+  .tc-legend {
+    display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap;
+  }
+  .tc-legend-item {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; color: #cdd9e5;
+  }
+  .tc-swatch { width: 12px; height: 12px; border-radius: 2px; }
+
+  /* ── Knowledge Check ── */
+  .kc-wrap { margin: 0.85rem 0; }
+  .kc-question {
+    background: #f0f4fa; border-radius: 8px; padding: 1.1rem 1.25rem;
+    margin-bottom: 1.25rem; border: 1px solid #dde3ec;
+  }
+  .kc-question p.q-text { font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem; }
+  .kc-options { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .kc-options li label {
+    display: flex; align-items: center; gap: 0.6rem;
+    cursor: pointer; padding: 0.45rem 0.75rem;
+    border-radius: 5px; border: 1px solid #cdd5e0;
+    background: #fff; font-size: 0.9rem; transition: background 0.12s;
+  }
+  .kc-options li label:hover { background: #eef4fb; }
+  .kc-options li input[type="radio"] { accent-color: #1a3a5c; }
+  .kc-text-input {
+    width: 100%; max-width: 280px; padding: 0.45rem 0.75rem;
+    border: 1px solid #cdd5e0; border-radius: 5px;
+    font-size: 0.9rem; margin-bottom: 0.5rem; font-family: inherit;
+  }
+  .kc-text-input:focus { outline: 2px solid #1a3a5c; }
+  .kc-submit-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.45rem 1.1rem; border-radius: 5px; font-size: 0.88rem;
+    font-weight: 600; transition: background 0.15s; margin-top: 0.5rem;
+  }
+  .kc-submit-btn:hover { background: #2e5f8a; }
+  .kc-submit-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .kc-feedback {
+    display: none; margin-top: 0.65rem; padding: 0.65rem 0.9rem;
+    border-radius: 6px; font-size: 0.88rem; font-weight: 500;
+  }
+  .kc-feedback.correct   { background: #e8f5e9; color: #1b5e20; border-left: 4px solid #2e7d32; display: block; }
+  .kc-feedback.incorrect { background: #ffebee; color: #b71c1c; border-left: 4px solid #c62828; display: block; }
+  .kc-score-summary {
+    display: none; background: #1a3a5c; color: #fff;
+    border-radius: 8px; padding: 1rem 1.25rem; margin-top: 0.5rem;
+    text-align: center; font-size: 1rem;
+  }
+  .kc-score-summary.visible { display: block; }
+  .kc-score-summary .score-big { font-size: 2rem; font-weight: 900; color: #f0c040; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .module-header h1 { font-size: 1.35rem; }
+    .arch-flow { flex-direction: column; }
+    .arch-arrow { transform: rotate(90deg); }
+    nav#main-nav .nav-inner { gap: 0.15rem; }
+    nav#main-nav a { font-size: 0.72rem; padding: 0.25rem 0.4rem; }
+    .tc-bars { height: 70px; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ══════════════════════════════════════════════
+     TOP NAVIGATION
+══════════════════════════════════════════════ -->
+<nav id="main-nav" aria-label="Module sections">
+  <div class="nav-inner">
+    <span class="nav-brand">9.5 Splunk &amp; Syslog</span>
+    <a href="#sec-why"       data-tooltip="Why Centralized Logging?"          aria-label="Section 1: Why Centralized Logging?">1</a>
+    <a href="#sec-syslog"    data-tooltip="Syslog Protocol"                   aria-label="Section 2: Syslog Protocol">2</a>
+    <a href="#sec-arch"      data-tooltip="Splunk Architecture Overview"      aria-label="Section 3: Splunk Architecture Overview">3</a>
+    <a href="#sec-spl"       data-tooltip="SPL Basics"                        aria-label="Section 4: SPL Basics">4</a>
+    <a href="#sec-pfsense"   data-tooltip="Configuring pfSense Syslog"        aria-label="Section 5: Configuring pfSense Syslog Forwarding">5</a>
+    <a href="#sec-exercises" data-tooltip="Guided SPL Exercises"              aria-label="Section 6: Guided SPL Exercises">6</a>
+    <a href="#sec-security"  data-tooltip="Log Data &amp; Security Practice"  aria-label="Section 7: Connecting Log Data to Security Practice">7</a>
+    <a href="#sec-case"      data-tooltip="Mini-Case: Traffic Spike"          aria-label="Section 8: Mini-Case: The Suspicious Traffic Spike">8</a>
+    <a href="#sec-kc"        data-tooltip="Knowledge Check"                   aria-label="Section 9: Knowledge Check">9</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════ -->
+<main id="main-content" class="page-wrap">
+
+  <!-- Module Header -->
+  <header class="module-header" role="banner">
+    <div class="badge">CSC 152 · Week 9 · Module 9.5</div>
+    <h1>Splunk Introduction &amp; pfSense Log Forwarding</h1>
+    <p style="opacity:0.9;font-size:0.95rem;margin-top:0.5rem;">
+      Your first structured hands-on experience with Splunk — configure pfSense
+      to forward syslog events to the shared instructor instance, then run
+      progressively complex SPL searches on real firewall and network data.
+      No individual Splunk installation is required this week.
+    </p>
+    <div class="meta">
+      <span>Week 9 · March 16–22, 2026</span>
+      <span>Estimated time: ~1.5 hours</span>
+      <span>CSLO 2 · Week 9 Objectives 5 &amp; 6</span>
+      <span>Supports: Lab 9 EC (Part D) · Project 2 Part D · Project 3 preview</span>
+    </div>
+  </header>
+
+  <!-- Shared Instance Access Callout -->
+  <div class="callout callout-access" role="region" aria-label="Splunk instance access notice">
+    <div class="callout-title">🔑 Shared Splunk Instance — Access Required for Exercises</div>
+    <p style="margin-bottom:0;">
+      The guided exercises in Sections 5 and 6 require access to the
+      <strong>instructor-hosted shared Splunk instance</strong>. The URL and
+      your login credentials will be provided by the instructor in a
+      <strong>separate Canvas Announcement</strong> posted at the start of
+      Week 9. Check Canvas Announcements before beginning Section 5. If you
+      do not see the announcement by Tuesday March 17, contact the instructor
+      directly.
+    </p>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress-container" role="region" aria-label="Section completion progress">
+    <span class="progress-label">Sections completed:</span>
+    <div class="progress-bar-outer" role="progressbar" aria-valuemin="0" aria-valuemax="9"
+         aria-valuenow="0" aria-label="Progress" id="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar"></div>
+    </div>
+    <span class="progress-count" id="progress-count">0 / 9</span>
+  </div>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 1 – Why Centralized Logging?
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-why" aria-hidden="true"></span>
+  <article class="content-section" id="article-1">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="true" aria-controls="body-1"
+         onclick="toggleSection(1)" onkeydown="keyToggle(event,1)">
+      <h2><span class="section-icon" aria-hidden="true">🔍</span>
+          1 · Why Centralized Logging?</h2>
+      <button class="toggle-btn open" id="toggle-1" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body open" id="body-1">
+
+      <p>
+        Every server, firewall, and network device you manage generates log
+        events — records of what happened, when, and to whom. In a small
+        network with two or three devices, reading logs individually is
+        manageable. In any real organization, it is not.
+      </p>
+
+      <h3>The Problem with Local Log Review</h3>
+      <p>
+        Imagine your network has 10 servers, a firewall, three switches, and
+        a wireless controller. Each device writes its own log file in its own
+        format. To answer the question <em>"Was there any suspicious activity
+        last night?"</em> you would need to:
+      </p>
+      <ul>
+        <li>Log in to each device individually</li>
+        <li>Navigate to the correct log location on each</li>
+        <li>Search through potentially thousands of lines per device</li>
+        <li>Mentally correlate events across systems — without a shared timeline</li>
+      </ul>
+      <p>
+        This approach does not scale, is error-prone, and is far too slow for
+        incident response. Centralized logging solves all of these problems.
+      </p>
+
+      <h3>The Three Core Benefits</h3>
+
+      <!-- Tabs for 3 benefits -->
+      <div class="tab-group" role="tablist" aria-label="Core benefits of centralized logging">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-glass" id="tbtn-glass"
+                  onclick="switchTab('glass')" onkeydown="keyTab(event,'glass')">
+            🖥️ Single Pane of Glass
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-audit" id="tbtn-audit"
+                  onclick="switchTab('audit')" onkeydown="keyTab(event,'audit')">
+            📋 Audit Trails
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-ir" id="tbtn-ir"
+                  onclick="switchTab('ir')" onkeydown="keyTab(event,'ir')">
+            🚨 Incident Response
+          </button>
+        </div>
+
+        <div class="tab-panel active" id="tab-glass" role="tabpanel" aria-labelledby="tbtn-glass">
+          <h4>Single Pane of Glass</h4>
+          <p>
+            A centralized log platform aggregates events from every device into
+            one searchable interface. Instead of logging into 10 systems, an
+            administrator runs a single search and sees correlated events from
+            all sources on a unified timeline.
+          </p>
+          <p>
+            This is sometimes called a <strong>Single Pane of Glass</strong> —
+            one view that shows the entire environment. Splunk is one of the
+            industry's leading platforms for this purpose. Others include the
+            ELK Stack (Elasticsearch, Logstash, Kibana) and Graylog.
+          </p>
+          <div class="callout callout-info">
+            <div class="callout-title">📌 Week 9 Context</div>
+            In this module you will see pfSense firewall events, DHCP lease
+            events, and general system events all flowing into a single Splunk
+            search interface — that is the single pane of glass in action.
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-audit" role="tabpanel" aria-labelledby="tbtn-audit">
+          <h4>Audit Trails</h4>
+          <p>
+            An <strong>audit trail</strong> is a chronological record of
+            activity that can be used to verify compliance, reconstruct events,
+            or prove (or disprove) that a specific action occurred. Centralized
+            logging creates tamper-evident audit trails because log data is
+            forwarded off the originating device — even if an attacker
+            compromises a server and deletes local logs, the centralized copy
+            remains.
+          </p>
+          <p>
+            Audit trails matter for:
+          </p>
+          <ul>
+            <li><strong>Compliance frameworks</strong> (PCI-DSS, HIPAA, SOC 2) that
+              require log retention and review</li>
+            <li><strong>Change management</strong> — who changed what firewall rule
+              and when?</li>
+            <li><strong>HR and legal investigations</strong> — documenting user
+              activity on corporate systems</li>
+            <li><strong>Post-incident forensics</strong> — reconstructing the
+              sequence of events after a breach</li>
+          </ul>
+        </div>
+
+        <div class="tab-panel" id="tab-ir" role="tabpanel" aria-labelledby="tbtn-ir">
+          <h4>Incident Response</h4>
+          <p>
+            When a security incident occurs, time is critical. Centralized
+            logging dramatically reduces <strong>Mean Time to Detect (MTTD)</strong>
+            and <strong>Mean Time to Respond (MTTR)</strong> by allowing
+            analysts to:
+          </p>
+          <ul>
+            <li>Search across all systems simultaneously for indicators of
+              compromise (IoCs)</li>
+            <li>Correlate a suspicious IP address seen in firewall logs with
+              failed login attempts in authentication logs</li>
+            <li>Build timelines showing the progression of an attack across
+              multiple systems</li>
+            <li>Set up <strong>alerts</strong> that fire automatically when
+              specific patterns (e.g., 10 failed logins in 5 minutes) are
+              detected</li>
+          </ul>
+          <div class="callout callout-security">
+            <div class="callout-title">🔒 CSLO 2 Connection</div>
+            Centralized logging directly supports CSLO 2 — Apply physical and
+            network data security techniques. A SIEM (Security Information and
+            Event Management) platform like Splunk is a foundational security
+            control in enterprise environments.
+          </div>
+        </div>
+      </div><!-- end tab-group -->
+
+      <h3>Does Centralized Logging Replace Local Log Review?</h3>
+      <p>
+        <strong>No — it supplements it.</strong> Centralized logging is a
+        powerful force multiplier, but local logs still matter for
+        troubleshooting service-specific issues, for systems that cannot
+        forward logs, and as a cross-check when the centralized platform
+        itself has issues. You will see this concept tested in the Knowledge
+        Check at the end of this module.
+      </p>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-1" onchange="updateProgress()">
+        <label for="chk-1">I have read and understood Section 1.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 2 – Syslog Protocol
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-syslog" aria-hidden="true"></span>
+  <article class="content-section" id="article-2">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-2"
+         onclick="toggleSection(2)" onkeydown="keyToggle(event,2)">
+      <h2><span class="section-icon" aria-hidden="true">📡</span>
+          2 · Syslog Protocol</h2>
+      <button class="toggle-btn" id="toggle-2" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-2">
+
+      <p>
+        <strong>Syslog</strong> is the standard protocol used by network
+        devices, servers, and appliances to send log messages to a central
+        collector. It was originally defined in RFC 3164 and updated in
+        RFC 5424. Almost every network device you will encounter — routers,
+        switches, firewalls, Linux servers — supports syslog natively.
+      </p>
+
+      <h3>How Syslog Works</h3>
+      <p>
+        A device configured with a remote syslog destination sends log
+        messages as UDP or TCP datagrams to a <strong>syslog server</strong>
+        (also called a syslog collector or receiver) listening on
+        <strong>port 514</strong>.
+      </p>
+
+      <!-- Syslog flow diagram -->
+      <div class="arch-flow" role="img" aria-label="Syslog message flow: device sends to collector on port 514">
+        <div class="arch-node">
+          <span class="node-icon" aria-hidden="true">🔥</span>
+          <div class="node-label">pfSense Firewall</div>
+          <div class="node-sub">Syslog Sender</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div class="arch-arrow" aria-hidden="true">→</div>
+          <div class="arch-label">UDP/TCP<br>port 514</div>
+        </div>
+        <div class="arch-node highlight">
+          <span class="node-icon" aria-hidden="true">📥</span>
+          <div class="node-label">Syslog Collector</div>
+          <div class="node-sub">Splunk / rsyslog</div>
+        </div>
+      </div>
+
+      <h3>Syslog Message Structure</h3>
+      <p>
+        Every syslog message contains three key components:
+      </p>
+      <table class="data-table" aria-label="Syslog message components">
+        <thead>
+          <tr><th>Component</th><th>Description</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Priority (PRI)</strong></td>
+            <td>Encoded combination of <em>Facility</em> (what generated the message) and <em>Severity</em> (how important it is). Written as a number in angle brackets.</td>
+            <td><code>&lt;134&gt;</code></td>
+          </tr>
+          <tr>
+            <td><strong>Header</strong></td>
+            <td>Timestamp and hostname of the sending device.</td>
+            <td><code>Mar 20 14:32:01 pfsense</code></td>
+          </tr>
+          <tr>
+            <td><strong>Message</strong></td>
+            <td>The actual log content — process name, PID, and the event description.</td>
+            <td><code>filterlog: 5,16,,...,block,in,...</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Syslog Severity Levels</h3>
+      <p>
+        Syslog defines 8 severity levels (0 = most critical, 7 = least):
+      </p>
+      <table class="data-table" aria-label="Syslog severity levels">
+        <thead>
+          <tr><th>Level</th><th>Keyword</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0</td><td><code>EMERG</code></td><td>System is unusable</td></tr>
+          <tr><td>1</td><td><code>ALERT</code></td><td>Immediate action required</td></tr>
+          <tr><td>2</td><td><code>CRIT</code></td><td>Critical condition</td></tr>
+          <tr><td>3</td><td><code>ERR</code></td><td>Error condition</td></tr>
+          <tr><td>4</td><td><code>WARNING</code></td><td>Warning — may indicate a problem</td></tr>
+          <tr><td>5</td><td><code>NOTICE</code></td><td>Normal but significant event</td></tr>
+          <tr><td>6</td><td><code>INFO</code></td><td>Informational message</td></tr>
+          <tr><td>7</td><td><code>DEBUG</code></td><td>Debug-level detail</td></tr>
+        </tbody>
+      </table>
+
+      <h3>UDP vs. TCP for Syslog</h3>
+      <table class="data-table" aria-label="UDP vs TCP for syslog">
+        <thead>
+          <tr><th>Transport</th><th>Port</th><th>Reliable?</th><th>When to Use</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>UDP</strong></td>
+            <td>514</td>
+            <td>No — messages can be lost if the network is congested</td>
+            <td>Default for most devices; acceptable for high-volume, low-criticality logs</td>
+          </tr>
+          <tr>
+            <td><strong>TCP</strong></td>
+            <td>514 (or 601)</td>
+            <td>Yes — connection-oriented, delivery confirmed</td>
+            <td>Compliance environments where log completeness is required</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>pfSense as a Syslog Sender</h3>
+      <p>
+        pfSense can forward its firewall filter logs, DHCP events, system
+        events, and more to a remote syslog server. The forwarded messages
+        use the <strong>filterlog</strong> format for firewall events, which
+        Splunk can parse using the <code>pfsense</code> sourcetype add-on.
+        You will configure this forwarding in Section 5.
+      </p>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Port 514 — Know This</div>
+        The default syslog port is <strong>514</strong> (UDP or TCP). This
+        is a frequently tested fact in Quiz 9 and on the final exam. It also
+        appears in the Knowledge Check at the end of this module.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-2" onchange="updateProgress()">
+        <label for="chk-2">I have read and understood Section 2.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 3 – Splunk Architecture Overview
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-arch" aria-hidden="true"></span>
+  <article class="content-section" id="article-3">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-3"
+         onclick="toggleSection(3)" onkeydown="keyToggle(event,3)">
+      <h2><span class="section-icon" aria-hidden="true">🏗️</span>
+          3 · Splunk Architecture Overview</h2>
+      <button class="toggle-btn" id="toggle-3" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-3">
+
+      <p>
+        You do not need to administer Splunk this week — that comes in
+        Project 3. But understanding Splunk's architecture at an awareness
+        level will help you understand where your pfSense data goes and why
+        searches work the way they do.
+      </p>
+
+      <h3>The Three Core Components</h3>
+
+      <!-- Architecture flow diagram -->
+      <div class="arch-flow" role="img" aria-label="Splunk architecture: Forwarders send to Indexers, Search Heads query Indexers">
+        <div class="arch-node">
+          <span class="node-icon" aria-hidden="true">📤</span>
+          <div class="node-label">Forwarders</div>
+          <div class="node-sub">Collect &amp; send data</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div class="arch-arrow" aria-hidden="true">→</div>
+          <div class="arch-label">TCP 9997<br>(or syslog 514)</div>
+        </div>
+        <div class="arch-node highlight">
+          <span class="node-icon" aria-hidden="true">🗄️</span>
+          <div class="node-label">Indexers</div>
+          <div class="node-sub">Parse &amp; store data</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div class="arch-arrow" aria-hidden="true">→</div>
+          <div class="arch-label">Search<br>queries</div>
+        </div>
+        <div class="arch-node accent">
+          <span class="node-icon" aria-hidden="true">🔎</span>
+          <div class="node-label">Search Heads</div>
+          <div class="node-sub">Query &amp; visualize</div>
+        </div>
+      </div>
+
+      <h3>Component Descriptions</h3>
+
+      <h4>Forwarders</h4>
+      <p>
+        A <strong>Forwarder</strong> is a lightweight Splunk agent installed
+        on a data source (e.g., a Linux or Windows server) that collects log
+        data and sends it to an Indexer. The most common type is the
+        <strong>Universal Forwarder (UF)</strong> — a small, low-overhead
+        agent that does minimal processing locally and forwards raw data.
+      </p>
+      <p>
+        <strong>This week:</strong> pfSense does not use a Splunk forwarder.
+        Instead, it uses the built-in syslog protocol to send log messages
+        directly to the Splunk Indexer's syslog listener on port 514. This is
+        a common pattern for network appliances that cannot run software agents.
+      </p>
+      <p>
+        <strong>Project 3:</strong> You will install Universal Forwarders on
+        your Linux and Windows Server VMs to forward OS-level logs (auth logs,
+        Windows Event Logs) to your own Splunk instance.
+      </p>
+
+      <h4>Indexers</h4>
+      <p>
+        The <strong>Indexer</strong> is the heart of Splunk. It receives
+        incoming data, parses it into individual events, assigns timestamps,
+        extracts fields, and stores the data in compressed, indexed form on
+        disk. The Indexer is what makes searches fast — instead of scanning
+        raw log files line by line, Splunk queries its index structures.
+      </p>
+      <p>
+        Data on an Indexer is organized into <strong>indexes</strong> —
+        named buckets of data (similar to a database). Common indexes you
+        will see in this course include <code>network</code> (for firewall
+        and network device logs) and <code>main</code> (the default index).
+      </p>
+
+      <h4>Search Heads</h4>
+      <p>
+        The <strong>Search Head</strong> provides the web interface
+        (<strong>Splunk Web</strong>) where users write SPL queries, view
+        results, and build dashboards. In a small deployment (like your
+        Project 3 instance), the Search Head and Indexer run on the same
+        server. In large enterprise deployments they are separate.
+      </p>
+      <p>
+        Splunk Web runs on <strong>port 8000</strong> by default. When you
+        open the shared Splunk instance in your browser, you are connecting
+        to the Search Head.
+      </p>
+
+      <h3>Indexes and Sourcetypes</h3>
+      <p>
+        Two concepts are essential for writing SPL searches:
+      </p>
+      <table class="data-table" aria-label="Splunk indexes and sourcetypes explained">
+        <thead>
+          <tr><th>Concept</th><th>What it is</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Index</strong></td>
+            <td>A named data store on the Indexer. You specify which index to search with <code>index=</code> in SPL.</td>
+            <td><code>index=network</code>, <code>index=main</code></td>
+          </tr>
+          <tr>
+            <td><strong>Sourcetype</strong></td>
+            <td>A label that tells Splunk how to parse and interpret the data format. Splunk uses sourcetype to extract fields correctly.</td>
+            <td><code>sourcetype=pfsense:filterlog</code>, <code>sourcetype=linux_secure</code></td>
+          </tr>
+          <tr>
+            <td><strong>Host</strong></td>
+            <td>The hostname or IP address of the device that sent the data. Used to filter results to a specific device.</td>
+            <td><code>host=pfsense</code>, <code>host=ubuntu-srv</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Week 9 Scope</div>
+        This week you are working with the <strong>instructor-hosted shared
+        instance</strong>. The Indexer, Search Head, and syslog receiver are
+        all pre-configured. Your job is to (1) configure pfSense to send data
+        to it, and (2) run searches against the data that arrives.
+        In <strong>Project 3</strong> (assigned Week 13) you will deploy and
+        configure your own Splunk instance from scratch.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-3" onchange="updateProgress()">
+        <label for="chk-3">I have read and understood Section 3.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 4 – SPL Basics
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-spl" aria-hidden="true"></span>
+  <article class="content-section" id="article-4">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-4"
+         onclick="toggleSection(4)" onkeydown="keyToggle(event,4)">
+      <h2><span class="section-icon" aria-hidden="true">💻</span>
+          4 · SPL Basics</h2>
+      <button class="toggle-btn" id="toggle-4" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-4">
+
+      <p>
+        <strong>SPL (Search Processing Language)</strong> is Splunk's query
+        language. It is designed to be readable and pipeline-based — you
+        start with a search that retrieves events, then chain commands
+        together using the pipe character (<code>|</code>) to transform,
+        filter, and summarize the results.
+      </p>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 You Don't Need to Memorize SPL</div>
+        The goal this week is familiarity, not memorization. A reference
+        sheet with the most important SPL commands will be provided as a
+        course handout and will be available during Quiz 9 (open-note).
+        Focus on understanding <em>what each command does</em> and
+        <em>why</em> you would use it.
+      </div>
+
+      <h3>The SPL Pipeline Model</h3>
+      <p>
+        Think of an SPL query as a pipeline: data flows from left to right,
+        and each <code>|</code>-separated command transforms the data before
+        passing it to the next stage.
+      </p>
+      <div class="spl-block" aria-label="SPL pipeline concept">
+        <div class="spl-header">📝 SPL Pipeline Concept</div>
+        <div class="spl-body">
+<span class="s-comment">-- search terms --</span>  <span class="s-pipe">|</span>  <span class="s-comment">-- transform --</span>  <span class="s-pipe">|</span>  <span class="s-comment">-- summarize --</span>
+
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">src_ip</span>  <span class="s-pipe">|</span>  <span class="s-cmd">sort</span> -count
+        </div>
+      </div>
+
+      <h3>Core SPL Keywords and Commands</h3>
+
+      <h4>Search Terms: <code>index=</code>, <code>sourcetype=</code>, <code>host=</code></h4>
+      <p>
+        These three are the primary <strong>filter keywords</strong> that
+        narrow down which events Splunk retrieves. They are placed at the
+        beginning of a search, before any pipe commands.
+      </p>
+      <div class="spl-block" aria-label="SPL filter keywords examples">
+        <div class="spl-header">📝 Filter Keywords</div>
+        <div class="spl-body">
+<span class="s-comment">-- Search all events in the "network" index --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>
+
+<span class="s-comment">-- Filter to pfSense firewall events only --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>
+
+<span class="s-comment">-- Filter to events from a specific host --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">host</span>=<span class="s-value">pfsense</span>
+
+<span class="s-comment">-- Combine multiple filters (AND logic by default) --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>  <span class="s-field">action</span>=<span class="s-value">block</span>
+        </div>
+      </div>
+
+      <h4>Counting Events: <code>| stats count by &lt;field&gt;</code></h4>
+      <p>
+        The <code>stats</code> command performs statistical aggregations on
+        your search results. The most common pattern is
+        <code>| stats count by &lt;field&gt;</code>, which groups events by
+        the values of a field and counts how many events belong to each group.
+      </p>
+      <div class="spl-block" aria-label="SPL stats count by examples">
+        <div class="spl-header">📝 | stats count by</div>
+        <div class="spl-body">
+<span class="s-comment">-- How many events came from each host? --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">host</span>
+
+<span class="s-comment">-- How many blocked events per source IP? --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>  <span class="s-field">action</span>=<span class="s-value">block</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">src_ip</span>
+
+<span class="s-comment">-- Sort results descending by count --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>  <span class="s-field">action</span>=<span class="s-value">block</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">src_ip</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">sort</span> -count
+        </div>
+      </div>
+
+      <h4>Events Over Time: <code>| timechart count</code></h4>
+      <p>
+        The <code>timechart</code> command creates a time-series summary —
+        it buckets events into time intervals and counts them. This is the
+        command that produces the line charts and bar charts you see in
+        Splunk dashboards. The <code>span=</code> option controls the bucket
+        size.
+      </p>
+      <div class="spl-block" aria-label="SPL timechart examples">
+        <div class="spl-header">📝 | timechart count</div>
+        <div class="spl-body">
+<span class="s-comment">-- Count all pfSense events per hour --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">timechart</span> span=<span class="s-value">1h</span>  <span class="s-func">count</span>
+
+<span class="s-comment">-- Count blocked vs. passed events per hour --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">timechart</span> span=<span class="s-value">1h</span>  <span class="s-func">count</span> by <span class="s-field">action</span>
+
+<span class="s-comment">-- 15-minute buckets for higher resolution --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">timechart</span> span=<span class="s-value">15m</span>  <span class="s-func">count</span>
+        </div>
+      </div>
+
+      <h4>Limiting Results: <code>| head N</code></h4>
+      <p>
+        The <code>head</code> command returns only the first N results from
+        the pipeline. Combined with <code>sort</code>, it gives you "top N"
+        results — for example, the top 10 blocked source IPs.
+      </p>
+      <div class="spl-block" aria-label="SPL head command example">
+        <div class="spl-header">📝 | head</div>
+        <div class="spl-body">
+<span class="s-comment">-- Top 10 blocked source IPs --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>  <span class="s-field">action</span>=<span class="s-value">block</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">src_ip</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">sort</span> -count
+  <span class="s-pipe">|</span>  <span class="s-cmd">head</span> <span class="s-value">10</span>
+        </div>
+      </div>
+
+      <h3>Quick SPL Command Reference</h3>
+      <table class="data-table" aria-label="SPL command quick reference">
+        <thead>
+          <tr><th>Command</th><th>Purpose</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>index=</code></td>
+            <td>Specify which Splunk index to search</td>
+            <td><code>index=network</code></td>
+          </tr>
+          <tr>
+            <td><code>sourcetype=</code></td>
+            <td>Filter by data source type / format</td>
+            <td><code>sourcetype=pfsense:filterlog</code></td>
+          </tr>
+          <tr>
+            <td><code>host=</code></td>
+            <td>Filter by originating hostname</td>
+            <td><code>host=pfsense</code></td>
+          </tr>
+          <tr>
+            <td><code>| stats count by &lt;field&gt;</code></td>
+            <td>Count events grouped by a field's values</td>
+            <td><code>| stats count by src_ip</code></td>
+          </tr>
+          <tr>
+            <td><code>| timechart span=Xh count</code></td>
+            <td>Count events over time in buckets</td>
+            <td><code>| timechart span=1h count</code></td>
+          </tr>
+          <tr>
+            <td><code>| sort -count</code></td>
+            <td>Sort results by count, descending</td>
+            <td><code>| sort -count</code></td>
+          </tr>
+          <tr>
+            <td><code>| head N</code></td>
+            <td>Return only the first N results</td>
+            <td><code>| head 10</code></td>
+          </tr>
+          <tr>
+            <td><code>| table &lt;field1&gt; &lt;field2&gt;</code></td>
+            <td>Display results as a table with selected fields</td>
+            <td><code>| table src_ip dest_port count</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-4" onchange="updateProgress()">
+        <label for="chk-4">I have read and understood Section 4.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 5 – Configuring pfSense Syslog Forwarding
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-pfsense" aria-hidden="true"></span>
+  <article class="content-section" id="article-5">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-5"
+         onclick="toggleSection(5)" onkeydown="keyToggle(event,5)">
+      <h2><span class="section-icon" aria-hidden="true">🔥</span>
+          5 · Configuring pfSense Syslog Forwarding</h2>
+      <button class="toggle-btn" id="toggle-5" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-5">
+
+      <div class="callout callout-access">
+        <div class="callout-title">🔑 Before You Begin</div>
+        You will need the <strong>shared Splunk instance IP address</strong>
+        from the instructor Canvas Announcement before completing this
+        walk-through. Have it ready to enter in Step 6 below.
+      </div>
+
+      <p>
+        pfSense includes built-in syslog forwarding. Once configured, pfSense
+        will automatically send copies of its log events to the remote Splunk
+        instance in real time. The configuration is done entirely through the
+        pfSense web UI — no command line is required.
+      </p>
+
+      <h3>Where pfSense Logs Live</h3>
+      <p>
+        Before configuring forwarding, it helps to know what pfSense is
+        logging locally. Navigate to <strong>Status → System Logs</strong>
+        in the pfSense web UI to see the following log categories:
+      </p>
+      <table class="data-table" aria-label="pfSense local log categories">
+        <thead>
+          <tr><th>Tab</th><th>What it contains</th><th>Splunk sourcetype</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Firewall</strong></td>
+            <td>Packet filter decisions — blocked and passed connections, rule matches</td>
+            <td><code>pfsense:filterlog</code></td>
+          </tr>
+          <tr>
+            <td><strong>DHCP</strong></td>
+            <td>DHCP lease assignments, renewals, releases</td>
+            <td><code>pfsense:dhcpd</code></td>
+          </tr>
+          <tr>
+            <td><strong>General</strong></td>
+            <td>System events, interface state changes, login activity</td>
+            <td><code>pfsense:syslog</code></td>
+          </tr>
+          <tr>
+            <td><strong>VPN</strong></td>
+            <td>OpenVPN / IPsec connection and disconnection events</td>
+            <td><code>pfsense:openvpn</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Step-by-Step: Configuring Remote Syslog</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Log in to the pfSense web UI.</strong><br>
+            Open a browser on your Management network VM and navigate to
+            <code>https://10.0.1.1</code> (or your pfSense LAN IP).
+            Log in with your admin credentials.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Navigate to the System Logs settings.</strong><br>
+            From the top menu select <strong>Status</strong> →
+            <strong>System Logs</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Open the Settings tab.</strong><br>
+            Inside the System Logs page, click the <strong>Settings</strong>
+            tab (it appears as a sub-tab alongside Firewall, DHCP, General,
+            etc.).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Scroll down to the Remote Logging section.</strong><br>
+            Look for the heading <em>Remote Logging Options</em>. You will
+            see a checkbox and fields for remote syslog servers.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Enable remote syslog.</strong><br>
+            Check the box labeled
+            <strong>Enable Remote Logging</strong> (or
+            <em>Send log messages to remote syslog server</em> in some
+            pfSense versions).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <strong>Enter the Splunk instance address.</strong><br>
+            In the <em>Remote log servers</em> field, enter the IP address
+            of the shared Splunk instance followed by <code>:514</code>
+            (e.g., <code>10.255.254.50:514</code>). Use the address provided
+            in the instructor Canvas Announcement.
+            <div class="callout callout-warning" style="margin-top:0.65rem;">
+              <div class="callout-title">⚠️ Use the Correct Address</div>
+              Enter the IP address provided by the instructor — do not guess
+              or use a placeholder. Using the wrong address will result in
+              no data appearing in Splunk.
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">7</div>
+          <div class="step-content">
+            <strong>Select which log categories to forward.</strong><br>
+            Under <em>Remote Syslog Contents</em>, check at minimum:
+            <ul style="margin-top:0.4rem;">
+              <li><strong>Firewall Events</strong> — essential for the SPL exercises</li>
+              <li><strong>DHCP service events</strong> — useful for tracking lease activity</li>
+              <li><strong>General system events</strong> — captures interface changes, login events</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">8</div>
+          <div class="step-content">
+            <strong>Save the configuration.</strong><br>
+            Click <strong>Save</strong> at the bottom of the Settings page.
+            pfSense will apply the changes immediately — no reboot is
+            required.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">9</div>
+          <div class="step-content">
+            <strong>Verify data is flowing.</strong><br>
+            Wait 1–2 minutes, then log in to the shared Splunk instance
+            (see Section 6 for navigation instructions) and run:
+            <div class="spl-block" aria-label="Verification search">
+              <div class="spl-header">📝 Verification Search</div>
+              <div class="spl-body">
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">host</span>=<span class="s-value">pfsense</span>  <span class="s-pipe">|</span>  <span class="s-cmd">head</span> <span class="s-value">10</span>
+              </div>
+            </div>
+            If events appear, your syslog forwarding is working correctly.
+            If no events appear after 5 minutes, double-check the IP address
+            in Step 6 and confirm your pfSense can reach the Splunk instance
+            (try pinging the Splunk IP from the pfSense Diagnostics →
+            Ping tool).
+          </div>
+        </li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Lab 9 EC — Part D Connection</div>
+        If you are completing Lab 9 (Extra Credit), Part D asks you to
+        configure pfSense syslog forwarding and submit screenshot evidence
+        of the Settings page with remote logging enabled, plus screenshots
+        of at least three SPL search results. Complete Sections 5 and 6 of
+        this module to fulfill Part D requirements.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-5" onchange="updateProgress()">
+        <label for="chk-5">I have read and understood Section 5.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 6 – Guided SPL Exercises
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-exercises" aria-hidden="true"></span>
+  <article class="content-section" id="article-6">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-6"
+         onclick="toggleSection(6)" onkeydown="keyToggle(event,6)">
+      <h2><span class="section-icon" aria-hidden="true">🧪</span>
+          6 · Guided SPL Exercises</h2>
+      <button class="toggle-btn" id="toggle-6" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-6">
+
+      <p>
+        These three exercises are designed to be completed on the shared
+        Splunk instance. Each one builds on the previous, introducing
+        progressively more complex SPL. Follow each numbered step carefully.
+      </p>
+
+      <div class="callout callout-access">
+        <div class="callout-title">🔑 Accessing the Shared Splunk Instance</div>
+        <ol style="margin:0.4rem 0 0 1.2rem;">
+          <li>Open a browser and navigate to the URL provided in the
+            instructor Canvas Announcement (format:
+            <code>http://[instructor-ip]:8000</code>).</li>
+          <li>Log in with the shared credentials provided in the same
+            announcement.</li>
+          <li>From the Splunk home screen, click
+            <strong>Search &amp; Reporting</strong> to open the search
+            interface.</li>
+          <li>Ensure the <strong>time range picker</strong> (top right of
+            the search bar) is set to <em>Last 24 hours</em> or
+            <em>Last 7 days</em> so you see recent data.</li>
+        </ol>
+      </div>
+
+      <!-- Exercise 1 -->
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <span aria-hidden="true">🔬</span> Exercise 1 — Count Events by Host
+        </div>
+        <div class="exercise-body">
+          <div class="exercise-goal">
+            <strong>Goal:</strong> See which devices are sending data to Splunk
+            and how many events each has generated. This is often the first
+            search an analyst runs when they open Splunk to get a situational
+            overview.
+          </div>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                In the Splunk search bar, type or paste the following query
+                exactly as shown:
+                <div class="spl-block" aria-label="Exercise 1 SPL query">
+                  <div class="spl-header">📝 Exercise 1 Query</div>
+                  <div class="spl-body">
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">host</span>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                Click the green <strong>Search</strong> button (or press
+                <kbd>Enter</kbd>). Wait for results to appear in the
+                Statistics tab below the search bar.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                You should see a table with two columns: <strong>host</strong>
+                and <strong>count</strong>. Each row represents a device
+                that has sent log data. Locate your pfSense entry.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <strong>Interpret the results:</strong> Note how many events
+                pfSense has generated compared to other hosts. A high count
+                from pfSense is expected — it logs every connection attempt
+                that matches a firewall rule.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">5</div>
+              <div class="step-content">
+                <strong>Take a screenshot</strong> of the results table
+                showing at least one row with pfSense data. You will need
+                this for Lab 9 Part D if you are pursuing extra credit.
+              </div>
+            </li>
+          </ol>
+          <div class="callout callout-info" style="margin-top:0.75rem;">
+            <div class="callout-title">📌 What You Just Did</div>
+            You ran your first SPL query. The <code>index=network</code>
+            told Splunk which data store to search. The
+            <code>| stats count by host</code> aggregated all events and
+            grouped them by the <code>host</code> field. No filtering was
+            applied — this is a "show me everything" overview query.
+          </div>
+        </div>
+      </div>
+
+      <!-- Exercise 2 -->
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <span aria-hidden="true">📈</span> Exercise 2 — Timechart of pfSense Events Over Time
+        </div>
+        <div class="exercise-body">
+          <div class="exercise-goal">
+            <strong>Goal:</strong> Visualize how pfSense event volume changes
+            over time. Spikes or drops in event rate can indicate security
+            events, configuration changes, or network problems.
+          </div>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                Clear the search bar and enter the following query:
+                <div class="spl-block" aria-label="Exercise 2 SPL query">
+                  <div class="spl-header">📝 Exercise 2 Query</div>
+                  <div class="spl-body">
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">timechart</span> span=<span class="s-value">1h</span>  <span class="s-func">count</span>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                Run the search. Click the <strong>Visualization</strong> tab
+                (next to Statistics) to see the results as a chart. Splunk
+                will automatically render a line or column chart showing
+                event count per hour.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                Adjust the time range picker to <em>Last 24 hours</em> if
+                you see only a flat line (this means not enough historical
+                data is available in a shorter window).
+              </div>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <strong>Optional extension:</strong> Modify the query to
+                split the timechart by action (block vs. pass):
+                <div class="spl-block" aria-label="Exercise 2 extension query">
+                  <div class="spl-header">📝 Extension: Split by Action</div>
+                  <div class="spl-body">
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">timechart</span> span=<span class="s-value">1h</span>  <span class="s-func">count</span> by <span class="s-field">action</span>
+                  </div>
+                </div>
+                This produces two series on the chart — one for blocked events
+                and one for passed events.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">5</div>
+              <div class="step-content">
+                <strong>Take a screenshot</strong> of the Visualization tab
+                showing the timechart. Note whether you can see any
+                interesting patterns (periodic spikes, quiet periods, etc.).
+              </div>
+            </li>
+          </ol>
+          <div class="callout callout-info" style="margin-top:0.75rem;">
+            <div class="callout-title">📌 What You Just Did</div>
+            By adding <code>sourcetype=pfsense:filterlog</code> you narrowed
+            the search to pfSense firewall log events only. The
+            <code>| timechart span=1h count</code> command bucketed those
+            events into 1-hour intervals and counted them — producing the
+            time-series data that Splunk rendered as a chart.
+          </div>
+        </div>
+      </div>
+
+      <!-- Exercise 3 -->
+      <div class="exercise-card">
+        <div class="exercise-header">
+          <span aria-hidden="true">🚫</span> Exercise 3 — Top 10 Blocked Source IPs
+        </div>
+        <div class="exercise-body">
+          <div class="exercise-goal">
+            <strong>Goal:</strong> Identify the source IP addresses
+            responsible for the most blocked traffic. This is a foundational
+            security query — the top blocked IPs are candidates for
+            investigation, threat intelligence lookup, or permanent firewall
+            block rules.
+          </div>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                Enter the following query:
+                <div class="spl-block" aria-label="Exercise 3 SPL query">
+                  <div class="spl-header">📝 Exercise 3 Query</div>
+                  <div class="spl-body">
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>  <span class="s-field">action</span>=<span class="s-value">block</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">src_ip</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">sort</span> -count
+  <span class="s-pipe">|</span>  <span class="s-cmd">head</span> <span class="s-value">10</span>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                Run the search. The Statistics tab will show a table with
+                two columns: <strong>src_ip</strong> (source IP address)
+                and <strong>count</strong> (number of times that IP was
+                blocked). The results are sorted from most blocked to least,
+                and only the top 10 are shown.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <strong>Examine the top result.</strong> Ask yourself:
+                <ul style="margin-top:0.4rem;">
+                  <li>Is this an internal IP (10.x.x.x, 192.168.x.x) or an
+                    external IP?</li>
+                  <li>Does the count seem unusually high compared to the
+                    others?</li>
+                  <li>What might explain repeated blocks from the same
+                    source?</li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <strong>Optional extension:</strong> Add destination port
+                to the grouping to see what services the top blocked IP
+                was trying to reach:
+                <div class="spl-block" aria-label="Exercise 3 extension query">
+                  <div class="spl-header">📝 Extension: Add Destination Port</div>
+                  <div class="spl-body">
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>  <span class="s-field">action</span>=<span class="s-value">block</span>
+  <span class="s-field">src_ip</span>=<span class="s-value">[paste top IP here]</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">dest_port</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">sort</span> -count
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">5</div>
+              <div class="step-content">
+                <strong>Take a screenshot</strong> of the top-10 results
+                table. This screenshot, along with those from Exercises 1
+                and 2, completes the Lab 9 Part D evidence requirement.
+              </div>
+            </li>
+          </ol>
+          <div class="callout callout-info" style="margin-top:0.75rem;">
+            <div class="callout-title">📌 What You Just Did</div>
+            This query chains four SPL commands. First, it filters to blocked
+            pfSense events. Then <code>| stats count by src_ip</code> groups
+            and counts by source IP. Then <code>| sort -count</code> orders
+            from highest to lowest. Finally <code>| head 10</code> trims the
+            output to the top 10 rows. This is a complete, production-quality
+            security query used by real SOC analysts.
+          </div>
+        </div>
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-6" onchange="updateProgress()">
+        <label for="chk-6">I have completed the Guided SPL Exercises.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 7 – Connecting Log Data to Security Practice
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-security" aria-hidden="true"></span>
+  <article class="content-section" id="article-7">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-7"
+         onclick="toggleSection(7)" onkeydown="keyToggle(event,7)">
+      <h2><span class="section-icon" aria-hidden="true">🛡️</span>
+          7 · Connecting Log Data to Security Practice</h2>
+      <button class="toggle-btn" id="toggle-7" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-7">
+
+      <p>
+        Raw log data becomes security intelligence when you know what
+        questions to ask. This section connects the SPL skills from
+        Section 6 to real security monitoring use cases you will encounter
+        in Project 3 and beyond.
+      </p>
+
+      <h3>Top Blocked Source IPs — What They Tell You</h3>
+      <p>
+        The top blocked IP query from Exercise 3 is more powerful than it
+        looks. Here is how a security analyst interprets the results:
+      </p>
+      <table class="data-table" aria-label="Interpreting top blocked IP results">
+        <thead>
+          <tr><th>Observation</th><th>What it might mean</th><th>Follow-up action</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>External IP with thousands of blocks in an hour</td>
+            <td>Port scan, brute-force attempt, or automated exploit tool targeting your network</td>
+            <td>Add a permanent block rule in pfSense; look up IP in threat intelligence (AbuseIPDB)</td>
+          </tr>
+          <tr>
+            <td>Internal IP appearing in blocked traffic</td>
+            <td>Misconfigured service trying to reach a blocked destination; or a compromised internal host</td>
+            <td>Investigate the internal host; check for malware or misconfiguration</td>
+          </tr>
+          <tr>
+            <td>Multiple IPs from the same /24 subnet</td>
+            <td>Coordinated scan from a single organization's IP block</td>
+            <td>Consider blocking the entire subnet range using a pfSense alias</td>
+          </tr>
+          <tr>
+            <td>Blocks targeting port 22 (SSH) or 3389 (RDP)</td>
+            <td>Automated credential stuffing or brute-force attack against remote access services</td>
+            <td>Ensure SSH/RDP is not exposed on WAN; consider fail2ban or geo-blocking</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>DHCP Lease Events in Splunk</h3>
+      <p>
+        DHCP logs forwarded from pfSense capture every lease assignment,
+        renewal, and release. This data is valuable for:
+      </p>
+      <ul>
+        <li><strong>Device inventory:</strong> Which MAC addresses have
+          been on your network and when?</li>
+        <li><strong>Incident response:</strong> At 14:32 yesterday, which
+          device had IP 10.0.3.147? Look it up in DHCP lease logs.</li>
+        <li><strong>Rogue device detection:</strong> A new MAC address
+          that has never appeared before suddenly obtaining a DHCP lease
+          is worth investigating.</li>
+      </ul>
+      <div class="spl-block" aria-label="DHCP lease events SPL query">
+        <div class="spl-header">📝 DHCP Lease Events</div>
+        <div class="spl-body">
+<span class="s-comment">-- All DHCP events from pfSense --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:dhcpd</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">client_mac</span>  <span class="s-field">client_ip</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">sort</span> -count
+        </div>
+      </div>
+
+      <h3>Traffic by Interface</h3>
+      <p>
+        pfSense logs include the interface on which each packet arrived.
+        Searching by interface helps you understand traffic patterns across
+        your network segments — for example, how much traffic is flowing
+        from the Clients subnet to the Servers subnet vs. directly to the
+        WAN.
+      </p>
+      <div class="spl-block" aria-label="Traffic by interface SPL query">
+        <div class="spl-header">📝 Traffic by Interface</div>
+        <div class="spl-body">
+<span class="s-comment">-- Event count by interface --</span>
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">interface</span>  <span class="s-field">action</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">sort</span> -count
+        </div>
+      </div>
+
+      <h3>Looking Ahead: Project 3</h3>
+      <p>
+        In <strong>Project 3</strong> (assigned Week 13), you will deploy
+        your own Splunk instance, install Universal Forwarders on your Linux
+        and Windows Server VMs, and build dashboards that monitor:
+      </p>
+      <ul>
+        <li>Failed SSH logins (Linux <code>/var/log/auth.log</code>)</li>
+        <li>Failed Windows logins (Windows Security Event ID 4625)</li>
+        <li>pfSense blocked traffic (the queries you practiced today)</li>
+        <li>Service changes and sudo usage</li>
+      </ul>
+      <p>
+        The SPL queries you ran in Section 6 are directly reusable in
+        Project 3. Save your screenshots and notes.
+      </p>
+
+      <div class="callout callout-security">
+        <div class="callout-title">🔒 CSLO 2 Connection</div>
+        Using Splunk to monitor firewall block events, identify top attacking
+        IPs, and correlate DHCP lease data with suspicious activity directly
+        applies CSLO 2 — Apply physical and network data security techniques.
+        Log monitoring is not just an administrative task; it is a core
+        security control.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-7" onchange="updateProgress()">
+        <label for="chk-7">I have read and understood Section 7.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 8 – Mini-Case: The Suspicious Traffic Spike
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-case" aria-hidden="true"></span>
+  <article class="content-section" id="article-8">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-8"
+         onclick="toggleSection(8)" onkeydown="keyToggle(event,8)">
+      <h2><span class="section-icon" aria-hidden="true">📊</span>
+          8 · Mini-Case: The Suspicious Traffic Spike</h2>
+      <button class="toggle-btn" id="toggle-8" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-8">
+
+      <div class="mini-case" role="region" aria-label="Mini-case scenario: The Suspicious Traffic Spike">
+        <div class="mini-case-header">📊 Scenario: Monday Morning at Mendocino Tech — A Splunk Alert</div>
+
+        <div class="scenario-box">
+          <p>
+            It is 8:15 AM on Monday. You are the on-call network administrator
+            at Mendocino Tech. You open the Splunk dashboard and notice
+            something unusual in the pfSense firewall timechart. The chart
+            below represents what you see:
+          </p>
+
+          <!-- Timechart visual -->
+          <div class="timechart-visual" role="img" aria-label="Timechart showing normal traffic from 00:00 to 03:00, then a large spike from 03:00 to 04:00 from IP 198.51.100.47, then return to normal">
+            <div class="tc-title">pfSense Blocked Events — Last 8 Hours (sourcetype=pfsense:filterlog action=block)</div>
+            <div class="tc-bars" aria-hidden="true">
+              <div class="tc-bar normal" style="height:18%;" title="00:00 – 12 events"></div>
+              <div class="tc-bar normal" style="height:22%;" title="00:30 – 14 events"></div>
+              <div class="tc-bar normal" style="height:15%;" title="01:00 – 10 events"></div>
+              <div class="tc-bar normal" style="height:20%;" title="01:30 – 13 events"></div>
+              <div class="tc-bar normal" style="height:18%;" title="02:00 – 12 events"></div>
+              <div class="tc-bar normal" style="height:25%;" title="02:30 – 16 events"></div>
+              <div class="tc-bar spike"  style="height:100%;" title="03:00 – 847 events (SPIKE)"></div>
+              <div class="tc-bar spike"  style="height:88%;" title="03:30 – 742 events"></div>
+              <div class="tc-bar spike"  style="height:40%;" title="04:00 – 340 events (declining)"></div>
+              <div class="tc-bar normal" style="height:20%;" title="04:30 – 13 events"></div>
+              <div class="tc-bar normal" style="height:17%;" title="05:00 – 11 events"></div>
+              <div class="tc-bar normal" style="height:22%;" title="05:30 – 14 events"></div>
+              <div class="tc-bar normal" style="height:19%;" title="06:00 – 12 events"></div>
+              <div class="tc-bar normal" style="height:24%;" title="06:30 – 15 events"></div>
+              <div class="tc-bar normal" style="height:21%;" title="07:00 – 13 events"></div>
+              <div class="tc-bar normal" style="height:18%;" title="07:30 – 12 events"></div>
+            </div>
+            <div class="tc-axis" aria-hidden="true">
+              <span>00:00</span><span>01:00</span><span>02:00</span>
+              <span>03:00</span><span>04:00</span><span>05:00</span>
+              <span>06:00</span><span>07:00</span><span>08:00</span>
+            </div>
+            <div class="tc-legend" aria-hidden="true">
+              <div class="tc-legend-item">
+                <div class="tc-swatch" style="background:#2e5f8a;"></div>
+                Normal traffic (~10–25 events/30 min)
+              </div>
+              <div class="tc-legend-item">
+                <div class="tc-swatch" style="background:#f97583;"></div>
+                Spike (03:00–04:30 · 847–340 events/30 min)
+              </div>
+            </div>
+          </div>
+
+          <p>
+            You run the top-blocked-IP query (Exercise 3) filtered to the
+            spike window (03:00–04:30) and see that <strong>98% of the blocked
+            events during the spike came from a single source IP:
+            <code>198.51.100.47</code></strong> — an external address you
+            do not recognize. The destination ports targeted were
+            <code>22</code> (SSH), <code>3389</code> (RDP), <code>445</code>
+            (SMB), and <code>23</code> (Telnet).
+          </p>
+        </div>
+
+        <!-- Question 1 -->
+        <div class="case-question">
+          <p>❓ Question 1: What does this traffic pattern suggest? What type of activity is most likely occurring?</p>
+          <button class="reveal-btn" onclick="revealAnswer('case-ans1')"
+                  aria-expanded="false" aria-controls="case-ans1">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="case-ans1" role="region" aria-label="Model answer 1">
+            <strong>Likely Activity — Automated Port Scan / Credential Attack:</strong>
+            The pattern strongly suggests an <strong>automated port scan
+            followed by service exploitation attempts</strong> from a single
+            external IP. Key indicators:
+            <ul style="margin-top:0.5rem;">
+              <li>The <strong>sudden spike</strong> starting at 03:00 (overnight,
+                when administrators are not watching) is consistent with
+                automated attack tools.</li>
+              <li>The <strong>targeted ports</strong> — SSH (22), RDP (3389),
+                SMB (445), Telnet (23) — are all remote access or file-sharing
+                services commonly targeted in credential brute-force attacks
+                and ransomware pre-staging.</li>
+              <li>The <strong>gradual decline</strong> after 04:00 suggests
+                the tool completed its scan range or moved on after finding
+                no open ports.</li>
+              <li>The fact that <strong>pfSense blocked all of it</strong>
+                means your firewall rules are working — the attacker found
+                no open services on the WAN interface.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="case-question">
+          <p>❓ Question 2: What additional SPL searches would you run to investigate further?</p>
+          <button class="reveal-btn" onclick="revealAnswer('case-ans2')"
+                  aria-expanded="false" aria-controls="case-ans2">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="case-ans2" role="region" aria-label="Model answer 2">
+            <strong>Follow-Up Searches:</strong>
+            <ol style="margin-top:0.5rem;">
+              <li>
+                <strong>Check all ports targeted by this IP:</strong>
+                <div class="spl-block" style="margin:0.5rem 0;" aria-label="Follow-up search 1">
+                  <div class="spl-header">📝 All Ports Targeted</div>
+                  <div class="spl-body" style="font-size:0.78rem;">
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>  <span class="s-field">src_ip</span>=<span class="s-value">198.51.100.47</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">dest_port</span>  <span class="s-pipe">|</span>  <span class="s-cmd">sort</span> -count
+                  </div>
+                </div>
+              </li>
+              <li>
+                <strong>Check if this IP appears in any <em>passed</em>
+                traffic (i.e., did anything get through?):</strong>
+                <div class="spl-block" style="margin:0.5rem 0;" aria-label="Follow-up search 2">
+                  <div class="spl-header">📝 Check for Passed Traffic</div>
+                  <div class="spl-body" style="font-size:0.78rem;">
+<span class="s-index">index</span>=<span class="s-value">network</span>  <span class="s-field">sourcetype</span>=<span class="s-value">pfsense:filterlog</span>
+  <span class="s-field">src_ip</span>=<span class="s-value">198.51.100.47</span>  <span class="s-field">action</span>=<span class="s-value">pass</span>
+  <span class="s-pipe">|</span>  <span class="s-cmd">stats</span> <span class="s-func">count</span> by <span class="s-field">dest_port</span>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <strong>Check if this IP has appeared before (historical
+                context):</strong> Expand the time range to "Last 30 days"
+                and run the same blocked-IP query to see if
+                <code>198.51.100.47</code> is a repeat offender.
+              </li>
+              <li>
+                <strong>External lookup:</strong> Search the IP in a threat
+                intelligence service (AbuseIPDB, VirusTotal, Shodan) to see
+                if it is a known malicious host.
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="case-question">
+          <p>❓ Question 3: What firewall action would you consider taking, and how does this connect to Module 9.3?</p>
+          <button class="reveal-btn" onclick="revealAnswer('case-ans3')"
+                  aria-expanded="false" aria-controls="case-ans3">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="case-ans3" role="region" aria-label="Model answer 3">
+            <strong>Recommended Firewall Action:</strong>
+            <ol style="margin-top:0.5rem;">
+              <li>
+                <strong>Add an explicit block rule in pfSense for this IP:</strong>
+                Navigate to Firewall → Rules → WAN in pfSense and add a rule
+                at the top of the ruleset:
+                <ul style="margin-top:0.4rem;">
+                  <li>Action: <strong>Block</strong></li>
+                  <li>Source: <code>198.51.100.47</code></li>
+                  <li>Destination: <em>any</em></li>
+                  <li>Log: <strong>Yes</strong> (so Splunk continues to record
+                    if the IP returns)</li>
+                  <li>Description: <em>Block known scanner — detected via Splunk
+                    2026-03-16 03:00 spike</em></li>
+                </ul>
+              </li>
+              <li>
+                <strong>Module 9.3 connection:</strong> This action directly
+                applies the firewall rule concepts from Module 9.3 —
+                specifically rule ordering (the explicit block rule must be
+                placed <em>above</em> any allow rules so it matches first),
+                and the use of logging on block rules to maintain the audit
+                trail in Splunk.
+              </li>
+              <li>
+                <strong>Consider blocking the entire subnet</strong>
+                (<code>198.51.100.0/24</code>) using a pfSense Alias if
+                threat intelligence confirms the block is a known malicious
+                range. Aliases allow you to maintain a list of IPs/subnets
+                that is easy to update without editing individual rules.
+              </li>
+              <li>
+                <strong>Document the incident</strong> — note the time,
+                source IP, targeted ports, block count, and action taken.
+                This is the beginning of an incident report.
+              </li>
+            </ol>
+          </div>
+        </div>
+
+      </div><!-- end mini-case -->
+
+      <div class="callout callout-security">
+        <div class="callout-title">🔒 The Splunk → Firewall Feedback Loop</div>
+        This mini-case illustrates the core value of combining a SIEM with
+        a firewall: Splunk <em>detects</em> the pattern, and pfSense
+        <em>enforces</em> the response. In Project 3 you will build
+        automated alerts that can notify you of exactly this type of spike
+        without requiring manual dashboard review.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-8" onchange="updateProgress()">
+        <label for="chk-8">I have read and understood Section 8.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 9 – Knowledge Check
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-kc" aria-hidden="true"></span>
+  <article class="content-section" id="article-9">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-9"
+         onclick="toggleSection(9)" onkeydown="keyToggle(event,9)">
+      <h2><span class="section-icon" aria-hidden="true">✅</span>
+          9 · Knowledge Check (Ungraded)</h2>
+      <button class="toggle-btn" id="toggle-9" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-9">
+
+      <p style="font-size:0.92rem;margin-bottom:1rem;">
+        Three quick questions covering the key concepts from this module.
+        These are <strong>not graded</strong> — answer honestly and read
+        the explanatory feedback carefully. You may re-attempt by
+        refreshing the page.
+      </p>
+
+      <div class="kc-wrap" id="kc-form">
+
+        <!-- Q1: Default syslog port (short answer) -->
+        <div class="kc-question" id="kc-q1">
+          <p class="q-text">
+            Q1 · Splunk (and most syslog collectors) receive syslog messages
+            from network devices like pfSense on which default port?
+            <br><small style="font-weight:400;color:#555;">
+              Type the port number only (e.g., 80).
+            </small>
+          </p>
+          <input type="text" class="kc-text-input" id="kc1-input"
+                 placeholder="Port number…" aria-label="Default syslog port answer"
+                 onkeydown="if(event.key==='Enter') checkQ1()">
+          <br>
+          <button class="kc-submit-btn" onclick="checkQ1()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q1" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q2: SPL command that counts events by a field (multiple choice) -->
+        <div class="kc-question" id="kc-q2">
+          <p class="q-text">
+            Q2 · In SPL, which command counts events grouped by the values
+            of a field?
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="a">
+                <code>| timechart count</code>
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="b">
+                <code>| stats count by &lt;field&gt;</code>
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="c">
+                <code>| table &lt;field&gt;</code>
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="d">
+                <code>| search &lt;field&gt;</code>
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ2()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q2" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q3: Centralized logging replaces local log review (true/false) -->
+        <div class="kc-question" id="kc-q3">
+          <p class="q-text">
+            Q3 · True or False: Centralized logging (using a tool like
+            Splunk) eliminates the need to review logs on individual servers.
+            Once logs are forwarded to Splunk, local log review is no longer
+            necessary.
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc3" value="true">
+                True
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc3" value="false">
+                False
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ3()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q3" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Score summary -->
+        <div class="kc-score-summary" id="kc-score" role="region" aria-live="polite">
+          <div>Your Score</div>
+          <div class="score-big" id="score-display">–</div>
+          <div id="score-msg" style="font-size:0.9rem;margin-top:0.4rem;"></div>
+        </div>
+
+      </div><!-- end kc-wrap -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-9" onchange="updateProgress()">
+        <label for="chk-9">I have completed the Knowledge Check.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ── Footer ── -->
+  <footer style="text-align:center;font-size:0.78rem;color:#666;margin-top:2rem;padding-top:1rem;border-top:1px solid #dde3ec;">
+    CSC 152 · Network Operating Systems and Administration · Mendocino College<br>
+    Module 9.5 · Week 9 · March 16–22, 2026 · Instructor: David Pai<br>
+    <em>This is the fifth and final module in Week 9. Splunk skills continue in Weeks 10–13 and Project 3.</em>
+  </footer>
+
+</main><!-- end .page-wrap -->
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+  /* ── Section Toggle ── */
+  function toggleSection(n) {
+    const body   = document.getElementById('body-' + n);
+    const btn    = document.getElementById('toggle-' + n);
+    const header = body.previousElementSibling;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    header.setAttribute('aria-expanded', String(!isOpen));
+  }
+
+  function keyToggle(e, n) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(n); }
+  }
+
+  /* ── Tab Switcher ── */
+  function switchTab(id) {
+    const panels  = document.querySelectorAll('.tab-panel');
+    const buttons = document.querySelectorAll('.tab-btn');
+    panels.forEach(p  => p.classList.remove('active'));
+    buttons.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    const ap = document.getElementById('tab-' + id);
+    const ab = document.getElementById('tbtn-' + id);
+    if (ap) ap.classList.add('active');
+    if (ab) { ab.classList.add('active'); ab.setAttribute('aria-selected','true'); }
+  }
+
+  function keyTab(e, id) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab(id); }
+  }
+
+  /* ── Reveal Answer ── */
+  function revealAnswer(id) {
+    const el  = document.getElementById(id);
+    const btn = el.previousElementSibling;
+    el.classList.toggle('visible');
+    const visible = el.classList.contains('visible');
+    btn.textContent = visible ? 'Hide Model Answer' : 'Show Model Answer';
+    btn.setAttribute('aria-expanded', String(visible));
+  }
+
+  /* ── Progress Tracker ── */
+  function updateProgress() {
+    const total   = 9;
+    const checked = document.querySelectorAll('input[type="checkbox"][id^="chk-"]:checked').length;
+    const pct     = Math.round((checked / total) * 100);
+    const bar     = document.getElementById('progress-bar');
+    const outer   = document.getElementById('progress-bar-outer');
+    const count   = document.getElementById('progress-count');
+    bar.style.width = pct + '%';
+    outer.setAttribute('aria-valuenow', checked);
+    count.textContent = checked + ' / ' + total;
+  }
+
+  /* ── Knowledge Check ── */
+  let kcScore    = 0;
+  let kcAnswered = [false, false, false];
+
+  function showFeedback(fbId, correct, message) {
+    const el = document.getElementById(fbId);
+    el.className = 'kc-feedback ' + (correct ? 'correct' : 'incorrect');
+    el.innerHTML = (correct ? '✅ ' : '❌ ') + message;
+  }
+
+  function maybeShowScore() {
+    if (!kcAnswered.every(Boolean)) return;
+    const summary = document.getElementById('kc-score');
+    const display = document.getElementById('score-display');
+    const msg     = document.getElementById('score-msg');
+    summary.classList.add('visible');
+    display.textContent = kcScore + ' / 3';
+    const msgs = [
+      'Keep reviewing — re-read the sections and try again after a refresh.',
+      'Good effort! Review the sections for the questions you missed.',
+      'Almost there! Double-check the one you missed.',
+      '🎉 Perfect score! You are ready for the Splunk content in Quiz 9.'
+    ];
+    msg.textContent = msgs[kcScore] || '';
+  }
+
+  function checkQ1() {
+    if (kcAnswered[0]) return;
+    const input = document.getElementById('kc1-input');
+    const val   = input.value.trim().replace(/\s+/g, '');
+    const correct = val === '514';
+    kcAnswered[0] = true;
+    if (correct) kcScore++;
+    input.disabled = true;
+    showFeedback('fb-q1', correct,
+      correct
+        ? 'Correct! The default syslog port is <strong>514</strong> (UDP or TCP). This is the port pfSense sends to and the port Splunk (and rsyslog, syslog-ng) listens on by default.'
+        : 'Not quite. The correct answer is <strong>514</strong>. Syslog uses UDP port 514 by default (TCP 514 is also supported). This is one of the most commonly tested port numbers in network administration — make sure it is on your port reference sheet.'
+    );
+    maybeShowScore();
+  }
+
+  function checkQ2() {
+    if (kcAnswered[1]) return;
+    const sel = document.querySelector('input[name="kc2"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'b';
+    kcAnswered[1] = true;
+    if (correct) kcScore++;
+    document.querySelectorAll('input[name="kc2"]').forEach(r => r.disabled = true);
+    showFeedback('fb-q2', correct,
+      correct
+        ? 'Correct! <strong>| stats count by &lt;field&gt;</strong> groups events by the values of the specified field and counts how many events fall into each group. It is one of the most frequently used SPL commands.'
+        : 'Not quite. The correct answer is <strong>| stats count by &lt;field&gt;</strong>. The <code>timechart</code> command also counts events but organizes them over time (not by field value). The <code>table</code> command formats output as a table, and <code>search</code> filters events — neither counts by field.'
+    );
+    maybeShowScore();
+  }
+
+  function checkQ3() {
+    if (kcAnswered[2]) return;
+    const sel = document.querySelector('input[name="kc3"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'false';
+    kcAnswered[2] = true;
+    if (correct) kcScore++;
+    document.querySelectorAll('input[name="kc3"]').forEach(r => r.disabled = true);
+    showFeedback('fb-q3', correct,
+      correct
+        ? 'Correct! The statement is <strong>False</strong>. Centralized logging <em>supplements</em> local log review — it does not replace it. Local logs remain important for service-specific troubleshooting, for systems that cannot forward logs, and as a backup when the centralized platform has issues. Think of Splunk as a powerful tool that makes log review faster and more comprehensive, not a substitute for understanding where logs come from.'
+        : 'Incorrect. The statement is <strong>False</strong>. Centralized logging is a powerful supplement to local log review, but it does not eliminate the need for it. Local logs remain essential for troubleshooting, for systems that cannot forward logs, and as a cross-check against the centralized platform. A good administrator understands both.'
+    );
+    maybeShowScore();
+  }
+</script>
+</body>
+</html>

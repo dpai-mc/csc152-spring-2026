@@ -1,0 +1,2566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 9.3 – Firewall Fundamentals &amp; pfSense Introduction | CSC 152</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f6f9;
+    color: #1a1a2e;
+    line-height: 1.7;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute; top: -100%; left: 1rem;
+    background: #1a3a5c; color: #fff; padding: 0.5rem 1rem;
+    border-radius: 0 0 4px 4px; font-weight: 700; z-index: 9999;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Navigation ── */
+  nav#main-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #1a3a5c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  nav#main-nav .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.25rem; padding: 0.5rem 1rem;
+  }
+  nav#main-nav .nav-brand {
+    color: #f0c040; font-weight: 700; font-size: 0.85rem;
+    margin-right: 0.75rem; white-space: nowrap;
+  }
+  nav#main-nav a {
+    color: #cfe2ff; text-decoration: none;
+    font-size: 0.82rem; font-weight: 700;
+    min-width: 1.9rem; height: 1.9rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+  }
+  nav#main-nav a:hover { background: #2e5f8a; color: #fff; }
+  nav#main-nav a:focus-visible {
+    outline: 3px solid #f0c040; outline-offset: 2px;
+    background: #2e5f8a; color: #fff;
+  }
+  nav#main-nav a[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute; top: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: #0d2137; color: #fff;
+    font-size: 0.72rem; font-weight: 500;
+    white-space: nowrap; padding: 0.3rem 0.6rem;
+    border-radius: 4px; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; z-index: 200;
+  }
+  nav#main-nav a[data-tooltip]:hover::after,
+  nav#main-nav a[data-tooltip]:focus-visible::after { opacity: 1; }
+
+  /* ── Page Layout ── */
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── Module Header ── */
+  .module-header {
+    background: linear-gradient(135deg, #1a3a5c 0%, #2e5f8a 100%);
+    color: #fff; border-radius: 10px; padding: 2rem 2rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .module-header .badge {
+    display: inline-block; background: #f0c040; color: #1a1a2e;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+  .module-header h1 { font-size: 1.75rem; line-height: 1.25; margin-bottom: 0.5rem; }
+  .module-header .meta {
+    font-size: 0.85rem; opacity: 0.85; display: flex; flex-wrap: wrap; gap: 1rem;
+    margin-top: 0.75rem;
+  }
+  .module-header .meta span::before { content: "• "; }
+  .module-header .meta span:first-child::before { content: ""; }
+
+  /* ── Progress Bar ── */
+  .progress-container {
+    background: #dde3ec; border-radius: 8px; padding: 1rem 1.25rem;
+    margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;
+  }
+  .progress-label { font-size: 0.82rem; font-weight: 600; white-space: nowrap; color: #1a3a5c; }
+  .progress-bar-outer {
+    flex: 1; height: 10px; background: #b8c4d4; border-radius: 10px; overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%; width: 0%; background: #2e7d32;
+    border-radius: 10px; transition: width 0.4s ease;
+  }
+  .progress-count { font-size: 0.82rem; font-weight: 700; color: #1a3a5c; white-space: nowrap; }
+
+  /* ── Section Anchors ── */
+  .section-anchor {
+    display: block; height: 0; visibility: hidden;
+    margin-top: -70px; padding-top: 70px;
+  }
+
+  /* ── Content Sections ── */
+  .content-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 1.75rem; overflow: hidden;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.5rem; cursor: pointer;
+    background: #f0f4fa; border-bottom: 2px solid #dde3ec;
+    user-select: none;
+  }
+  .section-header:hover { background: #e4ecf7; }
+  .section-header:focus-visible { outline: 3px solid #1a3a5c; outline-offset: -3px; }
+  .section-header h2 {
+    font-size: 1.1rem; color: #1a3a5c; display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-icon { font-size: 1.2rem; }
+  .toggle-btn {
+    background: none; border: none; cursor: pointer;
+    color: #1a3a5c; font-size: 1.2rem; padding: 0.25rem;
+    border-radius: 4px; transition: transform 0.25s; line-height: 1;
+  }
+  .toggle-btn:focus-visible { outline: 3px solid #1a3a5c; outline-offset: 2px; }
+  .toggle-btn.open { transform: rotate(180deg); }
+  .section-body { padding: 1.5rem; display: none; }
+  .section-body.open { display: block; }
+
+  /* ── Completion Checkbox ── */
+  .completion-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #eee;
+  }
+  .completion-row input[type="checkbox"] {
+    width: 1.1rem; height: 1.1rem; accent-color: #2e7d32; cursor: pointer;
+  }
+  .completion-row label { font-size: 0.85rem; color: #444; cursor: pointer; }
+
+  /* ── Typography ── */
+  h3 { font-size: 1rem; color: #1a3a5c; margin: 1.25rem 0 0.5rem; }
+  h4 { font-size: 0.92rem; color: #2e5f8a; margin: 1rem 0 0.4rem; }
+  p { margin-bottom: 0.85rem; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 0.85rem; }
+  li { margin-bottom: 0.3rem; }
+  strong { color: #1a1a2e; }
+  code {
+    background: #eef2f7; color: #c0392b;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 3px;
+  }
+
+  /* ── Callout Boxes ── */
+  .callout {
+    border-left: 4px solid; border-radius: 0 6px 6px 0;
+    padding: 0.85rem 1rem; margin: 1rem 0; font-size: 0.92rem;
+  }
+  .callout-info     { border-color: #2e5f8a; background: #eef4fb; }
+  .callout-tip      { border-color: #2e7d32; background: #edf7ee; }
+  .callout-warning  { border-color: #e65100; background: #fff3e0; }
+  .callout-security { border-color: #6a1b9a; background: #f3e5f5; }
+  .callout-title { font-weight: 700; margin-bottom: 0.3rem; }
+
+  /* ── Code Block ── */
+  .code-block {
+    background: #1e2a3a; color: #cdd9e5;
+    border-radius: 8px; padding: 1.1rem 1.25rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.82rem; line-height: 1.65;
+    overflow-x: auto; margin: 0.85rem 0; tab-size: 4;
+  }
+  .code-block .cm { color: #8fa8c8; font-style: italic; }
+  .code-block .kw { color: #79b8ff; }
+  .code-block .st { color: #85e89d; }
+  .code-block .nm { color: #f0c040; }
+  .code-block .op { color: #ffab70; }
+  .code-block .pu { color: #cdd9e5; }
+
+  /* ── Step List ── */
+  .step-list { list-style: none; padding: 0; margin: 0.85rem 0; }
+  .step-list li { display: flex; gap: 0.85rem; align-items: flex-start; margin-bottom: 0.85rem; }
+  .step-num {
+    flex-shrink: 0; width: 1.8rem; height: 1.8rem;
+    background: #1a3a5c; color: #f0c040;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.8rem;
+  }
+  .step-content { flex: 1; padding-top: 0.15rem; }
+
+  /* ── Tables ── */
+  .data-table {
+    width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.85rem 0;
+    overflow-x: auto; display: block;
+  }
+  .data-table th {
+    background: #1a3a5c; color: #fff; text-align: left;
+    padding: 0.6rem 0.85rem; font-size: 0.82rem;
+  }
+  .data-table td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #eee; }
+  .data-table tr:nth-child(even) td { background: #f8fafc; }
+  .data-table tr:hover td { background: #eef4fb; }
+
+  /* ── Tabs ── */
+  .tab-group { margin: 1rem 0; }
+  .tab-buttons {
+    display: flex; gap: 0; border-bottom: 2px solid #1a3a5c; flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: #eef2f7; border: none; cursor: pointer;
+    padding: 0.55rem 1.1rem; font-size: 0.88rem; font-weight: 600;
+    color: #1a3a5c; border-radius: 6px 6px 0 0;
+    border: 1px solid #dde3ec; border-bottom: none;
+    margin-right: 3px; transition: background 0.15s;
+  }
+  .tab-btn:hover { background: #d6e4f5; }
+  .tab-btn.active { background: #1a3a5c; color: #f0c040; border-color: #1a3a5c; }
+  .tab-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .tab-panel {
+    display: none; padding: 1.25rem; background: #fff;
+    border: 1px solid #dde3ec; border-top: none; border-radius: 0 0 6px 6px;
+  }
+  .tab-panel.active { display: block; }
+
+  /* ── SVG / Diagram Containers ── */
+  .diagram-wrap {
+    background: #f8fafc; border: 1px solid #dde3ec;
+    border-radius: 8px; padding: 1.25rem; margin: 1rem 0;
+    overflow-x: auto; text-align: center;
+  }
+  .diagram-wrap svg { max-width: 100%; height: auto; }
+
+  /* ── Flowchart (rule processing) ── */
+  .flow-box {
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 6px; padding: 0.5rem 1rem;
+    font-size: 0.85rem; font-weight: 600; text-align: center;
+  }
+  .flow-packet  { background: #e3f2fd; color: #1565c0; border: 2px solid #1565c0; }
+  .flow-rule    { background: #fff3e0; color: #e65100; border: 2px solid #e65100; }
+  .flow-match   { background: #f3e5f5; color: #6a1b9a; border: 2px solid #6a1b9a; }
+  .flow-accept  { background: #e8f5e9; color: #2e7d32; border: 2px solid #2e7d32; }
+  .flow-drop    { background: #ffebee; color: #b71c1c; border: 2px solid #c62828; }
+  .flow-next    { background: #f8fafc;  color: #455a64; border: 2px dashed #90a4ae; }
+  .flow-deny    { background: #fce4ec; color: #880e4f; border: 2px solid #880e4f; }
+  .flow-arrow-v {
+    text-align: center; font-size: 1.3rem; color: #2e5f8a;
+    margin: 0.2rem 0; line-height: 1;
+  }
+  .flow-grid {
+    display: grid; grid-template-columns: 1fr; gap: 0;
+    max-width: 340px; margin: 0 auto;
+  }
+  .flow-branch {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+    margin: 0.2rem 0;
+  }
+
+  /* ── Zone Topology Diagram ── */
+  .zone-diagram {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0; margin: 1rem 0;
+  }
+  .zone-internet {
+    background: #e3f2fd; border: 2px solid #1565c0;
+    border-radius: 8px; padding: 0.6rem 2rem;
+    font-weight: 700; color: #1565c0; font-size: 0.9rem;
+  }
+  .zone-arrow {
+    font-size: 1.5rem; color: #2e5f8a; line-height: 1.2;
+    text-align: center;
+  }
+  .zone-fw-box {
+    background: linear-gradient(135deg, #1a3a5c, #2e5f8a);
+    color: #fff; border-radius: 10px; padding: 1rem 2rem;
+    text-align: center; min-width: 260px;
+  }
+  .zone-fw-box .fw-title { font-weight: 800; font-size: 1rem; color: #f0c040; }
+  .zone-fw-box .fw-sub { font-size: 0.78rem; opacity: 0.85; margin-top: 0.2rem; }
+  .zone-iface-row {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;
+    margin-top: 0.6rem;
+  }
+  .zone-iface {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 4px; padding: 0.2rem 0.55rem; font-size: 0.75rem;
+  }
+  .zone-segments {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;
+    margin-top: 0;
+  }
+  .zone-seg {
+    border-radius: 8px; padding: 0.75rem 1rem; min-width: 150px;
+    text-align: center; border: 2px solid;
+  }
+  .zone-seg-title { font-weight: 700; font-size: 0.85rem; }
+  .zone-seg-ip   { font-family: monospace; font-size: 0.78rem; margin-top: 0.2rem; }
+  .zone-seg-vms  { font-size: 0.75rem; margin-top: 0.3rem; color: #555; }
+  .seg-mgmt  { background: #e8f5e9; border-color: #2e7d32; }
+  .seg-mgmt  .zone-seg-title { color: #2e7d32; }
+  .seg-srv   { background: #fff3e0; border-color: #e65100; }
+  .seg-srv   .zone-seg-title { color: #e65100; }
+  .seg-cli   { background: #e3f2fd; border-color: #1565c0; }
+  .seg-cli   .zone-seg-title { color: #1565c0; }
+  .seg-wan   { background: #f3e5f5; border-color: #6a1b9a; }
+  .seg-wan   .zone-seg-title { color: #6a1b9a; }
+
+  /* ── iptables Chain Diagram ── */
+  .chain-diagram {
+    display: flex; flex-wrap: wrap; gap: 0.75rem;
+    margin: 1rem 0; justify-content: flex-start;
+  }
+  .chain-box {
+    border-radius: 8px; border: 2px solid; padding: 0.75rem 1rem; min-width: 180px;
+  }
+  .chain-box .chain-name { font-weight: 800; font-size: 0.95rem; margin-bottom: 0.4rem; }
+  .chain-box .chain-desc { font-size: 0.82rem; color: #333; }
+  .chain-input   { background: #e8f5e9; border-color: #2e7d32; }
+  .chain-input   .chain-name { color: #2e7d32; }
+  .chain-output  { background: #e3f2fd; border-color: #1565c0; }
+  .chain-output  .chain-name { color: #1565c0; }
+  .chain-forward { background: #fff3e0; border-color: #e65100; }
+  .chain-forward .chain-name { color: #e65100; }
+
+  .target-row {
+    display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.75rem 0;
+  }
+  .target-badge {
+    border-radius: 5px; padding: 0.3rem 0.75rem;
+    font-size: 0.82rem; font-weight: 700; font-family: monospace;
+  }
+  .target-accept { background: #e8f5e9; color: #2e7d32; border: 1px solid #81c784; }
+  .target-drop   { background: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+  .target-reject { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+
+  /* ── Mini-Case ── */
+  .mini-case {
+    background: #fff8e1; border: 2px solid #f0c040;
+    border-radius: 8px; padding: 1.25rem; margin: 1rem 0;
+  }
+  .mini-case-header { font-weight: 700; color: #e65100; margin-bottom: 0.75rem; font-size: 1rem; }
+  .scenario-box {
+    background: #fff; border-left: 4px solid #e65100;
+    padding: 0.85rem 1rem; border-radius: 0 6px 6px 0;
+    margin-bottom: 1rem; font-size: 0.92rem;
+  }
+  .case-question { margin: 0.75rem 0; }
+  .case-question p { font-weight: 600; margin-bottom: 0.35rem; font-size: 0.92rem; }
+  .reveal-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.4rem 0.9rem; border-radius: 5px; font-size: 0.82rem;
+    font-weight: 600; transition: background 0.15s;
+  }
+  .reveal-btn:hover { background: #2e5f8a; }
+  .reveal-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .model-answer {
+    display: none; background: #e8f5e9; border-left: 4px solid #2e7d32;
+    padding: 0.75rem 1rem; margin-top: 0.5rem; border-radius: 0 6px 6px 0;
+    font-size: 0.88rem;
+  }
+  .model-answer.visible { display: block; }
+
+  /* ── Knowledge Check ── */
+  .kc-wrap { margin: 0.85rem 0; }
+  .kc-question {
+    background: #f0f4fa; border-radius: 8px; padding: 1.1rem 1.25rem;
+    margin-bottom: 1.25rem; border: 1px solid #dde3ec;
+  }
+  .kc-question p.q-text { font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem; }
+  .kc-options { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .kc-options li label {
+    display: flex; align-items: center; gap: 0.6rem;
+    cursor: pointer; padding: 0.45rem 0.75rem;
+    border-radius: 5px; border: 1px solid #cdd5e0;
+    background: #fff; font-size: 0.9rem; transition: background 0.12s;
+  }
+  .kc-options li label:hover { background: #eef4fb; }
+  .kc-options li input[type="radio"] { accent-color: #1a3a5c; }
+  .kc-text-input {
+    width: 100%; max-width: 480px; padding: 0.45rem 0.75rem;
+    border: 1px solid #cdd5e0; border-radius: 5px;
+    font-size: 0.9rem; margin-bottom: 0.5rem; font-family: inherit;
+  }
+  .kc-text-input:focus { outline: 2px solid #1a3a5c; }
+  .kc-submit-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.45rem 1.1rem; border-radius: 5px; font-size: 0.88rem;
+    font-weight: 600; transition: background 0.15s; margin-top: 0.5rem;
+  }
+  .kc-submit-btn:hover { background: #2e5f8a; }
+  .kc-submit-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .kc-feedback {
+    display: none; margin-top: 0.65rem; padding: 0.65rem 0.9rem;
+    border-radius: 6px; font-size: 0.88rem; font-weight: 500;
+  }
+  .kc-feedback.correct   { background: #e8f5e9; color: #1b5e20; border-left: 4px solid #2e7d32; display: block; }
+  .kc-feedback.incorrect { background: #ffebee; color: #b71c1c; border-left: 4px solid #c62828; display: block; }
+  .kc-score-summary {
+    display: none; background: #1a3a5c; color: #fff;
+    border-radius: 8px; padding: 1rem 1.25rem; margin-top: 0.5rem;
+    text-align: center; font-size: 1rem;
+  }
+  .kc-score-summary.visible { display: block; }
+  .kc-score-summary .score-big { font-size: 2rem; font-weight: 900; color: #f0c040; }
+
+  /* ── Rule Table ── */
+  .rule-table {
+    width: 100%; border-collapse: collapse; font-size: 0.83rem; margin: 0.85rem 0;
+    overflow-x: auto; display: block;
+  }
+  .rule-table th {
+    background: #1a3a5c; color: #fff; text-align: left;
+    padding: 0.5rem 0.75rem; font-size: 0.8rem;
+  }
+  .rule-table td { padding: 0.45rem 0.75rem; border-bottom: 1px solid #eee; font-family: monospace; font-size: 0.82rem; }
+  .rule-table tr:nth-child(even) td { background: #f8fafc; }
+  .rule-table tr:hover td { background: #eef4fb; }
+  .action-pass   { color: #2e7d32; font-weight: 700; }
+  .action-block  { color: #b71c1c; font-weight: 700; }
+  .action-reject { color: #e65100; font-weight: 700; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .module-header h1 { font-size: 1.35rem; }
+    nav#main-nav .nav-inner { gap: 0.15rem; }
+    nav#main-nav a { font-size: 0.72rem; padding: 0.25rem 0.4rem; }
+    .zone-segments { flex-direction: column; align-items: center; }
+    .chain-diagram { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ══════════════════════════════════════════════
+     TOP NAVIGATION
+══════════════════════════════════════════════ -->
+<nav id="main-nav" aria-label="Module sections">
+  <div class="nav-inner">
+    <span class="nav-brand">9.3 Firewalls &amp; pfSense</span>
+    <a href="#sec-why"       data-tooltip="Why Firewalls Matter"           aria-label="Section 1: Why Firewalls Matter">1</a>
+    <a href="#sec-types"     data-tooltip="Firewall Types"                 aria-label="Section 2: Firewall Types">2</a>
+    <a href="#sec-rules"     data-tooltip="Rule Components &amp; Ordering" aria-label="Section 3: Rule Components &amp; Ordering">3</a>
+    <a href="#sec-zones"     data-tooltip="Interface Zones"                aria-label="Section 4: Interface Zones">4</a>
+    <a href="#sec-linux"     data-tooltip="Linux Host Firewalls"           aria-label="Section 5: Linux Host Firewalls">5</a>
+    <a href="#sec-windows"   data-tooltip="Windows Defender Firewall"      aria-label="Section 6: Windows Defender Firewall">6</a>
+    <a href="#sec-pfsense"   data-tooltip="pfSense 2.7.2 Overview"         aria-label="Section 7: pfSense 2.7.2 Overview">7</a>
+    <a href="#sec-proxmox"   data-tooltip="pfSense in Proxmox"             aria-label="Section 8: pfSense in Proxmox">8</a>
+    <a href="#sec-wizard"    data-tooltip="pfSense Initial Configuration"  aria-label="Section 9: pfSense Initial Configuration">9</a>
+    <a href="#sec-segdesign" data-tooltip="Network Segmentation Design"    aria-label="Section 10: Network Segmentation Design">10</a>
+    <a href="#sec-minicase"  data-tooltip="Mini-Case: Locked Out"          aria-label="Section 11: Mini-Case: Locked Out After a Rule Change">11</a>
+    <a href="#sec-kc"        data-tooltip="Knowledge Check"                aria-label="Section 12: Knowledge Check">12</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════ -->
+<main id="main-content" class="page-wrap">
+
+  <!-- Module Header -->
+  <header class="module-header" role="banner">
+    <div class="badge">CSC 152 · Week 9 · Module 9.3</div>
+    <h1>Firewall Fundamentals &amp; pfSense Introduction</h1>
+    <p style="opacity:0.9;font-size:0.95rem;margin-top:0.5rem;">
+      Learn how firewalls work — stateful inspection, rule ordering, and implicit
+      deny — then deploy <strong>pfSense 2.7.2</strong> as your virtual firewall
+      appliance in Proxmox, the foundation for Project 2.
+    </p>
+    <div class="meta">
+      <span>Week 9 · March 16–22, 2026</span>
+      <span>Estimated time: ~2.0 hours</span>
+      <span>CSLO 2 · CSLO 3 · Week 9 Objectives 4</span>
+      <span>Supports: Quiz 9 · Lab 9 EC · Project 2 Parts A &amp; B</span>
+    </div>
+  </header>
+
+  <!-- Progress Bar -->
+  <div class="progress-container" role="region" aria-label="Section completion progress">
+    <span class="progress-label">Sections completed:</span>
+    <div class="progress-bar-outer" role="progressbar" aria-valuemin="0" aria-valuemax="12"
+         aria-valuenow="0" aria-label="Progress" id="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar"></div>
+    </div>
+    <span class="progress-count" id="progress-count">0 / 12</span>
+  </div>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 1 – Why Firewalls Matter
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-why" aria-hidden="true"></span>
+  <article class="content-section" id="article-1">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="true" aria-controls="body-1"
+         onclick="toggleSection(1)" onkeydown="keyToggle(event,1)">
+      <h2><span class="section-icon" aria-hidden="true">🛡️</span>
+          1 · Why Firewalls Matter</h2>
+      <button class="toggle-btn open" id="toggle-1" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body open" id="body-1">
+
+      <p>
+        Every network-connected system is a potential target. A
+        <strong>firewall</strong> is a security control that inspects network
+        traffic and decides — based on a set of rules — whether to allow or
+        block each packet. Without firewalls, every service running on every
+        machine is reachable by anyone on the network, creating an enormous
+        attack surface.
+      </p>
+
+      <h3>Defense in Depth</h3>
+      <p>
+        Firewalls are one layer in a <strong>defense-in-depth</strong> strategy.
+        No single control is perfect; the goal is to make an attacker defeat
+        multiple independent controls. A typical layered approach includes:
+      </p>
+      <ul>
+        <li><strong>Perimeter firewall</strong> — sits at the network boundary,
+          filters traffic entering and leaving the organization (e.g., pfSense
+          on the WAN interface).</li>
+        <li><strong>Internal segmentation firewall</strong> — separates internal
+          zones (Management, Servers, Clients) so a compromised client cannot
+          freely reach servers.</li>
+        <li><strong>Host-based firewall</strong> — runs on each individual
+          machine (iptables on Linux, Windows Defender Firewall on Windows),
+          providing a last line of defense even if a network firewall is
+          bypassed.</li>
+      </ul>
+
+      <h3>Network Firewalls vs. Host-Based Firewalls</h3>
+      <table class="data-table" aria-label="Network vs host-based firewall comparison">
+        <thead>
+          <tr><th>Characteristic</th><th>Network Firewall</th><th>Host-Based Firewall</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Location</td><td>Between network segments (router/appliance)</td><td>On each individual host</td></tr>
+          <tr><td>Scope</td><td>Protects all hosts behind it</td><td>Protects only that one host</td></tr>
+          <tr><td>Visibility</td><td>Sees traffic crossing segment boundaries</td><td>Sees all traffic to/from that host</td></tr>
+          <tr><td>Blind spots</td><td>Cannot see traffic that stays within a segment</td><td>Cannot protect other hosts</td></tr>
+          <tr><td>Examples</td><td>pfSense, Cisco ASA, Palo Alto</td><td>iptables/nftables, Windows Defender Firewall</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Project 2 Connection</div>
+        In Project 2 you will deploy <strong>pfSense 2.7.2</strong> as a network
+        firewall between your WAN, Management, Servers, and Clients segments
+        (Part A), then write firewall rules to control traffic between those
+        segments (Part D). This module builds the conceptual foundation for
+        both tasks.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-1" onchange="updateProgress()">
+        <label for="chk-1">I have read and understood Section 1.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 2 – Firewall Types
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-types" aria-hidden="true"></span>
+  <article class="content-section" id="article-2">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-2"
+         onclick="toggleSection(2)" onkeydown="keyToggle(event,2)">
+      <h2><span class="section-icon" aria-hidden="true">🔍</span>
+          2 · Firewall Types</h2>
+      <button class="toggle-btn" id="toggle-2" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-2">
+
+      <p>
+        Not all firewalls work the same way. Understanding the three main
+        generations helps you choose the right tool and interpret how a
+        given firewall makes its decisions.
+      </p>
+
+      <!-- Tabs for three firewall types -->
+      <div class="tab-group" role="tablist" aria-label="Firewall types">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-pf" id="tbtn-pf"
+                  onclick="switchTab('pf')" onkeydown="keyTab(event,'pf')">
+            Packet Filter
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-sf" id="tbtn-sf"
+                  onclick="switchTab('sf')" onkeydown="keyTab(event,'sf')">
+            Stateful Inspection
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-al" id="tbtn-al"
+                  onclick="switchTab('al')" onkeydown="keyTab(event,'al')">
+            Application-Layer (Proxy)
+          </button>
+        </div>
+
+        <div class="tab-panel active" id="tab-pf" role="tabpanel" aria-labelledby="tbtn-pf">
+          <h3>Packet Filter (Stateless)</h3>
+          <p>
+            The simplest firewall type. Each packet is evaluated
+            <strong>independently</strong> against a list of rules based only on
+            information in the packet headers: source IP, destination IP,
+            source port, destination port, and protocol (TCP/UDP/ICMP).
+          </p>
+          <ul>
+            <li><strong>No memory of connections</strong> — the firewall does not
+              track whether a packet is part of an established session.</li>
+            <li><strong>Fast and low overhead</strong> — simple header inspection
+              requires minimal processing.</li>
+            <li><strong>Limitation:</strong> Cannot distinguish a legitimate reply
+              packet from an unsolicited inbound packet with the same ports.
+              Requires explicit rules for both directions of a connection.</li>
+            <li><strong>Example:</strong> Early <code>ipchains</code> on Linux;
+              basic ACLs on Cisco routers.</li>
+          </ul>
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ Stateless Limitation Example</div>
+            To allow a web server to receive HTTP requests (TCP dst port 80)
+            and send replies, a stateless firewall needs two rules: one allowing
+            inbound TCP port 80, and one allowing outbound TCP from port 80.
+            Without the second rule, responses are blocked. A stateful firewall
+            handles this automatically.
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-sf" role="tabpanel" aria-labelledby="tbtn-sf">
+          <h3>Stateful Inspection</h3>
+          <p>
+            The most common type in modern firewalls, including
+            <strong>pfSense</strong>. A stateful firewall maintains a
+            <strong>connection tracking table</strong> (state table) that
+            records the state of every active network connection.
+          </p>
+          <ul>
+            <li><strong>Connection states tracked:</strong> NEW (first packet of
+              a connection), ESTABLISHED (handshake complete, data flowing),
+              RELATED (associated with an existing connection, e.g., FTP data
+              channel), INVALID (does not match any known state).</li>
+            <li><strong>Automatic reply handling:</strong> Once an outbound
+              connection is allowed, reply packets matching that connection are
+              automatically permitted without needing a separate rule.</li>
+            <li><strong>More secure than stateless:</strong> Unsolicited inbound
+              packets that do not match an established connection are blocked
+              even if their port numbers would otherwise match a rule.</li>
+            <li><strong>Example:</strong> pfSense, iptables with
+              <code>-m conntrack --ctstate</code>, Windows Defender Firewall.</li>
+          </ul>
+          <div class="callout callout-tip">
+            <div class="callout-title">💡 pfSense Uses Stateful Inspection</div>
+            pfSense is built on FreeBSD's <strong>pf</strong> (packet filter),
+            which performs full stateful inspection. When you write a rule to
+            allow traffic, pfSense automatically allows the return traffic for
+            that connection — you do not need a separate rule for replies.
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-al" role="tabpanel" aria-labelledby="tbtn-al">
+          <h3>Application-Layer Firewall (Proxy / NGFW)</h3>
+          <p>
+            The most sophisticated type. An application-layer firewall (also
+            called a <strong>proxy firewall</strong> or
+            <strong>Next-Generation Firewall / NGFW</strong>) understands
+            specific application protocols — HTTP, DNS, SMTP, etc. — and can
+            make filtering decisions based on application content, not just
+            headers.
+          </p>
+          <ul>
+            <li><strong>Deep Packet Inspection (DPI):</strong> Reads inside the
+              packet payload to identify the application, even if it uses a
+              non-standard port.</li>
+            <li><strong>URL filtering:</strong> Can allow or block specific
+              websites or URL categories within HTTP/HTTPS traffic.</li>
+            <li><strong>SSL/TLS inspection:</strong> Decrypts HTTPS traffic,
+              inspects it, and re-encrypts it (requires certificate deployment).</li>
+            <li><strong>Intrusion Prevention System (IPS):</strong> Detects and
+              blocks known attack patterns within application traffic.</li>
+            <li><strong>Examples:</strong> Palo Alto Networks, Fortinet FortiGate,
+              pfSense with Snort/Suricata packages.</li>
+          </ul>
+          <div class="callout callout-info">
+            <div class="callout-title">📌 Scope for This Course</div>
+            Project 2 uses pfSense as a <strong>stateful packet filter</strong>.
+            Application-layer features (Snort, Suricata) are available as pfSense
+            packages but are beyond the scope of this project. Understanding the
+            distinction helps you explain <em>why</em> pfSense rules are based on
+            IP/port rather than application identity.
+          </div>
+        </div>
+      </div><!-- end tab-group -->
+
+      <h3>Quick Comparison</h3>
+      <table class="data-table" aria-label="Firewall type comparison table">
+        <thead>
+          <tr><th>Type</th><th>Tracks Connections?</th><th>Understands App Protocol?</th><th>Performance</th><th>Use Case</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Packet Filter (Stateless)</td><td>No</td><td>No</td><td>Highest</td><td>Simple ACLs, router filters</td></tr>
+          <tr><td>Stateful Inspection</td><td>Yes</td><td>No</td><td>High</td><td>Most firewalls incl. pfSense</td></tr>
+          <tr><td>Application-Layer / NGFW</td><td>Yes</td><td>Yes</td><td>Lower (more processing)</td><td>Enterprise perimeter, DPI</td></tr>
+        </tbody>
+      </table>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-2" onchange="updateProgress()">
+        <label for="chk-2">I have read and understood Section 2.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 3 – Rule Components & Ordering
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-rules" aria-hidden="true"></span>
+  <article class="content-section" id="article-3">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-3"
+         onclick="toggleSection(3)" onkeydown="keyToggle(event,3)">
+      <h2><span class="section-icon" aria-hidden="true">📋</span>
+          3 · Rule Components, Ordering &amp; Implicit Deny</h2>
+      <button class="toggle-btn" id="toggle-3" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-3">
+
+      <h3>Anatomy of a Firewall Rule</h3>
+      <p>
+        Every firewall rule is made up of <strong>match criteria</strong>
+        (what traffic does this rule apply to?) and an
+        <strong>action</strong> (what should happen when traffic matches?).
+      </p>
+
+      <table class="data-table" aria-label="Firewall rule components">
+        <thead>
+          <tr><th>Component</th><th>What It Specifies</th><th>Examples</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Source</strong></td>
+            <td>Where the traffic originates — IP address, subnet, or alias</td>
+            <td><code>10.0.3.0/24</code>, <code>any</code>, <code>CLIENTS_net</code></td>
+          </tr>
+          <tr>
+            <td><strong>Destination</strong></td>
+            <td>Where the traffic is going — IP address, subnet, or alias</td>
+            <td><code>10.0.2.10</code>, <code>WAN net</code>, <code>any</code></td>
+          </tr>
+          <tr>
+            <td><strong>Port / Protocol</strong></td>
+            <td>The transport protocol and port number(s) being used</td>
+            <td><code>TCP/443</code>, <code>UDP/53</code>, <code>TCP/80,443</code></td>
+          </tr>
+          <tr>
+            <td><strong>Action</strong></td>
+            <td>What to do when the criteria match</td>
+            <td>Pass (Allow), Block (Drop), Reject</td>
+          </tr>
+          <tr>
+            <td><strong>Interface</strong></td>
+            <td>Which network interface this rule is evaluated on</td>
+            <td>WAN, LAN, SERVERS, CLIENTS</td>
+          </tr>
+          <tr>
+            <td><strong>Logging</strong></td>
+            <td>Whether to record matched packets in the firewall log</td>
+            <td>On / Off (recommended On for block rules)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Block vs. Reject: What Is the Difference?</h3>
+      <ul>
+        <li><strong>Block (Drop):</strong> The packet is silently discarded.
+          The sender receives no response and must wait for a timeout.
+          Preferred for inbound WAN traffic — reveals nothing to attackers.</li>
+        <li><strong>Reject:</strong> The packet is discarded <em>and</em> an
+          ICMP "destination unreachable" or TCP RST is sent back to the sender.
+          The sender knows immediately the connection was refused. Useful for
+          internal rules where fast failure is more helpful than stealth.</li>
+      </ul>
+
+      <h3>Rule Ordering: First Match Wins</h3>
+      <p>
+        Firewall rules are evaluated <strong>top to bottom</strong>. The
+        <em>first rule whose criteria match the packet</em> determines the
+        action. Subsequent rules are never evaluated for that packet. This is
+        called the <strong>first-match-wins</strong> model.
+      </p>
+
+      <!-- Rule Processing Flowchart -->
+      <h4>Rule Processing Flowchart</h4>
+      <div class="diagram-wrap" role="img" aria-label="Firewall rule processing flowchart: packet evaluated top to bottom until first match or implicit deny">
+        <div class="flow-grid">
+          <div style="text-align:center;">
+            <span class="flow-box flow-packet">📦 Incoming Packet</span>
+          </div>
+          <div class="flow-arrow-v">↓</div>
+          <div style="text-align:center;">
+            <span class="flow-box flow-rule">Rule 1: Does it match?</span>
+          </div>
+          <div class="flow-branch">
+            <div style="text-align:center;">
+              <div class="flow-arrow-v" style="color:#2e7d32;">↙ Yes</div>
+              <span class="flow-box flow-accept" style="font-size:0.78rem;">Apply Rule 1 Action<br>(Pass / Block / Reject)</span>
+              <div class="flow-arrow-v">↓</div>
+              <span class="flow-box flow-accept" style="font-size:0.78rem;">✅ Done — no further rules evaluated</span>
+            </div>
+            <div style="text-align:center;">
+              <div class="flow-arrow-v" style="color:#e65100;">↘ No</div>
+              <span class="flow-box flow-rule">Rule 2: Does it match?</span>
+              <div class="flow-arrow-v">↓ No</div>
+              <span class="flow-box flow-next" style="font-size:0.78rem;">… Rule 3, 4, 5 …</span>
+              <div class="flow-arrow-v">↓ No match</div>
+              <span class="flow-box flow-deny">🚫 Implicit Deny-All<br>(packet dropped)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Implicit Deny-All</h3>
+      <p>
+        At the end of every firewall ruleset there is an invisible, unconfigured
+        rule: <strong>"deny everything not explicitly permitted."</strong>
+        This is the <em>implicit deny-all</em> (also called the
+        <em>default deny</em> policy). You do not see it listed, but it always
+        applies. Its consequence:
+      </p>
+      <ul>
+        <li>If a packet does not match any rule, it is <strong>blocked</strong>.</li>
+        <li>You must explicitly write rules to <em>allow</em> traffic you want.</li>
+        <li>Any service or port you forget to allow is automatically blocked —
+          this is a security feature, not a bug.</li>
+      </ul>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Rule Order Pitfall</div>
+        Because the first match wins, a broad <strong>allow-all</strong> rule
+        placed near the top of a ruleset will match before any specific block
+        rules below it, making those block rules unreachable. Always place
+        <em>more specific rules above more general rules</em>. For example:
+        block SSH from Clients before a general allow-web rule for Clients.
+      </div>
+
+      <h3>Example: Project 2 Clients Interface Rules (Ordered)</h3>
+      <table class="rule-table" aria-label="Example firewall rules for Clients interface in order">
+        <thead>
+          <tr><th>#</th><th>Action</th><th>Source</th><th>Destination</th><th>Port/Proto</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td class="action-block">Block</td><td>CLIENTS net</td><td>LAN (Mgmt) net</td><td>any</td><td>Security isolation — clients cannot reach management</td></tr>
+          <tr><td>2</td><td class="action-block">Block</td><td>CLIENTS net</td><td>SERVERS net</td><td>TCP/22</td><td>No direct SSH from clients to servers</td></tr>
+          <tr><td>3</td><td class="action-pass">Pass</td><td>CLIENTS net</td><td>SERVERS net</td><td>TCP/53,80,443,445,3389</td><td>Allow DNS, web, file share, RDP to servers</td></tr>
+          <tr><td>4</td><td class="action-pass">Pass</td><td>CLIENTS net</td><td>WAN net</td><td>TCP/80,443</td><td>Web browsing</td></tr>
+          <tr><td>5</td><td class="action-pass">Pass</td><td>CLIENTS net</td><td>WAN net</td><td>UDP/53</td><td>External DNS</td></tr>
+          <tr><td>6</td><td class="action-block">Block</td><td>CLIENTS net</td><td>any</td><td>any</td><td>Explicit deny-all (also catches implicit deny; enables logging)</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.82rem;color:#555;">
+        Rule 1 must come before Rule 3 — if Rule 3 were first, the broad
+        allow would match management-bound traffic before Rule 1 could block it.
+      </p>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-3" onchange="updateProgress()">
+        <label for="chk-3">I have read and understood Section 3.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 4 – Interface Zones
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-zones" aria-hidden="true"></span>
+  <article class="content-section" id="article-4">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-4"
+         onclick="toggleSection(4)" onkeydown="keyToggle(event,4)">
+      <h2><span class="section-icon" aria-hidden="true">🗺️</span>
+          4 · Interface Zones: WAN, LAN, DMZ &amp; Management</h2>
+      <button class="toggle-btn" id="toggle-4" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-4">
+
+      <p>
+        A <strong>zone</strong> is a logical grouping of network interfaces or
+        segments that share a common trust level and security policy. Firewalls
+        apply different default behaviors and rule sets to different zones.
+      </p>
+
+      <h3>Common Zone Definitions</h3>
+      <table class="data-table" aria-label="Firewall zone definitions">
+        <thead>
+          <tr><th>Zone</th><th>Trust Level</th><th>Typical Contents</th><th>Default Policy</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>WAN</strong> (Wide Area Network)</td>
+            <td>Untrusted</td>
+            <td>Internet, upstream campus network</td>
+            <td>Block all inbound; allow established replies</td>
+          </tr>
+          <tr>
+            <td><strong>LAN</strong> (Local Area Network)</td>
+            <td>Trusted</td>
+            <td>Internal hosts, workstations (or in pfSense: Management)</td>
+            <td>Allow all outbound by default (pfSense default)</td>
+          </tr>
+          <tr>
+            <td><strong>DMZ</strong> (Demilitarized Zone)</td>
+            <td>Semi-trusted</td>
+            <td>Public-facing servers (web, mail, DNS) accessible from WAN</td>
+            <td>Allow specific inbound from WAN; restrict access to LAN</td>
+          </tr>
+          <tr>
+            <td><strong>Management</strong></td>
+            <td>Highly trusted</td>
+            <td>Admin workstations, jump hosts, monitoring systems</td>
+            <td>Allow full outbound; restrict inbound to management tools only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>pfSense Zone Topology for Project 2</h3>
+      <p>
+        In your Project 2 environment, pfSense connects four zones. The diagram
+        below shows how traffic flows through pfSense and which Proxmox bridge
+        each zone uses.
+      </p>
+
+      <div class="diagram-wrap" role="img" aria-label="pfSense zone topology diagram showing WAN, Management LAN, Servers OPT1, and Clients OPT2 connected through pfSense">
+        <div class="zone-diagram">
+          <div class="zone-internet">🌐 Internet / Campus Network (WAN)</div>
+          <div class="zone-arrow">↕</div>
+          <div class="zone-fw-box">
+            <div class="fw-title">pfSense 2.7.2 Virtual Firewall</div>
+            <div class="fw-sub">Stateful Packet Filter · NAT · DHCP · DNS Forwarder</div>
+            <div class="zone-iface-row">
+              <span class="zone-iface">vtnet0 · WAN · vmbr0 · DHCP</span>
+              <span class="zone-iface">vtnet1 · LAN · vmbr1 · 10.0.1.1/24</span>
+              <span class="zone-iface">vtnet2 · OPT1 · vmbr2 · 10.0.2.1/24</span>
+              <span class="zone-iface">vtnet3 · OPT2 · vmbr3 · 10.0.3.1/24</span>
+            </div>
+          </div>
+          <div class="zone-arrow">↕ ↕ ↕</div>
+          <div class="zone-segments">
+            <div class="zone-seg seg-mgmt">
+              <div class="zone-seg-title">🔧 Management</div>
+              <div class="zone-seg-ip">10.0.1.0/24 · vmbr1</div>
+              <div class="zone-seg-vms">Admin workstations<br>Web UI access: https://10.0.1.1</div>
+            </div>
+            <div class="zone-seg seg-srv">
+              <div class="zone-seg-title">🖥️ Servers</div>
+              <div class="zone-seg-ip">10.0.2.0/24 · vmbr2</div>
+              <div class="zone-seg-vms">Linux Server · 10.0.2.10<br>Windows Server · 10.0.2.11</div>
+            </div>
+            <div class="zone-seg seg-cli">
+              <div class="zone-seg-title">💻 Clients</div>
+              <div class="zone-seg-ip">10.0.3.0/24 · vmbr3</div>
+              <div class="zone-seg-vms">DHCP: 10.0.3.100–200<br>Linux Client VM (testing)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Why This Segmentation?</h3>
+      <ul>
+        <li><strong>Management isolation:</strong> Only administrators on the
+          Management network (10.0.1.0/24) can access the pfSense web UI.
+          A compromised client VM on 10.0.3.0/24 cannot reach the firewall
+          management interface.</li>
+        <li><strong>Server protection:</strong> Clients can only reach specific
+          ports on servers (DNS, HTTP, file sharing). They cannot SSH directly
+          into servers, limiting lateral movement.</li>
+        <li><strong>Blast radius reduction:</strong> If the Clients segment is
+          compromised (e.g., malware on a workstation), the attacker cannot
+          freely move to the Servers or Management segments — firewall rules
+          block them.</li>
+        <li><strong>Compliance:</strong> Many security frameworks (PCI-DSS,
+          HIPAA, SOC 2) require separation of sensitive systems from general
+          user workstations.</li>
+      </ul>
+
+      <div class="callout callout-security">
+        <div class="callout-title">🔒 CSLO 2 Connection</div>
+        Network segmentation with interface zones is a core
+        <em>network data security technique</em> (CSLO 2). By placing systems
+        into zones and controlling inter-zone traffic with firewall rules, you
+        implement the principle of <strong>least privilege at the network
+        layer</strong> — each zone can only communicate with what it
+        legitimately needs.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-4" onchange="updateProgress()">
+        <label for="chk-4">I have read and understood Section 4.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 5 – Linux Host Firewalls
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-linux" aria-hidden="true"></span>
+  <article class="content-section" id="article-5">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-5"
+         onclick="toggleSection(5)" onkeydown="keyToggle(event,5)">
+      <h2><span class="section-icon" aria-hidden="true">🐧</span>
+          5 · Linux Host Firewalls: iptables &amp; nftables</h2>
+      <button class="toggle-btn" id="toggle-5" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-5">
+
+      <p>
+        Linux includes a powerful built-in firewall framework in the kernel.
+        The two main user-space tools for managing it are
+        <strong>iptables</strong> (the traditional tool, still widely used)
+        and <strong>nftables</strong> (the modern replacement, default on
+        Debian/Ubuntu since 20.04 and RHEL/Rocky since 8). Both control the
+        same underlying <strong>Netfilter</strong> kernel subsystem.
+      </p>
+
+      <h3>iptables Tables and Chains</h3>
+      <p>
+        iptables organizes rules into <strong>tables</strong> (by function)
+        and <strong>chains</strong> (by traffic direction). For host firewall
+        purposes, the <strong>filter</strong> table is the most important, and
+        it contains three chains:
+      </p>
+
+      <div class="chain-diagram" role="list" aria-label="iptables filter table chains">
+        <div class="chain-box chain-input" role="listitem">
+          <div class="chain-name">INPUT</div>
+          <div class="chain-desc">
+            Traffic <strong>destined for the local system</strong> itself.
+            Controls what reaches services running on this host
+            (e.g., SSH on port 22, a web server on port 80).
+          </div>
+        </div>
+        <div class="chain-box chain-output" role="listitem">
+          <div class="chain-name">OUTPUT</div>
+          <div class="chain-desc">
+            Traffic <strong>originating from the local system</strong>.
+            Controls what this host is allowed to send out
+            (e.g., outbound HTTP requests, DNS queries).
+          </div>
+        </div>
+        <div class="chain-box chain-forward" role="listitem">
+          <div class="chain-name">FORWARD</div>
+          <div class="chain-desc">
+            Traffic <strong>passing through</strong> this system from one
+            interface to another. Used when the host acts as a router
+            or firewall (like pfSense internally). Not used for
+            traffic to/from the host itself.
+          </div>
+        </div>
+      </div>
+
+      <h3>Targets (Actions)</h3>
+      <p>Each rule ends with a <strong>target</strong> that specifies what to do when the rule matches:</p>
+      <div class="target-row" role="list" aria-label="iptables targets">
+        <span class="target-badge target-accept" role="listitem">ACCEPT — allow the packet through</span>
+        <span class="target-badge target-drop"   role="listitem">DROP — silently discard (no response to sender)</span>
+        <span class="target-badge target-reject" role="listitem">REJECT — discard and send error back to sender</span>
+      </div>
+
+      <h3>Common iptables Commands</h3>
+      <div class="code-block" role="region" aria-label="iptables command examples">
+<span class="cm"># View current rules (with line numbers)</span>
+<span class="kw">sudo</span> iptables -L -v -n --line-numbers
+
+<span class="cm"># Allow incoming SSH (TCP port 22) on INPUT chain</span>
+<span class="kw">sudo</span> iptables -A INPUT -p tcp --dport <span class="nm">22</span> -j ACCEPT
+
+<span class="cm"># Allow incoming HTTP and HTTPS</span>
+<span class="kw">sudo</span> iptables -A INPUT -p tcp --dport <span class="nm">80</span>  -j ACCEPT
+<span class="kw">sudo</span> iptables -A INPUT -p tcp --dport <span class="nm">443</span> -j ACCEPT
+
+<span class="cm"># Allow established/related connections (stateful — required for replies)</span>
+<span class="kw">sudo</span> iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+<span class="cm"># Allow loopback interface traffic (always needed)</span>
+<span class="kw">sudo</span> iptables -A INPUT -i lo -j ACCEPT
+
+<span class="cm"># Set default policy: drop everything not explicitly allowed</span>
+<span class="kw">sudo</span> iptables -P INPUT   DROP
+<span class="kw">sudo</span> iptables -P FORWARD DROP
+<span class="kw">sudo</span> iptables -P OUTPUT  ACCEPT  <span class="cm"># allow all outbound by default</span>
+
+<span class="cm"># Delete a rule by line number (e.g., line 3 in INPUT)</span>
+<span class="kw">sudo</span> iptables -D INPUT <span class="nm">3</span>
+
+<span class="cm"># Save rules so they persist after reboot (Ubuntu)</span>
+<span class="kw">sudo</span> apt install iptables-persistent
+<span class="kw">sudo</span> netfilter-persistent save
+      </div>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ Order Matters in iptables Too</div>
+        iptables rules are also evaluated top to bottom with first-match-wins.
+        Always add your <code>ESTABLISHED,RELATED</code> accept rule
+        <em>before</em> setting the default DROP policy, and add specific
+        ACCEPT rules before any broad DROP rules.
+      </div>
+
+      <h3>nftables: The Modern Replacement</h3>
+      <p>
+        <strong>nftables</strong> replaces iptables with a cleaner syntax,
+        better performance, and atomic rule updates. On Ubuntu 20.04+ and
+        Rocky Linux 8+, <code>nft</code> is the preferred tool, though
+        <code>iptables</code> commands still work via a compatibility layer.
+      </p>
+      <div class="code-block" role="region" aria-label="nftables example">
+<span class="cm"># View current nftables ruleset</span>
+<span class="kw">sudo</span> nft list ruleset
+
+<span class="cm"># Simple nftables rule file: /etc/nftables.conf</span>
+<span class="kw">table</span> inet filter {
+  <span class="kw">chain</span> input {
+    type filter hook input priority <span class="nm">0</span>; policy drop;
+
+    iif lo accept                          <span class="cm"># loopback</span>
+    ct state established,related accept    <span class="cm"># stateful replies</span>
+    tcp dport <span class="nm">22</span> accept                   <span class="cm"># SSH</span>
+    tcp dport { <span class="nm">80</span>, <span class="nm">443</span> } accept          <span class="cm"># web</span>
+  }
+  <span class="kw">chain</span> output {
+    type filter hook output priority <span class="nm">0</span>; policy accept;
+  }
+  <span class="kw">chain</span> forward {
+    type filter hook forward priority <span class="nm">0</span>; policy drop;
+  }
+}
+      </div>
+
+      <h3>ufw: Simplified Front-End (Ubuntu)</h3>
+      <p>
+        <strong>ufw</strong> (Uncomplicated Firewall) is a simplified
+        command-line front-end for iptables/nftables, common on Ubuntu desktop
+        and server installations.
+      </p>
+      <div class="code-block" role="region" aria-label="ufw command examples">
+<span class="kw">sudo</span> ufw enable
+<span class="kw">sudo</span> ufw allow <span class="nm">22</span>/tcp     <span class="cm"># allow SSH</span>
+<span class="kw">sudo</span> ufw allow <span class="nm">80</span>/tcp     <span class="cm"># allow HTTP</span>
+<span class="kw">sudo</span> ufw deny  <span class="nm">23</span>/tcp     <span class="cm"># block Telnet</span>
+<span class="kw">sudo</span> ufw status verbose
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-5" onchange="updateProgress()">
+        <label for="chk-5">I have read and understood Section 5.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 6 – Windows Defender Firewall
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-windows" aria-hidden="true"></span>
+  <article class="content-section" id="article-6">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-6"
+         onclick="toggleSection(6)" onkeydown="keyToggle(event,6)">
+      <h2><span class="section-icon" aria-hidden="true">🪟</span>
+          6 · Windows Defender Firewall</h2>
+      <button class="toggle-btn" id="toggle-6" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-6">
+
+      <p>
+        <strong>Windows Defender Firewall with Advanced Security</strong> is the
+        built-in host-based firewall on all modern Windows systems, including
+        Windows Server 2022. It is a stateful firewall that filters both inbound
+        and outbound traffic based on configurable rules.
+      </p>
+
+      <h3>Network Profiles</h3>
+      <p>
+        Windows Defender Firewall applies different rule sets depending on which
+        <strong>network profile</strong> is active for a given network adapter.
+        There are three profiles:
+      </p>
+      <table class="data-table" aria-label="Windows Firewall network profiles">
+        <thead>
+          <tr><th>Profile</th><th>When Applied</th><th>Default Stance</th><th>Typical Use</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Domain</strong></td>
+            <td>Computer is joined to an Active Directory domain and can contact a domain controller</td>
+            <td>Moderate — allows domain management traffic</td>
+            <td>Corporate/enterprise networks</td>
+          </tr>
+          <tr>
+            <td><strong>Private</strong></td>
+            <td>User marks the network as private (home/work network)</td>
+            <td>Moderate — allows file/printer sharing</td>
+            <td>Home networks, trusted office LANs</td>
+          </tr>
+          <tr>
+            <td><strong>Public</strong></td>
+            <td>New or unknown network (default for unrecognized connections)</td>
+            <td>Strict — blocks most inbound connections</td>
+            <td>Coffee shops, airports, untrusted networks</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Server 2022 Default Profile</div>
+        When your Windows Server 2022 VM connects to a Proxmox bridge that is
+        not a domain network, it will likely use the <strong>Public</strong>
+        profile — the most restrictive. If you find that services are
+        unexpectedly blocked (e.g., file sharing, RDP), check which profile
+        is active and whether you need to add rules to that profile.
+      </div>
+
+      <h3>Inbound vs. Outbound Rules</h3>
+      <ul>
+        <li><strong>Inbound rules</strong> control traffic arriving at the
+          Windows host from the network. By default, most inbound connections
+          are blocked unless a rule explicitly allows them.</li>
+        <li><strong>Outbound rules</strong> control traffic leaving the
+          Windows host. By default, all outbound connections are allowed.</li>
+      </ul>
+
+      <h3>Creating a Custom Inbound Rule (GUI Walk-Through)</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            Open <strong>Windows Defender Firewall with Advanced Security</strong>:
+            Start → search "Windows Defender Firewall with Advanced Security",
+            or open it from Server Manager → Tools.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            In the left pane, click <strong>Inbound Rules</strong>, then
+            in the right pane click <strong>New Rule…</strong>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Rule Type:</strong> Select <em>Port</em> (to control by
+            port number) or <em>Program</em> (to control by application).
+            For most server rules, choose <strong>Port</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Protocol and Ports:</strong> Select TCP or UDP and enter
+            the specific port number(s), e.g., <code>443</code> or
+            <code>80, 443</code>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Action:</strong> Choose <em>Allow the connection</em>
+            (or "Allow the connection if it is secure" for IPsec-protected
+            connections).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <strong>Profile:</strong> Select which profiles this rule applies
+            to — Domain, Private, and/or Public.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">7</div>
+          <div class="step-content">
+            <strong>Name:</strong> Give the rule a descriptive name
+            (e.g., <em>Allow HTTPS Inbound</em>). Click <strong>Finish</strong>.
+          </div>
+        </li>
+      </ol>
+
+      <h3>PowerShell: Managing Firewall Rules</h3>
+      <div class="code-block" role="region" aria-label="PowerShell Windows Firewall examples">
+<span class="cm"># View all inbound rules</span>
+<span class="kw">Get-NetFirewallRule</span> -Direction Inbound | <span class="kw">Select-Object</span> Name, Enabled, Action
+
+<span class="cm"># Allow inbound HTTPS (TCP 443) on all profiles</span>
+<span class="kw">New-NetFirewallRule</span> -DisplayName <span class="st">"Allow HTTPS Inbound"</span> `
+  -Direction Inbound -Protocol TCP -LocalPort <span class="nm">443</span> `
+  -Action Allow -Profile Any
+
+<span class="cm"># Block inbound Telnet (TCP 23)</span>
+<span class="kw">New-NetFirewallRule</span> -DisplayName <span class="st">"Block Telnet Inbound"</span> `
+  -Direction Inbound -Protocol TCP -LocalPort <span class="nm">23</span> `
+  -Action Block -Profile Any
+
+<span class="cm"># Enable an existing rule by name</span>
+<span class="kw">Enable-NetFirewallRule</span> -DisplayName <span class="st">"Remote Desktop - User Mode (TCP-In)"</span>
+
+<span class="cm"># Check firewall profile status</span>
+<span class="kw">Get-NetFirewallProfile</span> | <span class="kw">Select-Object</span> Name, Enabled, DefaultInboundAction
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Defense in Depth in Action</div>
+        Even though pfSense will block SSH from the Clients segment to your
+        Windows Server, you should <em>also</em> ensure Windows Defender
+        Firewall is configured to block unnecessary inbound connections. If
+        pfSense is misconfigured or bypassed, the host-based firewall provides
+        a second layer of protection.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-6" onchange="updateProgress()">
+        <label for="chk-6">I have read and understood Section 6.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 7 – pfSense 2.7.2 Overview
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-pfsense" aria-hidden="true"></span>
+  <article class="content-section" id="article-7">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-7"
+         onclick="toggleSection(7)" onkeydown="keyToggle(event,7)">
+      <h2><span class="section-icon" aria-hidden="true">🔥</span>
+          7 · pfSense 2.7.2 Overview</h2>
+      <button class="toggle-btn" id="toggle-7" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-7">
+
+      <p>
+        <strong>pfSense Community Edition (CE) 2.7.2</strong> is a free,
+        open-source firewall and router distribution based on
+        <strong>FreeBSD</strong>. It is one of the most widely deployed
+        open-source firewalls in the world, used in homes, small businesses,
+        enterprises, and labs. In this course it is your virtual firewall
+        appliance for Project 2.
+      </p>
+
+      <h3>Key Features</h3>
+      <table class="data-table" aria-label="pfSense key features">
+        <thead>
+          <tr><th>Feature</th><th>Description</th><th>Relevance to Project 2</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Stateful Packet Filtering</strong></td>
+            <td>FreeBSD pf-based firewall with connection tracking</td>
+            <td>Core of Part D firewall rules</td>
+          </tr>
+          <tr>
+            <td><strong>NAT</strong></td>
+            <td>Network Address Translation — maps private IPs to WAN IP for internet access</td>
+            <td>Enabled by default; allows all VMs to reach internet via WAN</td>
+          </tr>
+          <tr>
+            <td><strong>DHCP Server</strong></td>
+            <td>Built-in DHCP service, configurable per interface</td>
+            <td>Part B: DHCP for Clients subnet (10.0.3.100–200)</td>
+          </tr>
+          <tr>
+            <td><strong>DNS Forwarder / Resolver</strong></td>
+            <td>Unbound DNS resolver or dnsmasq-based forwarder</td>
+            <td>Forwards DNS queries; can serve local hostnames</td>
+          </tr>
+          <tr>
+            <td><strong>Multi-Interface Support</strong></td>
+            <td>Manages multiple network interfaces as separate zones</td>
+            <td>WAN + LAN + OPT1 (SERVERS) + OPT2 (CLIENTS)</td>
+          </tr>
+          <tr>
+            <td><strong>Web-Based Management UI</strong></td>
+            <td>Full configuration via browser (HTTPS); no CLI required for most tasks</td>
+            <td>All Project 2 pfSense config done via web UI</td>
+          </tr>
+          <tr>
+            <td><strong>Firewall Logging</strong></td>
+            <td>Per-rule logging; viewable in Status → System Logs → Firewall</td>
+            <td>Part D: log blocked traffic; Part E: testing evidence</td>
+          </tr>
+          <tr>
+            <td><strong>VPN Support</strong></td>
+            <td>OpenVPN and IPsec built in</td>
+            <td>Beyond scope of Project 2; awareness only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>pfSense Default Behaviors (Important for Project 2)</h3>
+      <ul>
+        <li><strong>LAN interface:</strong> pfSense creates a default
+          <em>allow all</em> rule on the LAN interface. In your topology,
+          LAN = Management (10.0.1.0/24). Management hosts have full
+          outbound access by default.</li>
+        <li><strong>WAN interface:</strong> All unsolicited inbound traffic
+          from WAN is blocked by default (implicit deny). Only established
+          reply traffic is allowed.</li>
+        <li><strong>OPT interfaces (OPT1, OPT2):</strong>
+          <strong>No rules are created by default.</strong> All traffic on
+          OPT interfaces is blocked until you explicitly add allow rules.
+          This is why your Servers and Clients VMs will have no connectivity
+          after initial pfSense setup — you must add rules.</li>
+        <li><strong>NAT (Outbound):</strong> Automatic outbound NAT is enabled
+          by default, so all internal interfaces can reach the internet through
+          the WAN IP without additional configuration.</li>
+      </ul>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">⚠️ OPT Interfaces Are Blocked by Default</div>
+        A very common Project 2 issue: after assigning and enabling OPT1
+        (SERVERS) and OPT2 (CLIENTS), students find those VMs have no
+        connectivity. This is expected — <strong>you must add firewall rules
+        on those interfaces</strong> before any traffic is allowed. The LAN
+        (Management) interface is the only one with a default allow rule.
+      </div>
+
+      <h3>pfSense Web UI — Key Navigation Areas</h3>
+      <table class="data-table" aria-label="pfSense web UI navigation areas">
+        <thead>
+          <tr><th>Menu Path</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Interfaces → [Interface Name]</td><td>Configure IP, enable/disable, rename OPT interfaces</td></tr>
+          <tr><td>Firewall → Rules</td><td>Add, edit, reorder firewall rules per interface</td></tr>
+          <tr><td>Firewall → Aliases</td><td>Create named groups of IPs or ports for use in rules</td></tr>
+          <tr><td>Services → DHCP Server</td><td>Configure DHCP per interface (pool, options, reservations)</td></tr>
+          <tr><td>Services → DNS Resolver</td><td>Configure Unbound DNS; add local host overrides</td></tr>
+          <tr><td>Status → Dashboard</td><td>Overview: interfaces, traffic, system info</td></tr>
+          <tr><td>Status → System Logs → Firewall</td><td>View blocked/allowed traffic log entries</td></tr>
+          <tr><td>Diagnostics → Ping</td><td>Test connectivity from pfSense to a host</td></tr>
+          <tr><td>System → General Setup</td><td>Hostname, domain, DNS servers, time zone</td></tr>
+          <tr><td>System → User Manager</td><td>Change admin password, manage users</td></tr>
+        </tbody>
+      </table>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-7" onchange="updateProgress()">
+        <label for="chk-7">I have read and understood Section 7.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 8 – pfSense in Proxmox
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-proxmox" aria-hidden="true"></span>
+  <article class="content-section" id="article-8">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-8"
+         onclick="toggleSection(8)" onkeydown="keyToggle(event,8)">
+      <h2><span class="section-icon" aria-hidden="true">⚙️</span>
+          8 · Deploying pfSense 2.7.2 in Proxmox</h2>
+      <button class="toggle-btn" id="toggle-8" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-8">
+
+      <p>
+        This section walks through deploying pfSense 2.7.2 as a virtual machine
+        in Proxmox, from ISO upload through interface assignment. Follow these
+        steps carefully — getting the network interface order correct is critical.
+      </p>
+
+      <!-- Tabs: Phase 1 / Phase 2 / Phase 3 -->
+      <div class="tab-group" role="tablist" aria-label="pfSense deployment phases">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-iso" id="tbtn-iso"
+                  onclick="switchTab('iso')" onkeydown="keyTab(event,'iso')">
+            Phase 1: Bridges &amp; ISO
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-vmcreate" id="tbtn-vmcreate"
+                  onclick="switchTab('vmcreate')" onkeydown="keyTab(event,'vmcreate')">
+            Phase 2: VM Creation
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-install" id="tbtn-install"
+                  onclick="switchTab('install')" onkeydown="keyTab(event,'install')">
+            Phase 3: Installation
+          </button>
+        </div>
+
+        <!-- Phase 1 -->
+        <div class="tab-panel active" id="tab-iso" role="tabpanel" aria-labelledby="tbtn-iso">
+          <h3>Step 1A: Create Virtual Bridges in Proxmox</h3>
+          <p>
+            Before creating the pfSense VM, you need three additional Linux
+            bridges in Proxmox (vmbr0 already exists for WAN/management).
+          </p>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                Log in to the <strong>Proxmox web UI</strong>. In the left
+                panel, click your node name (e.g., <em>pve</em>).
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                Navigate to <strong>System → Network</strong>. Click
+                <strong>Create → Linux Bridge</strong>.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                Create <strong>vmbr1</strong>:
+                <ul style="margin-top:0.4rem;">
+                  <li>Name: <code>vmbr1</code></li>
+                  <li>IPv4/CIDR: <em>leave blank</em> (pfSense will be the gateway)</li>
+                  <li>Comment: <code>Management Network 10.0.1.0/24</code></li>
+                  <li>Click <strong>Create</strong></li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <div class="step-content">
+                Repeat to create <strong>vmbr2</strong> (comment:
+                <code>Servers Network 10.0.2.0/24</code>) and
+                <strong>vmbr3</strong> (comment:
+                <code>Clients Network 10.0.3.0/24</code>).
+              </div>
+            </li>
+            <li>
+              <div class="step-num">5</div>
+              <div class="step-content">
+                Click <strong>Apply Configuration</strong> to activate all
+                three bridges. Verify all four bridges (vmbr0–vmbr3) are
+                listed and active.
+              </div>
+            </li>
+          </ol>
+          <div class="callout callout-info">
+            <div class="callout-title">📌 Why Leave Bridge IPs Blank?</div>
+            Proxmox bridge IPs would place the Proxmox hypervisor itself on
+            those subnets, creating routing conflicts. Since pfSense will be
+            the gateway (10.0.1.1, 10.0.2.1, 10.0.3.1) on each bridge, the
+            Proxmox host should have no IP on these bridges. The bridges
+            function as pure Layer 2 switches connecting VMs.
+          </div>
+
+          <h3>Step 1B: Upload pfSense ISO</h3>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                In the Proxmox left panel, navigate to your storage node
+                (e.g., <em>local</em>) → <strong>ISO Images</strong>.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                Click <strong>Upload</strong> and select the pfSense CE 2.7.2
+                ISO file: <code>pfSense-CE-2.7.2-RELEASE-amd64.iso</code>
+                (approximately 1 GB). Wait for the upload to complete.
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Phase 2: VM Creation -->
+        <div class="tab-panel" id="tab-vmcreate" role="tabpanel" aria-labelledby="tbtn-vmcreate">
+          <h3>Step 2: Create the pfSense VM</h3>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                Click <strong>Create VM</strong> in the top-right of the
+                Proxmox UI.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <strong>General tab:</strong>
+                <ul style="margin-top:0.4rem;">
+                  <li>VM ID: your choice (e.g., <code>200</code>)</li>
+                  <li>Name: <code>pfsense-fw</code></li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <strong>OS tab:</strong>
+                <ul style="margin-top:0.4rem;">
+                  <li>ISO image: select <code>pfSense-CE-2.7.2-RELEASE-amd64.iso</code></li>
+                  <li>Guest OS Type: <strong>Other</strong></li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <strong>System tab:</strong> Leave defaults (SeaBIOS,
+                VirtIO SCSI controller). Do <em>not</em> enable EFI for
+                pfSense CE 2.7.2 — it uses BIOS boot.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">5</div>
+              <div class="step-content">
+                <strong>Disks tab:</strong>
+                <ul style="margin-top:0.4rem;">
+                  <li>Bus/Device: <strong>VirtIO Block</strong></li>
+                  <li>Size: <strong>20 GB</strong> minimum</li>
+                  <li>Cache: Write back</li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">6</div>
+              <div class="step-content">
+                <strong>CPU tab:</strong>
+                <ul style="margin-top:0.4rem;">
+                  <li>Sockets: 1 · Cores: 1</li>
+                  <li>Type: <strong>host</strong></li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">7</div>
+              <div class="step-content">
+                <strong>Memory tab:</strong> 2048 MB (2 GB) minimum.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">8</div>
+              <div class="step-content">
+                <strong>Network tab — add four network devices in order:</strong>
+                <table class="data-table" style="margin-top:0.5rem;" aria-label="pfSense VM network interface assignments">
+                  <thead><tr><th>Device #</th><th>Bridge</th><th>Model</th><th>pfSense Interface</th><th>Zone</th></tr></thead>
+                  <tbody>
+                    <tr><td>net0</td><td>vmbr0</td><td>VirtIO</td><td>vtnet0 → WAN</td><td>WAN / Internet</td></tr>
+                    <tr><td>net1</td><td>vmbr1</td><td>VirtIO</td><td>vtnet1 → LAN</td><td>Management</td></tr>
+                    <tr><td>net2</td><td>vmbr2</td><td>VirtIO</td><td>vtnet2 → OPT1</td><td>Servers</td></tr>
+                    <tr><td>net3</td><td>vmbr3</td><td>VirtIO</td><td>vtnet3 → OPT2</td><td>Clients</td></tr>
+                  </tbody>
+                </table>
+                <div class="callout callout-warning" style="margin-top:0.75rem;">
+                  <div class="callout-title">⚠️ Interface Order Matters</div>
+                  Proxmox assigns <code>vtnet0</code>, <code>vtnet1</code>, etc.
+                  in the order you add network devices. Add them in the exact
+                  order shown above. If the order is wrong, pfSense will map
+                  the wrong bridge to the wrong zone and your network will not
+                  work as expected.
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="step-num">9</div>
+              <div class="step-content">
+                <strong>Confirm tab:</strong> Review all settings. Check
+                <em>Start after created</em> if you are ready to install.
+                Click <strong>Finish</strong>.
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Phase 3: Installation -->
+        <div class="tab-panel" id="tab-install" role="tabpanel" aria-labelledby="tbtn-install">
+          <h3>Step 3: Install pfSense</h3>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                Start the VM and open the <strong>Console</strong> tab.
+                The pfSense installer boots from the ISO.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                At the copyright/trademark notice, press
+                <strong>Enter</strong> to accept and continue.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                Select <strong>Install pfSense</strong> and press Enter.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <strong>Keymap:</strong> Select your preferred keymap
+                (default US is fine for most students). Continue.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">5</div>
+              <div class="step-content">
+                <strong>Partitioning:</strong> Select
+                <strong>Auto (UFS)</strong> for a straightforward single-disk
+                install. Select the VirtIO disk (<code>vtbd0</code>).
+                Confirm the installation — this will erase the disk.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">6</div>
+              <div class="step-content">
+                Wait for installation to complete (2–5 minutes). When
+                prompted to open a shell, select <strong>No</strong>.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">7</div>
+              <div class="step-content">
+                Select <strong>Reboot</strong>. Before the VM boots from
+                disk, <strong>remove the ISO</strong>: in Proxmox, go to
+                Hardware → CD/DVD Drive → select "Do not use any media".
+                This prevents booting the installer again.
+              </div>
+            </li>
+          </ol>
+
+          <h3>Step 4: Console Interface Assignment</h3>
+          <p>
+            After reboot, pfSense presents a console menu. The first task
+            is to assign interfaces.
+          </p>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                When asked <em>"Should VLANs be set up now?"</em> type
+                <strong>n</strong> and press Enter.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                When prompted to enter the WAN interface name, type
+                <strong>vtnet0</strong> and press Enter.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                LAN interface: <strong>vtnet1</strong>. Enter.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">4</div>
+              <div class="step-content">
+                Optional interface 1: <strong>vtnet2</strong>. Enter.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">5</div>
+              <div class="step-content">
+                Optional interface 2: <strong>vtnet3</strong>. Enter.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">6</div>
+              <div class="step-content">
+                Press Enter again (no more optional interfaces). Confirm
+                the assignment summary looks correct, then type
+                <strong>y</strong> and Enter to proceed.
+              </div>
+            </li>
+          </ol>
+
+          <h3>Step 5: Set LAN IP Address (Console)</h3>
+          <ol class="step-list">
+            <li>
+              <div class="step-num">1</div>
+              <div class="step-content">
+                From the pfSense console menu, select option
+                <strong>2 — Set interface(s) IP address</strong>.
+              </div>
+            </li>
+            <li>
+              <div class="step-num">2</div>
+              <div class="step-content">
+                Select interface <strong>2 — LAN</strong>.
+                Enter IP address: <code>10.0.1.1</code>.
+                Subnet bit count: <code>24</code>.
+                Press Enter (no upstream gateway for LAN).
+                Press Enter (no IPv6 for now).
+                When asked to enable DHCP on LAN, type <strong>n</strong>
+                (you will configure DHCP via the web UI).
+              </div>
+            </li>
+            <li>
+              <div class="step-num">3</div>
+              <div class="step-content">
+                When asked to revert to HTTP, type <strong>n</strong>
+                (keep HTTPS). The console will confirm the web UI is
+                accessible at <code>https://10.0.1.1</code>.
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div><!-- end tab-group -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-8" onchange="updateProgress()">
+        <label for="chk-8">I have read and understood Section 8.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 9 – pfSense Initial Configuration
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-wizard" aria-hidden="true"></span>
+  <article class="content-section" id="article-9">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-9"
+         onclick="toggleSection(9)" onkeydown="keyToggle(event,9)">
+      <h2><span class="section-icon" aria-hidden="true">🧙</span>
+          9 · pfSense Initial Configuration Wizard</h2>
+      <button class="toggle-btn" id="toggle-9" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-9">
+
+      <p>
+        Once pfSense is installed and the LAN IP is set, you access the web UI
+        from a VM on the Management network (vmbr1) and complete the Setup Wizard.
+      </p>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 Accessing the Web UI</div>
+        You must be on a VM connected to <strong>vmbr1</strong> (the Management
+        network, 10.0.1.0/24) to reach the pfSense web UI at
+        <code>https://10.0.1.1</code>. Default credentials are
+        <code>admin</code> / <code>pfsense</code>. You will be prompted to
+        change the password during the wizard — do so immediately.
+      </div>
+
+      <h3>Setup Wizard Walk-Through</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>General Information:</strong>
+            <ul style="margin-top:0.4rem;">
+              <li>Hostname: <code>pfsense</code></li>
+              <li>Domain: <code>techstart.local</code> (or your chosen domain)</li>
+              <li>Primary DNS: <code>10.255.254.1</code> (campus upstream DNS)</li>
+              <li>Secondary DNS: <code>8.8.8.8</code></li>
+              <li>Uncheck "Override DNS" if you want pfSense to use only your
+                specified DNS servers.</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Time Server:</strong> Leave the default NTP server
+            (<code>2.pfsense.pool.ntp.org</code>) or use your campus NTP.
+            Set the correct time zone for your location.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>WAN Configuration:</strong>
+            <ul style="margin-top:0.4rem;">
+              <li>Type: <strong>DHCP</strong> (pfSense will get its WAN IP
+                from the campus DHCP server via vmbr0)</li>
+              <li>Leave all other WAN settings at defaults</li>
+              <li>Uncheck "Block RFC1918 Private Networks" if you see it —
+                the campus WAN may use private addressing</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>LAN Configuration:</strong>
+            <ul style="margin-top:0.4rem;">
+              <li>LAN IP Address: <code>10.0.1.1</code></li>
+              <li>Subnet Mask: <code>24</code> (/24)</li>
+              <li>This should already be set from the console step — verify it.</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Admin Password:</strong> Change the password from the
+            default <code>pfsense</code> to a strong password. Document that
+            you changed it (do not include the actual password in your project
+            submission).
+          </div>
+        </li>
+        <li>
+          <div class="step-num">6</div>
+          <div class="step-content">
+            Click <strong>Reload</strong>. pfSense applies the configuration
+            and you are redirected to the <strong>Dashboard</strong>.
+          </div>
+        </li>
+      </ol>
+
+      <h3>Post-Wizard: Enable and Configure OPT Interfaces</h3>
+      <ol class="step-list">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-content">
+            Navigate to <strong>Interfaces → OPT1</strong>.
+            Check <strong>Enable interface</strong>.
+            Description: <code>SERVERS</code>.
+            IPv4 Configuration Type: <strong>Static IPv4</strong>.
+            IPv4 Address: <code>10.0.2.1 / 24</code>.
+            Click <strong>Save</strong>, then <strong>Apply Changes</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-content">
+            Navigate to <strong>Interfaces → OPT2</strong>.
+            Check <strong>Enable interface</strong>.
+            Description: <code>CLIENTS</code>.
+            IPv4 Configuration Type: <strong>Static IPv4</strong>.
+            IPv4 Address: <code>10.0.3.1 / 24</code>.
+            Click <strong>Save</strong>, then <strong>Apply Changes</strong>.
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-content">
+            Verify all four interfaces are shown correctly on the
+            <strong>Dashboard</strong>: WAN (DHCP address from campus),
+            LAN (10.0.1.1/24), SERVERS (10.0.2.1/24), CLIENTS (10.0.3.1/24).
+          </div>
+        </li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">💡 Take a Snapshot Now</div>
+        After completing the initial configuration wizard and verifying all
+        interfaces, take a <strong>Proxmox snapshot</strong> of the pfSense VM.
+        Label it something like <em>"pfSense-initial-config-complete"</em>.
+        If you accidentally break something during firewall rule configuration,
+        you can roll back to this known-good state in seconds.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-9" onchange="updateProgress()">
+        <label for="chk-9">I have read and understood Section 9.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 10 – Network Segmentation Design
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-segdesign" aria-hidden="true"></span>
+  <article class="content-section" id="article-10">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-10"
+         onclick="toggleSection(10)" onkeydown="keyToggle(event,10)">
+      <h2><span class="section-icon" aria-hidden="true">🗂️</span>
+          10 · Network Segmentation Design</h2>
+      <button class="toggle-btn" id="toggle-10" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-10">
+
+      <p>
+        With pfSense configured, you have a three-segment internal network.
+        Understanding <em>why</em> the segments are designed the way they are
+        helps you write correct firewall rules and explain your design in
+        Project 2's documentation.
+      </p>
+
+      <h3>The Three Internal Segments</h3>
+
+      <div class="tab-group" role="tablist" aria-label="Network segment details">
+        <div class="tab-buttons">
+          <button class="tab-btn active" role="tab" aria-selected="true"
+                  aria-controls="tab-mgmt" id="tbtn-mgmt"
+                  onclick="switchTab('mgmt')" onkeydown="keyTab(event,'mgmt')">
+            Management (LAN)
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-srvs" id="tbtn-srvs"
+                  onclick="switchTab('srvs')" onkeydown="keyTab(event,'srvs')">
+            Servers (OPT1)
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false"
+                  aria-controls="tab-clts" id="tbtn-clts"
+                  onclick="switchTab('clts')" onkeydown="keyTab(event,'clts')">
+            Clients (OPT2)
+          </button>
+        </div>
+
+        <div class="tab-panel active" id="tab-mgmt" role="tabpanel" aria-labelledby="tbtn-mgmt">
+          <h4>Management Network — 10.0.1.0/24 (vmbr1)</h4>
+          <ul>
+            <li><strong>Purpose:</strong> Administrative access only. This is
+              where IT administrators connect to manage all other systems,
+              including the pfSense web UI.</li>
+            <li><strong>Who belongs here:</strong> Admin workstations, jump
+              hosts, monitoring systems. In the lab: your own machine
+              accessing pfSense via the Proxmox console.</li>
+            <li><strong>IP addressing:</strong> Static only — no DHCP.
+              pfSense LAN IP is 10.0.1.1/24.</li>
+            <li><strong>Default firewall behavior:</strong> pfSense's default
+              LAN allow-all rule gives Management full outbound access.</li>
+            <li><strong>Security rationale:</strong> Servers and Clients
+              cannot initiate connections to Management. If a client or server
+              is compromised, the attacker cannot reach the management plane
+              to reconfigure the firewall or access admin tools.</li>
+          </ul>
+        </div>
+
+        <div class="tab-panel" id="tab-srvs" role="tabpanel" aria-labelledby="tbtn-srvs">
+          <h4>Servers Network — 10.0.2.0/24 (vmbr2)</h4>
+          <ul>
+            <li><strong>Purpose:</strong> Production servers providing
+              services to the organization — DNS, file sharing, directory
+              services, web applications.</li>
+            <li><strong>Who belongs here:</strong> Linux Server (10.0.2.10),
+              Windows Server (10.0.2.11).</li>
+            <li><strong>IP addressing:</strong> Static only — servers must
+              have predictable, fixed IPs so clients can reliably reach them
+              by IP (and by DNS name once DNS is configured).</li>
+            <li><strong>Default firewall behavior:</strong> OPT1 has no
+              default rules — all traffic blocked until you add rules.</li>
+            <li><strong>Security rationale:</strong> Servers can reach the
+              internet for updates (HTTP/HTTPS, DNS) but are blocked from
+              initiating connections to Management. Clients can reach servers
+              only on specific allowed ports — not unrestricted access.</li>
+          </ul>
+        </div>
+
+        <div class="tab-panel" id="tab-clts" role="tabpanel" aria-labelledby="tbtn-clts">
+          <h4>Clients Network — 10.0.3.0/24 (vmbr3)</h4>
+          <ul>
+            <li><strong>Purpose:</strong> End-user workstations and test VMs.
+              The highest-risk zone because end users interact with external
+              content and are most likely to be targeted by phishing or
+              malware.</li>
+            <li><strong>Who belongs here:</strong> Linux Client VM (test VM
+              for Project 2 verification).</li>
+            <li><strong>IP addressing:</strong> Dynamic via DHCP
+              (10.0.3.100–10.0.3.200). pfSense DHCP server on CLIENTS
+              interface.</li>
+            <li><strong>Default firewall behavior:</strong> OPT2 has no
+              default rules — all traffic blocked until you add rules.</li>
+            <li><strong>Security rationale:</strong> Clients can reach servers
+              on specific ports (DNS, web, file sharing, RDP) and can browse
+              the internet. They are blocked from Management entirely and
+              blocked from SSH to servers. This limits the damage a compromised
+              client can do.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Traffic Flow Summary</h3>
+      <table class="rule-table" aria-label="Traffic flow matrix between segments">
+        <thead>
+          <tr><th>From</th><th>To</th><th>Ports/Services</th><th>Action</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Management</td><td>Any</td><td>Any</td><td class="action-pass">Allow</td><td>Admin full access</td></tr>
+          <tr><td>Servers</td><td>WAN</td><td>80, 443, 53</td><td class="action-pass">Allow</td><td>Web updates &amp; DNS</td></tr>
+          <tr><td>Servers</td><td>Servers</td><td>Any</td><td class="action-pass">Allow</td><td>Inter-server communication</td></tr>
+          <tr><td>Servers</td><td>Management</td><td>Any</td><td class="action-block">Block</td><td>Security isolation</td></tr>
+          <tr><td>Clients</td><td>Servers</td><td>53, 80, 443, 445, 3389</td><td class="action-pass">Allow</td><td>DNS, web, file share, RDP</td></tr>
+          <tr><td>Clients</td><td>Servers</td><td>22 (SSH)</td><td class="action-block">Block</td><td>No direct SSH from clients</td></tr>
+          <tr><td>Clients</td><td>WAN</td><td>80, 443, 53</td><td class="action-pass">Allow</td><td>Web browsing &amp; DNS</td></tr>
+          <tr><td>Clients</td><td>Management</td><td>Any</td><td class="action-block">Block</td><td>Security isolation</td></tr>
+          <tr><td>Any</td><td>Any</td><td>Any</td><td class="action-block">Block</td><td>Implicit deny-all</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-security">
+        <div class="callout-title">🔒 This Is Your Project 2 Part D Blueprint</div>
+        The traffic flow matrix above maps directly to the firewall rules you
+        will implement in Project 2 Part D. When you write rules in pfSense,
+        implement them on the <em>source</em> interface (e.g., rules for
+        Clients-originated traffic go on the CLIENTS interface). Refer to
+        the Project 2 detailed specification document for the complete
+        deliverable requirements.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-10" onchange="updateProgress()">
+        <label for="chk-10">I have read and understood Section 10.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 11 – Mini-Case: Locked Out
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-minicase" aria-hidden="true"></span>
+  <article class="content-section" id="article-11">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-11"
+         onclick="toggleSection(11)" onkeydown="keyToggle(event,11)">
+      <h2><span class="section-icon" aria-hidden="true">🚨</span>
+          11 · Mini-Case: Locked Out After a Rule Change</h2>
+      <button class="toggle-btn" id="toggle-11" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-11">
+
+      <div class="mini-case" role="region" aria-label="Mini-case scenario: locked out after a rule change">
+        <div class="mini-case-header">🚨 Scenario: Friday Afternoon at TechStart Solutions</div>
+
+        <div class="scenario-box">
+          <p>
+            It is 4:45 PM on a Friday. Alex, the junior IT admin at TechStart
+            Solutions, is tightening security on the pfSense firewall before the
+            weekend. Alex wants to block all traffic from the Servers segment to
+            the Management segment — a sensible security goal.
+          </p>
+          <p>
+            Alex navigates to <strong>Firewall → Rules → LAN</strong> (the
+            Management interface) and adds the following rule at the
+            <strong>top</strong> of the LAN ruleset:
+          </p>
+          <table class="rule-table" aria-label="The rule Alex added">
+            <thead><tr><th>Action</th><th>Source</th><th>Destination</th><th>Port</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td class="action-block">Block</td><td>any</td><td>LAN address</td><td>any</td><td>"Block all inbound to management"</td></tr>
+            </tbody>
+          </table>
+          <p>
+            Alex clicks <strong>Save</strong> and <strong>Apply Changes</strong>.
+            The browser immediately stops loading. Alex can no longer reach the
+            pfSense web UI at <code>https://10.0.1.1</code>. The rule change
+            has locked Alex out of the firewall management interface.
+          </p>
+          <p>
+            It is now 4:52 PM. The senior admin is unreachable. The firewall
+            is running — it is still routing traffic for users — but nobody
+            can access the management UI to fix the rule.
+          </p>
+        </div>
+
+        <!-- Q1 -->
+        <div class="case-question">
+          <p>❓ Question 1: What mistake did Alex make? Explain using rule ordering and implicit deny concepts.</p>
+          <button class="reveal-btn" onclick="revealAnswer('mc-ans1')"
+                  aria-expanded="false" aria-controls="mc-ans1">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="mc-ans1" role="region" aria-label="Model answer 1">
+            <strong>The Mistake — Wrong Rule Placement and Overly Broad Criteria:</strong>
+            <p style="margin-top:0.5rem;">
+              Alex added a <strong>Block any → LAN address any</strong> rule
+              at the <em>top</em> of the LAN interface ruleset. Because pfSense
+              uses <strong>first-match-wins</strong> ordering, this rule is
+              evaluated before all other rules — including the default allow-all
+              rule that was already there.
+            </p>
+            <p>
+              The rule matches <em>all</em> traffic destined for the pfSense
+              LAN IP (10.0.1.1), including Alex's own browser traffic from the
+              Management workstation. The intended goal was to block traffic
+              from the <em>Servers segment</em> to Management — but the rule
+              source was set to <code>any</code>, which includes Management
+              hosts themselves.
+            </p>
+            <p>
+              <strong>Two errors combined:</strong>
+            </p>
+            <ol style="margin-top:0.3rem;">
+              <li>The source should have been <code>SERVERS net</code>, not
+                <code>any</code> — the rule blocked the admin's own traffic.</li>
+              <li>The rule was placed at the top of the LAN ruleset, overriding
+                the existing default allow rule for Management hosts.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="case-question">
+          <p>❓ Question 2: How can Alex recover access to the pfSense web UI without physical access to the firewall hardware?</p>
+          <button class="reveal-btn" onclick="revealAnswer('mc-ans2')"
+                  aria-expanded="false" aria-controls="mc-ans2">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="mc-ans2" role="region" aria-label="Model answer 2">
+            <strong>Recovery Options:</strong>
+            <ol style="margin-top:0.5rem;">
+              <li>
+                <strong>Proxmox Console (preferred for a VM):</strong>
+                Since pfSense is a VM in Proxmox, Alex can open the
+                <strong>Proxmox web UI → pfSense VM → Console</strong> tab.
+                The pfSense console menu is accessible regardless of firewall
+                rules — it is a direct connection to the VM's virtual serial
+                port, not a network connection.
+                <ul style="margin-top:0.3rem;">
+                  <li>From the console, select option
+                    <strong>8 — Shell</strong>.</li>
+                  <li>Run: <code>pfctl -d</code> to temporarily
+                    <strong>disable the packet filter entirely</strong>,
+                    restoring access to the web UI.</li>
+                  <li>Log into the web UI, delete or correct the bad rule,
+                    then re-enable pf with <code>pfctl -e</code>.</li>
+                </ul>
+              </li>
+              <li>
+                <strong>Alternative — Reset to defaults via console:</strong>
+                Console option <strong>4 — Reset to factory defaults</strong>
+                will restore pfSense to its out-of-box state, clearing all
+                rules. This is a last resort as it removes all configuration.
+              </li>
+              <li>
+                <strong>Alternative — Restore from snapshot:</strong>
+                If a Proxmox snapshot was taken before the rule change,
+                roll back the VM to the snapshot. This is why snapshots
+                before major changes are so important.
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="case-question">
+          <p>❓ Question 3: How should the rule have been written to achieve Alex's original security goal without causing a lockout? Write the corrected rule.</p>
+          <button class="reveal-btn" onclick="revealAnswer('mc-ans3')"
+                  aria-expanded="false" aria-controls="mc-ans3">
+            Show Model Answer
+          </button>
+          <div class="model-answer" id="mc-ans3" role="region" aria-label="Model answer 3">
+            <strong>Corrected Rule Design:</strong>
+            <p style="margin-top:0.5rem;">
+              The goal is to block the <em>Servers segment</em> from reaching
+              Management — not to block Management from reaching itself.
+              The correct approach is to add the block rule on the
+              <strong>SERVERS interface</strong> (where Servers-originated
+              traffic enters pfSense), not on the LAN interface.
+            </p>
+            <table class="rule-table" aria-label="Corrected firewall rule" style="margin-top:0.5rem;">
+              <thead><tr><th>Interface</th><th>Action</th><th>Source</th><th>Destination</th><th>Port</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>SERVERS</td>
+                  <td class="action-block">Block</td>
+                  <td>SERVERS net</td>
+                  <td>LAN (Management) net</td>
+                  <td>any</td>
+                  <td>Block servers from reaching management</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="margin-top:0.5rem;">
+              <strong>Key lessons:</strong>
+            </p>
+            <ul>
+              <li>In pfSense, rules are applied on the <strong>ingress
+                interface</strong> — the interface where traffic enters pfSense.
+                Traffic from Servers enters on the SERVERS interface, so
+                block rules for Servers-originated traffic belong there.</li>
+              <li>Never use <code>any</code> as the source when you mean a
+                specific subnet. Be as specific as possible.</li>
+              <li>Test rule changes during business hours with a colleague
+                available to recover access if needed.</li>
+              <li>Always take a <strong>snapshot before applying firewall
+                rule changes</strong> in a production or lab environment.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div><!-- end mini-case -->
+
+      <div class="callout callout-security">
+        <div class="callout-title">🔒 CSLO 2 Connection</div>
+        This scenario illustrates a critical operational security principle:
+        <strong>firewall rule changes must be carefully planned, tested, and
+        reversible.</strong> Accidental self-lockout is one of the most common
+        firewall administration mistakes. Defense-in-depth (Proxmox console
+        access, snapshots) provides the recovery path when a rule change
+        goes wrong.
+      </div>
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-11" onchange="updateProgress()">
+        <label for="chk-11">I have read and understood Section 11.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─────────────────────────────────────────
+       SECTION 12 – Knowledge Check
+  ───────────────────────────────────────── -->
+  <span class="section-anchor" id="sec-kc" aria-hidden="true"></span>
+  <article class="content-section" id="article-12">
+    <div class="section-header" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="body-12"
+         onclick="toggleSection(12)" onkeydown="keyToggle(event,12)">
+      <h2><span class="section-icon" aria-hidden="true">✅</span>
+          12 · Knowledge Check (Ungraded)</h2>
+      <button class="toggle-btn" id="toggle-12" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-12">
+
+      <p style="font-size:0.92rem;margin-bottom:1rem;">
+        Three quick questions to check your understanding before Quiz 9.
+        These are <strong>not graded</strong> — answer honestly and read
+        the explanatory feedback carefully. You may re-attempt by refreshing.
+      </p>
+
+      <div class="kc-wrap" id="kc-form">
+
+        <!-- Q1: True/False — first match wins -->
+        <div class="kc-question" id="kc-q1">
+          <p class="q-text">
+            Q1 · True or False: Firewall rules are evaluated in order from top
+            to bottom, and the <strong>first matching rule</strong> determines
+            the action taken on a packet — subsequent rules are not evaluated
+            for that packet.
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="true">
+                True
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc1" value="false">
+                False
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ1()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q1" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q2: MC — iptables chain for locally-destined traffic -->
+        <div class="kc-question" id="kc-q2">
+          <p class="q-text">
+            Q2 · Which <code>iptables</code> chain handles traffic that is
+            <strong>destined for the local system itself</strong> (e.g., an
+            SSH connection arriving at this host)?
+          </p>
+          <ul class="kc-options" role="list">
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="a">
+                OUTPUT
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="b">
+                FORWARD
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="c">
+                INPUT
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="radio" name="kc2" value="d">
+                PREROUTING
+              </label>
+            </li>
+          </ul>
+          <button class="kc-submit-btn" onclick="checkQ2()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q2" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q3: Short answer — pfSense default for unmatched traffic -->
+        <div class="kc-question" id="kc-q3">
+          <p class="q-text">
+            Q3 · In pfSense, what happens to traffic that does not match
+            <em>any</em> firewall rule on an interface?
+            <br><small style="font-weight:400;color:#555;">
+              Describe the default behavior in a few words
+              (e.g., "it is ___").
+            </small>
+          </p>
+          <input type="text" class="kc-text-input" id="kc3-input"
+                 placeholder="It is …"
+                 aria-label="pfSense default behavior for unmatched traffic"
+                 onkeydown="if(event.key==='Enter') checkQ3()">
+          <br>
+          <button class="kc-submit-btn" onclick="checkQ3()">Check Answer</button>
+          <div class="kc-feedback" id="fb-q3" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Score Summary -->
+        <div class="kc-score-summary" id="kc-score" role="region" aria-live="polite">
+          <div>Your Score</div>
+          <div class="score-big" id="score-display">–</div>
+          <div id="score-msg" style="font-size:0.9rem;margin-top:0.4rem;"></div>
+        </div>
+
+      </div><!-- end kc-wrap -->
+
+      <div class="completion-row">
+        <input type="checkbox" id="chk-12" onchange="updateProgress()">
+        <label for="chk-12">I have completed the Knowledge Check.</label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ── Footer ── -->
+  <footer style="text-align:center;font-size:0.78rem;color:#666;margin-top:2rem;padding-top:1rem;border-top:1px solid #dde3ec;">
+    CSC 152 · Network Operating Systems and Administration · Mendocino College<br>
+    Module 9.3 · Week 9 · March 16–22, 2026 · Instructor: David Pai<br>
+    <em>Supports: Quiz 9 · Lab 9 (EC) · Project 2 Parts A &amp; B · CSLO 2 &amp; CSLO 3</em>
+  </footer>
+
+</main><!-- end .page-wrap -->
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+  /* ── Section Toggle ── */
+  function toggleSection(n) {
+    const body   = document.getElementById('body-' + n);
+    const btn    = document.getElementById('toggle-' + n);
+    const header = body.previousElementSibling;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    header.setAttribute('aria-expanded', String(!isOpen));
+  }
+  function keyToggle(e, n) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(n); }
+  }
+
+  /* ── Tab Switcher ── */
+  function switchTab(id) {
+    const panels  = document.querySelectorAll('.tab-panel');
+    const buttons = document.querySelectorAll('.tab-btn');
+    panels.forEach(p  => p.classList.remove('active'));
+    buttons.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+    const ap = document.getElementById('tab-' + id);
+    const ab = document.getElementById('tbtn-' + id);
+    if (ap) ap.classList.add('active');
+    if (ab) { ab.classList.add('active'); ab.setAttribute('aria-selected', 'true'); }
+  }
+  function keyTab(e, id) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab(id); }
+  }
+
+  /* ── Reveal Answer (Mini-Case) ── */
+  function revealAnswer(id) {
+    const el  = document.getElementById(id);
+    const btn = el.previousElementSibling;
+    el.classList.toggle('visible');
+    const visible = el.classList.contains('visible');
+    btn.textContent = visible ? 'Hide Model Answer' : 'Show Model Answer';
+    btn.setAttribute('aria-expanded', String(visible));
+  }
+
+  /* ── Progress Tracker ── */
+  function updateProgress() {
+    const total   = 12;
+    const checked = document.querySelectorAll('input[type="checkbox"][id^="chk-"]:checked').length;
+    const pct     = Math.round((checked / total) * 100);
+    const bar     = document.getElementById('progress-bar');
+    const outer   = document.getElementById('progress-bar-outer');
+    const count   = document.getElementById('progress-count');
+    bar.style.width = pct + '%';
+    outer.setAttribute('aria-valuenow', checked);
+    count.textContent = checked + ' / ' + total;
+  }
+
+  /* ── Knowledge Check ── */
+  let kcScore    = 0;
+  let kcAnswered = [false, false, false];
+
+  function showFeedback(fbId, correct, message) {
+    const el = document.getElementById(fbId);
+    el.className = 'kc-feedback ' + (correct ? 'correct' : 'incorrect');
+    el.innerHTML = (correct ? '✅ ' : '❌ ') + message;
+  }
+
+  function maybeShowScore() {
+    if (!kcAnswered.every(Boolean)) return;
+    const summary = document.getElementById('kc-score');
+    const display = document.getElementById('score-display');
+    const msg     = document.getElementById('score-msg');
+    summary.classList.add('visible');
+    display.textContent = kcScore + ' / 3';
+    const msgs = [
+      'Keep reviewing — re-read the sections and try again after a refresh.',
+      'Good effort! Review the sections for the questions you missed.',
+      'Almost there! Double-check the one you missed.',
+      '🎉 Perfect score! You are ready for the firewall questions on Quiz 9.'
+    ];
+    msg.textContent = msgs[kcScore] || '';
+  }
+
+  function checkQ1() {
+    if (kcAnswered[0]) return;
+    const sel = document.querySelector('input[name="kc1"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'true';
+    kcAnswered[0] = true;
+    if (correct) kcScore++;
+    showFeedback('fb-q1', correct,
+      correct
+        ? 'Correct! This is the <strong>first-match-wins</strong> model. Rules are evaluated top to bottom; the first rule whose criteria match the packet determines the action, and no further rules are checked for that packet.'
+        : 'Incorrect. The statement is <strong>True</strong>. Firewall rules use first-match-wins ordering: the first matching rule wins, and subsequent rules are skipped. This is why rule order is so important — a broad allow rule near the top can bypass specific block rules below it.'
+    );
+    document.querySelectorAll('input[name="kc1"]').forEach(r => r.disabled = true);
+    maybeShowScore();
+  }
+
+  function checkQ2() {
+    if (kcAnswered[1]) return;
+    const sel = document.querySelector('input[name="kc2"]:checked');
+    if (!sel) { alert('Please select an answer first.'); return; }
+    const correct = sel.value === 'c';
+    kcAnswered[1] = true;
+    if (correct) kcScore++;
+    showFeedback('fb-q2', correct,
+      correct
+        ? 'Correct! The <strong>INPUT</strong> chain handles traffic destined for the local system. If a packet is addressed to an IP on this host (e.g., someone SSHing into this machine), it traverses the INPUT chain. OUTPUT handles outbound traffic from this host; FORWARD handles traffic passing through this host to another destination.'
+        : 'Incorrect. The correct answer is <strong>INPUT</strong>. Remember the three filter chains: <strong>INPUT</strong> = traffic arriving at this host; <strong>OUTPUT</strong> = traffic leaving this host; <strong>FORWARD</strong> = traffic passing through this host from one interface to another (used when the host acts as a router).'
+    );
+    document.querySelectorAll('input[name="kc2"]').forEach(r => r.disabled = true);
+    maybeShowScore();
+  }
+
+  function checkQ3() {
+    if (kcAnswered[2]) return;
+    const input = document.getElementById('kc3-input');
+    const val   = input.value.trim().toLowerCase();
+    const keywords = ['block', 'drop', 'denied', 'deny', 'implicit', 'discard', 'dropped', 'blocked'];
+    const correct  = keywords.some(k => val.includes(k));
+    kcAnswered[2] = true;
+    if (correct) kcScore++;
+    input.disabled = true;
+    showFeedback('fb-q3', correct,
+      correct
+        ? 'Correct! Traffic that does not match any rule is <strong>blocked (dropped)</strong> by the implicit deny-all at the end of every pfSense ruleset. This is the default-deny security posture: anything not explicitly permitted is forbidden. You must write explicit allow rules for every type of traffic you want to pass.'
+        : 'Not quite. The correct answer is that unmatched traffic is <strong>blocked / dropped</strong>. pfSense (like most firewalls) has an <em>implicit deny-all</em> at the end of every interface\'s ruleset. If no rule matches a packet, it is silently discarded. This is why OPT interfaces (SERVERS, CLIENTS) have no connectivity until you add explicit allow rules.'
+    );
+    maybeShowScore();
+  }
+</script>
+</body>
+</html>
