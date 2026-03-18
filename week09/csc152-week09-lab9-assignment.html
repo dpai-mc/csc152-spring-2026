@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 9 – Network Services &amp; Virtual Firewall Configuration | CSC 152</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f6f9;
+    color: #1a1a2e;
+    line-height: 1.7;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute; top: -100%; left: 1rem;
+    background: #1a3a5c; color: #fff; padding: 0.5rem 1rem;
+    border-radius: 0 0 4px 4px; font-weight: 700; z-index: 9999;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Navigation ── */
+  nav#main-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: #1a3a5c;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  nav#main-nav .nav-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.25rem; padding: 0.5rem 1rem;
+  }
+  nav#main-nav .nav-brand {
+    color: #f0c040; font-weight: 700; font-size: 0.85rem;
+    margin-right: 0.75rem; white-space: nowrap;
+  }
+  nav#main-nav a {
+    color: #cfe2ff; text-decoration: none;
+    font-size: 0.82rem; font-weight: 700;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px; white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+  }
+  nav#main-nav a:hover { background: #2e5f8a; color: #fff; }
+  nav#main-nav a:focus-visible {
+    outline: 3px solid #f0c040; outline-offset: 2px;
+    background: #2e5f8a; color: #fff;
+  }
+
+  /* ── Page Layout ── */
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── Lab Header ── */
+  .lab-header {
+    background: linear-gradient(135deg, #1a3a5c 0%, #2e5f8a 100%);
+    color: #fff; border-radius: 10px; padding: 2rem 2rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .lab-header .badge {
+    display: inline-block; background: #f0c040; color: #1a1a2e;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em;
+    padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+  .lab-header h1 { font-size: 1.75rem; line-height: 1.25; margin-bottom: 0.5rem; }
+  .lab-header .meta {
+    font-size: 0.85rem; opacity: 0.85; display: flex; flex-wrap: wrap; gap: 1rem;
+    margin-top: 0.75rem;
+  }
+  .lab-header .meta span::before { content: "• "; }
+  .lab-header .meta span:first-child::before { content: ""; }
+
+  /* ── Points Summary Bar ── */
+  .points-bar {
+    display: flex; flex-wrap: wrap; gap: 0.6rem;
+    margin: 1rem 0 0;
+  }
+  .points-chip {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px; padding: 0.2rem 0.7rem;
+    font-size: 0.8rem; font-weight: 600; color: #fff;
+  }
+  .points-chip.total { background: #f0c040; color: #1a1a2e; border-color: #f0c040; }
+
+  /* ── Section Anchors (offset for sticky nav) ── */
+  .section-anchor {
+    display: block; height: 0; visibility: hidden;
+    margin-top: -70px; padding-top: 70px;
+  }
+
+  /* ── Content Sections ── */
+  .content-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 1.75rem; overflow: hidden;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 1.5rem; cursor: pointer;
+    background: #f0f4fa; border-bottom: 2px solid #dde3ec;
+    user-select: none;
+  }
+  .section-header:hover { background: #e4ecf7; }
+  .section-header:focus-visible { outline: 3px solid #1a3a5c; outline-offset: -3px; }
+  .section-header h2 {
+    font-size: 1.1rem; color: #1a3a5c; display: flex; align-items: center; gap: 0.6rem;
+  }
+  .section-icon { font-size: 1.2rem; }
+  .part-badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: #1a3a5c; color: #f0c040;
+    font-size: 0.72rem; font-weight: 700;
+    padding: 0.15rem 0.55rem; border-radius: 12px;
+    margin-left: 0.5rem;
+  }
+  .toggle-btn {
+    background: none; border: none; cursor: pointer;
+    color: #1a3a5c; font-size: 1.2rem; padding: 0.25rem;
+    border-radius: 4px; transition: transform 0.25s; line-height: 1;
+  }
+  .toggle-btn:focus-visible { outline: 3px solid #1a3a5c; outline-offset: 2px; }
+  .toggle-btn.open { transform: rotate(180deg); }
+  .section-body { padding: 1.5rem; display: none; }
+  .section-body.open { display: block; }
+
+  /* ── Typography Helpers ── */
+  h3 { font-size: 1rem; color: #1a3a5c; margin: 1.25rem 0 0.5rem; }
+  h4 { font-size: 0.92rem; color: #2e5f8a; margin: 1rem 0 0.4rem; }
+  p { margin-bottom: 0.85rem; }
+  ul, ol { padding-left: 1.4rem; margin-bottom: 0.85rem; }
+  li { margin-bottom: 0.3rem; }
+  strong { color: #1a1a2e; }
+  code {
+    background: #eef2f7; color: #c0392b;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 3px;
+  }
+
+  /* ── Callout Boxes ── */
+  .callout {
+    border-left: 4px solid; border-radius: 0 6px 6px 0;
+    padding: 0.85rem 1rem; margin: 1rem 0; font-size: 0.92rem;
+  }
+  .callout-info    { border-color: #2e5f8a; background: #eef4fb; }
+  .callout-tip     { border-color: #2e7d32; background: #edf7ee; }
+  .callout-warning { border-color: #e65100; background: #fff3e0; }
+  .callout-ec      { border-color: #f0c040; background: #fffde7; }
+  .callout-title   { font-weight: 700; margin-bottom: 0.3rem; }
+
+  /* ── Step List ── */
+  .step-list { list-style: none; padding: 0; margin: 0.85rem 0; }
+  .step-list li {
+    display: flex; gap: 0.85rem; align-items: flex-start;
+    margin-bottom: 0.85rem;
+  }
+  .step-num {
+    flex-shrink: 0; width: 1.8rem; height: 1.8rem;
+    background: #1a3a5c; color: #f0c040;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 0.8rem;
+  }
+  .step-content { flex: 1; padding-top: 0.15rem; }
+
+  /* ── Config Table ── */
+  .config-table {
+    width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.85rem 0;
+  }
+  .config-table th {
+    background: #1a3a5c; color: #fff; text-align: left;
+    padding: 0.6rem 0.85rem; font-size: 0.82rem;
+  }
+  .config-table td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #eee; }
+  .config-table tr:nth-child(even) td { background: #f8fafc; }
+  .config-table tr:hover td { background: #eef4fb; }
+  .config-table code { font-size: 0.82rem; }
+
+  /* ── Network Topology Diagram ── */
+  .topo-diagram {
+    background: #1e2a3a; color: #cdd9e5;
+    border-radius: 8px; padding: 1.1rem 1.25rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.8rem; line-height: 1.6;
+    overflow-x: auto; margin: 0.85rem 0;
+    white-space: pre;
+  }
+
+  /* ── Firewall Rule Table ── */
+  .fw-table {
+    width: 100%; border-collapse: collapse; font-size: 0.83rem; margin: 0.85rem 0;
+    overflow-x: auto; display: block;
+  }
+  .fw-table th {
+    background: #2e5f8a; color: #fff; text-align: left;
+    padding: 0.5rem 0.7rem; white-space: nowrap;
+  }
+  .fw-table td { padding: 0.45rem 0.7rem; border-bottom: 1px solid #dde3ec; white-space: nowrap; }
+  .fw-table tr:nth-child(even) td { background: #f8fafc; }
+  .fw-table .action-pass { color: #1b5e20; font-weight: 700; }
+  .fw-table .action-block { color: #b71c1c; font-weight: 700; }
+
+  /* ── Observation Fields ── */
+  .obs-field {
+    margin: 1rem 0;
+  }
+  .obs-label {
+    display: block; font-size: 0.88rem; font-weight: 600; color: #1a3a5c;
+    margin-bottom: 0.4rem;
+  }
+  .obs-textarea {
+    width: 100%; min-height: 90px; padding: 0.65rem 0.85rem;
+    border: 1.5px solid #b8c4d4; border-radius: 6px;
+    font-family: inherit; font-size: 0.88rem; line-height: 1.6;
+    background: #fafcff; color: #1a1a2e; resize: vertical;
+    transition: border-color 0.15s;
+  }
+  .obs-textarea:focus { outline: none; border-color: #1a3a5c; background: #fff; }
+  .obs-textarea.code-entry {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.83rem; background: #f8fafc;
+  }
+  .obs-hint { font-size: 0.78rem; color: #666; margin-top: 0.3rem; }
+
+  /* ── Deliverable Reminder ── */
+  .deliverable-box {
+    background: #e8f5e9; border: 2px solid #2e7d32;
+    border-radius: 8px; padding: 1rem 1.1rem; margin: 1.25rem 0;
+    font-size: 0.9rem;
+  }
+  .deliverable-box .d-title {
+    font-weight: 700; color: #1b5e20; display: flex; align-items: center;
+    gap: 0.4rem; margin-bottom: 0.5rem;
+  }
+
+  /* ── Hints Accordion ── */
+  .hints-section {
+    background: #fff8e1; border: 2px solid #f0c040;
+    border-radius: 10px; margin-bottom: 1.75rem; overflow: hidden;
+  }
+  .hints-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.25rem; cursor: pointer; user-select: none;
+  }
+  .hints-header:hover { background: #fff3cd; }
+  .hints-header:focus-visible { outline: 3px solid #1a3a5c; outline-offset: -3px; }
+  .hints-header h2 { font-size: 1rem; color: #e65100; display: flex; align-items: center; gap: 0.5rem; }
+  .hints-body { padding: 1.25rem 1.5rem; display: none; border-top: 1px solid #ffe082; }
+  .hints-body.open { display: block; }
+
+  /* ── Save PDF Button ── */
+  .pdf-bar {
+    text-align: center; padding: 1rem 0 0.5rem;
+  }
+  .pdf-btn {
+    background: #1a3a5c; color: #fff; border: none; cursor: pointer;
+    padding: 0.65rem 1.6rem; border-radius: 6px; font-size: 0.95rem;
+    font-weight: 700; letter-spacing: 0.03em;
+    transition: background 0.15s; display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .pdf-btn:hover { background: #2e5f8a; }
+  .pdf-btn:focus-visible { outline: 3px solid #f0c040; outline-offset: 2px; }
+  .pdf-note { font-size: 0.78rem; color: #555; margin-top: 0.4rem; }
+
+  /* ── Submission Box ── */
+  .submit-section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    padding: 1.5rem; margin-bottom: 1.75rem;
+  }
+  .submit-section h2 { font-size: 1.15rem; color: #1a3a5c; margin-bottom: 0.75rem; }
+
+  /* ── Print / PDF styles ── */
+  @media print {
+    nav#main-nav, .skip-link, .pdf-bar, .toggle-btn { display: none !important; }
+    .section-body { display: block !important; }
+    .content-section { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    body { background: #fff; }
+    .page-wrap { padding: 0; }
+    .hints-body { display: block !important; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .lab-header h1 { font-size: 1.3rem; }
+    nav#main-nav a { font-size: 0.72rem; padding: 0.2rem 0.4rem; }
+    .fw-table { font-size: 0.76rem; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ══════════════════════════════════════════════
+     TOP NAVIGATION
+══════════════════════════════════════════════ -->
+<nav id="main-nav" aria-label="Lab sections">
+  <div class="nav-inner">
+    <span class="nav-brand">Lab 9 – Virtual Firewall</span>
+    <a href="#sec-overview" aria-label="Overview &amp; Objectives">Overview</a>
+    <a href="#sec-parta" aria-label="Part A: Proxmox Network Configuration">Part A</a>
+    <a href="#sec-partb" aria-label="Part B: pfSense Installation &amp; Setup">Part B</a>
+    <a href="#sec-partc" aria-label="Part C: DHCP Configuration">Part C</a>
+    <a href="#sec-partd" aria-label="Part D: Firewall Rules">Part D</a>
+    <a href="#sec-diagram" aria-label="Network Diagram">Diagram</a>
+    <a href="#sec-deliverables" aria-label="Deliverables &amp; Submission">Submit</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════ -->
+<main id="main-content" class="page-wrap">
+
+  <!-- Lab Header -->
+  <header class="lab-header" role="banner">
+    <div class="badge">CSC 152 · Week 9 · Optional Extra Credit Lab</div>
+    <h1>Lab 9 – Network Services &amp; Virtual Firewall Configuration</h1>
+    <p style="opacity:0.9;font-size:0.95rem;margin-top:0.5rem;">
+      Deploy pfSense 2.7.2 as a virtual firewall in Proxmox, segment a small organization's
+      network into three subnets, configure DHCP and firewall rules, and analyze live
+      firewall logs. Completing this lab gives you a significant head start on
+      Project 2, Parts A and B.
+    </p>
+    <div class="meta">
+      <span>Week 9 · March 16–22, 2026</span>
+      <span>Optional Extra Credit – 30 points</span>
+      <span>Due: Sunday, March 22, 2026 at 11:59 PM</span>
+      <span>No late submissions accepted for extra credit</span>
+    </div>
+    <div class="points-bar" role="list" aria-label="Point values by part">
+      <span class="points-chip" role="listitem">Part A: 6 pts</span>
+      <span class="points-chip" role="listitem">Part B: 8 pts</span>
+      <span class="points-chip" role="listitem">Part C: 6 pts</span>
+      <span class="points-chip" role="listitem">Part D: 8 pts</span>
+      <span class="points-chip" role="listitem">Diagram: 2 pts</span>
+      <span class="points-chip total" role="listitem">Total: 30 pts EC</span>
+    </div>
+  </header>
+
+  <div class="callout callout-ec">
+    <div class="callout-title">Extra Credit — Optional</div>
+    This lab is entirely optional. Completing it can add up to 30 extra credit points to your
+    final grade. Use the text areas below to record your notes and observations as you work.
+    When finished, compile all required screenshots and documentation into a single
+    <strong>PDF or DOCX lab report</strong> and submit it to the Lab 9 assignment in Canvas.
+  </div>
+
+  <!-- ══════════ OVERVIEW ══════════ -->
+  <span class="section-anchor" id="sec-overview"></span>
+  <section class="content-section" aria-labelledby="hdr-overview">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="true" aria-controls="body-overview" id="hdr-overview" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <h2><span class="section-icon" aria-hidden="true">🗺️</span> Overview &amp; Objectives</h2>
+      <button class="toggle-btn open" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body open" id="body-overview">
+
+      <h3>Scenario</h3>
+      <p>You have been hired as a junior network administrator for <strong>Lakeview Consulting</strong>,
+      a small professional services firm. The company currently runs all its servers and workstations
+      on a flat, unsegmented network — a security risk. Your task is to design and implement a
+      segmented virtual network using <strong>Proxmox VE</strong> and a <strong>pfSense 2.7.2</strong>
+      virtual firewall. When finished, the network will have three isolated segments: Management,
+      Servers, and Clients — with controlled traffic flow between them.</p>
+
+      <h3>Lab Parts at a Glance</h3>
+      <table class="config-table" aria-label="Lab parts and point values">
+        <thead>
+          <tr><th>Part</th><th>Task</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Part A</strong></td><td>Proxmox Network Configuration — create virtual bridges</td><td>6 pts</td></tr>
+          <tr><td><strong>Part B</strong></td><td>pfSense Installation &amp; Setup — deploy and configure the firewall VM</td><td>8 pts</td></tr>
+          <tr><td><strong>Part C</strong></td><td>DHCP Configuration — set up dynamic IP assignment for the Clients network</td><td>6 pts</td></tr>
+          <tr><td><strong>Part D</strong></td><td>Firewall Rules — create and test traffic-control rules across all interfaces</td><td>8 pts</td></tr>
+          <tr><td><strong>Diagram</strong></td><td>Network topology diagram showing all segments, IPs, and connections</td><td>2 pts</td></tr>
+          <tr><td colspan="2" style="font-weight:700;text-align:right;">Total Extra Credit</td><td><strong>30 pts</strong></td></tr>
+        </tbody>
+      </table>
+
+      <h3>What You Will Build</h3>
+      <div class="topo-diagram" role="img" aria-label="Network topology: Proxmox host with pfSense firewall bridging WAN and three internal segments">&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502;                    Proxmox VE Host                          &#x2502;
+&#x2502;                                                             &#x2502;
+&#x2502;  vmbr0 (WAN) &#x2500;&#x2500;&#x2500;&#x2500;&#x2510;                                        &#x2502;
+&#x2502;  10.255.254.x      &#x2502;                                        &#x2502;
+&#x2502;                    &#x25BC;                                        &#x2502;
+&#x2502;              &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;                                &#x2502;
+&#x2502;              &#x2502; pfSense 2.7.2 &#x2502;                                &#x2502;
+&#x2502;              &#x2502;   Firewall    &#x2502;                                &#x2502;
+&#x2502;              &#x2502; WAN:  vtnet0  &#x2502;                                &#x2502;
+&#x2502;              &#x2502; LAN:  vtnet1 &#x2500;&#x2500;&#x2500;&#x2500; vmbr1 (Management 10.0.1.0/24) &#x2502;
+&#x2502;              &#x2502; OPT1: vtnet2 &#x2500;&#x2500;&#x2500;&#x2500; vmbr2 (Servers   10.0.2.0/24) &#x2502;
+&#x2502;              &#x2502; OPT2: vtnet3 &#x2500;&#x2500;&#x2500;&#x2500; vmbr3 (Clients   10.0.3.0/24) &#x2502;
+&#x2502;              &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;                                &#x2502;
+&#x2502;                    &#x2502;                                        &#x2502;
+&#x2502;         &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x253C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;                               &#x2502;
+&#x2502;         &#x25BC;         &#x25BC;         &#x25BC;                               &#x2502;
+&#x2502;    &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510; &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510; &#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;                         &#x2502;
+&#x2502;    &#x2502; Mgmt   &#x2502; &#x2502; Server &#x2502; &#x2502; Client &#x2502;                         &#x2502;
+&#x2502;    &#x2502; 10.0.1 &#x2502; &#x2502; 10.0.2 &#x2502; &#x2502; 10.0.3 &#x2502;                         &#x2502;
+&#x2502;    &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518; &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518; &#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;                         &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;</div>
+
+      <h3>IP Addressing Summary</h3>
+      <table class="config-table" aria-label="IP addressing scheme">
+        <thead>
+          <tr><th>Bridge</th><th>Segment</th><th>Subnet</th><th>pfSense Gateway IP</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>vmbr0</code></td><td>WAN (existing)</td><td>10.255.254.0/24</td><td>DHCP from lab</td></tr>
+          <tr><td><code>vmbr1</code></td><td>Management (LAN)</td><td>10.0.1.0/24</td><td>10.0.1.1</td></tr>
+          <tr><td><code>vmbr2</code></td><td>Servers (OPT1)</td><td>10.0.2.0/24</td><td>10.0.2.1</td></tr>
+          <tr><td><code>vmbr3</code></td><td>Clients (OPT2)</td><td>10.0.3.0/24</td><td>10.0.3.1</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Connection to Project 2</h3>
+      <div class="callout callout-tip">
+        <div class="callout-title">Head Start on Project 2</div>
+        This lab covers exactly what Project 2, Parts A and B require: deploying pfSense in
+        Proxmox, creating network segments, configuring DHCP, and implementing firewall rules.
+        Students who complete Lab 9 will have a working foundation they can build on directly
+        for the project (due Week 11, Sunday March 29, 2026).
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ PART A ══════════ -->
+  <span class="section-anchor" id="sec-parta"></span>
+  <section class="content-section" aria-labelledby="hdr-parta">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="true" aria-controls="body-parta" id="hdr-parta" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <h2>
+        <span class="section-icon" aria-hidden="true">🌐</span>
+        Part A – Proxmox Network Configuration
+        <span class="part-badge">6 pts</span>
+      </h2>
+      <button class="toggle-btn open" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body open" id="body-parta">
+
+      <p>Before deploying pfSense, you must create three additional Linux bridges in Proxmox.
+      Each bridge becomes one internal network segment. The existing <code>vmbr0</code> provides WAN
+      (upstream/internet) connectivity; the new bridges will carry internal traffic.</p>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">Important: Leave bridge IP fields blank</div>
+        When creating bridges for pfSense-managed subnets, do <strong>not</strong> assign IP
+        addresses to the Proxmox bridge interfaces. pfSense will serve as the gateway for each
+        subnet. Assigning IPs to the bridges in Proxmox would create routing conflicts.
+      </div>
+
+      <h3>Task A-1: Create Linux Bridge vmbr1 (Management)</h3>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Log in to the Proxmox web interface and select your node from the left panel.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Navigate to <strong>Node → Network</strong> in the left sidebar.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Click <strong>Create → Linux Bridge</strong>.</div></li>
+        <li><span class="step-num">4</span><div class="step-content">Set the name to <code>vmbr1</code>. Leave the IP address and gateway fields <strong>blank</strong>. Set a comment: <em>Management – 10.0.1.0/24</em>.</div></li>
+        <li><span class="step-num">5</span><div class="step-content">Click <strong>Create</strong>, then click <strong>Apply Configuration</strong> at the top of the Network panel.</div></li>
+      </ol>
+
+      <h3>Task A-2: Create Linux Bridge vmbr2 (Servers)</h3>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Repeat the bridge creation process. Set the name to <code>vmbr2</code>.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Leave IP/gateway blank. Comment: <em>Servers – 10.0.2.0/24</em>.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Click <strong>Create</strong> (no need to apply yet — apply once after all bridges are created).</div></li>
+      </ol>
+
+      <h3>Task A-3: Create Linux Bridge vmbr3 (Clients)</h3>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Create a third bridge named <code>vmbr3</code>.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Leave IP/gateway blank. Comment: <em>Clients – 10.0.3.0/24</em>.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Click <strong>Create</strong>, then click <strong>Apply Configuration</strong>. Confirm all three new bridges appear in the network list.</div></li>
+      </ol>
+
+      <h3>Task A-4: Document Your IP Addressing Scheme</h3>
+      <p>Complete the table below with the details of your network configuration.</p>
+
+      <div class="obs-field">
+        <label class="obs-label" for="obs-a-bridges">Bridge configuration summary (bridge name, segment, subnet, gateway IP for each):</label>
+        <textarea class="obs-textarea" id="obs-a-bridges" rows="6" placeholder="Example:&#10;vmbr0 – WAN – 10.255.254.0/24 – DHCP from lab&#10;vmbr1 – Management – 10.0.1.0/24 – 10.0.1.1 (pfSense)&#10;vmbr2 – Servers – 10.0.2.0/24 – 10.0.2.1 (pfSense)&#10;vmbr3 – Clients – 10.0.3.0/24 – 10.0.3.1 (pfSense)"></textarea>
+        <p class="obs-hint">This will appear in your lab report table.</p>
+      </div>
+
+      <div class="obs-field">
+        <label class="obs-label" for="obs-a-design">Segmentation design explanation (150–200 words): Why is it beneficial to divide the network into Management, Servers, and Clients segments? What security or operational advantages does this provide for Lakeview Consulting?</label>
+        <textarea class="obs-textarea" id="obs-a-design" rows="8" placeholder="Write your 150–200 word explanation here. Consider: traffic isolation, security zones, limiting blast radius of a breach, administrative control..."></textarea>
+        <p class="obs-hint">Target: 150–200 words. This explanation is required in your lab report (Part A deliverable).</p>
+      </div>
+
+      <div class="deliverable-box">
+        <div class="d-title">📋 Part A Deliverables</div>
+        <ul>
+          <li>Screenshots of Proxmox Network panel showing all three new bridges (vmbr1, vmbr2, vmbr3)</li>
+          <li>IP addressing scheme documentation table (use your notes above)</li>
+          <li>150–200 word explanation of your network segmentation design</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ PART B ══════════ -->
+  <span class="section-anchor" id="sec-partb"></span>
+  <section class="content-section" aria-labelledby="hdr-partb">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="body-partb" id="hdr-partb" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <h2>
+        <span class="section-icon" aria-hidden="true">🔥</span>
+        Part B – pfSense Installation &amp; Setup
+        <span class="part-badge">8 pts</span>
+      </h2>
+      <button class="toggle-btn" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-partb">
+
+      <p>With the virtual bridges in place, you will now create a new VM in Proxmox, install
+      pfSense 2.7.2, assign interfaces via the console, and complete the initial configuration
+      wizard through the web GUI.</p>
+
+      <h3>Task B-1: Create the pfSense VM in Proxmox</h3>
+      <p>Use the following settings when creating the VM. Click <strong>Create VM</strong> in
+      Proxmox and work through each tab.</p>
+
+      <table class="config-table" aria-label="pfSense VM configuration settings">
+        <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>VM ID</td><td>Student choice (e.g., <code>9001</code>)</td></tr>
+          <tr><td>Name</td><td><code>pfsense-fw</code></td></tr>
+          <tr><td>OS Type</td><td>Other</td></tr>
+          <tr><td>ISO Image</td><td><code>pfSense-CE-2.7.2-RELEASE-amd64.iso</code></td></tr>
+          <tr><td>System</td><td>Default (SeaBIOS)</td></tr>
+          <tr><td>Disk Size</td><td>20 GB, VirtIO Block, Write-back cache</td></tr>
+          <tr><td>CPU</td><td>1 socket, 1 core, Type: host</td></tr>
+          <tr><td>Memory</td><td>2048 MB (2 GB)</td></tr>
+          <tr><td>Network 1</td><td>Bridge: <code>vmbr0</code> (WAN), Model: VirtIO</td></tr>
+          <tr><td>Network 2</td><td>Bridge: <code>vmbr1</code> (Management), Model: VirtIO</td></tr>
+          <tr><td>Network 3</td><td>Bridge: <code>vmbr2</code> (Servers), Model: VirtIO</td></tr>
+          <tr><td>Network 4</td><td>Bridge: <code>vmbr3</code> (Clients), Model: VirtIO</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">Snapshot tip</div>
+        After creating the VM but <em>before</em> starting the installation, take a Proxmox
+        snapshot named <strong>pre-install</strong>. Snapshots let you roll back to a clean state
+        if something goes wrong during configuration.
+      </div>
+
+      <h3>Task B-2: Install pfSense 2.7.2</h3>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Start the VM and open the console. The pfSense installer will boot from the ISO.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Accept the copyright/end-user agreement.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Select <strong>Install pfSense</strong>.</div></li>
+        <li><span class="step-num">4</span><div class="step-content">Choose your keymap (typically US).</div></li>
+        <li><span class="step-num">5</span><div class="step-content">Select <strong>Auto (ZFS)</strong> or <strong>Auto (UFS)</strong> partitioning. Either works for a lab environment.</div></li>
+        <li><span class="step-num">6</span><div class="step-content">Confirm the disk and proceed. Installation will complete in about 2–3 minutes.</div></li>
+        <li><span class="step-num">7</span><div class="step-content">When prompted to reboot, select <strong>Reboot</strong>. <em>Before the VM boots, remove the ISO from the VM's CD/DVD drive</em> in Proxmox (Hardware → CD/DVD Drive → Remove ISO).</div></li>
+      </ol>
+
+      <h3>Task B-3: Assign Interfaces at the Console</h3>
+      <p>After pfSense reboots, you will see a numbered console menu. Interface assignment
+      happens here before the web GUI is accessible.</p>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Select option <strong>1) Assign Interfaces</strong>.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">When asked to set up VLANs, type <strong>n</strong> (no).</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Assign interfaces as follows (pfSense names NICs <code>vtnet0</code>–<code>vtnet3</code> in order):
+          <table class="config-table" style="margin-top:0.6rem;" aria-label="Interface assignments">
+            <thead><tr><th>pfSense Interface</th><th>NIC</th><th>Bridge / Segment</th></tr></thead>
+            <tbody>
+              <tr><td>WAN</td><td><code>vtnet0</code></td><td>vmbr0 – WAN/upstream</td></tr>
+              <tr><td>LAN</td><td><code>vtnet1</code></td><td>vmbr1 – Management</td></tr>
+              <tr><td>OPT1</td><td><code>vtnet2</code></td><td>vmbr2 – Servers</td></tr>
+              <tr><td>OPT2</td><td><code>vtnet3</code></td><td>vmbr3 – Clients</td></tr>
+            </tbody>
+          </table>
+        </div></li>
+        <li><span class="step-num">4</span><div class="step-content">Confirm the assignments and allow pfSense to apply them.</div></li>
+        <li><span class="step-num">5</span><div class="step-content">Select option <strong>2) Set Interface IP Address</strong>. Set LAN (Management) to <strong>10.0.1.1/24</strong>, OPT1 (Servers) to <strong>10.0.2.1/24</strong>, OPT2 (Clients) to <strong>10.0.3.1/24</strong>. WAN should be DHCP.</div></li>
+      </ol>
+
+      <h3>Task B-4: Complete the Web GUI Setup Wizard</h3>
+      <p>The pfSense web interface is accessible from a VM on the Management network
+      (vmbr1). Place a management VM or your workstation on vmbr1 and browse to
+      <code>https://10.0.1.1</code>. Default credentials: <strong>admin / pfsense</strong>.</p>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Log in and click through the <strong>Setup Wizard</strong>.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Set <strong>Hostname</strong>: <code>pfsense</code> and <strong>Domain</strong>: <code>lab.local</code>.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Set DNS servers: primary <code>10.255.254.1</code>, secondary <code>8.8.8.8</code>.</div></li>
+        <li><span class="step-num">4</span><div class="step-content">Set your local timezone.</div></li>
+        <li><span class="step-num">5</span><div class="step-content">Leave WAN set to DHCP; verify LAN shows <code>10.0.1.1/24</code>.</div></li>
+        <li><span class="step-num">6</span><div class="step-content"><strong>Change the admin password</strong> to something you will remember.</div></li>
+        <li><span class="step-num">7</span><div class="step-content">Finish the wizard and reload pfSense.</div></li>
+        <li><span class="step-num">8</span><div class="step-content">Go to <strong>Interfaces → OPT1</strong>. Enable it, rename it <code>SERVERS</code>, and verify IP is <code>10.0.2.1/24</code>. Save and apply.</div></li>
+        <li><span class="step-num">9</span><div class="step-content">Go to <strong>Interfaces → OPT2</strong>. Enable it, rename it <code>CLIENTS</code>, and verify IP is <code>10.0.3.1/24</code>. Save and apply.</div></li>
+      </ol>
+
+      <div class="obs-field">
+        <label class="obs-label" for="obs-b-interfaces">Interface configuration summary (record the assigned NIC, IP, and subnet for each interface after wizard completion):</label>
+        <textarea class="obs-textarea code-entry" id="obs-b-interfaces" rows="6" placeholder="WAN  (vtnet0): DHCP – 10.255.254.x/24&#10;LAN  (vtnet1): 10.0.1.1/24  [Management]&#10;OPT1 (vtnet2): 10.0.2.1/24  [SERVERS]&#10;OPT2 (vtnet3): 10.0.3.1/24  [CLIENTS]"></textarea>
+      </div>
+
+      <div class="obs-field">
+        <label class="obs-label" for="obs-b-notes">Installation notes / issues encountered and how you resolved them:</label>
+        <textarea class="obs-textarea" id="obs-b-notes" rows="5" placeholder="Record any issues, error messages, or unexpected behavior you encountered during installation and how you resolved them..."></textarea>
+      </div>
+
+      <div class="deliverable-box">
+        <div class="d-title">📋 Part B Deliverables</div>
+        <ul>
+          <li>VM configuration screenshots from Proxmox (hardware settings, network interfaces)</li>
+          <li>pfSense installation process screenshots (installer, partitioning, reboot)</li>
+          <li>Console interface assignment screenshot</li>
+          <li>Web GUI Setup Wizard completion screenshot (hostname, domain visible)</li>
+          <li>Screenshots of all four interfaces (WAN, LAN/Management, SERVERS, CLIENTS) showing enabled status and IP addresses</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ PART C ══════════ -->
+  <span class="section-anchor" id="sec-partc"></span>
+  <section class="content-section" aria-labelledby="hdr-partc">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="body-partc" id="hdr-partc" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <h2>
+        <span class="section-icon" aria-hidden="true">📡</span>
+        Part C – DHCP Configuration
+        <span class="part-badge">6 pts</span>
+      </h2>
+      <button class="toggle-btn" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-partc">
+
+      <p>The CLIENTS subnet (10.0.3.0/24) will use pfSense as its DHCP server so that
+      workstations receive IP addresses automatically when they connect. You will also configure
+      at least two static DHCP mappings to ensure that known devices always receive the same IP.</p>
+
+      <h3>Task C-1: Configure the DHCP Scope for the CLIENTS Network</h3>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">In the pfSense web GUI, navigate to <strong>Services → DHCP Server</strong>.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Select the <strong>CLIENTS</strong> tab (OPT2).</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Check <strong>Enable DHCP server on CLIENTS interface</strong>.</div></li>
+        <li><span class="step-num">4</span><div class="step-content">Configure the scope using the values in the table below.</div></li>
+        <li><span class="step-num">5</span><div class="step-content">Scroll down and click <strong>Save</strong>. pfSense will apply the DHCP configuration immediately.</div></li>
+      </ol>
+
+      <table class="config-table" aria-label="DHCP scope settings for CLIENTS network">
+        <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Interface</td><td>CLIENTS (OPT2)</td></tr>
+          <tr><td>Enable</td><td>Checked ✓</td></tr>
+          <tr><td>Address Pool Range — From</td><td><code>10.0.3.100</code></td></tr>
+          <tr><td>Address Pool Range — To</td><td><code>10.0.3.200</code></td></tr>
+          <tr><td>DNS Servers (primary)</td><td><code>10.0.2.10</code> (future DNS server on Servers subnet)</td></tr>
+          <tr><td>Gateway</td><td><code>10.0.3.1</code></td></tr>
+          <tr><td>Domain Name</td><td><code>lab.local</code></td></tr>
+          <tr><td>Default Lease Time</td><td><code>86400</code> (24 hours)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Task C-2: Create Static DHCP Mappings</h3>
+      <p>Static mappings reserve a specific IP for a known device based on its MAC address.
+      Create at least <strong>two reservations</strong> — for example, your test client VM and
+      one simulated server.</p>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Scroll to the <strong>DHCP Static Mappings</strong> section on the same CLIENTS DHCP page.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Click <strong>Add</strong>. Enter the MAC address, IP address (must be outside the dynamic pool, e.g., <code>10.0.3.10</code> or <code>10.0.3.11</code>), and a hostname/description.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Click <strong>Save</strong>, then repeat for the second reservation.</div></li>
+      </ol>
+
+      <div class="callout callout-info">
+        <div class="callout-title">Finding a VM's MAC address</div>
+        In Proxmox, select the VM → Hardware → Network Device. The MAC address is listed there.
+        You can also get it from the guest OS with <code>ip link</code> (Linux) or
+        <code>ipconfig /all</code> (Windows).
+      </div>
+
+      <h3>Task C-3: Deploy a Test VM on the CLIENTS Network and Verify a DHCP Lease</h3>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Create or boot a small test VM in Proxmox. Attach its network interface to <strong>vmbr3</strong> (Clients).</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Boot the test VM. The network interface should automatically request a DHCP lease from pfSense.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Verify the lease: on Linux, run <code>ip addr</code> or <code>ifconfig</code>; on Windows, run <code>ipconfig /all</code>. Confirm the assigned IP is in the <code>10.0.3.100–10.0.3.200</code> range and that the gateway is <code>10.0.3.1</code>.</div></li>
+        <li><span class="step-num">4</span><div class="step-content">In pfSense, navigate to <strong>Status → DHCP Leases</strong> to confirm the lease appears there as well.</div></li>
+        <li><span class="step-num">5</span><div class="step-content">Test connectivity: from the test VM, run <code>ping 10.0.3.1</code> to verify the gateway is reachable.</div></li>
+      </ol>
+
+      <div class="obs-field">
+        <label class="obs-label" for="obs-c-scope">DHCP scope settings you configured (record all settings from the pfSense DHCP page):</label>
+        <textarea class="obs-textarea code-entry" id="obs-c-scope" rows="7" placeholder="Range: 10.0.3.100 – 10.0.3.200&#10;Gateway: 10.0.3.1&#10;DNS: 10.0.2.10&#10;Domain: lab.local&#10;Lease time: 86400s&#10;&#10;Static mappings:&#10;  MAC xx:xx:xx:xx:xx:xx → 10.0.3.10 (hostname)&#10;  MAC xx:xx:xx:xx:xx:xx → 10.0.3.11 (hostname)"></textarea>
+      </div>
+
+      <div class="obs-field">
+        <label class="obs-label" for="obs-c-lease">ipconfig / ip addr output from your test VM showing the DHCP lease:</label>
+        <textarea class="obs-textarea code-entry" id="obs-c-lease" rows="8" placeholder="Paste the output of `ipconfig /all` (Windows) or `ip addr` / `ifconfig` (Linux) here.&#10;&#10;Example (Linux):&#10;inet 10.0.3.102/24 brd 10.0.3.255 scope global dynamic eth0&#10;  valid_lft 86271sec preferred_lft 86271sec"></textarea>
+        <p class="obs-hint">This output is required as evidence in your lab report.</p>
+      </div>
+
+      <div class="deliverable-box">
+        <div class="d-title">📋 Part C Deliverables</div>
+        <ul>
+          <li>Screenshot of the DHCP scope configuration in pfSense (Services → DHCP Server → CLIENTS)</li>
+          <li>Screenshot showing at least two static DHCP mappings configured</li>
+          <li>Screenshot of Status → DHCP Leases showing the test VM's active lease</li>
+          <li>Terminal output from the test client VM showing the assigned IP, gateway, and DNS (paste above or include as screenshot)</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ PART D ══════════ -->
+  <span class="section-anchor" id="sec-partd"></span>
+  <section class="content-section" aria-labelledby="hdr-partd">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="body-partd" id="hdr-partd" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <h2>
+        <span class="section-icon" aria-hidden="true">🛡️</span>
+        Part D – Firewall Rules Implementation
+        <span class="part-badge">8 pts</span>
+      </h2>
+      <button class="toggle-btn" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-partd">
+
+      <p>pfSense processes firewall rules per interface, in order from top to bottom — the
+      <strong>first matching rule wins</strong>. OPT interfaces (SERVERS and CLIENTS) have
+      <em>no default rules</em> and block all traffic until you create rules explicitly.
+      The LAN (Management) interface has a default "allow all" rule.</p>
+
+      <div class="callout callout-warning">
+        <div class="callout-title">Rule order matters</div>
+        Place more specific rules <em>above</em> more general rules. A broad "block all" rule
+        at the top will prevent more specific "allow" rules below it from ever matching.
+      </div>
+
+      <h3>Task D-1: Review Default Rules</h3>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Navigate to <strong>Firewall → Rules</strong>.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Click the <strong>LAN</strong> tab. Note the pre-existing "Default allow LAN to any" rule. This allows full access from the Management segment.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Click the <strong>SERVERS</strong> and <strong>CLIENTS</strong> tabs. Confirm both are empty (no rules = all traffic blocked).</div></li>
+      </ol>
+
+      <h3>Task D-2: Create SERVERS Network Rules</h3>
+      <p>Navigate to <strong>Firewall → Rules → SERVERS</strong> and add the following rules in order.
+      For each, click <strong>Add</strong> (with the down-arrow to add below), fill in the rule details, and click <strong>Save</strong>.
+      After all rules are added, click <strong>Apply Changes</strong>.</p>
+
+      <div style="overflow-x:auto;">
+        <table class="fw-table" aria-label="Firewall rules for SERVERS interface">
+          <thead>
+            <tr><th>#</th><th>Action</th><th>Protocol</th><th>Source</th><th>Destination</th><th>Port</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td class="action-pass">Pass</td><td>TCP</td><td>SERVERS net</td><td>WAN net</td><td>80, 443</td><td>Allow web access from servers</td></tr>
+            <tr><td>2</td><td class="action-pass">Pass</td><td>UDP</td><td>SERVERS net</td><td>WAN net</td><td>53</td><td>Allow DNS queries outbound</td></tr>
+            <tr><td>3</td><td class="action-block">Block</td><td>any</td><td>SERVERS net</td><td>LAN net</td><td>any</td><td>Block access to Management segment</td></tr>
+            <tr><td>4</td><td class="action-pass">Pass</td><td>any</td><td>SERVERS net</td><td>SERVERS net</td><td>any</td><td>Allow inter-server communication</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Task D-3: Create CLIENTS Network Rules</h3>
+      <p>Navigate to <strong>Firewall → Rules → CLIENTS</strong> and add the following rules.</p>
+
+      <div style="overflow-x:auto;">
+        <table class="fw-table" aria-label="Firewall rules for CLIENTS interface">
+          <thead>
+            <tr><th>#</th><th>Action</th><th>Protocol</th><th>Source</th><th>Destination</th><th>Port</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td class="action-pass">Pass</td><td>TCP</td><td>CLIENTS net</td><td>SERVERS net</td><td>80, 443, 445, 3389</td><td>Allow client access to server services</td></tr>
+            <tr><td>2</td><td class="action-pass">Pass</td><td>TCP</td><td>CLIENTS net</td><td>WAN net</td><td>80, 443</td><td>Allow web browsing</td></tr>
+            <tr><td>3</td><td class="action-pass">Pass</td><td>UDP</td><td>CLIENTS net</td><td>WAN net</td><td>53</td><td>Allow DNS queries</td></tr>
+            <tr><td>4</td><td class="action-block">Block</td><td>any</td><td>CLIENTS net</td><td>LAN net</td><td>any</td><td>Block management access from clients</td></tr>
+            <tr><td>5</td><td class="action-block">Block</td><td>TCP</td><td>CLIENTS net</td><td>SERVERS net</td><td>22</td><td>Block SSH to servers from clients</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">Adding rules in pfSense</div>
+        When adding multiple rules, use the <strong>Add ↓</strong> button (add below current) to
+        build the list top-to-bottom. After adding all rules for an interface, click
+        <strong>Apply Changes</strong> once to activate them all.
+      </div>
+
+      <h3>Task D-4: Enable Logging on Block Rules</h3>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">Edit each <strong>Block</strong> rule (click the pencil icon).</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Scroll to the <strong>Extra Options</strong> section and check <strong>Log packets that are handled by this rule</strong>.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Save each rule. Apply changes when all block rules are updated.</div></li>
+      </ol>
+
+      <h3>Task D-5: Test and Verify Rules</h3>
+      <ol class="step-list">
+        <li><span class="step-num">1</span><div class="step-content">From your CLIENTS test VM, test an <strong>allowed</strong> connection: try to reach port 80 on a Servers-network VM or the WAN. Confirm it succeeds.</div></li>
+        <li><span class="step-num">2</span><div class="step-content">Test a <strong>blocked</strong> connection: attempt to SSH (port 22) from the client to a server VM, or ping the Management segment IP (10.0.1.x). Confirm it times out or is refused.</div></li>
+        <li><span class="step-num">3</span><div class="step-content">Check the firewall log: navigate to <strong>Status → System Logs → Firewall</strong>. You should see log entries for the blocked connection attempts.</div></li>
+        <li><span class="step-num">4</span><div class="step-content">Note 2–3 example log entries. Each entry shows: timestamp, interface, source IP:port, destination IP:port, protocol, and action.</div></li>
+      </ol>
+
+      <div class="obs-field">
+        <label class="obs-label" for="obs-d-rules">Firewall rules documentation table — for each rule, record: Interface, #, Action, Source, Destination, Port, and your justification for why the rule is needed:</label>
+        <textarea class="obs-textarea" id="obs-d-rules" rows="14" placeholder="SERVERS interface:&#10;Rule 1 – Pass – SERVERS net → WAN :80,443 – Justification: servers need to download updates and access external web services.&#10;Rule 2 – Pass – SERVERS net → WAN :53 UDP – Justification: servers need DNS resolution for hostnames.&#10;Rule 3 – Block – SERVERS net → LAN – Justification: servers should not be able to reach management interfaces directly.&#10;Rule 4 – Pass – SERVERS net → SERVERS net – Justification: servers must communicate with each other (e.g., replication, database calls).&#10;&#10;CLIENTS interface:&#10;(continue...)"></textarea>
+        <p class="obs-hint">Include a justification for every rule — this is evaluated in the lab report.</p>
+      </div>
+
+      <div class="obs-field">
+        <label class="obs-label" for="obs-d-logs">Firewall log analysis — paste 2–3 example blocked-traffic log entries and explain what each one shows:</label>
+        <textarea class="obs-textarea code-entry" id="obs-d-logs" rows="10" placeholder="Entry 1:&#10;Mar 22 14:03:17  CLIENTS  block  10.0.3.102:54321 → 10.0.1.1:80  TCP&#10;Explanation: A client VM (10.0.3.102) attempted to access the Management gateway on port 80.&#10;             Rule 4 (Block CLIENTS → LAN) matched and dropped the packet. This is expected behavior.&#10;&#10;Entry 2:&#10;..."></textarea>
+        <p class="obs-hint">At least 2 entries with explanations are required in the lab report.</p>
+      </div>
+
+      <div class="deliverable-box">
+        <div class="d-title">📋 Part D Deliverables</div>
+        <ul>
+          <li>Screenshots of firewall rules for SERVERS and CLIENTS interfaces in pfSense (all rules visible)</li>
+          <li>Firewall rules documentation table with justification for each rule (use your notes above)</li>
+          <li>Testing evidence: at least one screenshot of a successful <em>allowed</em> connection and one of a <em>blocked</em> connection (e.g., connection timeout or refused)</li>
+          <li>Firewall log screenshot (Status → System Logs → Firewall) showing blocked entries</li>
+          <li>Log analysis: 2–3 example log entries with explanations (paste above or include in report)</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ DIAGRAM ══════════ -->
+  <span class="section-anchor" id="sec-diagram"></span>
+  <section class="content-section" aria-labelledby="hdr-diagram">
+    <div class="section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="body-diagram" id="hdr-diagram" onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+      <h2>
+        <span class="section-icon" aria-hidden="true">📐</span>
+        Network Topology Diagram
+        <span class="part-badge">2 pts</span>
+      </h2>
+      <button class="toggle-btn" aria-hidden="true" tabindex="-1">▼</button>
+    </div>
+    <div class="section-body" id="body-diagram">
+
+      <p>Create a clear, complete network topology diagram showing your entire lab environment.
+      This diagram should be included in your lab report and will be graded on completeness
+      and clarity.</p>
+
+      <h3>Required Diagram Elements</h3>
+      <ul>
+        <li>All four virtual bridges (vmbr0–vmbr3) labeled with names and subnets</li>
+        <li>The pfSense VM with all four interface labels (WAN/vtnet0, LAN/vtnet1, OPT1–SERVERS/vtnet2, OPT2–CLIENTS/vtnet3) and IP addresses</li>
+        <li>All VMs deployed in your environment, connected to the correct bridge, with their IP addresses shown</li>
+        <li>IP address range annotations for each subnet (e.g., 10.0.3.100–10.0.3.200 DHCP pool)</li>
+        <li>Arrows or lines indicating allowed and blocked traffic flows (optional but encouraged)</li>
+      </ul>
+
+      <h3>Recommended Tools</h3>
+      <ul>
+        <li><strong>draw.io</strong> (free, browser-based) — search draw.io in your browser</li>
+        <li><strong>Lucidchart</strong> — free tier available</li>
+        <li><strong>Microsoft Visio</strong> — if available through your institution</li>
+        <li><strong>LibreOffice Draw</strong> — free and open-source</li>
+        <li>Hand-drawn and scanned — acceptable if clearly labeled and legible</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <div class="callout-title">Diagram tip</div>
+        Use the ASCII topology in the Overview section as a starting guide. Expand it to include
+        your actual VMs and their specific IP addresses once you have completed the lab.
+        Export or save the finished diagram as a PNG or PDF to include in your lab report.
+      </div>
+
+      <div class="obs-field">
+        <label class="obs-label" for="obs-diagram-notes">Diagram notes — describe any design decisions or elements you want to highlight in your diagram (optional):</label>
+        <textarea class="obs-textarea" id="obs-diagram-notes" rows="4" placeholder="Optional: note any design choices, color coding, or elements you are adding to make the diagram more informative..."></textarea>
+      </div>
+
+      <div class="deliverable-box">
+        <div class="d-title">📋 Diagram Deliverable</div>
+        <ul>
+          <li>One complete network topology diagram (PNG, PDF, or embedded image) included in your lab report</li>
+          <li>All required elements listed above must be present and clearly labeled</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ HINTS ══════════ -->
+  <div class="hints-section" aria-labelledby="hdr-hints">
+    <div class="hints-header" role="button" tabindex="0" aria-expanded="false" aria-controls="body-hints" id="hdr-hints" onclick="toggleHints(this)" onkeydown="keyToggleHints(event,this)">
+      <h2><span aria-hidden="true">💡</span> Hints &amp; Common Pitfalls</h2>
+      <button class="toggle-btn" aria-hidden="true" tabindex="-1" style="color:#e65100;">▼</button>
+    </div>
+    <div class="hints-body" id="body-hints">
+      <dl>
+        <dt style="font-weight:700;color:#1a3a5c;margin-bottom:0.25rem;">Take snapshots before major changes</dt>
+        <dd style="margin-bottom:1rem;padding-left:1rem;">
+          In Proxmox, right-click a VM → Snapshots → Take Snapshot. Name it descriptively
+          (e.g., <em>post-install</em>, <em>pre-firewall-rules</em>). If a configuration change
+          breaks something, you can roll back immediately without reinstalling.
+        </dd>
+
+        <dt style="font-weight:700;color:#1a3a5c;margin-bottom:0.25rem;">Test after each step — not all at once</dt>
+        <dd style="margin-bottom:1rem;padding-left:1rem;">
+          After completing each task (bridge creation, interface assignment, DHCP scope), verify
+          it works before moving on. Testing incrementally makes it much easier to identify
+          exactly where something went wrong.
+        </dd>
+
+        <dt style="font-weight:700;color:#1a3a5c;margin-bottom:0.25rem;">pfSense firewall rules: first match wins</dt>
+        <dd style="margin-bottom:1rem;padding-left:1rem;">
+          Rules are evaluated top-to-bottom; the first rule that matches the traffic wins.
+          Place specific allow rules <em>above</em> broad block rules. If you add a "block all"
+          rule at the top, nothing below it will ever match.
+        </dd>
+
+        <dt style="font-weight:700;color:#1a3a5c;margin-bottom:0.25rem;">OPT interfaces are blocked by default</dt>
+        <dd style="margin-bottom:1rem;padding-left:1rem;">
+          Unlike LAN, pfSense OPT interfaces (SERVERS and CLIENTS) have no default allow rule.
+          All traffic is blocked until you explicitly create pass rules. If a VM on an OPT
+          interface cannot reach anything, check whether you have added the necessary allow rules
+          and clicked <strong>Apply Changes</strong>.
+        </dd>
+
+        <dt style="font-weight:700;color:#1a3a5c;margin-bottom:0.25rem;">pfSense documentation is comprehensive</dt>
+        <dd style="margin-bottom:1rem;padding-left:1rem;">
+          The Netgate documentation site (docs.netgate.com) covers every feature in detail.
+          The pfSense community forums are also highly active. Search for your specific question
+          before spending too long troubleshooting on your own.
+        </dd>
+
+        <dt style="font-weight:700;color:#1a3a5c;margin-bottom:0.25rem;">Apply Changes after every rule edit</dt>
+        <dd style="margin-bottom:0;padding-left:1rem;">
+          pfSense does not activate new or edited rules until you click <strong>Apply Changes</strong>
+          at the top of the Firewall Rules page. A common mistake is adding rules and then
+          wondering why traffic behavior has not changed — check whether you applied the changes.
+        </dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- ══════════ DELIVERABLES ══════════ -->
+  <span class="section-anchor" id="sec-deliverables"></span>
+  <section class="submit-section" aria-labelledby="hdr-submit">
+    <h2 id="hdr-submit">Deliverables &amp; Submission</h2>
+
+    <p>Compile all parts into a <strong>single lab report</strong> submitted as a PDF or DOCX
+    file. Your report should follow the part structure (A, B, C, D, Diagram) and include all
+    required screenshots, configuration tables, and written explanations.</p>
+
+    <h3>Complete Lab Report Checklist</h3>
+    <ul>
+      <li><strong>Part A (6 pts):</strong> Proxmox bridge screenshots, IP addressing table, 150–200 word segmentation explanation</li>
+      <li><strong>Part B (8 pts):</strong> VM settings screenshots, installation screenshots, interface assignment screenshot, Setup Wizard completion screenshot, all four interfaces confirmed</li>
+      <li><strong>Part C (6 pts):</strong> DHCP scope screenshot, static mappings screenshot, DHCP Leases screenshot, test client terminal output</li>
+      <li><strong>Part D (8 pts):</strong> Firewall rules screenshots (both interfaces), rules documentation table with justifications, testing evidence (allowed + blocked), log screenshot, 2–3 log entry analyses</li>
+      <li><strong>Diagram (2 pts):</strong> Complete labeled network topology diagram</li>
+    </ul>
+
+    <div class="callout callout-ec" style="margin-top:1rem;">
+      <div class="callout-title">Submission Reminder</div>
+      <strong>Submit</strong> your completed lab report to the <strong>Lab 9</strong> assignment
+      in Canvas by <strong>Sunday, March 22, 2026 at 11:59 PM</strong>.
+      No late submissions are accepted for extra credit labs.
+      You may complete any or all parts — points are awarded based on completed parts
+      per the rubric.
+    </div>
+
+    <div class="pdf-bar">
+      <button class="pdf-btn" onclick="printNotes()" type="button">
+        <span aria-hidden="true">🖨️</span> Save / Print Lab Notes as PDF
+      </button>
+      <p class="pdf-note">Opens a print-friendly view of all your typed notes above. Use your browser's "Save as PDF" option.</p>
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+  /* ── Section toggle ── */
+  function toggleSection(header) {
+    var body = document.getElementById(header.getAttribute('aria-controls'));
+    var btn  = header.querySelector('.toggle-btn');
+    var open = body.classList.contains('open');
+    body.classList.toggle('open', !open);
+    btn.classList.toggle('open', !open);
+    header.setAttribute('aria-expanded', String(!open));
+  }
+  function keyToggle(e, header) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(header); }
+  }
+
+  /* ── Hints toggle ── */
+  function toggleHints(header) {
+    var body = document.getElementById('body-hints');
+    var btn  = header.querySelector('.toggle-btn');
+    var open = body.classList.contains('open');
+    body.classList.toggle('open', !open);
+    btn.classList.toggle('open', !open);
+    header.setAttribute('aria-expanded', String(!open));
+  }
+  function keyToggleHints(e, header) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleHints(header); }
+  }
+
+  /* ── Print / Save as PDF ── */
+  function printNotes() {
+    var fields = document.querySelectorAll('.obs-textarea');
+    var sections = document.querySelectorAll('.content-section, .hints-section');
+    var originalDisplay = [];
+
+    // Temporarily open all sections for print
+    sections.forEach(function(sec) {
+      var body = sec.querySelector('.section-body, .hints-body');
+      if (body) {
+        originalDisplay.push(body.style.display);
+        body.style.display = 'block';
+      } else {
+        originalDisplay.push(null);
+      }
+    });
+
+    window.print();
+
+    // Restore section states after print dialog closes
+    setTimeout(function() {
+      sections.forEach(function(sec, i) {
+        var body = sec.querySelector('.section-body, .hints-body');
+        if (body && originalDisplay[i] !== null) {
+          body.style.display = originalDisplay[i];
+        }
+      });
+    }, 1000);
+  }
+</script>
+
+</body>
+</html>
