@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CSC 152 – Week 10: Storage Technologies &amp; Management</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #1a2e4a;
+    --teal:    #0e7490;
+    --teal-lt: #cffafe;
+    --amber:   #b45309;
+    --amber-lt:#fef3c7;
+    --green:   #166534;
+    --green-lt:#dcfce7;
+    --red:     #991b1b;
+    --red-lt:  #fee2e2;
+    --gray-50: #f8fafc;
+    --gray-100:#f1f5f9;
+    --gray-200:#e2e8f0;
+    --gray-700:#374151;
+    --gray-800:#1e293b;
+    --white:   #ffffff;
+    --radius:  8px;
+    --shadow:  0 2px 8px rgba(0,0,0,.10);
+    --max-w:   860px;
+    --font:    'Segoe UI', system-ui, Arial, sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font);
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--gray-800);
+    background: var(--gray-50);
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute;
+    top: -999px; left: 6px;
+    background: var(--navy);
+    color: var(--white);
+    padding: .4rem .9rem;
+    border-radius: 0 0 var(--radius) var(--radius);
+    font-weight: 700;
+    z-index: 9999;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Top Nav ── */
+  nav#top-nav {
+    background: var(--navy);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  }
+  nav#top-nav .nav-inner {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .1rem;
+    align-items: center;
+  }
+  nav#top-nav .nav-label {
+    color: #94a3b8;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: .7rem .5rem .7rem 0;
+    margin-right: .5rem;
+    white-space: nowrap;
+  }
+  nav#top-nav a {
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: .82rem;
+    font-weight: 500;
+    padding: .65rem .65rem;
+    border-radius: var(--radius);
+    white-space: nowrap;
+    transition: background .15s, color .15s;
+  }
+  nav#top-nav a:hover  { background: rgba(255,255,255,.12); color: var(--white); }
+  nav#top-nav a:focus-visible {
+    outline: 3px solid #7dd3fc;
+    outline-offset: 2px;
+    color: var(--white);
+  }
+
+  /* ── Page Wrapper ── */
+  main {
+    max-width: var(--max-w);
+    margin: 2rem auto 4rem;
+    padding: 0 1rem;
+  }
+
+  /* ── Hero Banner ── */
+  .hero {
+    background: linear-gradient(135deg, var(--navy) 0%, #0e4f72 100%);
+    color: var(--white);
+    border-radius: var(--radius);
+    padding: 2rem 2rem 1.75rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+  }
+  .hero .week-badge {
+    display: inline-block;
+    background: rgba(255,255,255,.15);
+    color: #bae6fd;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .25rem .75rem;
+    border-radius: 999px;
+    margin-bottom: .75rem;
+  }
+  .hero h1 {
+    font-size: 1.65rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: .6rem;
+  }
+  .hero p { font-size: 1rem; color: #bae6fd; max-width: 640px; }
+
+  /* ── Section Cards ── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .card h2 .icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  /* ── Utility ── */
+  ul, ol { padding-left: 1.4rem; }
+  li { margin-bottom: .35rem; }
+  p  { margin-bottom: .75rem; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 700; }
+
+  /* ── Learning Goals ── */
+  .goals-list { list-style: none; padding-left: 0; }
+  .goals-list li {
+    padding: .45rem .6rem .45rem 2rem;
+    position: relative;
+    border-left: 3px solid var(--teal);
+    margin-bottom: .5rem;
+    background: var(--gray-50);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .goals-list li::before {
+    content: "✓";
+    position: absolute;
+    left: .45rem;
+    color: var(--teal);
+    font-weight: 700;
+  }
+
+  /* ── Modules ── */
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: .85rem;
+  }
+  .module-tile {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-top: 4px solid var(--teal);
+    border-radius: var(--radius);
+    padding: .9rem 1rem;
+  }
+  .module-tile .mod-id {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: .3rem;
+  }
+  .module-tile .mod-title {
+    font-weight: 700;
+    font-size: .95rem;
+    color: var(--navy);
+    margin-bottom: .4rem;
+  }
+  .module-tile .mod-desc {
+    font-size: .875rem;
+    color: var(--gray-700);
+    line-height: 1.5;
+  }
+
+  /* ── Activities Table ── */
+  .activity-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .92rem;
+  }
+  .activity-table th {
+    background: var(--navy);
+    color: var(--white);
+    text-align: left;
+    padding: .55rem .85rem;
+    font-size: .8rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .activity-table th:first-child { border-radius: var(--radius) 0 0 0; }
+  .activity-table th:last-child  { border-radius: 0 var(--radius) 0 0; }
+  .activity-table td {
+    padding: .6rem .85rem;
+    border-bottom: 1px solid var(--gray-200);
+    vertical-align: top;
+  }
+  .activity-table tr:last-child td { border-bottom: none; }
+  .activity-table tr:nth-child(even) td { background: var(--gray-50); }
+  .badge {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 700;
+    padding: .18rem .55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge-required { background: var(--teal-lt); color: var(--teal); }
+  .badge-ec       { background: var(--amber-lt); color: var(--amber); }
+
+  /* ── Key Concepts ── */
+  .concept-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+  }
+  .concept-chip {
+    background: var(--navy);
+    color: var(--white);
+    border-radius: 999px;
+    padding: .3rem .9rem;
+    font-size: .875rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+  }
+
+  /* ── Project 2 Reminder ── */
+  .alert-project {
+    background: var(--red-lt);
+    border-left: 5px solid var(--red);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 1.1rem 1.3rem;
+  }
+  .alert-project h2 {
+    color: var(--red);
+    margin-bottom: .6rem;
+  }
+  .alert-project p { color: #3b0f0f; }
+
+  /* ── Looking Ahead ── */
+  .ahead-card {
+    background: var(--green-lt);
+    border-left: 5px solid var(--green);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 1.1rem 1.3rem;
+  }
+  .ahead-card h2 { color: var(--green); margin-bottom: .6rem; }
+  .ahead-card p  { color: #14532d; }
+
+  /* ── Collapsible ── */
+  details { margin-bottom: .5rem; }
+  details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--teal);
+    padding: .35rem .2rem;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    border-radius: 4px;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before {
+    content: "▶";
+    font-size: .7rem;
+    transition: transform .2s;
+    display: inline-block;
+  }
+  details[open] summary::before { transform: rotate(90deg); }
+  details summary:focus-visible {
+    outline: 3px solid var(--teal);
+    outline-offset: 2px;
+  }
+  details .detail-body { padding: .6rem 0 .3rem 1.2rem; }
+
+  /* ── Responsive ── */
+  @media (max-width: 560px) {
+    .hero h1 { font-size: 1.3rem; }
+    .module-grid { grid-template-columns: 1fr; }
+    nav#top-nav a { font-size: .78rem; padding: .55rem .45rem; }
+    nav#top-nav .nav-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Skip Navigation -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- ── Top Navigation ── -->
+<nav id="top-nav" role="navigation" aria-label="Page sections">
+  <div class="nav-inner">
+    <span class="nav-label" aria-hidden="true">Week 10</span>
+    <a href="#welcome">Welcome</a>
+    <a href="#goals">Goals</a>
+    <a href="#modules">Modules</a>
+    <a href="#activities">Activities</a>
+    <a href="#concepts">Key Concepts</a>
+    <a href="#project2">Project 2</a>
+    <a href="#ahead">Week 11</a>
+  </div>
+</nav>
+
+<!-- ── Main Content ── -->
+<main id="main-content">
+
+  <!-- 1. Hero / Welcome -->
+  <section id="welcome" aria-labelledby="welcome-heading">
+    <div class="hero">
+      <span class="week-badge" aria-label="Week 10 of 17">Week 10 of 17</span>
+      <h1 id="welcome-heading">Storage Technologies &amp; Management</h1>
+      <p>
+        Welcome to Week 10! This week you move from managing users and permissions
+        into the physical and logical foundations that keep server data safe,
+        organized, and accessible — skills that are central to every
+        systems and network administration role.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon" aria-hidden="true">🎯</span> Why This Week Matters</h2>
+      <p>
+        Storage is the backbone of every production server environment. Whether
+        you are deploying a file server, a domain controller, or a cloud-hosted
+        workload, understanding how disks are partitioned, how RAID protects
+        against drive failure, and how Logical Volume Manager (LVM) gives you
+        flexible, live-resizable storage is a day-one expectation for junior
+        sysadmins and cloud engineers.
+      </p>
+      <p>
+        This week also reinforces your monitoring and log-management skills by
+        connecting storage health to centralized logging with Splunk — bridging
+        the gap between infrastructure management and security operations.
+        By the end of the week you will have a solid conceptual and practical
+        foundation to carry into the domain-controller work coming in Week 11.
+      </p>
+    </div>
+  </section>
+
+  <!-- 2. Learning Goals -->
+  <section id="goals" aria-labelledby="goals-heading">
+    <div class="card">
+      <h2><span class="icon" aria-hidden="true">📋</span> Week 10 Learning Goals</h2>
+      <p>By the end of this week you should be able to:</p>
+      <ul class="goals-list" role="list">
+        <li>Identify and compare common storage technologies used in server environments, including HDDs, SSDs, and NVMe drives.</li>
+        <li>Explain the purpose and structure of MBR and GPT partition tables and create partitions using command-line tools.</li>
+        <li>Describe the major RAID levels (0, 1, 5, 6, 10) and select an appropriate level given a scenario's performance and redundancy requirements.</li>
+        <li>Configure and manage software RAID arrays on a Linux server using <code>mdadm</code>.</li>
+        <li>Explain the three-layer LVM architecture (Physical Volumes, Volume Groups, Logical Volumes) and perform basic LVM operations including creation and live extension.</li>
+        <li>Apply appropriate Linux filesystem types (ext4, XFS, Btrfs) and mount filesystems persistently via <code>/etc/fstab</code>.</li>
+        <li>Use core Linux storage management commands (<code>fdisk</code>, <code>parted</code>, <code>lsblk</code>, <code>df</code>, <code>du</code>, <code>mount</code>) to inspect and manage storage.</li>
+        <li>Configure Splunk to monitor storage-related log sources and apply retention policies aligned with organizational requirements.</li>
+        <li>Recognize storage-related security considerations, including encryption at rest and access control for storage resources.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3. This Week's Modules -->
+  <section id="modules" aria-labelledby="modules-heading">
+    <div class="card">
+      <h2><span class="icon" aria-hidden="true">📚</span> This Week's Learning Modules</h2>
+      <p>
+        Five learning modules are available for Week 10. Work through them in
+        order — each one builds on the last. All modules are accessible from the
+        <strong>Week 10 Modules</strong> area in Canvas.
+      </p>
+      <div class="module-grid" role="list">
+
+        <div class="module-tile" role="listitem">
+          <div class="mod-id">Module 10.1</div>
+          <div class="mod-title">Storage Technologies Overview</div>
+          <p class="mod-desc">
+            Introduces HDD, SSD, and NVMe storage hardware, compares their
+            performance and use-case trade-offs, and surveys how storage
+            connects to servers through common interfaces (SATA, SAS, NVMe).
+          </p>
+        </div>
+
+        <div class="module-tile" role="listitem">
+          <div class="mod-id">Module 10.2</div>
+          <div class="mod-title">Disk Partitioning &amp; Filesystems</div>
+          <p class="mod-desc">
+            Covers MBR vs. GPT partition table design, walks through
+            partitioning with <code>fdisk</code> and <code>parted</code>,
+            and compares the ext4, XFS, and Btrfs filesystems including
+            persistent mounting via <code>/etc/fstab</code>.
+          </p>
+        </div>
+
+        <div class="module-tile" role="listitem">
+          <div class="mod-id">Module 10.3</div>
+          <div class="mod-title">RAID Concepts &amp; Software RAID</div>
+          <p class="mod-desc">
+            Explains RAID 0, 1, 5, 6, and 10 with performance and fault-tolerance
+            analysis, then demonstrates how to build and monitor software RAID
+            arrays on Linux using <code>mdadm</code>.
+          </p>
+        </div>
+
+        <div class="module-tile" role="listitem">
+          <div class="mod-id">Module 10.4</div>
+          <div class="mod-title">Logical Volume Manager (LVM)</div>
+          <p class="mod-desc">
+            Demystifies the Physical Volume → Volume Group → Logical Volume
+            architecture and guides you through creating, extending, and
+            managing LVM storage without taking services offline.
+          </p>
+        </div>
+
+        <div class="module-tile" role="listitem">
+          <div class="mod-id">Module 10.5</div>
+          <div class="mod-title">Storage Monitoring, Logging &amp; Security</div>
+          <p class="mod-desc">
+            Connects storage management to operational visibility by configuring
+            Splunk to ingest storage-related logs, setting log retention policies,
+            and reviewing encryption-at-rest and access-control best practices.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Required Activities -->
+  <section id="activities" aria-labelledby="activities-heading">
+    <div class="card">
+      <h2><span class="icon" aria-hidden="true">✅</span> This Week's Activities</h2>
+      <p>
+        The table below lists all graded activities for Week 10.
+        Check Canvas for exact due dates and submission instructions.
+      </p>
+
+      <table class="activity-table" role="table" aria-label="Week 10 graded activities">
+        <thead>
+          <tr>
+            <th scope="col">Activity</th>
+            <th scope="col">Type</th>
+            <th scope="col">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Quiz 10 – Storage Technologies &amp; Management</strong></td>
+            <td><span class="badge badge-required">Required</span></td>
+            <td>
+              Covers all five Week 10 modules. Complete the reading and module
+              activities before attempting the quiz. See Canvas for the deadline
+              and the number of attempts allowed.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Lab 10 – Hands-On Storage Configuration</strong></td>
+            <td><span class="badge badge-ec">Extra Credit</span></td>
+            <td>
+              Optional hands-on lab for students who want deeper practice
+              partitioning disks, configuring a software RAID array, and working
+              with LVM on a live Linux VM. Completing Lab 10 earns extra-credit
+              points — see Canvas for details and submission instructions.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Project 2 – Linux Server Administration</strong></td>
+            <td><span class="badge badge-required">Required</span></td>
+            <td>
+              Final submission due this week (see the Project 2 reminder section
+              below). Submit via Canvas following the Project 2 specification
+              document.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <details style="margin-top:1rem;">
+        <summary>About Quiz 10</summary>
+        <div class="detail-body">
+          <p>
+            Quiz 10 is the primary assessment for this week's learning objectives.
+            Questions draw from all five modules and may include scenario-based
+            items asking you to select an appropriate RAID level, interpret
+            <code>lsblk</code> output, or identify an LVM command sequence.
+            Review the Key Concepts section below before you begin.
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>About Lab 10 (Extra Credit)</summary>
+        <div class="detail-body">
+          <p>
+            Lab 10 is fully optional. It is designed for students who want to
+            reinforce this week's concepts through hands-on terminal work in a
+            Linux virtual machine environment. If you are aiming to build a
+            strong portfolio or are considering a systems administration career
+            path, this lab is highly recommended. No penalty for skipping it.
+          </p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 5. Key Concepts -->
+  <section id="concepts" aria-labelledby="concepts-heading">
+    <div class="card">
+      <h2><span class="icon" aria-hidden="true">🔑</span> Key Concepts to Watch For</h2>
+      <p>
+        As you work through the modules this week, pay particular attention to
+        these terms and ideas. Understanding them deeply will prepare you for
+        Quiz 10, Lab 10, and future project work.
+      </p>
+      <div class="concept-grid" role="list" aria-label="Key concepts for Week 10">
+        <span class="concept-chip" role="listitem">GPT Partition Table</span>
+        <span class="concept-chip" role="listitem">RAID 5 Striping with Parity</span>
+        <span class="concept-chip" role="listitem">LVM Volume Group</span>
+        <span class="concept-chip" role="listitem">Logical Volume Extension</span>
+        <span class="concept-chip" role="listitem">mdadm Software RAID</span>
+        <span class="concept-chip" role="listitem">/etc/fstab Persistent Mounts</span>
+        <span class="concept-chip" role="listitem">Splunk Log Retention Policy</span>
+        <span class="concept-chip" role="listitem">Encryption at Rest</span>
+      </div>
+
+      <details style="margin-top:1.1rem;">
+        <summary>Quick concept hints</summary>
+        <div class="detail-body">
+          <ul>
+            <li><strong>GPT vs. MBR:</strong> Know the partition count and disk-size limits that make GPT the modern standard.</li>
+            <li><strong>RAID 5:</strong> Requires a minimum of 3 drives; distributes parity across all drives so any single drive can fail without data loss.</li>
+            <li><strong>LVM Volume Group:</strong> The pool of storage made up of one or more Physical Volumes — Logical Volumes are carved out of this pool.</li>
+            <li><strong>Live Extension:</strong> LVM allows you to grow a Logical Volume and its filesystem while it is still mounted and in use.</li>
+            <li><strong>mdadm:</strong> The Linux tool for creating, assembling, and monitoring software RAID arrays.</li>
+            <li><strong>/etc/fstab:</strong> The configuration file that tells Linux which filesystems to mount automatically at boot and with what options.</li>
+            <li><strong>Splunk Retention:</strong> Retention policies control how long indexed data is kept — critical for compliance and storage capacity planning.</li>
+            <li><strong>Encryption at Rest:</strong> Protects data on disk from physical theft; common implementations include LUKS on Linux.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 6. Project 2 Reminder -->
+  <section id="project2" aria-labelledby="project2-heading">
+    <div class="alert-project" role="region" aria-labelledby="project2-heading">
+      <h2 id="project2-heading">
+        <span aria-hidden="true">🚨 </span>Project 2 Is Due This Week
+      </h2>
+      <p>
+        <strong>Project 2 – Linux Server Administration</strong> has its final
+        deadline this week. If you have not already done so, make completing
+        your Project 2 submission your top priority before diving into the
+        Week 10 modules.
+      </p>
+      <p>
+        Review the <strong>Project 2 Specification</strong> document in Canvas
+        to confirm you have addressed every required deliverable, and double-check
+        your submission format before uploading. <strong>Check Canvas for the
+        exact due date and time</strong> — late submissions may not be accepted
+        or may receive a grade penalty per the course late-work policy.
+      </p>
+      <p>
+        If you are running into technical issues or have questions about any
+        requirement, reach out in the course discussion board or contact your
+        instructor as soon as possible — do not wait until the last hour.
+      </p>
+    </div>
+  </section>
+
+  <!-- 7. Looking Ahead: Week 11 -->
+  <section id="ahead" aria-labelledby="ahead-heading">
+    <div class="ahead-card" role="region" aria-labelledby="ahead-heading">
+      <h2 id="ahead-heading">
+        <span aria-hidden="true">🔭 </span>Looking Ahead: Week 11 – Active Directory &amp; Directory Services
+      </h2>
+      <p>
+        In Week 11 we shift focus to <strong>Active Directory and Directory
+        Services</strong>, exploring how Windows Server domain controllers
+        centralize authentication, authorization, and policy management across
+        an enterprise network. You will learn how to promote a Windows Server
+        to a domain controller, configure DNS integration, and manage users and
+        groups through Active Directory Users and Computers.
+      </p>
+      <p>
+        The storage skills you are building this week connect directly to that
+        work: a domain controller relies on well-planned disk partitioning and
+        volume management to separate the operating system, the Active Directory
+        database (<code>NTDS.dit</code>), and log files onto distinct volumes —
+        a best practice you will apply during the Week 11 lab setup.
+      </p>
+      <p>
+        Finish strong this week, get Project 2 submitted, and you will be
+        well-positioned to hit the ground running with domain services next week.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // Smooth-scroll polyfill fallback for browsers that ignore CSS scroll-behavior
+  document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+    anchor.addEventListener('click', function(e) {
+      var target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Move focus to the target section for keyboard / screen-reader users
+        if (!target.hasAttribute('tabindex')) {
+          target.setAttribute('tabindex', '-1');
+        }
+        target.focus({ preventScroll: true });
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
