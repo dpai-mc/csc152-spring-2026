@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CSC 152 – Lab 10: Storage Technologies &amp; RAID (Optional Extra Credit)</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f4f6f9;
+    color: #1a1a1a;
+    line-height: 1.65;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute; top: -50px; left: 0;
+    background: #003366; color: #fff;
+    padding: 8px 16px; font-weight: 700;
+    z-index: 9999; border-radius: 0 0 6px 0;
+    transition: top .2s;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Nav Bar ── */
+  nav {
+    background: #003366;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  }
+  nav ul {
+    display: flex; flex-wrap: wrap; list-style: none;
+    max-width: 1100px; margin: 0 auto; padding: 0 12px;
+  }
+  nav ul li a {
+    display: block; color: #cce0ff;
+    padding: 12px 14px; font-size: .88rem; font-weight: 600;
+    text-decoration: none; border-bottom: 3px solid transparent;
+    transition: color .2s, border-color .2s;
+  }
+  nav ul li a:hover,
+  nav ul li a:focus {
+    color: #fff; border-bottom-color: #ffcc00;
+    outline: none;
+  }
+  nav ul li a:focus-visible {
+    outline: 3px solid #ffcc00; outline-offset: -3px;
+  }
+
+  /* ── Page Wrapper ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  /* ── Section Cards ── */
+  section {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.10);
+    margin-bottom: 36px; padding: 30px 32px;
+  }
+  section + section { border-top: none; }
+
+  /* ── Headings ── */
+  h1 { font-size: 1.7rem; color: #003366; margin-bottom: 6px; }
+  h2 { font-size: 1.3rem; color: #003366; margin-bottom: 14px; border-bottom: 2px solid #003366; padding-bottom: 6px; }
+  h3 { font-size: 1.05rem; color: #1a3a5c; margin: 18px 0 8px; }
+  h4 { font-size: .97rem; color: #1a3a5c; margin: 14px 0 6px; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block; border-radius: 20px;
+    padding: 3px 12px; font-size: .8rem; font-weight: 700;
+    margin-left: 8px; vertical-align: middle;
+  }
+  .badge-ec  { background: #d4edda; color: #155724; }
+  .badge-pts { background: #cce5ff; color: #004085; }
+  .badge-win { background: #e2d9f3; color: #4a235a; }
+  .badge-linux { background: #d1ecf1; color: #0c5460; }
+
+  /* ── Alert Boxes ── */
+  .alert {
+    border-left: 5px solid; border-radius: 6px;
+    padding: 12px 16px; margin: 14px 0; font-size: .93rem;
+  }
+  .alert-warning { border-color: #ffc107; background: #fff8e1; color: #6d4c00; }
+  .alert-info    { border-color: #17a2b8; background: #e8f7fa; color: #0c4a52; }
+  .alert-success { border-color: #28a745; background: #eafaf1; color: #145a32; }
+  .alert-danger  { border-color: #dc3545; background: #fdf3f4; color: #7b1f28; }
+  .alert strong  { font-weight: 700; }
+
+  /* ── Steps ── */
+  .step-list { list-style: none; counter-reset: step-counter; padding: 0; }
+  .step-list li {
+    counter-increment: step-counter;
+    position: relative; padding: 10px 10px 10px 52px;
+    margin-bottom: 10px; border-radius: 6px;
+    background: #f8f9fc; border: 1px solid #dde3ec;
+  }
+  .step-list li::before {
+    content: counter(step-counter);
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    background: #003366; color: #fff;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .85rem;
+  }
+
+  /* ── Code Blocks ── */
+  pre, code {
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: .88rem;
+  }
+  pre {
+    background: #1e1e2e; color: #cdd6f4;
+    border-radius: 8px; padding: 14px 18px;
+    overflow-x: auto; margin: 10px 0;
+    border: 1px solid #313244;
+  }
+  code {
+    background: #eef0f5; color: #c0392b;
+    padding: 1px 5px; border-radius: 3px;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+
+  /* ── Form Elements ── */
+  label { display: block; font-weight: 600; margin-bottom: 4px; font-size: .93rem; }
+  textarea, input[type="text"] {
+    width: 100%; border: 1px solid #b0bac9;
+    border-radius: 6px; padding: 10px 12px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: .87rem; background: #fafbfd;
+    color: #1a1a1a; resize: vertical;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  textarea:focus, input[type="text"]:focus {
+    border-color: #003366; outline: none;
+    box-shadow: 0 0 0 3px rgba(0,51,102,.18);
+  }
+  .field-group { margin-bottom: 16px; }
+
+  /* ── Reflection Questions ── */
+  .reflection {
+    background: #f0f4ff; border: 1px solid #b8c8e8;
+    border-radius: 8px; padding: 16px 18px; margin: 16px 0;
+  }
+  .reflection h4 { color: #003366; margin-top: 0; }
+
+  /* ── Hint / Pitfall Boxes ── */
+  .hint {
+    background: #fffbea; border: 1px dashed #e6b800;
+    border-radius: 6px; padding: 10px 14px;
+    font-size: .89rem; margin: 10px 0;
+  }
+  .hint::before { content: "💡 Hint: "; font-weight: 700; color: #7a5700; }
+
+  .pitfall {
+    background: #fff0f0; border: 1px dashed #e05c5c;
+    border-radius: 6px; padding: 10px 14px;
+    font-size: .89rem; margin: 10px 0;
+  }
+  .pitfall::before { content: "⚠️ Common Pitfall: "; font-weight: 700; color: #8b0000; }
+
+  /* ── Deliverables Box ── */
+  .deliverables {
+    background: #eafaf1; border: 2px solid #28a745;
+    border-radius: 8px; padding: 16px 18px; margin-top: 20px;
+  }
+  .deliverables h4 { color: #145a32; margin-top: 0; }
+  .deliverables ul { padding-left: 20px; }
+  .deliverables ul li { margin-bottom: 5px; font-size: .93rem; }
+
+  /* ── Points Tracker ── */
+  .points-bar {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin: 10px 0 20px;
+  }
+  .points-card {
+    flex: 1 1 120px; background: #f0f4ff;
+    border: 1px solid #b8c8e8; border-radius: 8px;
+    padding: 10px 14px; text-align: center;
+  }
+  .points-card .pts-num { font-size: 1.5rem; font-weight: 800; color: #003366; }
+  .points-card .pts-label { font-size: .8rem; color: #4a5568; }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .9rem; }
+  th { background: #003366; color: #fff; padding: 9px 12px; text-align: left; }
+  td { padding: 8px 12px; border-bottom: 1px solid #dde3ec; }
+  tr:nth-child(even) td { background: #f6f8fb; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 22px; border: none; border-radius: 7px;
+    font-size: .95rem; font-weight: 700; cursor: pointer;
+    transition: filter .2s, transform .1s;
+    text-decoration: none;
+  }
+  .btn:focus-visible { outline: 3px solid #ffcc00; outline-offset: 2px; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: #003366; color: #fff; }
+  .btn-primary:hover { filter: brightness(1.25); }
+  .btn-success { background: #28a745; color: #fff; }
+  .btn-success:hover { filter: brightness(1.15); }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center; font-size: .82rem; color: #6c757d;
+    padding: 20px; border-top: 1px solid #dde3ec;
+    max-width: 1100px; margin: 0 auto;
+  }
+
+  /* ── Print / PDF styles ── */
+  @media print {
+    nav, .btn, .skip-link { display: none !important; }
+    body { background: #fff; font-size: 12pt; }
+    section { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    pre { white-space: pre-wrap; word-break: break-all; }
+    textarea { border: 1px solid #999; min-height: 40px; }
+    a { color: inherit; text-decoration: none; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    section { padding: 18px 14px; }
+    nav ul li a { padding: 10px 9px; font-size: .8rem; }
+    h1 { font-size: 1.35rem; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- ══════════════════════════════════════════════
+     Navigation Bar
+══════════════════════════════════════════════ -->
+<nav aria-label="Lab sections">
+  <ul>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#part-a">Part A: Partitioning</a></li>
+    <li><a href="#part-b">Part B: RAID</a></li>
+    <li><a href="#part-c">Part C: LVM</a></li>
+    <li><a href="#part-d">Part D: Storage Spaces</a></li>
+    <li><a href="#submission">Submission</a></li>
+  </ul>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     Main Content
+══════════════════════════════════════════════ -->
+<main id="main-content">
+
+  <!-- ── Lab Header ── -->
+  <section id="overview" aria-labelledby="h-overview">
+    <h1 id="h-overview">
+      Lab 10 – Storage Technologies &amp; RAID
+      <span class="badge badge-ec">Optional Extra Credit</span>
+    </h1>
+    <p style="color:#555; margin-bottom:14px;">
+      <strong>Course:</strong> CSC 152 – Network Operating Systems and Administration &nbsp;|&nbsp;
+      <strong>Week:</strong> 10 &nbsp;|&nbsp;
+      <strong>Total Points:</strong> 30
+    </p>
+
+    <div class="points-bar" role="list" aria-label="Point breakdown by part">
+      <div class="points-card" role="listitem">
+        <div class="pts-num">6</div>
+        <div class="pts-label">Part A<br/>Partitioning</div>
+      </div>
+      <div class="points-card" role="listitem">
+        <div class="pts-num">8</div>
+        <div class="pts-label">Part B<br/>RAID</div>
+      </div>
+      <div class="points-card" role="listitem">
+        <div class="pts-num">8</div>
+        <div class="pts-label">Part C<br/>LVM</div>
+      </div>
+      <div class="points-card" role="listitem">
+        <div class="pts-num">8</div>
+        <div class="pts-label">Part D<br/>Storage Spaces</div>
+      </div>
+    </div>
+
+    <div class="alert alert-warning">
+      <strong>Optional Extra Credit — No Late Submissions.</strong>
+      Check Canvas for the exact due date and time. Submissions received after the deadline will not be accepted under any circumstances.
+    </div>
+
+    <div class="alert alert-danger">
+      <strong>Safety First — Snapshot Your VMs Before You Begin.</strong>
+      Before adding any virtual disks or making storage changes, take a snapshot of each VM in Proxmox. This allows you to roll back quickly if something goes wrong. Label your snapshots clearly (e.g., <em>before-lab10</em>).
+    </div>
+
+    <h2 id="h-objectives">Lab Objectives</h2>
+    <p>In this lab you will gain hands-on experience with core storage management technologies used in enterprise Linux and Windows environments. By completing this lab you will be able to:</p>
+    <ul style="padding-left:22px; margin-top:8px;">
+      <li>Create and manage disk partitions using both MBR (fdisk) and GPT (parted) partition schemes on Linux.</li>
+      <li>Implement software RAID 1 using <code>mdadm</code>, simulate a drive failure, and perform an array rebuild.</li>
+      <li>Configure Logical Volume Management (LVM) — including physical volumes, volume groups, logical volumes, and online volume extension.</li>
+      <li>Create a Storage Spaces pool and virtual disk on Windows Server using both the GUI and PowerShell.</li>
+    </ul>
+
+    <h3>Lab Environment</h3>
+    <table>
+      <thead>
+        <tr><th>VM</th><th>OS</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>linux-server (or your Ubuntu/Rocky VM)</td><td>Ubuntu Server 22.04 LTS or Rocky Linux 9</td><td>Parts A, B, C</td></tr>
+        <tr><td>win-server</td><td>Windows Server 2022</td><td>Part D</td></tr>
+      </tbody>
+    </table>
+
+    <div class="alert alert-info">
+      <strong>Tip:</strong> All four parts are independent. You may complete them in any order, but Parts A, B, and C share the same Linux VM and build on a common set of virtual disks. Read each part fully before executing commands.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       PART A: Disk Partitioning
+  ══════════════════════════════════════════════ -->
+  <section id="part-a" aria-labelledby="h-parta">
+    <h2 id="h-parta">Part A: Disk Partitioning <span class="badge badge-pts">6 pts</span> <span class="badge badge-linux">Linux</span></h2>
+
+    <p>You will add two virtual disks to your Linux VM and practice both the legacy MBR partitioning workflow (<code>fdisk</code>) and the modern GPT workflow (<code>parted</code>). Understanding the differences between MBR and GPT is a foundational skill for any system administrator.</p>
+
+    <h3>A.1 — Add Virtual Disks in Proxmox</h3>
+    <ol class="step-list">
+      <li>In the Proxmox web interface, select your Linux VM and navigate to <strong>Hardware</strong>.</li>
+      <li>Click <strong>Add → Hard Disk</strong>. Set the size to <strong>5 GiB</strong>, use the default storage pool, and click <strong>Add</strong>. This will become <code>/dev/sdb</code> (or the next available device).</li>
+      <li>Repeat step 2 to add a second <strong>5 GiB</strong> disk. This will become <code>/dev/sdc</code>.</li>
+      <li>Start (or reboot) the VM. Log in via SSH or the Proxmox console.</li>
+      <li>Verify both disks are visible:
+        <pre><code>lsblk
+sudo fdisk -l | grep "Disk /dev/sd"</code></pre>
+      </li>
+    </ol>
+
+    <div class="pitfall">If the new disks do not appear after adding them in Proxmox, try a full VM reboot rather than just a rescan. You can also run <code>echo "- - -" | sudo tee /sys/class/scsi_host/host*/scan</code> to trigger a bus rescan without rebooting.</div>
+
+    <div class="field-group">
+      <label for="a-lsblk">Paste your <code>lsblk</code> output showing both new disks:</label>
+      <textarea id="a-lsblk" rows="8" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <!-- A.2 fdisk / MBR -->
+    <h3>A.2 — MBR Partitioning with <code>fdisk</code> (Disk 1: /dev/sdb)</h3>
+    <p>Use <code>fdisk</code> to create two primary partitions on <code>/dev/sdb</code>: one 2 GiB partition and one using the remaining space.</p>
+
+    <ol class="step-list">
+      <li>Launch fdisk on the first new disk:
+        <pre><code>sudo fdisk /dev/sdb</code></pre>
+      </li>
+      <li>At the <code>fdisk</code> prompt, press <kbd>m</kbd> to view help, then press <kbd>o</kbd> to create a new MBR (DOS) partition table.</li>
+      <li>Press <kbd>n</kbd> → <kbd>p</kbd> (primary) → partition number <kbd>1</kbd> → accept default first sector → type <code>+2G</code> for the last sector.</li>
+      <li>Press <kbd>n</kbd> → <kbd>p</kbd> → partition number <kbd>2</kbd> → accept default first sector → accept default last sector (uses remaining space).</li>
+      <li>Press <kbd>p</kbd> to print the partition table and verify.</li>
+      <li>Press <kbd>w</kbd> to write and exit.</li>
+      <li>Run <code>lsblk /dev/sdb</code> and <code>sudo fdisk -l /dev/sdb</code> to confirm the partitions.</li>
+    </ol>
+
+    <div class="hint">After writing with <kbd>w</kbd>, the kernel may not immediately see the new partition table. Run <code>sudo partprobe /dev/sdb</code> to notify the kernel, then re-run <code>lsblk</code>.</div>
+
+    <div class="field-group">
+      <label for="a-fdisk-output">Paste the output of <code>sudo fdisk -l /dev/sdb</code> showing both partitions:</label>
+      <textarea id="a-fdisk-output" rows="10" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <!-- A.3 parted / GPT -->
+    <h3>A.3 — GPT Partitioning with <code>parted</code> (Disk 2: /dev/sdc)</h3>
+    <p>Use <code>parted</code> to create a GPT partition table on <code>/dev/sdc</code> with two partitions: one 2 GiB and one using the remaining space.</p>
+
+    <ol class="step-list">
+      <li>Launch parted on the second disk:
+        <pre><code>sudo parted /dev/sdc</code></pre>
+      </li>
+      <li>At the <code>(parted)</code> prompt, create a GPT label:
+        <pre><code>mklabel gpt</code></pre>
+      </li>
+      <li>Create the first partition (1 MiB to 2049 MiB, leaving 1 MiB alignment at the start):
+        <pre><code>mkpart primary ext4 1MiB 2049MiB</code></pre>
+      </li>
+      <li>Create the second partition using the remaining space:
+        <pre><code>mkpart primary ext4 2049MiB 100%</code></pre>
+      </li>
+      <li>Print the partition table:
+        <pre><code>print</code></pre>
+      </li>
+      <li>Exit parted:
+        <pre><code>quit</code></pre>
+      </li>
+      <li>Verify with <code>lsblk /dev/sdc</code> and <code>sudo parted /dev/sdc print</code>.</li>
+    </ol>
+
+    <div class="hint">If <code>parted</code> warns about disk alignment, you can acknowledge with <kbd>I</kbd> (Ignore) during interactive use. For production systems, always align partitions to 1 MiB boundaries for optimal performance on modern drives.</div>
+
+    <div class="field-group">
+      <label for="a-parted-output">Paste the output of <code>sudo parted /dev/sdc print</code> showing the GPT partition table:</label>
+      <textarea id="a-parted-output" rows="10" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <!-- A.4 Reflection -->
+    <div class="reflection" role="region" aria-label="Part A Reflection Questions">
+      <h4>Part A — Reflection Questions</h4>
+
+      <div class="field-group">
+        <label for="a-q1">1. What is the maximum number of primary partitions allowed under MBR, and what is the maximum partition size? Why do these limitations exist?</label>
+        <textarea id="a-q1" rows="4" placeholder="Type your answer here..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label for="a-q2">2. List two specific advantages of GPT over MBR for modern enterprise storage systems.</label>
+        <textarea id="a-q2" rows="4" placeholder="Type your answer here..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label for="a-q3">3. In what scenario would you still choose MBR over GPT today? Explain your reasoning.</label>
+        <textarea id="a-q3" rows="4" placeholder="Type your answer here..."></textarea>
+      </div>
+    </div>
+
+    <div class="deliverables">
+      <h4>Part A Deliverables (6 pts)</h4>
+      <ul>
+        <li>Screenshot or pasted output of <code>lsblk</code> confirming both new disks are visible.</li>
+        <li>Screenshot or pasted output of <code>sudo fdisk -l /dev/sdb</code> showing two MBR partitions.</li>
+        <li>Screenshot or pasted output of <code>sudo parted /dev/sdc print</code> showing the GPT table with two partitions.</li>
+        <li>Answers to all three reflection questions above.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       PART B: Software RAID Implementation
+  ══════════════════════════════════════════════ -->
+  <section id="part-b" aria-labelledby="h-partb">
+    <h2 id="h-partb">Part B: Software RAID Implementation <span class="badge badge-pts">8 pts</span> <span class="badge badge-linux">Linux</span></h2>
+
+    <p>You will create a software RAID 1 (mirroring) array using <code>mdadm</code> on two new virtual disks, format it, mount it, simulate a disk failure, and perform a rebuild. This mirrors a real-world scenario where a drive fails and must be replaced.</p>
+
+    <div class="alert alert-warning">
+      <strong>New Disks Required:</strong> Parts B and C each need dedicated disks. Add two more 5 GiB disks in Proxmox for Part B (these will become <code>/dev/sdd</code> and <code>/dev/sde</code>, or the next available devices). Do NOT reuse the disks from Part A.
+    </div>
+
+    <h3>B.1 — Add Disks and Install mdadm</h3>
+    <ol class="step-list">
+      <li>In Proxmox, add two additional <strong>5 GiB</strong> virtual disks to your Linux VM (as described in Part A.1). Note the device names shown by <code>lsblk</code> (e.g., <code>/dev/sdd</code>, <code>/dev/sde</code>).</li>
+      <li>Install <code>mdadm</code> if not already present:
+        <pre><code># Ubuntu/Debian:
+sudo apt update &amp;&amp; sudo apt install -y mdadm
+
+# Rocky Linux / RHEL:
+sudo dnf install -y mdadm</code></pre>
+      </li>
+      <li>Verify installation:
+        <pre><code>mdadm --version</code></pre>
+      </li>
+    </ol>
+
+    <div class="field-group">
+      <label for="b-lsblk">Paste <code>lsblk</code> output confirming the two new RAID disks are present:</label>
+      <textarea id="b-lsblk" rows="6" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <h3>B.2 — Create the RAID 1 Array</h3>
+    <ol class="step-list">
+      <li>Create the RAID 1 array (replace <code>sdd</code> and <code>sde</code> with your actual device names):
+        <pre><code>sudo mdadm --create /dev/md0 \
+  --level=1 \
+  --raid-devices=2 \
+  /dev/sdd /dev/sde</code></pre>
+        Type <code>y</code> and press <kbd>Enter</kbd> when prompted to confirm.
+      </li>
+      <li>Monitor the sync progress:
+        <pre><code>watch -n 2 cat /proc/mdstat</code></pre>
+        Wait for the sync to complete (the progress bar will reach 100%). Press <kbd>Ctrl+C</kbd> to exit watch.
+      </li>
+      <li>Check the array details:
+        <pre><code>sudo mdadm --detail /dev/md0</code></pre>
+      </li>
+    </ol>
+
+    <div class="hint">On small 5 GiB virtual disks, the initial sync usually completes in under a minute. On real hardware with large disks, this can take hours.</div>
+
+    <div class="field-group">
+      <label for="b-mdstat">Paste the contents of <code>/proc/mdstat</code> after the sync completes:</label>
+      <textarea id="b-mdstat" rows="8" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <div class="field-group">
+      <label for="b-detail">Paste the output of <code>sudo mdadm --detail /dev/md0</code>:</label>
+      <textarea id="b-detail" rows="12" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <h3>B.3 — Format, Mount, and Test</h3>
+    <ol class="step-list">
+      <li>Create an ext4 filesystem on the RAID array:
+        <pre><code>sudo mkfs.ext4 /dev/md0</code></pre>
+      </li>
+      <li>Create a mount point and mount the array:
+        <pre><code>sudo mkdir -p /mnt/raid1
+sudo mount /dev/md0 /mnt/raid1</code></pre>
+      </li>
+      <li>Write a test file to confirm the filesystem is working:
+        <pre><code>echo "RAID 1 test file - CSC152 Lab 10" | sudo tee /mnt/raid1/testfile.txt
+cat /mnt/raid1/testfile.txt</code></pre>
+      </li>
+      <li>Check available space:
+        <pre><code>df -h /mnt/raid1</code></pre>
+      </li>
+    </ol>
+
+    <div class="field-group">
+      <label for="b-mount-output">Paste the output of <code>df -h /mnt/raid1</code> and <code>cat /mnt/raid1/testfile.txt</code>:</label>
+      <textarea id="b-mount-output" rows="6" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <h3>B.4 — Simulate a Drive Failure and Rebuild</h3>
+    <ol class="step-list">
+      <li>Mark one disk as faulty (simulating a hardware failure):
+        <pre><code>sudo mdadm --manage /dev/md0 --fail /dev/sde</code></pre>
+      </li>
+      <li>Check the array status — it should now show a degraded state:
+        <pre><code>sudo mdadm --detail /dev/md0
+cat /proc/mdstat</code></pre>
+      </li>
+      <li>Remove the failed disk from the array:
+        <pre><code>sudo mdadm --manage /dev/md0 --remove /dev/sde</code></pre>
+      </li>
+      <li>Simulate replacing the drive by adding the same device back (in a real scenario this would be a new physical disk):
+        <pre><code>sudo mdadm --manage /dev/md0 --add /dev/sde</code></pre>
+      </li>
+      <li>Monitor the rebuild:
+        <pre><code>watch -n 2 cat /proc/mdstat</code></pre>
+        Wait for the rebuild to complete, then press <kbd>Ctrl+C</kbd>.
+      </li>
+      <li>Verify the array is healthy again:
+        <pre><code>sudo mdadm --detail /dev/md0</code></pre>
+      </li>
+    </ol>
+
+    <div class="pitfall">During the degraded state, your data is still accessible — RAID 1 continues to operate with one disk. However, you have NO redundancy during this window. Always rebuild as quickly as possible in production.</div>
+
+    <div class="field-group">
+      <label for="b-fail-output">Paste the <code>mdadm --detail</code> output showing the degraded state (after marking disk faulty, before rebuild):</label>
+      <textarea id="b-fail-output" rows="10" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <div class="field-group">
+      <label for="b-rebuild-output">Paste the <code>mdadm --detail</code> output after the rebuild completes, showing the array is healthy:</label>
+      <textarea id="b-rebuild-output" rows="10" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <h3>B.5 — Save Configuration and Add to /etc/fstab</h3>
+    <ol class="step-list">
+      <li>Save the RAID configuration to <code>mdadm.conf</code> so the array is reassembled automatically at boot:
+        <pre><code># Ubuntu/Debian:
+sudo mdadm --detail --scan | sudo tee -a /etc/mdadm/mdadm.conf
+sudo update-initramfs -u
+
+# Rocky Linux / RHEL:
+sudo mdadm --detail --scan | sudo tee -a /etc/mdadm.conf</code></pre>
+      </li>
+      <li>Get the UUID of the RAID filesystem:
+        <pre><code>sudo blkid /dev/md0</code></pre>
+      </li>
+      <li>Add a persistent mount entry to <code>/etc/fstab</code>. Open the file with your preferred editor and add a line similar to (use your actual UUID):
+        <pre><code>UUID=&lt;your-uuid-here&gt;  /mnt/raid1  ext4  defaults,nofail  0  2</code></pre>
+        The <code>nofail</code> option prevents the system from halting at boot if the RAID array is unavailable.
+      </li>
+      <li>Test the fstab entry without rebooting:
+        <pre><code>sudo umount /mnt/raid1
+sudo mount -a
+df -h /mnt/raid1</code></pre>
+      </li>
+    </ol>
+
+    <div class="pitfall">Always use <code>nofail</code> in <code>/etc/fstab</code> for RAID and LVM volumes in a lab environment. A typo or missing device can prevent the system from booting, requiring rescue mode to fix.</div>
+
+    <div class="field-group">
+      <label for="b-fstab">Paste the relevant line(s) you added to <code>/etc/fstab</code> and the output of <code>df -h /mnt/raid1</code> confirming the mount:</label>
+      <textarea id="b-fstab" rows="6" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <!-- B Reflection -->
+    <div class="reflection" role="region" aria-label="Part B Reflection Questions">
+      <h4>Part B — Reflection Questions</h4>
+
+      <div class="field-group">
+        <label for="b-q1">1. RAID 1 uses two disks but provides only the capacity of one. Explain why this trade-off is acceptable in certain enterprise scenarios.</label>
+        <textarea id="b-q1" rows="4" placeholder="Type your answer here..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label for="b-q2">2. What is the purpose of saving the RAID configuration to <code>mdadm.conf</code>? What could happen at boot if this step is skipped?</label>
+        <textarea id="b-q2" rows="4" placeholder="Type your answer here..."></textarea>
+      </div>
+    </div>
+
+    <div class="deliverables">
+      <h4>Part B Deliverables (8 pts)</h4>
+      <ul>
+        <li>Screenshot or pasted output of <code>mdadm --detail /dev/md0</code> showing a healthy, fully synced RAID 1 array.</li>
+        <li>Screenshot or pasted output showing the degraded state after simulating a disk failure.</li>
+        <li>Screenshot or pasted output of <code>mdadm --detail /dev/md0</code> after the rebuild is complete.</li>
+        <li>The <code>/etc/fstab</code> entry and confirmation that <code>mount -a</code> mounts the array successfully.</li>
+        <li>Answers to both reflection questions.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       PART C: LVM Configuration
+  ══════════════════════════════════════════════ -->
+  <section id="part-c" aria-labelledby="h-partc">
+    <h2 id="h-partc">Part C: LVM Configuration <span class="badge badge-pts">8 pts</span> <span class="badge badge-linux">Linux</span></h2>
+
+    <p>Logical Volume Management (LVM) provides a flexible abstraction layer over physical storage, allowing you to resize volumes, add disks, and manage storage pools without unmounting filesystems. You will create a volume group from two new disks, carve out three logical volumes, format and mount them, and then extend one volume online.</p>
+
+    <div class="alert alert-warning">
+      <strong>New Disks Required:</strong> Add two more <strong>5 GiB</strong> disks in Proxmox for Part C (e.g., <code>/dev/sdf</code> and <code>/dev/sdg</code>). Do NOT reuse disks from Parts A or B.
+    </div>
+
+    <h3>C.1 — Install LVM Tools and Prepare Disks</h3>
+    <ol class="step-list">
+      <li>Install LVM2 if not already present:
+        <pre><code># Ubuntu/Debian:
+sudo apt install -y lvm2
+
+# Rocky Linux / RHEL:
+sudo dnf install -y lvm2</code></pre>
+      </li>
+      <li>Verify the new disks are visible:
+        <pre><code>lsblk | grep -E "sdf|sdg"</code></pre>
+      </li>
+    </ol>
+
+    <h3>C.2 — Create Physical Volumes</h3>
+    <ol class="step-list">
+      <li>Initialize both disks as LVM physical volumes:
+        <pre><code>sudo pvcreate /dev/sdf /dev/sdg</code></pre>
+      </li>
+      <li>Verify the physical volumes:
+        <pre><code>sudo pvs
+sudo pvdisplay</code></pre>
+      </li>
+    </ol>
+
+    <div class="field-group">
+      <label for="c-pvs">Paste the output of <code>sudo pvs</code>:</label>
+      <textarea id="c-pvs" rows="6" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <h3>C.3 — Create a Volume Group</h3>
+    <ol class="step-list">
+      <li>Create a volume group named <code>vg_lab10</code> from both physical volumes:
+        <pre><code>sudo vgcreate vg_lab10 /dev/sdf /dev/sdg</code></pre>
+      </li>
+      <li>Verify the volume group:
+        <pre><code>sudo vgs
+sudo vgdisplay vg_lab10</code></pre>
+      </li>
+    </ol>
+
+    <div class="field-group">
+      <label for="c-vgs">Paste the output of <code>sudo vgs</code> and <code>sudo vgdisplay vg_lab10</code>:</label>
+      <textarea id="c-vgs" rows="10" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <h3>C.4 — Create Three Logical Volumes</h3>
+    <ol class="step-list">
+      <li>Create the first logical volume (2 GiB, for web data):
+        <pre><code>sudo lvcreate -L 2G -n lv_web vg_lab10</code></pre>
+      </li>
+      <li>Create the second logical volume (2 GiB, for database data):
+        <pre><code>sudo lvcreate -L 2G -n lv_db vg_lab10</code></pre>
+      </li>
+      <li>Create the third logical volume (1 GiB, for logs):
+        <pre><code>sudo lvcreate -L 1G -n lv_logs vg_lab10</code></pre>
+      </li>
+      <li>Verify all three logical volumes:
+        <pre><code>sudo lvs
+sudo lvdisplay vg_lab10</code></pre>
+      </li>
+    </ol>
+
+    <div class="field-group">
+      <label for="c-lvs">Paste the output of <code>sudo lvs</code> showing all three logical volumes:</label>
+      <textarea id="c-lvs" rows="8" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <h3>C.5 — Format, Mount, and Add to /etc/fstab</h3>
+    <ol class="step-list">
+      <li>Create ext4 filesystems on all three logical volumes:
+        <pre><code>sudo mkfs.ext4 /dev/vg_lab10/lv_web
+sudo mkfs.ext4 /dev/vg_lab10/lv_db
+sudo mkfs.ext4 /dev/vg_lab10/lv_logs</code></pre>
+      </li>
+      <li>Create mount points:
+        <pre><code>sudo mkdir -p /mnt/web /mnt/db /mnt/logs</code></pre>
+      </li>
+      <li>Mount all three volumes:
+        <pre><code>sudo mount /dev/vg_lab10/lv_web  /mnt/web
+sudo mount /dev/vg_lab10/lv_db   /mnt/db
+sudo mount /dev/vg_lab10/lv_logs /mnt/logs</code></pre>
+      </li>
+      <li>Verify all mounts:
+        <pre><code>df -h /mnt/web /mnt/db /mnt/logs</code></pre>
+      </li>
+      <li>Add persistent entries to <code>/etc/fstab</code> using the device mapper paths (or UUIDs from <code>blkid</code>):
+        <pre><code>/dev/vg_lab10/lv_web   /mnt/web   ext4  defaults,nofail  0  2
+/dev/vg_lab10/lv_db    /mnt/db    ext4  defaults,nofail  0  2
+/dev/vg_lab10/lv_logs  /mnt/logs  ext4  defaults,nofail  0  2</code></pre>
+      </li>
+      <li>Test the fstab entries:
+        <pre><code>sudo umount /mnt/web /mnt/db /mnt/logs
+sudo mount -a
+df -h /mnt/web /mnt/db /mnt/logs</code></pre>
+      </li>
+    </ol>
+
+    <div class="field-group">
+      <label for="c-df">Paste the output of <code>df -h /mnt/web /mnt/db /mnt/logs</code> after mounting:</label>
+      <textarea id="c-df" rows="6" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <h3>C.6 — Online Volume Extension</h3>
+    <p>One of LVM's most powerful features is the ability to extend a logical volume and its filesystem while it is mounted and in use — no downtime required.</p>
+
+    <ol class="step-list">
+      <li>Check the current free space in the volume group:
+        <pre><code>sudo vgs vg_lab10</code></pre>
+      </li>
+      <li>Extend <code>lv_web</code> by 1 GiB:
+        <pre><code>sudo lvextend -L +1G /dev/vg_lab10/lv_web</code></pre>
+      </li>
+      <li>Resize the ext4 filesystem to use the new space (the volume must be mounted):
+        <pre><code>sudo resize2fs /dev/vg_lab10/lv_web</code></pre>
+      </li>
+      <li>Verify the new size:
+        <pre><code>df -h /mnt/web
+sudo lvs vg_lab10</code></pre>
+      </li>
+    </ol>
+
+    <div class="pitfall"><code>resize2fs</code> works on ext4 filesystems while mounted (online resize). If you are using XFS, use <code>xfs_growfs /mnt/web</code> instead. Do NOT run <code>resize2fs</code> on an unmounted XFS volume — they use different tools.</div>
+
+    <div class="hint">You can also use <code>lvextend -r -L +1G /dev/vg_lab10/lv_web</code> — the <code>-r</code> flag automatically runs <code>resize2fs</code> (or <code>xfs_growfs</code>) after extending, combining steps 2 and 3 into one command.</div>
+
+    <div class="field-group">
+      <label for="c-extend">Paste the output of <code>df -h /mnt/web</code> and <code>sudo lvs vg_lab10</code> after the extension:</label>
+      <textarea id="c-extend" rows="8" placeholder="Paste terminal output here..."></textarea>
+    </div>
+
+    <!-- C Reflection -->
+    <div class="reflection" role="region" aria-label="Part C Reflection Questions">
+      <h4>Part C — Reflection Questions</h4>
+
+      <div class="field-group">
+        <label for="c-q1">1. What is the difference between a Physical Volume (PV), a Volume Group (VG), and a Logical Volume (LV)? Use an analogy to explain the relationship.</label>
+        <textarea id="c-q1" rows="5" placeholder="Type your answer here..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label for="c-q2">2. You extended <code>lv_web</code> online without unmounting it. Describe a real-world scenario where this capability would be critical to business operations.</label>
+        <textarea id="c-q2" rows="4" placeholder="Type your answer here..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label for="c-q3">3. Can you shrink an ext4 LVM logical volume while it is mounted? Explain what steps would be required to safely reduce the size of <code>lv_logs</code>.</label>
+        <textarea id="c-q3" rows="5" placeholder="Type your answer here..."></textarea>
+      </div>
+    </div>
+
+    <div class="deliverables">
+      <h4>Part C Deliverables (8 pts)</h4>
+      <ul>
+        <li>Screenshot or pasted output of <code>sudo pvs</code> showing both physical volumes.</li>
+        <li>Screenshot or pasted output of <code>sudo vgs</code> showing the <code>vg_lab10</code> volume group.</li>
+        <li>Screenshot or pasted output of <code>sudo lvs</code> showing all three logical volumes.</li>
+        <li>Screenshot or pasted output of <code>df -h</code> showing all three volumes mounted at their mount points.</li>
+        <li>Screenshot or pasted output confirming the online extension of <code>lv_web</code> (before and after sizes).</li>
+        <li>Answers to all three reflection questions.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       PART D: Windows Storage Spaces
+  ══════════════════════════════════════════════ -->
+  <section id="part-d" aria-labelledby="h-partd">
+    <h2 id="h-partd">Part D: Windows Storage Spaces <span class="badge badge-pts">8 pts</span> <span class="badge badge-win">Windows Server</span></h2>
+
+    <p>Windows Storage Spaces is Microsoft's software-defined storage solution, providing pooled storage, resiliency (mirroring/parity), and thin provisioning. You will create a storage pool and virtual disk using both the Server Manager GUI and PowerShell on your Windows Server 2022 VM.</p>
+
+    <div class="alert alert-warning">
+      <strong>New Disks Required:</strong> Add at least <strong>three 5 GiB</strong> virtual disks to your Windows Server VM in Proxmox. Storage Spaces requires a minimum of two disks for a mirror; three disks are recommended so you can observe the pool capacity. Bring the VM online and verify the disks appear in Disk Management before proceeding.
+    </div>
+
+    <h3>D.1 — Add Virtual Disks and Initialize in Disk Management</h3>
+    <ol class="step-list">
+      <li>In Proxmox, add three <strong>5 GiB</strong> virtual disks to your Windows Server VM (same process as the Linux VMs).</li>
+      <li>Start the Windows Server VM and log in as Administrator.</li>
+      <li>Open <strong>Disk Management</strong> (right-click Start → Disk Management). The new disks will appear as "Unknown / Not Initialized."</li>
+      <li>Right-click each new disk and select <strong>Initialize Disk</strong>. Choose <strong>GPT</strong> as the partition style and click OK.</li>
+      <li>The disks should now show as "Online" with unallocated space. Do NOT create volumes — Storage Spaces will manage the disks directly.</li>
+    </ol>
+
+    <div class="hint">Storage Spaces requires disks to be unformatted and unpartitioned (raw). If you accidentally created a partition, you can delete it in Disk Management before adding the disk to a pool.</div>
+
+    <div class="field-group">
+      <label for="d-diskmgmt">Paste a description or screenshot caption confirming the three disks are initialized and show unallocated space in Disk Management. (Describe what you see since you cannot paste screenshots directly into this field.)</label>
+      <textarea id="d-diskmgmt" rows="5" placeholder="Example: Disk 1, Disk 2, and Disk 3 each show 5.00 GB unallocated after GPT initialization..."></textarea>
+    </div>
+
+    <h3>D.2 — Create a Storage Pool via Server Manager GUI</h3>
+    <ol class="step-list">
+      <li>Open <strong>Server Manager</strong>. In the left panel, click <strong>File and Storage Services → Storage Pools</strong>.</li>
+      <li>In the Storage Pools panel, click <strong>Tasks → New Storage Pool…</strong> to launch the wizard.</li>
+      <li>On the <em>Before You Begin</em> page, click <strong>Next</strong>.</li>
+      <li>Name the pool <code>Lab10Pool</code> and click <strong>Next</strong>.</li>
+      <li>Select all three new physical disks to include in the pool and click <strong>Next</strong>.</li>
+      <li>Review the summary and click <strong>Create</strong>. Wait for the pool to be created, then click <strong>Close</strong>.</li>
+    </ol>
+
+    <div class="field-group">
+      <label for="d-pool-gui">Describe what you see in Server Manager after the pool is created (pool name, total capacity, number of physical disks shown):</label>
+      <textarea id="d-pool-gui" rows="5" placeholder="Type your description here..."></textarea>
+    </div>
+
+    <h3>D.3 — Create a Virtual Disk via Server Manager GUI</h3>
+    <ol class="step-list">
+      <li>With <code>Lab10Pool</code> selected, click <strong>Tasks → New Virtual Disk…</strong> in the Virtual Disks panel.</li>
+      <li>Select <code>Lab10Pool</code> as the storage pool and click <strong>OK</strong>.</li>
+      <li>Name the virtual disk <code>Lab10VDisk</code> and click <strong>Next</strong>.</li>
+      <li>Choose <strong>Mirror</strong> as the storage layout (requires at least 2 disks) and click <strong>Next</strong>.</li>
+      <li>Select <strong>Thin</strong> provisioning to allow the virtual disk to grow as data is written, then click <strong>Next</strong>.</li>
+      <li>Set the virtual disk size to <strong>8 GiB</strong> and click <strong>Next</strong>.</li>
+      <li>Review the summary and click <strong>Create</strong>. Leave the "Create a volume when this wizard closes" checkbox selected and click <strong>Close</strong>.</li>
+      <li>The New Volume Wizard will launch automatically. Format the volume as <strong>NTFS</strong>, assign drive letter <strong>V:</strong>, and label it <code>Lab10Volume</code>. Complete the wizard.</li>
+    </ol>
+
+    <div class="pitfall">If the New Volume Wizard does not launch automatically, open Disk Management, find the new virtual disk (it will appear as a new disk with unallocated space), right-click, and select <strong>New Simple Volume</strong>.</div>
+
+    <div class="field-group">
+      <label for="d-vdisk-gui">Describe the virtual disk as shown in Server Manager after creation (name, layout, provisioning type, capacity, status):</label>
+      <textarea id="d-vdisk-gui" rows="5" placeholder="Type your description here..."></textarea>
+    </div>
+
+    <h3>D.4 — PowerShell Verification and Commands</h3>
+    <p>Now verify your Storage Spaces configuration using PowerShell cmdlets and capture the output for your lab report.</p>
+
+    <ol class="step-list">
+      <li>Open <strong>Windows PowerShell</strong> as Administrator (right-click Start → Windows PowerShell (Admin)).</li>
+      <li>List all storage pools:
+        <pre><code>Get-StoragePool | Format-List FriendlyName, OperationalStatus, HealthStatus, Size, AllocatedSize</code></pre>
+      </li>
+      <li>List all virtual disks:
+        <pre><code>Get-VirtualDisk | Format-List FriendlyName, ResiliencySettingName, OperationalStatus, HealthStatus, Size, FootprintOnPool</code></pre>
+      </li>
+      <li>List all volumes:
+        <pre><code>Get-Volume | Where-Object {$_.DriveLetter -eq "V"} | Format-List *</code></pre>
+      </li>
+      <li>List the physical disks in the pool:
+        <pre><code>Get-PhysicalDisk | Format-Table FriendlyName, CanPool, OperationalStatus, HealthStatus, Usage, Size -AutoSize</code></pre>
+      </li>
+    </ol>
+
+    <div class="hint">You can also run <code>Get-StoragePool -FriendlyName "Lab10Pool" | Get-PhysicalDisk</code> to list only the disks that belong to your specific pool.</div>
+
+    <div class="field-group">
+      <label for="d-get-pool">Paste the output of <code>Get-StoragePool</code> (formatted output):</label>
+      <textarea id="d-get-pool" rows="8" placeholder="Paste PowerShell output here..."></textarea>
+    </div>
+
+    <div class="field-group">
+      <label for="d-get-vdisk">Paste the output of <code>Get-VirtualDisk</code>:</label>
+      <textarea id="d-get-vdisk" rows="10" placeholder="Paste PowerShell output here..."></textarea>
+    </div>
+
+    <div class="field-group">
+      <label for="d-get-volume">Paste the output of <code>Get-Volume</code> for drive V:</label>
+      <textarea id="d-get-volume" rows="10" placeholder="Paste PowerShell output here..."></textarea>
+    </div>
+
+    <!-- D Reflection -->
+    <div class="reflection" role="region" aria-label="Part D Reflection Questions">
+      <h4>Part D — Reflection Questions</h4>
+
+      <div class="field-group">
+        <label for="d-q1">1. You chose <strong>Thin provisioning</strong> for the virtual disk. Explain the difference between thin and fixed (thick) provisioning. What is the risk of over-provisioning with thin virtual disks?</label>
+        <textarea id="d-q1" rows="5" placeholder="Type your answer here..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label for="d-q2">2. How does Windows Storage Spaces compare to Linux software RAID (<code>mdadm</code>) and LVM? Identify one advantage and one limitation of each approach.</label>
+        <textarea id="d-q2" rows="6" placeholder="Type your answer here..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label for="d-q3">3. In what enterprise scenario would you recommend Storage Spaces over a hardware RAID controller? Consider cost, flexibility, and management overhead in your answer.</label>
+        <textarea id="d-q3" rows="5" placeholder="Type your answer here..."></textarea>
+      </div>
+    </div>
+
+    <div class="deliverables">
+      <h4>Part D Deliverables (8 pts)</h4>
+      <ul>
+        <li>Screenshot of Server Manager showing <code>Lab10Pool</code> with three physical disks.</li>
+        <li>Screenshot of Server Manager showing <code>Lab10VDisk</code> with Mirror layout and Thin provisioning.</li>
+        <li>Screenshot of File Explorer or Disk Management showing drive V: formatted as NTFS and labeled <code>Lab10Volume</code>.</li>
+        <li>Pasted PowerShell output of <code>Get-StoragePool</code>, <code>Get-VirtualDisk</code>, and <code>Get-Volume</code> for the lab resources.</li>
+        <li>Answers to all three reflection questions.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       Submission Notes
+  ══════════════════════════════════════════════ -->
+  <section id="submission" aria-labelledby="h-submission">
+    <h2 id="h-submission">Submission Notes</h2>
+
+    <div class="alert alert-success">
+      <strong>This is optional extra credit worth 30 points.</strong> Completing this lab can meaningfully boost your course grade. Each part is graded independently — partial credit is awarded if you complete some parts but not others.
+    </div>
+
+    <h3>What to Submit</h3>
+    <ul style="padding-left:22px; line-height:2;">
+      <li>A single lab report in <strong>PDF or DOCX format</strong>.</li>
+      <li>The report must include screenshots and/or pasted terminal/PowerShell output for every deliverable listed in each part.</li>
+      <li>Include your answers to all reflection questions in the report.</li>
+      <li>You may use the <strong>Save as PDF</strong> button below to export this page (with your typed responses) as a starting point, then add screenshots in a word processor before final submission.</li>
+      <li>Label each section clearly in your report (e.g., "Part A – Deliverable 1: lsblk output").</li>
+    </ul>
+
+    <h3>Due Date &amp; Late Policy</h3>
+    <div class="alert alert-danger">
+      <strong>Check Canvas for the exact due date and time.</strong> No late submissions are accepted for extra credit assignments. Submissions received after the deadline will receive a score of zero, regardless of the reason.
+    </div>
+
+    <h3>Grading Summary</h3>
+    <table>
+      <thead>
+        <tr><th>Part</th><th>Topic</th><th>Points</th><th>Key Deliverables</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>A</td>
+          <td>Disk Partitioning</td>
+          <td>6</td>
+          <td>fdisk output, parted output, MBR vs. GPT reflection</td>
+        </tr>
+        <tr>
+          <td>B</td>
+          <td>Software RAID 1</td>
+          <td>8</td>
+          <td>mdadm detail (healthy + degraded + rebuilt), fstab entry, reflection</td>
+        </tr>
+        <tr>
+          <td>C</td>
+          <td>LVM Configuration</td>
+          <td>8</td>
+          <td>pvs/vgs/lvs output, df output (3 volumes), online extension proof, reflection</td>
+        </tr>
+        <tr>
+          <td>D</td>
+          <td>Windows Storage Spaces</td>
+          <td>8</td>
+          <td>GUI screenshots, PowerShell output (Get-StoragePool, Get-VirtualDisk, Get-Volume), reflection</td>
+        </tr>
+        <tr style="font-weight:700;">
+          <td colspan="2">Total</td>
+          <td>30</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Academic Integrity</h3>
+    <p style="font-size:.93rem;">All work submitted must be your own. Terminal output and screenshots must reflect commands you executed in your own virtual machines. Collaboration to understand concepts is encouraged; sharing screenshots, command outputs, or written answers is not permitted.</p>
+
+    <div style="margin-top:28px; text-align:center;">
+      <button class="btn btn-success" id="save-pdf-btn" onclick="savePDF()" aria-label="Save this page as PDF for submission">
+        ⬇ Save as PDF
+      </button>
+      <p style="font-size:.82rem; color:#555; margin-top:10px;">
+        This will open your browser's print dialog. Choose <strong>"Save as PDF"</strong> as the destination. All text you have typed in the response fields will be included. Add screenshots in your word processor before final submission.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>CSC 152 – Network Operating Systems and Administration &nbsp;|&nbsp; Lab 10: Storage Technologies &amp; RAID &nbsp;|&nbsp; Optional Extra Credit – 30 Points</p>
+  <p style="margin-top:4px;">Check Canvas for the due date. No late submissions accepted for extra credit.</p>
+</footer>
+
+<!-- ══════════════════════════════════════════════
+     JavaScript – Save as PDF
+══════════════════════════════════════════════ -->
+<script>
+  function savePDF() {
+    // Temporarily make all textareas expand to show full content for print
+    var textareas = document.querySelectorAll('textarea');
+    var originalStyles = [];
+    textareas.forEach(function(ta, i) {
+      originalStyles[i] = {
+        height: ta.style.height,
+        overflow: ta.style.overflow,
+        resize: ta.style.resize
+      };
+      ta.style.height = ta.scrollHeight + 'px';
+      ta.style.overflow = 'visible';
+      ta.style.resize = 'none';
+    });
+
+    window.print();
+
+    // Restore styles after print dialog closes
+    setTimeout(function() {
+      textareas.forEach(function(ta, i) {
+        ta.style.height   = originalStyles[i].height;
+        ta.style.overflow = originalStyles[i].overflow;
+        ta.style.resize   = originalStyles[i].resize;
+      });
+    }, 1000);
+  }
+
+  // Auto-expand textareas as user types
+  document.querySelectorAll('textarea').forEach(function(ta) {
+    ta.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight + 4) + 'px';
+    });
+  });
+</script>
+
+</body>
+</html>
