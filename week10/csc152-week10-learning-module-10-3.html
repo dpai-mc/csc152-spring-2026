@@ -234,6 +234,7 @@
     font-size: .83rem; line-height: 1.65;
     overflow-x: auto; margin: 12px 0;
     position: relative;
+    white-space: pre;
   }
   .code-block .cb-label {
     display: block; font-size: .72rem; font-weight: 700;
@@ -1169,9 +1170,8 @@
       <h3>Step 1 — Verify Disks and Partitions</h3>
       <p>Before creating the array, confirm both partitions are visible and have
          the correct type.</p>
-      <div class="code-block">
-        <span class="cb-label">bash — verify partitions</span>
-        <span class="cmd">lsblk</span>                            <span class="cmt"># list all block devices and partitions</span>
+      <div class="code-block"><span class="cb-label">bash — verify partitions</span>
+<span class="cmd">lsblk</span>                            <span class="cmt"># list all block devices and partitions</span>
 <span class="out">NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 sdb      8:16   0   10G  0 disk
 └─sdb1   8:17   0   10G  0 part
@@ -1179,28 +1179,26 @@ sdc      8:32   0   10G  0 disk
 └─sdc1   8:33   0   10G  0 part</span>
 
 <span class="cmd">fdisk <span class="flag">-l</span> <span class="path">/dev/sdb</span></span>      <span class="cmt"># confirm partition type is fd (Linux RAID)</span>
-      </div>
+</div>
 
       <h3>Step 2 — Create the RAID 1 Array</h3>
       <p>The <code>mdadm --create</code> command assembles the array. Each flag is
          explained inline.</p>
-      <div class="code-block">
-        <span class="cb-label">bash — create RAID 1 array</span>
-        <span class="cmd">mdadm</span> <span class="flag">--create</span> <span class="path">/dev/md0</span> \
+      <div class="code-block"><span class="cb-label">bash — create RAID 1 array</span>
+<span class="cmd">mdadm</span> <span class="flag">--create</span> <span class="path">/dev/md0</span> \
       <span class="flag">--level=1</span>          \  <span class="cmt"># RAID level: 1 (mirror)</span>
       <span class="flag">--raid-devices=2</span>   \  <span class="cmt"># number of active member devices</span>
       <span class="path">/dev/sdb1</span> <span class="path">/dev/sdc1</span>    <span class="cmt"># the two member partitions</span>
 
 <span class="out">mdadm: Defaulting to version 1.2 metadata
 mdadm: array /dev/md0 started.</span>
-      </div>
+</div>
 
       <h3>Step 3 — Monitor Array Creation</h3>
       <p>RAID 1 performs an initial synchronization (resync) to ensure both mirrors
          are identical. Monitor progress with:</p>
-      <div class="code-block">
-        <span class="cb-label">bash — monitor sync progress</span>
-        <span class="cmd">cat</span> <span class="path">/proc/mdstat</span>
+      <div class="code-block"><span class="cb-label">bash — monitor sync progress</span>
+<span class="cmd">cat</span> <span class="path">/proc/mdstat</span>
 
 <span class="out">Personalities : [raid1]
 md0 : active raid1 sdc1[1] sdb1[0]
@@ -1210,14 +1208,13 @@ md0 : active raid1 sdc1[1] sdb1[0]
 unused devices: &lt;none&gt;</span>
 
 <span class="cmd">mdadm</span> <span class="flag">--detail</span> <span class="path">/dev/md0</span>   <span class="cmt"># detailed array status</span>
-      </div>
+</div>
       <p>In the <code>[UU]</code> status indicator, each <code>U</code> represents a
          healthy member disk. A failed disk shows as <code>_</code>.</p>
 
       <h3>Step 4 — Format and Mount the Array</h3>
-      <div class="code-block">
-        <span class="cb-label">bash — format and mount</span>
-        <span class="cmd">mkfs.ext4</span> <span class="path">/dev/md0</span>            <span class="cmt"># create ext4 filesystem on the array</span>
+      <div class="code-block"><span class="cb-label">bash — format and mount</span>
+<span class="cmd">mkfs.ext4</span> <span class="path">/dev/md0</span>            <span class="cmt"># create ext4 filesystem on the array</span>
 
 <span class="cmd">mkdir</span> <span class="flag">-p</span> <span class="path">/mnt/raid1</span>              <span class="cmt"># create mount point</span>
 
@@ -1226,33 +1223,30 @@ unused devices: &lt;none&gt;</span>
 <span class="cmd">df</span> <span class="flag">-h</span> <span class="path">/mnt/raid1</span>                 <span class="cmt"># verify mount and available space</span>
 <span class="out">Filesystem      Size  Used Avail Use% Mounted on
 /dev/md0        9.8G   24M  9.3G   1% /mnt/raid1</span>
-      </div>
+</div>
 
       <h3>Step 5 — Make the Mount Persistent (/etc/fstab)</h3>
       <p>Without an fstab entry, the mount will not survive a reboot. Use the
          array's UUID (not device name, which can change) for reliability.</p>
-      <div class="code-block">
-        <span class="cb-label">bash — get UUID and add to fstab</span>
-        <span class="cmd">blkid</span> <span class="path">/dev/md0</span>                 <span class="cmt"># get the UUID</span>
+      <div class="code-block"><span class="cb-label">bash — get UUID and add to fstab</span>
+<span class="cmd">blkid</span> <span class="path">/dev/md0</span>                 <span class="cmt"># get the UUID</span>
 <span class="out">/dev/md0: UUID="a1b2c3d4-e5f6-7890-abcd-ef1234567890" TYPE="ext4"</span>
 
 <span class="cmt"># Add this line to /etc/fstab (replace UUID with your actual value):</span>
 <span class="out">UUID=a1b2c3d4-e5f6-7890-abcd-ef1234567890  /mnt/raid1  ext4  defaults  0  2</span>
-      </div>
+</div>
 
       <h3>Step 6 — Save the RAID Configuration</h3>
-      <div class="code-block">
-        <span class="cb-label">bash — save mdadm configuration</span>
-        <span class="cmd">mdadm</span> <span class="flag">--detail --scan</span> <span class="flag">&gt;&gt;</span> <span class="path">/etc/mdadm/mdadm.conf</span>
+      <div class="code-block"><span class="cb-label">bash — save mdadm configuration</span>
+<span class="cmd">mdadm</span> <span class="flag">--detail --scan</span> <span class="flag">&gt;&gt;</span> <span class="path">/etc/mdadm/mdadm.conf</span>
 <span class="cmt"># This ensures the array is reassembled automatically on reboot</span>
-      </div>
+</div>
 
       <h3>Step 7 — Simulate a Disk Failure</h3>
       <p>You can mark a member disk as faulty without physically removing it.
          This is how Lab 10 asks you to test fault tolerance.</p>
-      <div class="code-block">
-        <span class="cb-label">bash — simulate failure and observe degraded state</span>
-        <span class="cmd">mdadm</span> <span class="flag">--manage</span> <span class="path">/dev/md0</span> <span class="flag">--fail</span> <span class="path">/dev/sdb1</span>
+      <div class="code-block"><span class="cb-label">bash — simulate failure and observe degraded state</span>
+<span class="cmd">mdadm</span> <span class="flag">--manage</span> <span class="path">/dev/md0</span> <span class="flag">--fail</span> <span class="path">/dev/sdb1</span>
 <span class="out">mdadm: set /dev/sdb1 faulty in /dev/md0</span>
 
 <span class="cmd">cat</span> <span class="path">/proc/mdstat</span>
@@ -1261,12 +1255,11 @@ unused devices: &lt;none&gt;</span>
 <span class="cmt"># [_U] = one disk failed, one healthy; array still running (degraded)</span>
 
 <span class="cmd">mdadm</span> <span class="flag">--detail</span> <span class="path">/dev/md0</span>   <span class="cmt"># confirm degraded state</span>
-      </div>
+</div>
 
       <h3>Step 8 — Remove and Re-Add Disk to Rebuild</h3>
-      <div class="code-block">
-        <span class="cb-label">bash — remove failed disk and rebuild</span>
-        <span class="cmd">mdadm</span> <span class="flag">--manage</span> <span class="path">/dev/md0</span> <span class="flag">--remove</span> <span class="path">/dev/sdb1</span>
+      <div class="code-block"><span class="cb-label">bash — remove failed disk and rebuild</span>
+<span class="cmd">mdadm</span> <span class="flag">--manage</span> <span class="path">/dev/md0</span> <span class="flag">--remove</span> <span class="path">/dev/sdb1</span>
 <span class="out">mdadm: hot removed /dev/sdb1 from /dev/md0</span>
 
 <span class="cmd">mdadm</span> <span class="flag">--manage</span> <span class="path">/dev/md0</span> <span class="flag">--add</span> <span class="path">/dev/sdb1</span>
@@ -1277,7 +1270,7 @@ unused devices: &lt;none&gt;</span>
       10475520 blocks super 1.2 [2/1] [_U]
       [===========>.........]  recovery = 57.3% (6002688/10475520) finish=0.3min speed=195432K/sec</span>
 <span class="cmt"># Array is rebuilding; [UU] will appear when complete</span>
-      </div>
+</div>
 
       <div class="callout success">
         <div class="callout-title">✅ Key Takeaway</div>
@@ -1410,9 +1403,8 @@ unused devices: &lt;none&gt;</span>
       <h3>PowerShell Workflow</h3>
       <p>PowerShell is the preferred method for scripted or automated deployments.
          The commands below create a 2-way mirror virtual disk from two disks.</p>
-      <div class="code-block">
-        <span class="cb-label">powershell — create storage pool and virtual disk</span>
-        <span class="cmt"># Step 1: View available physical disks (not yet in a pool)</span>
+      <div class="code-block"><span class="cb-label">powershell — create storage pool and virtual disk</span>
+<span class="cmt"># Step 1: View available physical disks (not yet in a pool)</span>
 <span class="cmd">Get-PhysicalDisk</span> <span class="flag">-CanPool</span> $true
 
 <span class="cmt"># Step 2: Create a storage pool named "DataPool" from two disks</span>
@@ -1432,7 +1424,7 @@ unused devices: &lt;none&gt;</span>
 <span class="cmd">Get-VirtualDisk</span> <span class="flag">-FriendlyName</span> <span class="out">"MirrorDisk"</span> | <span class="cmd">Get-Disk</span> | <span class="cmd">Initialize-Disk</span> <span class="flag">-PassThru</span> |
   <span class="cmd">New-Partition</span> <span class="flag">-AssignDriveLetter</span> <span class="flag">-UseMaximumSize</span> |
   <span class="cmd">Format-Volume</span> <span class="flag">-FileSystem</span> NTFS <span class="flag">-NewFileSystemLabel</span> <span class="out">"MirrorVol"</span> <span class="flag">-Confirm:$false</span>
-      </div>
+</div>
 
       <div class="callout">
         <div class="callout-title">📌 ReFS vs. NTFS with Storage Spaces</div>
