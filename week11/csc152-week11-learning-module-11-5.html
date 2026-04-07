@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CSC 152 – Module 11.5: Splunk &amp; Directory Service Monitoring</title>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:      #1a2a4a;
+    --navy-mid:  #243554;
+    --accent:    #e87722;
+    --accent-dk: #c45f0a;
+    --teal:      #0e7c86;
+    --teal-lt:   #d4f0f3;
+    --green:     #1a7a3c;
+    --green-lt:  #d4edda;
+    --red:       #b30000;
+    --red-lt:    #fde8e8;
+    --yellow-lt: #fff8e1;
+    --gray-100:  #f5f7fa;
+    --gray-200:  #e8ecf0;
+    --gray-400:  #9aa5b4;
+    --gray-700:  #3d4f63;
+    --gray-900:  #1c2b3a;
+    --white:     #ffffff;
+    --nav-h:     56px;
+    --radius:    6px;
+    --shadow:    0 2px 8px rgba(0,0,0,.12);
+    --font-body: 'Segoe UI', Arial, sans-serif;
+    --font-mono: 'Consolas', 'Courier New', monospace;
+    --max-w:     860px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--gray-900);
+    background: var(--gray-100);
+  }
+
+  /* ── Skip Link ────────────────────────────────────────────────────── */
+  .skip-link {
+    position: absolute;
+    top: -999px; left: 0;
+    background: var(--accent);
+    color: var(--white);
+    padding: .5rem 1rem;
+    font-weight: 700;
+    z-index: 9999;
+    border-radius: 0 0 var(--radius) 0;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Top Nav ──────────────────────────────────────────────────────── */
+  nav#top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--navy);
+    height: var(--nav-h);
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    overflow-x: auto;
+    gap: .25rem;
+  }
+
+  nav#top-nav .nav-brand {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: .85rem;
+    white-space: nowrap;
+    margin-right: .75rem;
+    flex-shrink: 0;
+  }
+
+  nav#top-nav a {
+    color: var(--gray-200);
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 600;
+    padding: .35rem .6rem;
+    border-radius: var(--radius);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background .15s, color .15s;
+  }
+  nav#top-nav a:hover  { background: var(--navy-mid); color: var(--white); }
+  nav#top-nav a:focus  {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    color: var(--white);
+  }
+
+  /* ── Page Layout ──────────────────────────────────────────────────── */
+  .page-wrap {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+  }
+
+  /* ── Page Header ──────────────────────────────────────────────────── */
+  .page-header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+    color: var(--white);
+    border-radius: var(--radius);
+    padding: 2rem 2rem 1.75rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+  }
+  .page-header .badge {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--white);
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    padding: .2rem .65rem;
+    border-radius: 999px;
+    margin-bottom: .75rem;
+  }
+  .page-header h1 {
+    font-size: 1.55rem;
+    line-height: 1.25;
+    margin-bottom: .5rem;
+  }
+  .page-header .subtitle {
+    font-size: .95rem;
+    color: var(--gray-200);
+    margin-bottom: 1rem;
+  }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.25rem;
+    font-size: .8rem;
+    color: var(--gray-400);
+  }
+  .meta-row span strong { color: var(--gray-200); }
+
+  /* ── Section Cards ────────────────────────────────────────────────── */
+  section.card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+
+  .card-header {
+    background: var(--navy);
+    color: var(--white);
+    padding: .9rem 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .card-header .sec-num {
+    background: var(--accent);
+    color: var(--white);
+    font-size: .72rem;
+    font-weight: 800;
+    padding: .15rem .5rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .card-header h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .card-body { padding: 1.4rem 1.5rem; }
+  .card-body p + p { margin-top: .75rem; }
+
+  /* ── Callout Boxes ────────────────────────────────────────────────── */
+  .callout {
+    border-left: 4px solid var(--teal);
+    background: var(--teal-lt);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: .85rem 1.1rem;
+    margin: 1rem 0;
+    font-size: .93rem;
+  }
+  .callout.warn {
+    border-color: var(--accent);
+    background: var(--yellow-lt);
+  }
+  .callout.success {
+    border-color: var(--green);
+    background: var(--green-lt);
+  }
+  .callout strong { display: block; margin-bottom: .2rem; }
+
+  /* ── Objectives List ──────────────────────────────────────────────── */
+  .obj-list {
+    list-style: none;
+    padding: 0;
+    margin: .5rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+  }
+  .obj-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    font-size: .93rem;
+  }
+  .obj-list li::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: 800;
+    flex-shrink: 0;
+    margin-top: .05rem;
+  }
+
+  /* ── Event ID Table ───────────────────────────────────────────────── */
+  .event-table-wrap {
+    overflow-x: auto;
+    margin: 1rem 0;
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-200);
+  }
+  table.event-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .88rem;
+  }
+  table.event-table thead {
+    background: var(--navy);
+    color: var(--white);
+  }
+  table.event-table thead th {
+    padding: .65rem .9rem;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  table.event-table tbody tr:nth-child(even) { background: var(--gray-100); }
+  table.event-table tbody tr:hover           { background: var(--teal-lt); }
+  table.event-table tbody td {
+    padding: .6rem .9rem;
+    vertical-align: top;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  table.event-table tbody tr:last-child td { border-bottom: none; }
+
+  .eid-badge {
+    display: inline-block;
+    background: var(--navy);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: .8rem;
+    font-weight: 700;
+    padding: .15rem .5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* ── Expandable Event Rows ────────────────────────────────────────── */
+  .expand-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--teal);
+    font-size: .78rem;
+    font-weight: 700;
+    padding: .15rem 0;
+    text-decoration: underline;
+    display: inline-block;
+    margin-top: .25rem;
+  }
+  .expand-btn:hover  { color: var(--navy); }
+  .expand-btn:focus  {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  .expand-detail {
+    display: none;
+    margin-top: .45rem;
+    padding: .6rem .8rem;
+    background: var(--gray-100);
+    border-left: 3px solid var(--teal);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: .85rem;
+    line-height: 1.55;
+  }
+  .expand-detail.open { display: block; }
+
+  /* ── Pipeline Diagram ─────────────────────────────────────────────── */
+  .pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    margin: 1.25rem 0;
+  }
+  .pipe-box {
+    background: var(--navy);
+    color: var(--white);
+    border-radius: var(--radius);
+    padding: .65rem 1rem;
+    text-align: center;
+    font-size: .82rem;
+    font-weight: 700;
+    min-width: 130px;
+    flex-shrink: 0;
+    line-height: 1.35;
+    box-shadow: var(--shadow);
+  }
+  .pipe-box .pipe-sub {
+    font-size: .7rem;
+    font-weight: 400;
+    color: var(--gray-400);
+    display: block;
+    margin-top: .15rem;
+  }
+  .pipe-arrow {
+    font-size: 1.4rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  /* ── Toggle Reveal ────────────────────────────────────────────────── */
+  .toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    padding: .5rem 1rem;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+    margin: .75rem 0 .5rem;
+  }
+  .toggle-btn:hover  { background: var(--accent); }
+  .toggle-btn:focus  {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .toggle-btn .arrow { transition: transform .2s; display: inline-block; }
+  .toggle-btn.open .arrow { transform: rotate(90deg); }
+
+  .toggle-panel {
+    display: none;
+    padding: 1rem 1.1rem;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    margin-bottom: .5rem;
+    font-size: .9rem;
+    line-height: 1.6;
+  }
+  .toggle-panel.open { display: block; }
+
+  /* ── Assignment Card ──────────────────────────────────────────────── */
+  .assign-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .assign-tile {
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: .9rem 1rem;
+  }
+  .assign-tile h3 {
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--gray-700);
+    margin-bottom: .35rem;
+  }
+  .assign-tile p {
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  /* ── Knowledge Check ──────────────────────────────────────────────── */
+  .kc-header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1rem;
+  }
+  .kc-header .kc-badge {
+    background: var(--teal);
+    color: var(--white);
+    font-size: .7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .kc-header p {
+    font-size: .88rem;
+    color: var(--gray-700);
+    margin: 0;
+  }
+
+  .question-block {
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1.25rem;
+  }
+  .question-block p.q-text {
+    font-weight: 700;
+    font-size: .95rem;
+    margin-bottom: .85rem;
+  }
+  .q-options { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .45rem; }
+  .q-options li label {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    cursor: pointer;
+    font-size: .9rem;
+    padding: .45rem .65rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    transition: background .12s, border-color .12s;
+  }
+  .q-options li label:hover { background: var(--teal-lt); border-color: var(--teal); }
+  .q-options li input[type="radio"] { flex-shrink: 0; margin-top: .18rem; accent-color: var(--teal); }
+
+  .check-btn {
+    background: var(--teal);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    padding: .5rem 1.2rem;
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: .75rem;
+    transition: background .15s;
+  }
+  .check-btn:hover  { background: var(--navy); }
+  .check-btn:focus  { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  .feedback-box {
+    display: none;
+    margin-top: .75rem;
+    padding: .75rem 1rem;
+    border-radius: var(--radius);
+    font-size: .88rem;
+    line-height: 1.55;
+  }
+  .feedback-box.correct   { background: var(--green-lt);  border-left: 4px solid var(--green); }
+  .feedback-box.incorrect { background: var(--red-lt);    border-left: 4px solid var(--red);   }
+  .feedback-box.show      { display: block; }
+  .feedback-box .fb-title { font-weight: 800; margin-bottom: .25rem; }
+
+  /* ── Summary Banner ───────────────────────────────────────────────── */
+  .summary-banner {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+    color: var(--white);
+    border-radius: var(--radius);
+    padding: 1.4rem 1.6rem;
+    margin-top: 2rem;
+    box-shadow: var(--shadow);
+  }
+  .summary-banner h2 {
+    font-size: 1.05rem;
+    margin-bottom: .6rem;
+    color: var(--accent);
+  }
+  .summary-banner ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+  .summary-banner ul li {
+    font-size: .9rem;
+    display: flex;
+    gap: .6rem;
+    align-items: flex-start;
+  }
+  .summary-banner ul li::before {
+    content: '→';
+    color: var(--accent);
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  /* ── Responsive ───────────────────────────────────────────────────── */
+  @media (max-width: 600px) {
+    .page-header h1 { font-size: 1.25rem; }
+    .card-body { padding: 1.1rem 1rem; }
+    .pipe-box  { min-width: 100px; font-size: .75rem; }
+    .assign-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Skip Navigation -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- ── Top Navigation ─────────────────────────────────────────────────── -->
+<nav id="top-nav" aria-label="Module section navigation">
+  <span class="nav-brand">CSC 152 · Module 11.5</span>
+  <a href="#sec-why">Why Monitor?</a>
+  <a href="#sec-eventids">Event IDs</a>
+  <a href="#sec-splunk-collect">How Splunk Collects</a>
+  <a href="#sec-fundamentals">Fundamentals 1</a>
+  <a href="#sec-kc">Knowledge Check</a>
+</nav>
+
+<!-- ── Main Content ───────────────────────────────────────────────────── -->
+<main id="main-content" class="page-wrap" tabindex="-1">
+
+  <!-- Page Header -->
+  <header class="page-header">
+    <span class="badge">Week 11 · Module 11.5</span>
+    <h1>Splunk &amp; Directory Service Monitoring<br><span style="font-weight:400;font-size:1.1rem;">Introduction</span></h1>
+    <p class="subtitle">
+      Connecting Active Directory DS skills to centralized log monitoring —
+      and orienting you to the Splunk Fundamentals 1 self-paced course.
+    </p>
+    <div class="meta-row">
+      <span><strong>Course:</strong> CSC 152 – Network Operating Systems &amp; Administration</span>
+      <span><strong>Week:</strong> 11 of 17 &nbsp;|&nbsp; April 6–12, 2026</span>
+      <span><strong>Est. Time:</strong> ~30 minutes</span>
+      <span><strong>Graded Work:</strong> None this module</span>
+    </div>
+  </header>
+
+  <!-- ── Module Overview callout ──────────────────────────────────────── -->
+  <div class="callout">
+    <strong>What This Module Is — and Is Not</strong>
+    This is a <em>conceptual orientation</em> module. You will not install or
+    configure Splunk this week. Instead, you will learn <em>why</em> AD DS
+    monitoring matters, get familiar with the Windows Security Event IDs that
+    matter most, understand conceptually how Splunk collects those events, and
+    receive your orientation to the <strong>Splunk Fundamentals 1</strong>
+    self-paced course, whose completion certificate is due <strong>Week 13</strong>.
+  </div>
+
+  <!-- ── SECTION 1 – Why Monitor? ──────────────────────────────────────── -->
+  <section class="card" id="sec-why" aria-labelledby="why-heading">
+    <div class="card-header">
+      <span class="sec-num">1</span>
+      <h2 id="why-heading">Why Monitor Directory Service Events?</h2>
+    </div>
+    <div class="card-body">
+
+      <p>
+        In Modules 11.1 through 11.4 you built and managed an Active Directory
+        Domain Services (AD DS) environment — promoting a Domain Controller,
+        creating OUs, users, and groups, and configuring Group Policy. That
+        infrastructure now holds the keys to your organization: user accounts,
+        authentication, and access rights. <strong>That makes it a prime
+        target.</strong>
+      </p>
+
+      <p>
+        Monitoring the Windows Security event log on your Domain Controllers
+        gives you visibility into three critical threat categories:
+      </p>
+
+      <!-- Three pillars -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem;margin:1.1rem 0;">
+
+        <div style="background:var(--red-lt);border-left:4px solid var(--red);border-radius:var(--radius);padding:.9rem 1rem;">
+          <p style="font-weight:800;font-size:.88rem;color:var(--red);margin-bottom:.3rem;">🔒 Unauthorized Access</p>
+          <p style="font-size:.86rem;">
+            Repeated failed logon attempts (brute-force), logins at unusual
+            hours, or successful logins from unexpected source IPs can all
+            signal an intrusion attempt or a compromised credential.
+          </p>
+        </div>
+
+        <div style="background:var(--yellow-lt);border-left:4px solid var(--accent);border-radius:var(--radius);padding:.9rem 1rem;">
+          <p style="font-weight:800;font-size:.88rem;color:var(--accent-dk);margin-bottom:.3rem;">🔐 Account Lockouts</p>
+          <p style="font-size:.86rem;">
+            A sudden spike in lockout events may indicate a password-spray
+            attack, a misconfigured service account, or a user whose
+            credentials were stolen and are being actively tested.
+          </p>
+        </div>
+
+        <div style="background:var(--teal-lt);border-left:4px solid var(--teal);border-radius:var(--radius);padding:.9rem 1rem;">
+          <p style="font-weight:800;font-size:.88rem;color:var(--teal);margin-bottom:.3rem;">⬆ Privilege Escalation</p>
+          <p style="font-size:.86rem;">
+            Adding an account to Domain Admins or other privileged groups —
+            especially outside of a change-control window — is one of the
+            most dangerous actions in an AD environment and must be tracked.
+          </p>
+        </div>
+
+      </div>
+
+      <p>
+        Without centralized log collection and alerting, these events sit
+        silently in individual server logs, often overwritten before anyone
+        reviews them. Splunk solves this by aggregating events in real time
+        and enabling search, dashboards, and automated alerts — skills you
+        will develop starting in Week 13.
+      </p>
+
+      <div class="callout warn">
+        <strong>Compliance Note</strong>
+        Many regulatory frameworks — including PCI-DSS, HIPAA, and SOC 2 —
+        explicitly require audit logging of authentication events, privileged
+        account changes, and account lockouts. The Event IDs you will study
+        in the next section directly satisfy those requirements.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 2 – Key Event IDs ─────────────────────────────────────── -->
+  <section class="card" id="sec-eventids" aria-labelledby="eid-heading">
+    <div class="card-header">
+      <span class="sec-num">2</span>
+      <h2 id="eid-heading">Key Windows Security Event IDs for AD DS</h2>
+    </div>
+    <div class="card-body">
+
+      <p>
+        Windows logs security events in the <strong>Security</strong> channel
+        of the Windows Event Log. On a Domain Controller, this channel records
+        authentication, account management, and group membership changes for
+        the entire domain. The table below covers the seven Event IDs you
+        need to know for this course. Click <em>Details</em> under any row
+        for additional monitoring context.
+      </p>
+
+      <div class="event-table-wrap" role="region" aria-label="Windows Security Event IDs">
+        <table class="event-table">
+          <thead>
+            <tr>
+              <th scope="col">Event ID</th>
+              <th scope="col">Name</th>
+              <th scope="col">Category</th>
+              <th scope="col">Brief Description</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- 4624 -->
+            <tr>
+              <td><span class="eid-badge">4624</span></td>
+              <td>Successful Logon</td>
+              <td>Authentication</td>
+              <td>
+                A user or service successfully authenticated to the system.
+                <br>
+                <button class="expand-btn" aria-expanded="false"
+                        aria-controls="detail-4624"
+                        onclick="toggleDetail(this,'detail-4624')">
+                  ▸ Details
+                </button>
+                <div id="detail-4624" class="expand-detail" role="region">
+                  <strong>Why it matters:</strong> Baseline logon activity.
+                  Look for Logon Type 3 (network) and Type 10 (RemoteInteractive/RDP)
+                  events from unexpected source IPs or at off-hours. The event
+                  includes the account name, workstation name, source IP, and
+                  logon type — all searchable in Splunk.
+                </div>
+              </td>
+            </tr>
+
+            <!-- 4625 -->
+            <tr>
+              <td><span class="eid-badge">4625</span></td>
+              <td>Failed Logon</td>
+              <td>Authentication</td>
+              <td>
+                An authentication attempt failed.
+                <br>
+                <button class="expand-btn" aria-expanded="false"
+                        aria-controls="detail-4625"
+                        onclick="toggleDetail(this,'detail-4625')">
+                  ▸ Details
+                </button>
+                <div id="detail-4625" class="expand-detail" role="region">
+                  <strong>Why it matters:</strong> A single failure is normal;
+                  dozens of failures against one account in a short window
+                  suggest a brute-force or password-spray attack. Sub-status
+                  codes within the event identify <em>why</em> the logon
+                  failed (wrong password, account disabled, expired, etc.),
+                  making triage much faster.
+                </div>
+              </td>
+            </tr>
+
+            <!-- 4720 -->
+            <tr>
+              <td><span class="eid-badge">4720</span></td>
+              <td>User Account Created</td>
+              <td>Account Management</td>
+              <td>
+                A new user account was created in the domain.
+                <br>
+                <button class="expand-btn" aria-expanded="false"
+                        aria-controls="detail-4720"
+                        onclick="toggleDetail(this,'detail-4720')">
+                  ▸ Details
+                </button>
+                <div id="detail-4720" class="expand-detail" role="region">
+                  <strong>Why it matters:</strong> Unauthorized account
+                  creation is a classic persistence technique — attackers
+                  create a backdoor account to maintain access. This event
+                  records the new account name <em>and</em> the account that
+                  performed the creation, enabling rapid attribution.
+                </div>
+              </td>
+            </tr>
+
+            <!-- 4740 -->
+            <tr>
+              <td><span class="eid-badge">4740</span></td>
+              <td>User Account Locked Out</td>
+              <td>Account Management</td>
+              <td>
+                An account was locked out due to too many failed logon attempts.
+                <br>
+                <button class="expand-btn" aria-expanded="false"
+                        aria-controls="detail-4740"
+                        onclick="toggleDetail(this,'detail-4740')">
+                  ▸ Details
+                </button>
+                <div id="detail-4740" class="expand-detail" role="region">
+                  <strong>Why it matters:</strong> Lockout events are
+                  generated on the Domain Controller that processed the
+                  final bad password. The event includes the caller computer
+                  name — the machine where the bad passwords originated —
+                  which is the starting point for investigating whether this
+                  is a user mistake, a misconfigured service, or an attack.
+                </div>
+              </td>
+            </tr>
+
+            <!-- 4728 -->
+            <tr>
+              <td><span class="eid-badge">4728</span></td>
+              <td>Member Added to Global Security Group</td>
+              <td>Group Management</td>
+              <td>
+                A member was added to a global security-enabled group.
+                <br>
+                <button class="expand-btn" aria-expanded="false"
+                        aria-controls="detail-4728"
+                        onclick="toggleDetail(this,'detail-4728')">
+                  ▸ Details
+                </button>
+                <div id="detail-4728" class="expand-detail" role="region">
+                  <strong>Why it matters:</strong> Global security groups
+                  commonly control resource access across the domain. Any
+                  unexpected addition — especially to privileged groups like
+                  Domain Admins — must be investigated immediately.
+                </div>
+              </td>
+            </tr>
+
+            <!-- 4732 -->
+            <tr>
+              <td><span class="eid-badge">4732</span></td>
+              <td>Member Added to Local Security Group</td>
+              <td>Group Management</td>
+              <td>
+                A member was added to a local security-enabled group.
+                <br>
+                <button class="expand-btn" aria-expanded="false"
+                        aria-controls="detail-4732"
+                        onclick="toggleDetail(this,'detail-4732')">
+                  ▸ Details
+                </button>
+                <div id="detail-4732" class="expand-detail" role="region">
+                  <strong>Why it matters:</strong> On Domain Controllers,
+                  local groups like Administrators and Remote Desktop Users
+                  grant elevated access. Adding an account to these groups
+                  outside a change window is a significant privilege
+                  escalation indicator.
+                </div>
+              </td>
+            </tr>
+
+            <!-- 4756 -->
+            <tr>
+              <td><span class="eid-badge">4756</span></td>
+              <td>Member Added to Universal Security Group</td>
+              <td>Group Management</td>
+              <td>
+                A member was added to a universal security-enabled group.
+                <br>
+                <button class="expand-btn" aria-expanded="false"
+                        aria-controls="detail-4756"
+                        onclick="toggleDetail(this,'detail-4756')">
+                  ▸ Details
+                </button>
+                <div id="detail-4756" class="expand-detail" role="region">
+                  <strong>Why it matters:</strong> Universal groups are
+                  replicated to the Global Catalog and can span multiple
+                  domains in a forest. Unauthorized additions to universal
+                  groups can grant cross-domain access, making this event
+                  especially important in multi-domain environments.
+                </div>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <strong>Audit Policy Prerequisite</strong>
+        These events are only generated if the appropriate audit policies are
+        enabled. In a default Windows Server installation, not all of them are
+        active. In Week 13 you will verify audit policy settings on your
+        Domain Controller as part of the Splunk lab setup.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 3 – How Splunk Collects ───────────────────────────────── -->
+  <section class="card" id="sec-splunk-collect" aria-labelledby="collect-heading">
+    <div class="card-header">
+      <span class="sec-num">3</span>
+      <h2 id="collect-heading">How Splunk Collects Windows Event Logs</h2>
+    </div>
+    <div class="card-body">
+
+      <p>
+        You do not need to install anything this week. This section gives you
+        a <strong>conceptual preview</strong> of the data pipeline you will
+        configure in the Week 13 lab, so the Splunk Fundamentals 1 course
+        makes sense in context.
+      </p>
+
+      <h3 style="font-size:.95rem;margin:1rem 0 .5rem;color:var(--navy);">The Two-Component Architecture</h3>
+
+      <p>
+        Splunk's Windows log collection relies on two software components
+        working together:
+      </p>
+
+      <!-- Pipeline visual -->
+      <div class="pipeline" role="img" aria-label="Data pipeline: Windows Event Log to Universal Forwarder to Splunk Enterprise">
+        <div class="pipe-box">
+          Windows Event Log
+          <span class="pipe-sub">Security channel<br>on Domain Controller</span>
+        </div>
+        <div class="pipe-arrow" aria-hidden="true">→</div>
+        <div class="pipe-box" style="background:var(--accent);">
+          Universal Forwarder
+          <span class="pipe-sub" style="color:#ffd8b0;">Lightweight agent<br>on the DC</span>
+        </div>
+        <div class="pipe-arrow" aria-hidden="true">→</div>
+        <div class="pipe-box">
+          Splunk Enterprise
+          <span class="pipe-sub">Indexer + Search Head<br>central server</span>
+        </div>
+      </div>
+
+      <!-- Toggle: what each component does -->
+      <button class="toggle-btn" aria-expanded="false"
+              aria-controls="pipeline-detail"
+              onclick="togglePanel(this,'pipeline-detail')">
+        <span class="arrow" aria-hidden="true">▶</span> What does each component do?
+      </button>
+      <div id="pipeline-detail" class="toggle-panel" role="region">
+        <p style="margin-bottom:.6rem;">
+          <strong>Windows Event Log (Security channel):</strong>
+          The operating system writes security events — logons, account
+          changes, group membership changes — to this channel in real time.
+          On a Domain Controller, this includes domain-wide authentication
+          events. Events are stored locally in a circular buffer; older
+          events are overwritten once the buffer fills.
+        </p>
+        <p style="margin-bottom:.6rem;">
+          <strong>Splunk Universal Forwarder:</strong>
+          A small, low-overhead agent installed on the Domain Controller.
+          It monitors the Windows Event Log channels you configure, reads
+          new events as they are written, and forwards them — in near real
+          time — to Splunk Enterprise over an encrypted TCP connection
+          (default port 9997). The forwarder does <em>not</em> index or
+          search data; it only collects and ships.
+        </p>
+        <p>
+          <strong>Splunk Enterprise (Indexer + Search Head):</strong>
+          The central server receives the forwarded events, indexes them for
+          fast retrieval, and provides the web-based interface where you
+          write searches (SPL — Splunk Processing Language), build
+          dashboards, and configure alerts. In the Week 13 lab your
+          Splunk Enterprise instance will be running in a separate VM on
+          your VirtualBox network, receiving events from the DC you built
+          this week.
+        </p>
+      </div>
+
+      <div class="callout success">
+        <strong>Week 13 Preview</strong>
+        In the Week 13 lab you will install the Universal Forwarder on your
+        Domain Controller VM, configure it to forward the Security event
+        channel to your Splunk Enterprise VM, and then write your first SPL
+        queries to surface Event ID 4625 (failed logons) and 4728/4732/4756
+        (group membership changes) in real time.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 4 – Splunk Fundamentals 1 ─────────────────────────────── -->
+  <section class="card" id="sec-fundamentals" aria-labelledby="fund-heading">
+    <div class="card-header">
+      <span class="sec-num">4</span>
+      <h2 id="fund-heading">Splunk Fundamentals 1 — Your Homework Assignment</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="callout warn">
+        <strong>Action Required — Due Week 13</strong>
+        Complete the free <strong>Splunk Fundamentals 1</strong> self-paced
+        course on Splunk's education platform and submit a screenshot of your
+        completion certificate to the Week 13 assignment in Canvas.
+        See the grading details below.
+      </div>
+
+      <h3 style="font-size:.95rem;margin:1rem 0 .5rem;color:var(--navy);">What Is Splunk Fundamentals 1?</h3>
+      <p>
+        Splunk Fundamentals 1 is a free, self-paced online course offered
+        through Splunk's education platform. It is the official starting point
+        for Splunk's certification track and is widely recognized in industry.
+        The course covers:
+      </p>
+      <ul class="obj-list" style="margin:.6rem 0 1rem 0;">
+        <li>Navigating the Splunk web interface and understanding the data pipeline</li>
+        <li>Using the Splunk Processing Language (SPL) to search and filter events</li>
+        <li>Working with fields, transforming commands, and statistical functions</li>
+        <li>Building basic reports, charts, and dashboards</li>
+        <li>Saving searches and setting up simple alerts</li>
+      </ul>
+
+      <p>
+        The skills taught in Fundamentals 1 map directly to what you will do
+        in the Week 13 and Week 14 labs — searching for AD DS event IDs,
+        building a logon-failure dashboard, and configuring a lockout alert.
+        Completing the course <em>before</em> Week 13 means you arrive at
+        the lab already knowing SPL syntax, which will make the lab
+        significantly smoother.
+      </p>
+
+      <!-- Toggle: How to access -->
+      <button class="toggle-btn" aria-expanded="false"
+              aria-controls="access-detail"
+              onclick="togglePanel(this,'access-detail')">
+        <span class="arrow" aria-hidden="true">▶</span> How to access Splunk Fundamentals 1
+      </button>
+      <div id="access-detail" class="toggle-panel" role="region">
+        <ol style="padding-left:1.3rem;font-size:.9rem;line-height:1.7;">
+          <li>
+            Open a browser and navigate to <strong>education.splunk.com</strong>
+            (type this address manually — no live link is provided here per
+            course policy).
+          </li>
+          <li>
+            Create a free Splunk account if you do not already have one.
+            Use an email address you check regularly — your certificate will
+            be sent there.
+          </li>
+          <li>
+            Search for <strong>"Splunk Fundamentals 1"</strong> in the course
+            catalog. Enroll in the free, self-paced version (not a paid
+            instructor-led section).
+          </li>
+          <li>
+            Work through all modules at your own pace. Most students complete
+            the course in <strong>4–6 hours</strong> spread across a week or
+            two.
+          </li>
+          <li>
+            Upon passing the final assessment, download or screenshot your
+            <strong>completion certificate</strong>. You will submit this as
+            the deliverable for the Week 13 assignment.
+          </li>
+        </ol>
+        <p style="margin-top:.75rem;font-size:.88rem;color:var(--gray-700);">
+          <strong>Tip:</strong> The course includes a free Splunk Cloud trial
+          environment you can use for hands-on practice. You are not required
+          to use it, but it is a great way to preview SPL before the lab.
+        </p>
+      </div>
+
+      <!-- Assignment details grid -->
+      <h3 style="font-size:.95rem;margin:1.25rem 0 .5rem;color:var(--navy);">Assignment Details</h3>
+      <div class="assign-grid">
+        <div class="assign-tile">
+          <h3>Assignment Name</h3>
+          <p>Splunk Fundamentals 1 — Completion Certificate</p>
+        </div>
+        <div class="assign-tile">
+          <h3>Due Date</h3>
+          <p>End of Week 13 (see Canvas for exact date/time)</p>
+        </div>
+        <div class="assign-tile">
+          <h3>Deliverable</h3>
+          <p>Screenshot of completion certificate uploaded to Canvas</p>
+        </div>
+        <div class="assign-tile">
+          <h3>Where to Submit</h3>
+          <p>Canvas — Week 13 Assignments section</p>
+        </div>
+        <div class="assign-tile">
+          <h3>Graded?</h3>
+          <p>Yes — see CSC152 Grading Plan for point value</p>
+        </div>
+        <div class="assign-tile">
+          <h3>Access</h3>
+          <p>education.splunk.com (free account required)</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Start Early</strong>
+        You have roughly two weeks from today to complete Splunk Fundamentals 1.
+        The course is self-paced, but students who wait until the last few days
+        before Week 13 often find themselves rushed. Aim to complete at least
+        the first half of the course by the end of Week 12.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 5 – Knowledge Check ──────────────────────────────────── -->
+  <section class="card" id="sec-kc" aria-labelledby="kc-heading">
+    <div class="card-header">
+      <span class="sec-num">5</span>
+      <h2 id="kc-heading">Knowledge Check</h2>
+    </div>
+    <div class="card-body">
+
+      <div class="kc-header">
+        <span class="kc-badge">Ungraded</span>
+        <p>Two questions to check your understanding. Immediate feedback is provided. This does not affect your grade.</p>
+      </div>
+
+      <!-- Question 1 -->
+      <div class="question-block" id="q1-block">
+        <p class="q-text" id="q1-label">
+          Question 1 of 2 &nbsp;—&nbsp;
+          An IT administrator notices dozens of Windows Security Event ID 4625
+          events against a single user account within a five-minute window,
+          all originating from the same external IP address. What is the most
+          likely explanation?
+        </p>
+        <ul class="q-options" role="radiogroup" aria-labelledby="q1-label">
+          <li>
+            <label>
+              <input type="radio" name="q1" value="a" />
+              The user forgot their password and is retrying manually.
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="radio" name="q1" value="b" />
+              A brute-force or password-spray attack is in progress.
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="radio" name="q1" value="c" />
+              The Domain Controller's audit policy is misconfigured.
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="radio" name="q1" value="d" />
+              The Universal Forwarder is duplicating events before sending them to Splunk.
+            </label>
+          </li>
+        </ul>
+        <button class="check-btn" onclick="checkQ1()">Check Answer</button>
+        <div id="q1-feedback" class="feedback-box" role="alert" aria-live="polite">
+          <p class="fb-title"></p>
+          <p class="fb-body"></p>
+        </div>
+      </div>
+
+      <!-- Question 2 -->
+      <div class="question-block" id="q2-block">
+        <p class="q-text" id="q2-label">
+          Question 2 of 2 &nbsp;—&nbsp;
+          In the Splunk Windows log collection architecture covered in this
+          module, what is the primary role of the <strong>Universal Forwarder</strong>?
+        </p>
+        <ul class="q-options" role="radiogroup" aria-labelledby="q2-label">
+          <li>
+            <label>
+              <input type="radio" name="q2" value="a" />
+              To index event data and make it searchable via SPL.
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="radio" name="q2" value="b" />
+              To generate Windows Security events when user accounts are created.
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="radio" name="q2" value="c" />
+              To collect Windows Event Log data from the source system and forward it to Splunk Enterprise.
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="radio" name="q2" value="d" />
+              To replace the Windows Event Log with a more efficient logging format.
+            </label>
+          </li>
+        </ul>
+        <button class="check-btn" onclick="checkQ2()">Check Answer</button>
+        <div id="q2-feedback" class="feedback-box" role="alert" aria-live="polite">
+          <p class="fb-title"></p>
+          <p class="fb-body"></p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Module Summary ────────────────────────────────────────────────── -->
+  <div class="summary-banner" role="complementary" aria-label="Module summary">
+    <h2>Module 11.5 — Summary</h2>
+    <ul>
+      <li>AD DS is a high-value target; monitoring its events is essential for detecting unauthorized access, lockouts, and privilege escalation.</li>
+      <li>Seven key Event IDs — 4624, 4625, 4720, 4740, 4728, 4732, 4756 — cover the most critical authentication and account-management activity.</li>
+      <li>Splunk collects Windows events via a lightweight Universal Forwarder agent that ships data to a central Splunk Enterprise server for indexing and search.</li>
+      <li>Your action item: enroll in and complete <strong>Splunk Fundamentals 1</strong> at education.splunk.com. Submit your completion certificate screenshot in Canvas by the end of Week 13.</li>
+      <li>Week 13 lab will connect your Domain Controller VM to Splunk Enterprise and put these concepts into practice with live SPL queries.</li>
+    </ul>
+  </div>
+
+</main><!-- /main -->
+
+<!-- ── JavaScript ─────────────────────────────────────────────────────── -->
+<script>
+  /* Expand/collapse Event ID detail rows */
+  function toggleDetail(btn, id) {
+    var panel = document.getElementById(id);
+    var isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    btn.setAttribute('aria-expanded', String(!isOpen));
+    btn.textContent = isOpen ? '▸ Details' : '▾ Hide';
+  }
+
+  /* Toggle panels (pipeline detail, access instructions) */
+  function togglePanel(btn, id) {
+    var panel = document.getElementById(id);
+    var isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    btn.setAttribute('aria-expanded', String(!isOpen));
+  }
+
+  /* Knowledge Check — Q1 */
+  function checkQ1() {
+    var sel = document.querySelector('input[name="q1"]:checked');
+    var fb  = document.getElementById('q1-feedback');
+    var title = fb.querySelector('.fb-title');
+    var body  = fb.querySelector('.fb-body');
+    if (!sel) {
+      fb.className = 'feedback-box show incorrect';
+      title.textContent = 'Please select an answer first.';
+      body.textContent  = '';
+      return;
+    }
+    if (sel.value === 'b') {
+      fb.className = 'feedback-box show correct';
+      title.textContent = '✓ Correct!';
+      body.textContent  = 'Dozens of Event ID 4625 failures against a single account from one external IP in a short window is a classic brute-force or password-spray pattern. A real user forgetting their password would produce only a handful of failures and would typically be on an internal network address. The Universal Forwarder and audit policy settings are unrelated to the number of logon failures generated.';
+    } else {
+      fb.className = 'feedback-box show incorrect';
+      title.textContent = '✗ Not quite.';
+      body.textContent  = 'The correct answer is: a brute-force or password-spray attack is in progress. Dozens of rapid failures from a single external IP against one account is a strong indicator of an automated attack tool. A user forgetting their password would generate only a few failures; audit policy and forwarder configuration do not cause duplicate failure events.';
+    }
+  }
+
+  /* Knowledge Check — Q2 */
+  function checkQ2() {
+    var sel = document.querySelector('input[name="q2"]:checked');
+    var fb  = document.getElementById('q2-feedback');
+    var title = fb.querySelector('.fb-title');
+    var body  = fb.querySelector('.fb-body');
+    if (!sel) {
+      fb.className = 'feedback-box show incorrect';
+      title.textContent = 'Please select an answer first.';
+      body.textContent  = '';
+      return;
+    }
+    if (sel.value === 'c') {
+      fb.className = 'feedback-box show correct';
+      title.textContent = '✓ Correct!';
+      body.textContent  = 'The Universal Forwarder is a lightweight agent installed on the source system (in our case the Domain Controller). Its sole job is to monitor configured Windows Event Log channels and forward new events to Splunk Enterprise over an encrypted TCP connection. Indexing and search are handled by Splunk Enterprise, not the forwarder. Windows itself generates the security events; the forwarder does not create them.';
+    } else {
+      fb.className = 'feedback-box show incorrect';
+      title.textContent = '✗ Not quite.';
+      body.textContent  = 'The correct answer is: the Universal Forwarder collects Windows Event Log data from the source system and forwards it to Splunk Enterprise. Indexing and SPL search are performed by Splunk Enterprise. Windows generates security events natively; the forwarder simply reads and ships them. The forwarder does not replace or modify the Windows Event Log.';
+    }
+  }
+
+  /* Offset anchor scroll so sticky nav does not hide headings */
+  (function () {
+    var navH = document.getElementById('top-nav').offsetHeight;
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var target = document.querySelector(this.getAttribute('href'));
+        if (!target) return;
+        e.preventDefault();
+        var top = target.getBoundingClientRect().top + window.pageYOffset - navH - 12;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+        target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

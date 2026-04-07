@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Lab 11: Active Directory Domain Services | CSC 152</title>
+<style>
+  :root {
+    --primary:#1a4f7a;
+    --primary-dark:#0f3254;
+    --primary-light:#e8f0f8;
+    --accent:#c8500a;
+    --accent-light:#fdf3ec;
+    --success:#1a6b3c;
+    --success-light:#eaf4ee;
+    --warning:#7a5c00;
+    --warning-light:#fdf8e8;
+    --gray-50:#f9fafb;
+    --gray-100:#f3f4f6;
+    --gray-200:#e5e7eb;
+    --gray-300:#d1d5db;
+    --gray-400:#9ca3af;
+    --gray-600:#4b5563;
+    --gray-700:#374151;
+    --gray-800:#1f2937;
+    --gray-900:#111827;
+    --border-radius:8px;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.1);
+    --shadow-md:0 4px 12px rgba(0,0,0,.12);
+    --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    --font-mono:'Cascadia Code','Consolas','Courier New',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{font-family:var(--font-sans);font-size:1rem;line-height:1.65;color:var(--gray-800);background:#fff;}
+
+  /* ── Skip link ── */
+  .skip-link{position:absolute;top:-40px;left:0;background:var(--primary);color:#fff;padding:.5rem 1rem;z-index:9999;border-radius:0 0 var(--border-radius) 0;transition:top .2s;}
+  .skip-link:focus{top:0;}
+
+  /* ── Top nav ── */
+  nav.top-nav{background:var(--primary-dark);color:#fff;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-md);}
+  .nav-inner{max-width:1100px;margin:0 auto;padding:.5rem 1.25rem;display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;}
+  .nav-brand{font-weight:700;font-size:.95rem;color:#fff;margin-right:1rem;white-space:nowrap;}
+  .nav-links{display:flex;flex-wrap:wrap;gap:.15rem;list-style:none;}
+  .nav-links a{color:#cfe4f8;text-decoration:none;font-size:.82rem;padding:.3rem .55rem;border-radius:4px;transition:background .2s,color .2s;}
+  .nav-links a:hover,.nav-links a:focus{background:rgba(255,255,255,.15);color:#fff;outline:2px solid #fff;outline-offset:2px;}
+
+  /* ── Page header ── */
+  .page-header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:#fff;padding:2.5rem 1.25rem 2rem;}
+  .page-header-inner{max-width:1100px;margin:0 auto;}
+  .badge-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;}
+  .badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;font-size:.78rem;font-weight:600;letter-spacing:.03em;}
+  .badge-ec{background:#c8500a;color:#fff;}
+  .badge-pts{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.35);}
+  .badge-week{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);}
+  .page-header h1{font-size:1.9rem;font-weight:800;line-height:1.2;margin-bottom:.5rem;}
+  .page-header .subtitle{font-size:1rem;opacity:.88;margin-bottom:1.1rem;}
+  .meta-grid{display:flex;flex-wrap:wrap;gap:1rem;}
+  .meta-item{font-size:.85rem;opacity:.85;}
+  .meta-item strong{opacity:1;}
+
+  /* ── Main layout ── */
+  main{max-width:1100px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+
+  /* ── Section containers ── */
+  .section{margin-bottom:2.5rem;}
+  .section-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;padding-bottom:.6rem;border-bottom:2px solid var(--gray-200);}
+  .section-number{display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:50%;background:var(--primary);color:#fff;font-weight:700;font-size:.9rem;flex-shrink:0;}
+  .section-header h2{font-size:1.35rem;font-weight:700;color:var(--primary-dark);}
+
+  /* ── Part headers ── */
+  .part-header{background:var(--primary);color:#fff;border-radius:var(--border-radius) var(--border-radius) 0 0;padding:.9rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+  .part-header h3{font-size:1.1rem;font-weight:700;}
+  .part-pts{background:rgba(255,255,255,.25);padding:.2rem .65rem;border-radius:20px;font-size:.82rem;font-weight:600;}
+  .part-body{border:2px solid var(--primary);border-top:none;border-radius:0 0 var(--border-radius) var(--border-radius);padding:1.5rem;margin-bottom:2rem;}
+
+  /* ── Cards ── */
+  .card{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--border-radius);padding:1.25rem;margin-bottom:1.25rem;}
+  .card-title{font-size:.95rem;font-weight:700;color:var(--primary-dark);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;}
+  .step-num{display:inline-flex;align-items:center;justify-content:center;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--accent);color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;}
+
+  /* ── Info boxes ── */
+  .info-box{border-radius:var(--border-radius);padding:1rem 1.25rem;margin-bottom:1.25rem;border-left:4px solid;}
+  .info-box.scenario{background:var(--primary-light);border-color:var(--primary);}
+  .info-box.tip{background:var(--success-light);border-color:var(--success);}
+  .info-box.warning{background:var(--warning-light);border-color:var(--warning);}
+  .info-box.ec{background:var(--accent-light);border-color:var(--accent);}
+  .info-box-title{font-weight:700;font-size:.88rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;}
+  .info-box.scenario .info-box-title{color:var(--primary-dark);}
+  .info-box.tip .info-box-title{color:var(--success);}
+  .info-box.warning .info-box-title{color:var(--warning);}
+  .info-box.ec .info-box-title{color:var(--accent);}
+
+  /* ── Code blocks ── */
+  pre{background:var(--gray-900);color:#e2e8f0;border-radius:var(--border-radius);padding:1rem 1.25rem;overflow-x:auto;margin:.75rem 0;font-family:var(--font-mono);font-size:.85rem;line-height:1.6;}
+  code{font-family:var(--font-mono);font-size:.88em;background:var(--gray-100);padding:.1em .35em;border-radius:3px;color:var(--accent);}
+  pre code{background:transparent;padding:0;color:inherit;font-size:inherit;}
+  .ps-comment{color:#6a9955;}
+  .ps-cmd{color:#9cdcfe;}
+  .ps-param{color:#ce9178;}
+  .ps-string{color:#ce9178;}
+  .ps-keyword{color:#c586c0;}
+
+  /* ── Response fields ── */
+  .response-field{margin-top:1rem;}
+  .response-label{display:block;font-weight:600;font-size:.9rem;color:var(--gray-700);margin-bottom:.4rem;}
+  .response-hint{font-size:.8rem;color:var(--gray-600);margin-bottom:.4rem;font-style:italic;}
+  textarea.response-input{width:100%;min-height:120px;border:2px solid var(--gray-300);border-radius:var(--border-radius);padding:.75rem;font-family:var(--font-sans);font-size:.9rem;line-height:1.5;resize:vertical;transition:border-color .2s,box-shadow .2s;background:#fff;}
+  textarea.response-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,79,122,.15);}
+  textarea.response-input.tall{min-height:180px;}
+  .char-counter{text-align:right;font-size:.75rem;color:var(--gray-400);margin-top:.2rem;}
+
+  /* ── Objectives list ── */
+  .obj-list{list-style:none;display:grid;gap:.5rem;}
+  .obj-list li{display:flex;align-items:flex-start;gap:.6rem;font-size:.93rem;}
+  .obj-icon{color:var(--primary);font-size:1rem;flex-shrink:0;margin-top:.1rem;}
+
+  /* ── CSLO tags ── */
+  .cslo-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem;}
+  .cslo-tag{background:var(--primary-light);color:var(--primary-dark);border:1px solid #b3cde8;padding:.15rem .55rem;border-radius:20px;font-size:.78rem;font-weight:600;}
+
+  /* ── OU tree ── */
+  .ou-tree{background:var(--gray-900);color:#a8d8a8;border-radius:var(--border-radius);padding:1rem 1.25rem;font-family:var(--font-mono);font-size:.85rem;line-height:1.8;overflow-x:auto;}
+  .ou-root{color:#9cdcfe;}
+  .ou-dept{color:#dcdcaa;}
+  .ou-child{color:#a8d8a8;}
+
+  /* ── Collapsible hints ── */
+  details.hints{border:1px solid var(--gray-200);border-radius:var(--border-radius);margin-top:1rem;}
+  details.hints summary{cursor:pointer;padding:.75rem 1rem;font-weight:600;font-size:.88rem;color:var(--primary-dark);background:var(--gray-50);border-radius:var(--border-radius);list-style:none;display:flex;align-items:center;gap:.5rem;user-select:none;}
+  details.hints summary::-webkit-details-marker{display:none;}
+  details.hints summary::before{content:'▶';font-size:.7rem;transition:transform .2s;display:inline-block;}
+  details.hints[open] summary::before{transform:rotate(90deg);}
+  details.hints summary:hover{background:var(--primary-light);}
+  details.hints summary:focus{outline:2px solid var(--primary);outline-offset:2px;}
+  .hints-body{padding:1rem;border-top:1px solid var(--gray-200);}
+  .hints-body ul{list-style:none;display:grid;gap:.6rem;}
+  .hints-body li{display:flex;align-items:flex-start;gap:.6rem;font-size:.88rem;}
+  .hint-icon{color:var(--warning);flex-shrink:0;}
+
+  /* ── Deliverables table ── */
+  .deliverables-table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:.75rem;}
+  .deliverables-table th{background:var(--primary);color:#fff;padding:.65rem .9rem;text-align:left;font-weight:600;}
+  .deliverables-table td{padding:.6rem .9rem;border-bottom:1px solid var(--gray-200);}
+  .deliverables-table tr:nth-child(even) td{background:var(--gray-50);}
+  .deliverables-table tr:last-child td{border-bottom:none;}
+
+  /* ── Grading table ── */
+  .grading-table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:.75rem;}
+  .grading-table th{background:var(--primary-dark);color:#fff;padding:.6rem .9rem;text-align:left;}
+  .grading-table td{padding:.55rem .9rem;border-bottom:1px solid var(--gray-200);}
+  .grading-table tr:last-child td{font-weight:700;background:var(--primary-light);}
+
+  /* ── Save PDF button ── */
+  .pdf-bar{background:var(--gray-100);border:1px solid var(--gray-200);border-radius:var(--border-radius);padding:1.25rem;display:flex;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;}
+  .pdf-bar p{font-size:.88rem;color:var(--gray-600);flex:1;min-width:200px;}
+  .btn-pdf{background:var(--accent);color:#fff;border:none;padding:.65rem 1.4rem;border-radius:var(--border-radius);font-size:.92rem;font-weight:700;cursor:pointer;transition:background .2s,transform .1s;display:flex;align-items:center;gap:.5rem;white-space:nowrap;}
+  .btn-pdf:hover{background:#a84008;}
+  .btn-pdf:focus{outline:3px solid var(--accent);outline-offset:3px;}
+  .btn-pdf:active{transform:scale(.97);}
+
+  /* ── Progress tracker ── */
+  .progress-bar-wrap{background:var(--gray-200);border-radius:20px;height:8px;margin-top:.5rem;overflow:hidden;}
+  .progress-bar-fill{height:100%;background:var(--primary);border-radius:20px;transition:width .4s ease;}
+  .progress-label{font-size:.78rem;color:var(--gray-600);margin-top:.3rem;text-align:right;}
+
+  /* ── Responsive ── */
+  @media(max-width:640px){
+    .page-header h1{font-size:1.4rem;}
+    .part-header{flex-direction:column;align-items:flex-start;}
+    .nav-brand{width:100%;}
+    .meta-grid{flex-direction:column;gap:.5rem;}
+  }
+  @media print{
+    nav.top-nav,.pdf-bar,details.hints summary::before{display:none!important;}
+    .page-header{background:var(--primary)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    textarea.response-input{border:1px solid #999;min-height:80px;}
+    pre{white-space:pre-wrap;word-break:break-all;}
+  }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- ═══════════════════════════════════════════════════
+     TOP NAVIGATION
+════════════════════════════════════════════════════ -->
+<nav class="top-nav" aria-label="Lab section navigation">
+  <div class="nav-inner">
+    <span class="nav-brand">CSC 152 – Lab 11</span>
+    <ul class="nav-links" role="list">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#scenario">Scenario</a></li>
+      <li><a href="#objectives">Objectives</a></li>
+      <li><a href="#part-a">Part A – AD DS</a></li>
+      <li><a href="#part-b">Part B – OUs</a></li>
+      <li><a href="#part-c">Part C – Users &amp; Groups</a></li>
+      <li><a href="#part-d">Part D – GPOs</a></li>
+      <li><a href="#deliverables">Deliverables</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════════════════ -->
+<header class="page-header" role="banner">
+  <div class="page-header-inner">
+    <div class="badge-row">
+      <span class="badge badge-week">Week 11 of 17</span>
+      <span class="badge badge-ec">Optional Extra Credit</span>
+      <span class="badge badge-pts">30 Points</span>
+    </div>
+    <h1>Lab 11: Active Directory Domain Services</h1>
+    <p class="subtitle">Installation, OU Design, Users &amp; Groups, and Group Policy</p>
+    <div class="meta-grid">
+      <div class="meta-item"><strong>Course:</strong> CSC 152 – Network OS and Administration</div>
+      <div class="meta-item"><strong>Due:</strong> Sunday, April 12, 2026, 11:59 PM</div>
+      <div class="meta-item"><strong>Environment:</strong> Proxmox Lab (Windows Server VM)</div>
+      <div class="meta-item"><strong>Est. Time:</strong> 3–5 hours hands-on + documentation</div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════ -->
+<main id="main-content">
+
+  <!-- PDF / Save bar -->
+  <div class="pdf-bar" role="region" aria-label="Save documentation">
+    <p>Complete all response fields below as you work through the lab. When finished, use the button to save your responses as a PDF to include with your submission.</p>
+    <button class="btn-pdf" onclick="savePDF()" aria-label="Save lab documentation as PDF">
+      ⬇ Save as PDF
+    </button>
+  </div>
+
+  <!-- ── EXTRA CREDIT NOTICE ── -->
+  <div class="info-box ec" role="note" aria-label="Extra credit notice">
+    <div class="info-box-title">⭐ Optional Extra Credit Lab</div>
+    <p>Lab 11 is an <strong>optional extra credit assignment worth 30 points</strong> per the CSC 152 Grading Plan. Completing this lab demonstrates mastery of Active Directory Domain Services and directly prepares you for Project 3: Directory Services &amp; Security Implementation. No penalty for not submitting; every point earned is bonus credit toward your final grade.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SECTION 0 – OVERVIEW
+  ═══════════════════════════════════════ -->
+  <section class="section" id="overview" aria-labelledby="h-overview">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">0</span>
+      <h2 id="h-overview">Lab Overview</h2>
+    </div>
+
+    <p style="margin-bottom:1rem;">In this lab you will build a complete Active Directory Domain Services (AD DS) environment from scratch inside your Proxmox virtual lab. You will promote a Windows Server to a Domain Controller, design and implement an Organizational Unit hierarchy, populate the domain with users and security groups using both the graphical interface and PowerShell, and enforce security settings through Group Policy Objects. Each part mirrors a real-world sysadmin workflow and directly supports the skills required for Project 3.</p>
+
+    <div class="info-box tip" role="note">
+      <div class="info-box-title">📚 Module Alignment</div>
+      <p>This lab maps to <strong>Modules 11.2, 11.3, and 11.4</strong> of the Week 11 Learning Module Plan. Complete those modules before attempting the lab. Module 11.1 provides the conceptual foundation; review it if any AD DS terminology is unclear.</p>
+    </div>
+
+    <div class="cslo-tags" aria-label="CSLO alignment">
+      <span class="cslo-tag">CSLO 1 – Server Management &amp; Access Control</span>
+      <span class="cslo-tag">CSLO 2 – Data Security Techniques</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       SECTION 1 – SCENARIO
+  ═══════════════════════════════════════ -->
+  <section class="section" id="scenario" aria-labelledby="h-scenario">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">1</span>
+      <h2 id="h-scenario">Scenario / Case Background</h2>
+    </div>
+
+    <div class="info-box scenario">
+      <div class="info-box-title">🏢 Your Role: Junior Systems Administrator – TechStart Solutions</div>
+      <p style="margin-bottom:.75rem;">TechStart Solutions is a 45-person technology consulting firm that has been operating on a peer-to-peer workgroup model since its founding three years ago. As the company has grown, the IT Director has identified serious problems: employees share files using local accounts with inconsistent passwords, there is no centralized way to enforce security policies, and onboarding a new employee requires manually configuring accounts on every machine they use.</p>
+      <p style="margin-bottom:.75rem;">You have just been hired as a Junior Systems Administrator. Your first major task is to design and deploy an Active Directory domain — <strong>techstart.local</strong> — that will serve as the identity and policy backbone for the entire organization. The IT Director has given you a Windows Server VM in the company's virtualization environment (mirrored in your Proxmox lab) and a clear set of requirements:</p>
+      <ul style="margin-left:1.25rem;margin-top:.5rem;line-height:1.9;">
+        <li>Promote the server to a Domain Controller for a new forest</li>
+        <li>Build an OU structure that reflects the company's three departments: IT, Sales, and Engineering</li>
+        <li>Create domain user accounts for employees across departments</li>
+        <li>Implement AGDLP group nesting for scalable permission management</li>
+        <li>Deploy Group Policy Objects to enforce the company's security baseline</li>
+      </ul>
+      <p style="margin-top:.75rem;">Work through each part of this lab as if you are completing this real-world deployment. Document your steps thoroughly — the IT Director expects a configuration report at the end.</p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       SECTION 2 – OBJECTIVES
+  ═══════════════════════════════════════ -->
+  <section class="section" id="objectives" aria-labelledby="h-objectives">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">2</span>
+      <h2 id="h-objectives">Lab Objectives</h2>
+    </div>
+
+    <p style="margin-bottom:1rem;">By completing this lab, you will be able to:</p>
+    <ul class="obj-list" aria-label="Lab objectives list">
+      <li><span class="obj-icon" aria-hidden="true">✦</span>Install the Active Directory Domain Services role on Windows Server using Server Manager and PowerShell</li>
+      <li><span class="obj-icon" aria-hidden="true">✦</span>Promote a Windows Server to a Domain Controller and create a new forest (<strong>techstart.local</strong>)</li>
+      <li><span class="obj-icon" aria-hidden="true">✦</span>Verify AD DS installation using <code>Get-ADDomain</code>, <code>Get-ADForest</code>, <code>dcdiag</code>, and DNS SRV record confirmation</li>
+      <li><span class="obj-icon" aria-hidden="true">✦</span>Design and implement a multi-level Organizational Unit hierarchy reflecting real organizational structure</li>
+      <li><span class="obj-icon" aria-hidden="true">✦</span>Create a minimum of 10 domain user accounts using both Active Directory Users and Computers (ADUC) and PowerShell (<code>New-ADUser</code>)</li>
+      <li><span class="obj-icon" aria-hidden="true">✦</span>Create Global and Domain Local security groups and implement AGDLP group nesting</li>
+      <li><span class="obj-icon" aria-hidden="true">✦</span>Create and link at least two Group Policy Objects: a domain-level password policy and a department-specific policy</li>
+      <li><span class="obj-icon" aria-hidden="true">✦</span>Verify Group Policy application using <code>gpresult /r</code> from a domain-joined computer</li>
+      <li><span class="obj-icon" aria-hidden="true">✦</span>Document the entire configuration with annotated screenshots and command output</li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       PART A – AD DS INSTALLATION
+  ═══════════════════════════════════════ -->
+  <section id="part-a" aria-labelledby="h-part-a">
+    <div class="part-header">
+      <h3 id="h-part-a">Part A – AD DS Installation &amp; Domain Controller Promotion</h3>
+      <span class="part-pts">8 Points</span>
+    </div>
+    <div class="part-body">
+
+      <p style="margin-bottom:1.25rem;">In this part you will install the AD DS server role, promote your Windows Server to a Domain Controller for a new forest, configure DNS integration, and verify the installation using PowerShell and diagnostic tools.</p>
+
+      <!-- Step A1 -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">1</span>Install the AD DS Role</div>
+        <p style="margin-bottom:.75rem;">Install the Active Directory Domain Services role using <strong>Server Manager</strong> or <strong>PowerShell</strong>. Both methods are shown below.</p>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">Method 1 – Server Manager GUI</p>
+        <ol style="margin-left:1.25rem;margin-bottom:1rem;font-size:.9rem;line-height:1.9;">
+          <li>Open <strong>Server Manager</strong> → click <strong>Manage</strong> → <strong>Add Roles and Features</strong></li>
+          <li>Select <strong>Role-based or feature-based installation</strong></li>
+          <li>Select your local server from the server pool</li>
+          <li>Check <strong>Active Directory Domain Services</strong>; accept all required features when prompted</li>
+          <li>Click through to the <strong>Confirmation</strong> page and click <strong>Install</strong></li>
+          <li>Do <em>not</em> close the wizard — you will promote the server in the next step</li>
+        </ol>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">Method 2 – PowerShell (run as Administrator)</p>
+        <pre><code><span class="ps-comment"># Install AD DS role and management tools</span>
+<span class="ps-cmd">Install-WindowsFeature</span> <span class="ps-param">-Name</span> AD-Domain-Services <span class="ps-param">-IncludeManagementTools</span>
+
+<span class="ps-comment"># Verify the role was installed successfully</span>
+<span class="ps-cmd">Get-WindowsFeature</span> AD-Domain-Services</code></pre>
+
+        <div class="response-field">
+          <label class="response-label" for="a1-screenshot">A1 – Screenshot Note: AD DS Role Installation</label>
+          <span class="response-hint">Describe what your screenshot shows (e.g., Server Manager confirmation page or PowerShell output confirming Success = True). Note any warnings or messages that appeared.</span>
+          <textarea class="response-input" id="a1-screenshot" name="a1-screenshot" aria-describedby="a1-hint" placeholder="Describe your screenshot: what is visible, what the output confirmed, and any notable messages..."></textarea>
+          <div class="char-counter" aria-live="polite" id="a1-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Step A2 -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">2</span>Promote Server to Domain Controller – New Forest</div>
+        <p style="margin-bottom:.75rem;">After the AD DS role installs, promote the server to a Domain Controller for a brand-new forest.</p>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">GUI Method – AD DS Configuration Wizard</p>
+        <ol style="margin-left:1.25rem;margin-bottom:1rem;font-size:.9rem;line-height:1.9;">
+          <li>In Server Manager, click the <strong>notification flag</strong> → <strong>Promote this server to a domain controller</strong></li>
+          <li>Select <strong>Add a new forest</strong></li>
+          <li>Root domain name: <code>techstart.local</code> (or use your instructor-assigned domain)</li>
+          <li>Forest Functional Level and Domain Functional Level: <strong>Windows Server 2016</strong> (or match your server version)</li>
+          <li>Ensure <strong>DNS server</strong> is checked (required for AD DS)</li>
+          <li>Set a strong <strong>DSRM (Directory Services Restore Mode) password</strong> — record it securely</li>
+          <li>Accept the default NetBIOS name (<strong>TECHSTART</strong>)</li>
+          <li>Accept default paths for SYSVOL, NTDS, and log files</li>
+          <li>Review the summary, then click <strong>Install</strong>. The server will reboot automatically.</li>
+        </ol>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">PowerShell Alternative</p>
+        <pre><code><span class="ps-comment"># Import the AD DS deployment module</span>
+<span class="ps-cmd">Import-Module</span> ADDSDeployment
+
+<span class="ps-comment"># Promote server to DC - creates new forest techstart.local</span>
+<span class="ps-cmd">Install-ADDSForest</span> `
+    <span class="ps-param">-DomainName</span> <span class="ps-string">"techstart.local"</span> `
+    <span class="ps-param">-DomainNetbiosName</span> <span class="ps-string">"TECHSTART"</span> `
+    <span class="ps-param">-ForestMode</span> <span class="ps-string">"WinThreshold"</span> `
+    <span class="ps-param">-DomainMode</span> <span class="ps-string">"WinThreshold"</span> `
+    <span class="ps-param">-InstallDns</span> <span class="ps-param">:$true</span> `
+    <span class="ps-param">-Force</span> <span class="ps-param">:$true</span></code></pre>
+
+        <div class="info-box warning" role="note">
+          <div class="info-box-title">⚠ Important</div>
+          <p>The server will reboot automatically after promotion. Log back in with the <strong>domain administrator account</strong> (TECHSTART\Administrator or your domain admin credentials). The login screen should now show the domain name.</p>
+        </div>
+
+        <div class="response-field">
+          <label class="response-label" for="a2-screenshot">A2 – Screenshot Note: DC Promotion Wizard / Promotion Output</label>
+          <span class="response-hint">Capture the AD DS Configuration Wizard summary page before clicking Install, AND the first login screen after reboot showing the domain name. Describe both screenshots here.</span>
+          <textarea class="response-input" id="a2-screenshot" name="a2-screenshot" placeholder="Describe your screenshots: the promotion wizard summary page showing techstart.local, and the post-reboot login screen confirming domain membership..."></textarea>
+          <div class="char-counter" aria-live="polite" id="a2-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Step A3 -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">3</span>Verify AD DS Installation</div>
+        <p style="margin-bottom:.75rem;">After rebooting and logging in as a domain administrator, run the following verification commands in an elevated PowerShell session.</p>
+
+        <pre><code><span class="ps-comment"># Verify domain configuration</span>
+<span class="ps-cmd">Get-ADDomain</span>
+
+<span class="ps-comment"># Verify forest configuration</span>
+<span class="ps-cmd">Get-ADForest</span>
+
+<span class="ps-comment"># Run domain controller diagnostics</span>
+<span class="ps-cmd">dcdiag</span> /test:dns /v
+
+<span class="ps-comment"># Confirm SRV records are registered in DNS</span>
+<span class="ps-cmd">nslookup</span> <span class="ps-param">-type=SRV</span> _ldap._tcp.techstart.local
+
+<span class="ps-comment"># Alternative SRV record check via Resolve-DnsName</span>
+<span class="ps-cmd">Resolve-DnsName</span> <span class="ps-param">-Name</span> _ldap._tcp.techstart.local <span class="ps-param">-Type</span> SRV</code></pre>
+
+        <p style="margin-bottom:.75rem;margin-top:.75rem;">Also verify DNS zones in <strong>DNS Manager</strong> (Server Manager → Tools → DNS). You should see:</p>
+        <ul style="margin-left:1.25rem;font-size:.9rem;line-height:1.9;">
+          <li>A forward lookup zone named <code>techstart.local</code></li>
+          <li>SRV records under <code>_msdcs</code>, <code>_sites</code>, <code>_tcp</code>, and <code>_udp</code> subfolders</li>
+          <li>An A record for your Domain Controller</li>
+        </ul>
+
+        <div class="response-field">
+          <label class="response-label" for="a3-get-addomain">A3a – Get-ADDomain Output</label>
+          <span class="response-hint">Paste the full output of Get-ADDomain here. Key fields to confirm: DomainMode, Forest, PDCEmulator, RIDMaster.</span>
+          <textarea class="response-input tall" id="a3-get-addomain" name="a3-get-addomain" placeholder="Paste Get-ADDomain output here...&#10;&#10;Example fields to look for:&#10;  AllowedDNSSuffixes  : {}&#10;  ChildDomains        : {}&#10;  DNSRoot             : techstart.local&#10;  DomainMode          : Windows2016Domain&#10;  Forest              : techstart.local&#10;  PDCEmulator         : DC01.techstart.local&#10;  ..."></textarea>
+          <div class="char-counter" aria-live="polite" id="a3a-counter">0 characters</div>
+        </div>
+
+        <div class="response-field">
+          <label class="response-label" for="a3-get-adforest">A3b – Get-ADForest Output</label>
+          <span class="response-hint">Paste the full output of Get-ADForest. Key fields: Domains, ForestMode, GlobalCatalogs, RootDomain, SchemaMaster.</span>
+          <textarea class="response-input tall" id="a3-get-adforest" name="a3-get-adforest" placeholder="Paste Get-ADForest output here..."></textarea>
+          <div class="char-counter" aria-live="polite" id="a3b-counter">0 characters</div>
+        </div>
+
+        <div class="response-field">
+          <label class="response-label" for="a3-dns">A3c – Screenshot Note: DNS Zones and SRV Records</label>
+          <span class="response-hint">Describe your DNS Manager screenshot showing the techstart.local forward lookup zone and the SRV records. Also note the nslookup or Resolve-DnsName output confirming SRV registration.</span>
+          <textarea class="response-input" id="a3-dns" name="a3-dns" placeholder="Describe DNS Manager screenshot: zone name visible, _msdcs subfolder expanded showing SRV records. Note the nslookup SRV response confirming _ldap._tcp.techstart.local resolves correctly..."></textarea>
+          <div class="char-counter" aria-live="polite" id="a3c-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Part A Hints -->
+      <details class="hints">
+        <summary>💡 Part A – Common Pitfalls &amp; Tips (click to expand)</summary>
+        <div class="hints-body">
+          <ul>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>Static IP required before promotion:</strong> Your Windows Server must have a static IP address configured before you promote it to a Domain Controller. If the server uses DHCP, the DC's own DNS records may break after a lease renewal. Set a static IP (e.g., 192.168.x.10) and point the DNS server address to 127.0.0.1 or the server's own static IP.</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>DSRM password is not your admin password:</strong> The Directory Services Restore Mode password is a separate, emergency-use credential. Store it securely — you will not need it during normal operations, but losing it can prevent disaster recovery. Do not leave it blank.</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>SRV records take a moment to register:</strong> Immediately after reboot, DNS SRV records may not yet appear. Wait 2–3 minutes, then run <code>ipconfig /registerdns</code> followed by <code>nslookup -type=SRV _ldap._tcp.techstart.local</code>. If records are still missing, check the DNS Server service is running and the forward lookup zone exists.</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>dcdiag warnings vs. errors:</strong> <code>dcdiag</code> often reports warnings that are not critical (e.g., missing reverse lookup zone). Focus on resolving any lines marked <strong>FAIL</strong> — warnings can generally be ignored in a lab environment.</li>
+          </ul>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       PART B – ORGANIZATIONAL UNIT STRUCTURE
+  ═══════════════════════════════════════ -->
+  <section id="part-b" aria-labelledby="h-part-b">
+    <div class="part-header">
+      <h3 id="h-part-b">Part B – Organizational Unit Structure</h3>
+      <span class="part-pts">6 Points</span>
+    </div>
+    <div class="part-body">
+
+      <p style="margin-bottom:1.25rem;">Design and implement the OU hierarchy for TechStart Solutions. A well-designed OU structure makes Group Policy application, delegation of control, and object management far more efficient. Follow the required structure below and document your design rationale.</p>
+
+      <!-- Required OU tree -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">1</span>Required OU Hierarchy</div>
+        <p style="margin-bottom:.75rem;">Create the following OU structure exactly as shown. The tree represents the <code>techstart.local</code> domain:</p>
+        <div class="ou-tree" role="img" aria-label="Required OU hierarchy tree diagram">
+<span class="ou-root">techstart.local</span>
+└── <span class="ou-dept">TechStart</span>  <span class="ps-comment">(top-level OU)</span>
+    ├── <span class="ou-dept">IT</span>
+    │   ├── <span class="ou-child">Users</span>
+    │   ├── <span class="ou-child">Computers</span>
+    │   └── <span class="ou-child">Groups</span>
+    ├── <span class="ou-dept">Sales</span>
+    │   ├── <span class="ou-child">Users</span>
+    │   ├── <span class="ou-child">Computers</span>
+    │   └── <span class="ou-child">Groups</span>
+    ├── <span class="ou-dept">Engineering</span>
+    │   ├── <span class="ou-child">Users</span>
+    │   ├── <span class="ou-child">Computers</span>
+    │   └── <span class="ou-child">Groups</span>
+    ├── <span class="ou-dept">Service Accounts</span>
+    └── <span class="ou-dept">Servers</span></div>
+      </div>
+
+      <!-- Step B2 – Create OUs -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">2</span>Create the OU Structure</div>
+        <p style="margin-bottom:.75rem;">Use <strong>Active Directory Users and Computers (ADUC)</strong> (Server Manager → Tools → Active Directory Users and Computers) or PowerShell to create the hierarchy.</p>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">ADUC GUI Method</p>
+        <ol style="margin-left:1.25rem;margin-bottom:1rem;font-size:.9rem;line-height:1.9;">
+          <li>In ADUC, right-click the <code>techstart.local</code> domain → <strong>New → Organizational Unit</strong></li>
+          <li>Name it <strong>TechStart</strong>; leave "Protect container from accidental deletion" checked</li>
+          <li>Right-click <strong>TechStart</strong> → New → Organizational Unit → create <strong>IT</strong>, <strong>Sales</strong>, <strong>Engineering</strong>, <strong>Service Accounts</strong>, and <strong>Servers</strong></li>
+          <li>Inside each department OU, create three child OUs: <strong>Users</strong>, <strong>Computers</strong>, and <strong>Groups</strong></li>
+        </ol>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">PowerShell Method</p>
+        <pre><code><span class="ps-comment"># Create top-level TechStart OU</span>
+<span class="ps-cmd">New-ADOrganizationalUnit</span> <span class="ps-param">-Name</span> <span class="ps-string">"TechStart"</span> `
+    <span class="ps-param">-Path</span> <span class="ps-string">"DC=techstart,DC=local"</span> `
+    <span class="ps-param">-ProtectedFromAccidentalDeletion</span> <span class="ps-param">$true</span>
+
+<span class="ps-comment"># Create department OUs under TechStart</span>
+<span class="ps-keyword">$depts</span> = <span class="ps-string">"IT"</span>,<span class="ps-string">"Sales"</span>,<span class="ps-string">"Engineering"</span>
+<span class="ps-keyword">foreach</span> (<span class="ps-keyword">$dept</span> <span class="ps-keyword">in</span> <span class="ps-keyword">$depts</span>) {
+    <span class="ps-cmd">New-ADOrganizationalUnit</span> <span class="ps-param">-Name</span> <span class="ps-keyword">$dept</span> `
+        <span class="ps-param">-Path</span> <span class="ps-string">"OU=TechStart,DC=techstart,DC=local"</span>
+
+    <span class="ps-comment"># Create child OUs for each department</span>
+    <span class="ps-keyword">foreach</span> (<span class="ps-keyword">$child</span> <span class="ps-keyword">in</span> <span class="ps-string">"Users"</span>,<span class="ps-string">"Computers"</span>,<span class="ps-string">"Groups"</span>) {
+        <span class="ps-cmd">New-ADOrganizationalUnit</span> <span class="ps-param">-Name</span> <span class="ps-keyword">$child</span> `
+            <span class="ps-param">-Path</span> <span class="ps-string">"OU=$dept,OU=TechStart,DC=techstart,DC=local"</span>
+    }
+}
+
+<span class="ps-comment"># Create Service Accounts and Servers OUs</span>
+<span class="ps-cmd">New-ADOrganizationalUnit</span> <span class="ps-param">-Name</span> <span class="ps-string">"Service Accounts"</span> `
+    <span class="ps-param">-Path</span> <span class="ps-string">"OU=TechStart,DC=techstart,DC=local"</span>
+<span class="ps-cmd">New-ADOrganizationalUnit</span> <span class="ps-param">-Name</span> <span class="ps-string">"Servers"</span> `
+    <span class="ps-param">-Path</span> <span class="ps-string">"OU=TechStart,DC=techstart,DC=local"</span>
+
+<span class="ps-comment"># Verify all OUs were created</span>
+<span class="ps-cmd">Get-ADOrganizationalUnit</span> <span class="ps-param">-Filter</span> <span class="ps-string">"*"</span> | <span class="ps-cmd">Select-Object</span> Name,DistinguishedName | <span class="ps-cmd">Sort-Object</span> DistinguishedName</code></pre>
+
+        <div class="response-field">
+          <label class="response-label" for="b2-screenshot">B2 – Screenshot Note: ADUC OU Hierarchy</label>
+          <span class="response-hint">Expand the full OU tree in ADUC and capture a screenshot showing all OUs. Describe what the screenshot shows — all department OUs and their child OUs should be visible.</span>
+          <textarea class="response-input" id="b2-screenshot" name="b2-screenshot" placeholder="Describe your ADUC screenshot: TechStart OU expanded showing IT, Sales, Engineering, Service Accounts, and Servers. Each department OU expanded to show Users, Computers, and Groups child OUs..."></textarea>
+          <div class="char-counter" aria-live="polite" id="b2-counter">0 characters</div>
+        </div>
+
+        <div class="response-field">
+          <label class="response-label" for="b2-powershell">B2 – Get-ADOrganizationalUnit Output</label>
+          <span class="response-hint">Paste the output of Get-ADOrganizationalUnit confirming all OUs exist. The DistinguishedName column should show the full LDAP path for each OU.</span>
+          <textarea class="response-input tall" id="b2-powershell" name="b2-powershell" placeholder="Paste Get-ADOrganizationalUnit output here...&#10;&#10;Expected output will include entries like:&#10;  Name             DistinguishedName&#10;  ----             -----------------&#10;  TechStart        OU=TechStart,DC=techstart,DC=local&#10;  IT               OU=IT,OU=TechStart,DC=techstart,DC=local&#10;  Users            OU=Users,OU=IT,OU=TechStart,DC=techstart,DC=local&#10;  ..."></textarea>
+          <div class="char-counter" aria-live="polite" id="b2b-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Step B3 – Design Rationale -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">3</span>OU Design Rationale</div>
+        <p style="margin-bottom:.75rem;">A thoughtful OU design is not just about organization — it directly determines how Group Policy is applied and how administrative control can be delegated. Reflect on the design choices made for TechStart Solutions.</p>
+
+        <div class="response-field">
+          <label class="response-label" for="b3-rationale">B3 – OU Design Rationale (100–150 words)</label>
+          <span class="response-hint">Address: (1) Why are Users, Computers, and Groups separated into child OUs rather than mixed together? (2) Why are Service Accounts and Servers in separate OUs at the TechStart level rather than inside a department? (3) How does this structure support GPO application and delegation of control?</span>
+          <textarea class="response-input tall" id="b3-rationale" name="b3-rationale" placeholder="Write your OU design rationale here (100–150 words)...&#10;&#10;Consider: separation of object types, GPO scope, delegation of control, scalability as the company grows, and the principle of least privilege in administrative access..."></textarea>
+          <div class="char-counter" aria-live="polite" id="b3-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Part B Hints -->
+      <details class="hints">
+        <summary>💡 Part B – Common Pitfalls &amp; Tips (click to expand)</summary>
+        <div class="hints-body">
+          <ul>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>OUs vs. Groups — do not confuse them:</strong> OUs are containers for organizing AD objects and applying Group Policy. Security Groups are used for assigning permissions to resources. Never use an OU as a substitute for a security group, and never use a group as a substitute for an OU.</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>Accidental deletion protection:</strong> When creating OUs via ADUC, the "Protect from accidental deletion" checkbox is enabled by default — leave it on. If you need to delete an OU later, you must first uncheck this option in ADUC's Advanced Features view (View → Advanced Features → Properties → Object tab).</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>Distinguished Name path syntax in PowerShell:</strong> The <code>-Path</code> parameter in <code>New-ADOrganizationalUnit</code> must use the correct LDAP distinguished name format. A common mistake is reversing the order — it should be <code>OU=TechStart,DC=techstart,DC=local</code>, not <code>DC=local,DC=techstart,OU=TechStart</code>. The path reads from most-specific (left) to least-specific (right).</li>
+          </ul>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       PART C – USERS AND GROUPS
+  ═══════════════════════════════════════ -->
+  <section id="part-c" aria-labelledby="h-part-c">
+    <div class="part-header">
+      <h3 id="h-part-c">Part C – Domain Users, Security Groups &amp; AGDLP Nesting</h3>
+      <span class="part-pts">8 Points</span>
+    </div>
+    <div class="part-body">
+
+      <p style="margin-bottom:1.25rem;">Populate the domain with at least 10 user accounts distributed across departments, create security groups, and implement the AGDLP group nesting strategy. You must use both ADUC (GUI) and PowerShell to demonstrate proficiency with both tools.</p>
+
+      <!-- Step C1 – Create Users -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">1</span>Create Domain User Accounts (Minimum 10)</div>
+
+        <p style="margin-bottom:.75rem;">Create at least 10 domain users distributed across the IT, Sales, and Engineering departments. Use the suggested accounts below or create your own — ensure at least 3 users per department and that you use both ADUC and PowerShell.</p>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">Suggested User Accounts</p>
+        <div style="overflow-x:auto;margin-bottom:1rem;">
+          <table class="deliverables-table" aria-label="Suggested domain user accounts">
+            <thead><tr><th>Username</th><th>Full Name</th><th>Department OU</th><th>Title</th></tr></thead>
+            <tbody>
+              <tr><td><code>jsmith</code></td><td>Jane Smith</td><td>IT\Users</td><td>Systems Administrator</td></tr>
+              <tr><td><code>bwilson</code></td><td>Bob Wilson</td><td>IT\Users</td><td>Network Engineer</td></tr>
+              <tr><td><code>alopez</code></td><td>Ana Lopez</td><td>IT\Users</td><td>Help Desk Technician</td></tr>
+              <tr><td><code>mjohnson</code></td><td>Mike Johnson</td><td>Sales\Users</td><td>Sales Manager</td></tr>
+              <tr><td><code>sdavis</code></td><td>Sarah Davis</td><td>Sales\Users</td><td>Account Executive</td></tr>
+              <tr><td><code>cthomas</code></td><td>Chris Thomas</td><td>Sales\Users</td><td>Sales Representative</td></tr>
+              <tr><td><code>lmartin</code></td><td>Lisa Martin</td><td>Sales\Users</td><td>Sales Representative</td></tr>
+              <tr><td><code>dwilliams</code></td><td>David Williams</td><td>Engineering\Users</td><td>Senior Developer</td></tr>
+              <tr><td><code>pbrown</code></td><td>Patricia Brown</td><td>Engineering\Users</td><td>Software Engineer</td></tr>
+              <tr><td><code>rgarcia</code></td><td>Robert Garcia</td><td>Engineering\Users</td><td>DevOps Engineer</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">Method 1 – ADUC GUI (create at least 3 users this way)</p>
+        <ol style="margin-left:1.25rem;margin-bottom:1rem;font-size:.9rem;line-height:1.9;">
+          <li>In ADUC, navigate to the appropriate department's <strong>Users</strong> OU (e.g., TechStart → IT → Users)</li>
+          <li>Right-click → <strong>New → User</strong></li>
+          <li>Enter First name, Last name, and User logon name (e.g., jsmith)</li>
+          <li>Set a temporary password (e.g., <code>Welcome1!</code>); check <strong>User must change password at next logon</strong></li>
+          <li>Click Finish, then right-click the new user → Properties to set Department and Title</li>
+        </ol>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">Method 2 – PowerShell (create remaining users)</p>
+        <pre><code><span class="ps-comment"># Create individual user with New-ADUser</span>
+<span class="ps-cmd">New-ADUser</span> `
+    <span class="ps-param">-Name</span>              <span class="ps-string">"David Williams"</span> `
+    <span class="ps-param">-GivenName</span>         <span class="ps-string">"David"</span> `
+    <span class="ps-param">-Surname</span>           <span class="ps-string">"Williams"</span> `
+    <span class="ps-param">-SamAccountName</span>    <span class="ps-string">"dwilliams"</span> `
+    <span class="ps-param">-UserPrincipalName</span> <span class="ps-string">"dwilliams@techstart.local"</span> `
+    <span class="ps-param">-Path</span>              <span class="ps-string">"OU=Users,OU=Engineering,OU=TechStart,DC=techstart,DC=local"</span> `
+    <span class="ps-param">-Department</span>        <span class="ps-string">"Engineering"</span> `
+    <span class="ps-param">-Title</span>             <span class="ps-string">"Senior Developer"</span> `
+    <span class="ps-param">-AccountPassword</span>   (<span class="ps-cmd">ConvertTo-SecureString</span> <span class="ps-string">"Welcome1!"</span> <span class="ps-param">-AsPlainText</span> <span class="ps-param">-Force</span>) `
+    <span class="ps-param">-ChangePasswordAtLogon</span> <span class="ps-param">$true</span> `
+    <span class="ps-param">-Enabled</span>           <span class="ps-param">$true</span>
+
+<span class="ps-comment"># Verify users were created in the correct OU</span>
+<span class="ps-cmd">Get-ADUser</span> <span class="ps-param">-Filter</span> <span class="ps-string">"*"</span> <span class="ps-param">-SearchBase</span> <span class="ps-string">"OU=TechStart,DC=techstart,DC=local"</span> `
+    | <span class="ps-cmd">Select-Object</span> Name,SamAccountName,DistinguishedName `
+    | <span class="ps-cmd">Sort-Object</span> DistinguishedName</code></pre>
+
+        <div class="response-field">
+          <label class="response-label" for="c1-aduc">C1a – Screenshot Note: ADUC User Creation (GUI)</label>
+          <span class="response-hint">Capture the New User wizard in ADUC showing at least one user being created. Also show the IT\Users OU with at least 3 user objects visible. Describe both screenshots.</span>
+          <textarea class="response-input" id="c1-aduc" name="c1-aduc" placeholder="Describe ADUC screenshots: New User wizard showing logon name and OU path, plus the IT\Users OU showing created user objects..."></textarea>
+          <div class="char-counter" aria-live="polite" id="c1a-counter">0 characters</div>
+        </div>
+
+        <div class="response-field">
+          <label class="response-label" for="c1-ps">C1b – PowerShell User Creation Output</label>
+          <span class="response-hint">Paste the Get-ADUser output confirming all 10+ users exist with their correct OU paths (DistinguishedName column).</span>
+          <textarea class="response-input tall" id="c1-ps" name="c1-ps" placeholder="Paste Get-ADUser output here showing all created users with their DistinguishedName paths..."></textarea>
+          <div class="char-counter" aria-live="polite" id="c1b-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Step C2 – Create Groups & AGDLP -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">2</span>Create Security Groups &amp; Implement AGDLP Nesting</div>
+
+        <div class="info-box scenario">
+          <div class="info-box-title">📖 AGDLP Explained</div>
+          <p style="margin-bottom:.5rem;"><strong>AGDLP</strong> is a Microsoft best-practice group nesting strategy:</p>
+          <ul style="margin-left:1.25rem;font-size:.9rem;line-height:1.9;">
+            <li><strong>A</strong>ccounts → added to <strong>G</strong>lobal groups → added to <strong>D</strong>omain <strong>L</strong>ocal groups → assigned <strong>P</strong>ermissions</li>
+            <li><strong>Global Groups</strong> collect users by job function (e.g., all Sales users). They can contain accounts from the same domain.</li>
+            <li><strong>Domain Local Groups</strong> are assigned to resources (e.g., a shared folder). They can contain Global groups from any trusted domain, making permission management scalable.</li>
+          </ul>
+          <p style="margin-top:.5rem;font-size:.88rem;">Example: User <em>mjohnson</em> → Global Group <em>GG-Sales-Users</em> → Domain Local Group <em>DL-SalesShare-Read</em> → Read permission on \\DC01\SalesShare</p>
+        </div>
+
+        <p style="margin-bottom:.75rem;">Create the following security groups (or equivalent groups of your own design) and implement AGDLP nesting:</p>
+
+        <div style="overflow-x:auto;margin-bottom:1rem;">
+          <table class="deliverables-table" aria-label="Required security groups">
+            <thead><tr><th>Group Name</th><th>Group Scope</th><th>Group Type</th><th>OU Path</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><code>GG-IT-Admins</code></td><td>Global</td><td>Security</td><td>IT\Groups</td><td>IT department administrators</td></tr>
+              <tr><td><code>GG-Sales-Users</code></td><td>Global</td><td>Security</td><td>Sales\Groups</td><td>All Sales department users</td></tr>
+              <tr><td><code>GG-Engineering-Users</code></td><td>Global</td><td>Security</td><td>Engineering\Groups</td><td>All Engineering department users</td></tr>
+              <tr><td><code>DL-SalesShare-Read</code></td><td>Domain Local</td><td>Security</td><td>Sales\Groups</td><td>Read access to Sales shared folder</td></tr>
+              <tr><td><code>DL-EngShare-Modify</code></td><td>Domain Local</td><td>Security</td><td>Engineering\Groups</td><td>Modify access to Engineering share</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <pre><code><span class="ps-comment"># Create Global security groups</span>
+<span class="ps-cmd">New-ADGroup</span> <span class="ps-param">-Name</span> <span class="ps-string">"GG-IT-Admins"</span> `
+    <span class="ps-param">-GroupScope</span> Global `
+    <span class="ps-param">-GroupCategory</span> Security `
+    <span class="ps-param">-Path</span> <span class="ps-string">"OU=Groups,OU=IT,OU=TechStart,DC=techstart,DC=local"</span>
+
+<span class="ps-cmd">New-ADGroup</span> <span class="ps-param">-Name</span> <span class="ps-string">"GG-Sales-Users"</span> `
+    <span class="ps-param">-GroupScope</span> Global `
+    <span class="ps-param">-GroupCategory</span> Security `
+    <span class="ps-param">-Path</span> <span class="ps-string">"OU=Groups,OU=Sales,OU=TechStart,DC=techstart,DC=local"</span>
+
+<span class="ps-cmd">New-ADGroup</span> <span class="ps-param">-Name</span> <span class="ps-string">"GG-Engineering-Users"</span> `
+    <span class="ps-param">-GroupScope</span> Global `
+    <span class="ps-param">-GroupCategory</span> Security `
+    <span class="ps-param">-Path</span> <span class="ps-string">"OU=Groups,OU=Engineering,OU=TechStart,DC=techstart,DC=local"</span>
+
+<span class="ps-comment"># Create Domain Local security groups</span>
+<span class="ps-cmd">New-ADGroup</span> <span class="ps-param">-Name</span> <span class="ps-string">"DL-SalesShare-Read"</span> `
+    <span class="ps-param">-GroupScope</span> DomainLocal `
+    <span class="ps-param">-GroupCategory</span> Security `
+    <span class="ps-param">-Path</span> <span class="ps-string">"OU=Groups,OU=Sales,OU=TechStart,DC=techstart,DC=local"</span>
+
+<span class="ps-cmd">New-ADGroup</span> <span class="ps-param">-Name</span> <span class="ps-string">"DL-EngShare-Modify"</span> `
+    <span class="ps-param">-GroupScope</span> DomainLocal `
+    <span class="ps-param">-GroupCategory</span> Security `
+    <span class="ps-param">-Path</span> <span class="ps-string">"OU=Groups,OU=Engineering,OU=TechStart,DC=techstart,DC=local"</span>
+
+<span class="ps-comment"># Add users to Global groups (A → G)</span>
+<span class="ps-cmd">Add-ADGroupMember</span> <span class="ps-param">-Identity</span> <span class="ps-string">"GG-IT-Admins"</span> `
+    <span class="ps-param">-Members</span> <span class="ps-string">"jsmith"</span>,<span class="ps-string">"bwilson"</span>,<span class="ps-string">"alopez"</span>
+
+<span class="ps-cmd">Add-ADGroupMember</span> <span class="ps-param">-Identity</span> <span class="ps-string">"GG-Sales-Users"</span> `
+    <span class="ps-param">-Members</span> <span class="ps-string">"mjohnson"</span>,<span class="ps-string">"sdavis"</span>,<span class="ps-string">"cthomas"</span>,<span class="ps-string">"lmartin"</span>
+
+<span class="ps-cmd">Add-ADGroupMember</span> <span class="ps-param">-Identity</span> <span class="ps-string">"GG-Engineering-Users"</span> `
+    <span class="ps-param">-Members</span> <span class="ps-string">"dwilliams"</span>,<span class="ps-string">"pbrown"</span>,<span class="ps-string">"rgarcia"</span>
+
+<span class="ps-comment"># Nest Global groups into Domain Local groups (G → DL)</span>
+<span class="ps-cmd">Add-ADGroupMember</span> <span class="ps-param">-Identity</span> <span class="ps-string">"DL-SalesShare-Read"</span> `
+    <span class="ps-param">-Members</span> <span class="ps-string">"GG-Sales-Users"</span>
+
+<span class="ps-cmd">Add-ADGroupMember</span> <span class="ps-param">-Identity</span> <span class="ps-string">"DL-EngShare-Modify"</span> `
+    <span class="ps-param">-Members</span> <span class="ps-string">"GG-Engineering-Users"</span>
+
+<span class="ps-comment"># Verify group memberships</span>
+<span class="ps-cmd">Get-ADGroupMember</span> <span class="ps-param">-Identity</span> <span class="ps-string">"GG-Sales-Users"</span> | <span class="ps-cmd">Select-Object</span> Name,objectClass
+<span class="ps-cmd">Get-ADGroupMember</span> <span class="ps-param">-Identity</span> <span class="ps-string">"DL-SalesShare-Read"</span> | <span class="ps-cmd">Select-Object</span> Name,objectClass,GroupScope</code></pre>
+
+        <div class="response-field">
+          <label class="response-label" for="c2-groups">C2a – Screenshot Note: Security Groups in ADUC</label>
+          <span class="response-hint">Show ADUC with the Groups OUs expanded, displaying the created security groups. Also show the Properties dialog of one group displaying its Members tab with nested group or user members visible.</span>
+          <textarea class="response-input" id="c2-groups" name="c2-groups" placeholder="Describe ADUC screenshots: Groups OUs showing GG- and DL- groups, plus one group's Properties Members tab showing members..."></textarea>
+          <div class="char-counter" aria-live="polite" id="c2a-counter">0 characters</div>
+        </div>
+
+        <div class="response-field">
+          <label class="response-label" for="c2-membership">C2b – Group Membership Verification Output</label>
+          <span class="response-hint">Paste the Get-ADGroupMember output for at least two groups: one Global group showing user members, and one Domain Local group showing the nested Global group as a member. This confirms the AGDLP chain.</span>
+          <textarea class="response-input tall" id="c2-membership" name="c2-membership" placeholder="Paste Get-ADGroupMember output here...&#10;&#10;For GG-Sales-Users: should show user accounts (objectClass = user)&#10;For DL-SalesShare-Read: should show GG-Sales-Users (objectClass = group)&#10;This confirms the A→G→DL nesting chain..."></textarea>
+          <div class="char-counter" aria-live="polite" id="c2b-counter">0 characters</div>
+        </div>
+
+        <div class="response-field">
+          <label class="response-label" for="c2-agdlp">C2c – AGDLP Design Explanation (75–100 words)</label>
+          <span class="response-hint">Explain in your own words why AGDLP is preferred over simply assigning users directly to Domain Local groups. What advantage does the Global group layer provide when the organization expands or merges with another domain?</span>
+          <textarea class="response-input" id="c2-agdlp" name="c2-agdlp" placeholder="Explain the AGDLP advantage in 75–100 words..."></textarea>
+          <div class="char-counter" aria-live="polite" id="c2c-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Part C Hints -->
+      <details class="hints">
+        <summary>💡 Part C – Common Pitfalls &amp; Tips (click to expand)</summary>
+        <div class="hints-body">
+          <ul>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>Password complexity is enforced immediately:</strong> The Default Domain Policy enforces password complexity by default. Passwords like <code>Password1</code> may be rejected. Use a password that meets the default policy: at least 7 characters, uppercase, lowercase, digit, and/or special character — e.g., <code>Welcome1!</code>.</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>Group scope limitations:</strong> You cannot add a Domain Local group as a member of a Global group — this is by design. The AGDLP flow is one-directional: Accounts → Global → Domain Local → Permissions. Trying to reverse this nesting will produce an error in PowerShell and ADUC.</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>SamAccountName vs. UserPrincipalName:</strong> The <code>SamAccountName</code> (e.g., <code>jsmith</code>) is the legacy logon name used for domain authentication (DOMAIN\jsmith). The <code>UserPrincipalName</code> (e.g., <code>jsmith@techstart.local</code>) is the modern UPN-format logon. Both should be set when creating users — <code>New-ADUser</code> requires <code>-SamAccountName</code> but <code>-UserPrincipalName</code> is a best practice to include.</li>
+          </ul>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       PART D – GROUP POLICY
+  ═══════════════════════════════════════ -->
+  <section id="part-d" aria-labelledby="h-part-d">
+    <div class="part-header">
+      <h3 id="h-part-d">Part D – Group Policy Objects</h3>
+      <span class="part-pts">8 Points</span>
+    </div>
+    <div class="part-body">
+
+      <p style="margin-bottom:1.25rem;">Create and link at least two Group Policy Objects: a <strong>domain-level password policy GPO</strong> and a <strong>department-specific GPO</strong> linked to one of your OUs. Verify policy application from a domain-joined computer using <code>gpresult</code>.</p>
+
+      <!-- Step D1 – GPO 1: Password Policy -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">1</span>GPO 1 – Domain Password &amp; Account Lockout Policy</div>
+        <p style="margin-bottom:.75rem;">Create a GPO named <strong>TechStart-Password-Policy</strong> and link it at the <strong>domain level</strong> (not to an OU). Password policies that apply to domain user accounts must be linked at the domain root to be effective.</p>
+
+        <div class="info-box warning" role="note">
+          <div class="info-box-title">⚠ Password Policy Placement</div>
+          <p>Password policies (Account Policies → Password Policy and Account Lockout Policy) only take effect for domain user accounts when linked at the <strong>domain root</strong> level. A password policy GPO linked to an OU will apply to local accounts on computers in that OU, but will <em>not</em> override the domain-level password policy for domain users. This is a very common misconfiguration in the field.</p>
+        </div>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">Required Password Policy Settings</p>
+        <div style="overflow-x:auto;margin-bottom:1rem;">
+          <table class="deliverables-table" aria-label="Required password policy settings">
+            <thead><tr><th>Policy Setting</th><th>Path in GPME</th><th>Required Value</th></tr></thead>
+            <tbody>
+              <tr><td>Minimum password length</td><td>Computer Config → Policies → Windows Settings → Security Settings → Account Policies → Password Policy</td><td><strong>12 characters</strong></td></tr>
+              <tr><td>Password must meet complexity requirements</td><td>Same path as above</td><td><strong>Enabled</strong></td></tr>
+              <tr><td>Enforce password history</td><td>Same path as above</td><td><strong>24 passwords remembered</strong></td></tr>
+              <tr><td>Maximum password age</td><td>Same path as above</td><td><strong>90 days</strong></td></tr>
+              <tr><td>Account lockout threshold</td><td>Computer Config → … → Account Lockout Policy</td><td><strong>5 invalid attempts</strong></td></tr>
+              <tr><td>Account lockout duration</td><td>Same path as above</td><td><strong>30 minutes</strong></td></tr>
+              <tr><td>Reset account lockout counter after</td><td>Same path as above</td><td><strong>30 minutes</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p style="margin-bottom:.4rem;font-weight:600;font-size:.88rem;">Create and Link the GPO via Group Policy Management Console (GPMC)</p>
+        <ol style="margin-left:1.25rem;margin-bottom:1rem;font-size:.9rem;line-height:1.9;">
+          <li>Open <strong>GPMC</strong> (Server Manager → Tools → Group Policy Management)</li>
+          <li>Right-click the <code>techstart.local</code> domain → <strong>Create a GPO in this domain, and Link it here</strong></li>
+          <li>Name it: <strong>TechStart-Password-Policy</strong></li>
+          <li>Right-click the new GPO → <strong>Edit</strong> to open the Group Policy Management Editor (GPME)</li>
+          <li>Navigate to: Computer Configuration → Policies → Windows Settings → Security Settings → Account Policies</li>
+          <li>Configure all settings in the table above</li>
+          <li>Close GPME; confirm the GPO is linked at the domain level in GPMC</li>
+        </ol>
+
+        <pre><code><span class="ps-comment"># Force immediate Group Policy refresh on the DC</span>
+<span class="ps-cmd">gpupdate</span> /force
+
+<span class="ps-comment"># Verify the password policy is applied</span>
+<span class="ps-cmd">Get-ADDefaultDomainPasswordPolicy</span>
+
+<span class="ps-comment"># View detailed GPO application results</span>
+<span class="ps-cmd">gpresult</span> /r</code></pre>
+
+        <div class="response-field">
+          <label class="response-label" for="d1-gpmc">D1a – Screenshot Note: GPMC Showing GPO Linked at Domain Level</label>
+          <span class="response-hint">Show the GPMC console tree with TechStart-Password-Policy linked under the techstart.local domain node. Also show the GPME open with the password policy settings configured. Describe both.</span>
+          <textarea class="response-input" id="d1-gpmc" name="d1-gpmc" placeholder="Describe GPMC screenshots: the domain node showing TechStart-Password-Policy linked, and the GPME showing Account Policies with minimum password length set to 12 and account lockout threshold set to 5..."></textarea>
+          <div class="char-counter" aria-live="polite" id="d1a-counter">0 characters</div>
+        </div>
+
+        <div class="response-field">
+          <label class="response-label" for="d1-policy">D1b – Get-ADDefaultDomainPasswordPolicy Output</label>
+          <span class="response-hint">Paste the full output. Confirm MinPasswordLength is 12, ComplexityEnabled is True, LockoutThreshold is 5, and PasswordHistoryCount is 24.</span>
+          <textarea class="response-input tall" id="d1-policy" name="d1-policy" placeholder="Paste Get-ADDefaultDomainPasswordPolicy output here...&#10;&#10;Key fields to confirm:&#10;  ComplexityEnabled     : True&#10;  LockoutDuration       : 00:30:00&#10;  LockoutObservationWindow : 00:30:00&#10;  LockoutThreshold      : 5&#10;  MaxPasswordAge        : 90.00:00:00&#10;  MinPasswordAge        : ...&#10;  MinPasswordLength     : 12&#10;  PasswordHistoryCount  : 24&#10;  ..."></textarea>
+          <div class="char-counter" aria-live="polite" id="d1b-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Step D2 – GPO 2: Department-Specific -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">2</span>GPO 2 – Department-Specific Policy (OU-Linked)</div>
+        <p style="margin-bottom:.75rem;">Create a second GPO named <strong>TechStart-IT-AuditPolicy</strong> (or a department-specific name of your choice) and link it to one of your department OUs. Configure at least two meaningful policy settings appropriate for that department.</p>
+
+        <p style="margin-bottom:.75rem;"><strong>Suggested configurations for an IT department GPO:</strong></p>
+        <div style="overflow-x:auto;margin-bottom:1rem;">
+          <table class="deliverables-table" aria-label="Suggested department GPO settings">
+            <thead><tr><th>Policy Setting</th><th>Path in GPME</th><th>Suggested Value</th></tr></thead>
+            <tbody>
+              <tr><td>Audit logon events</td><td>Computer Config → Policies → Windows Settings → Security Settings → Local Policies → Audit Policy</td><td>Success and Failure</td></tr>
+              <tr><td>Audit account logon events</td><td>Same path as above</td><td>Success and Failure</td></tr>
+              <tr><td>Audit account management</td><td>Same path as above</td><td>Success and Failure</td></tr>
+              <tr><td>Interactive logon: Message title for users attempting to log on</td><td>Computer Config → Policies → Windows Settings → Security Settings → Local Policies → Security Options</td><td>TechStart IT Systems</td></tr>
+              <tr><td>Interactive logon: Message text for users attempting to log on</td><td>Same path as above</td><td>Authorized users only. All access is monitored and logged.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ol style="margin-left:1.25rem;margin-bottom:1rem;font-size:.9rem;line-height:1.9;">
+          <li>In GPMC, right-click the <strong>IT</strong> OU (under TechStart) → <strong>Create a GPO in this domain, and Link it here</strong></li>
+          <li>Name it: <strong>TechStart-IT-AuditPolicy</strong></li>
+          <li>Right-click → Edit → configure your chosen policy settings</li>
+          <li>Close GPME and confirm the link in GPMC</li>
+        </ol>
+
+        <div class="response-field">
+          <label class="response-label" for="d2-gpmc">D2a – Screenshot Note: Department GPO in GPMC</label>
+          <span class="response-hint">Show GPMC with TechStart-IT-AuditPolicy linked to the IT OU. Show the GPME with at least two configured policy settings. Describe both screenshots.</span>
+          <textarea class="response-input" id="d2-gpmc" name="d2-gpmc" placeholder="Describe GPMC screenshots: IT OU node showing TechStart-IT-AuditPolicy linked, and GPME open showing the configured audit policy or security option settings..."></textarea>
+          <div class="char-counter" aria-live="polite" id="d2a-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Step D3 – Verify with gpresult -->
+      <div class="card">
+        <div class="card-title"><span class="step-num" aria-hidden="true">3</span>Verify Group Policy Application with gpresult</div>
+        <p style="margin-bottom:.75rem;">Run <code>gpresult</code> to confirm both GPOs are being applied. If you have a domain-joined client VM available, run these commands there; otherwise run them on the Domain Controller itself.</p>
+
+        <pre><code><span class="ps-comment"># Run gpupdate to ensure latest policies are applied</span>
+<span class="ps-cmd">gpupdate</span> /force
+
+<span class="ps-comment"># Display applied GPOs for the current computer and user</span>
+<span class="ps-cmd">gpresult</span> /r
+
+<span class="ps-comment"># Generate a detailed HTML report (opens in browser)</span>
+<span class="ps-cmd">gpresult</span> /h C:\GPReport.html /f
+<span class="ps-cmd">Start-Process</span> C:\GPReport.html
+
+<span class="ps-comment"># If running on DC, use /scope computer for computer-applied GPOs</span>
+<span class="ps-cmd">gpresult</span> /r /scope computer</code></pre>
+
+        <p style="margin-bottom:.5rem;margin-top:.75rem;">In the <code>gpresult /r</code> output, look for:</p>
+        <ul style="margin-left:1.25rem;font-size:.9rem;line-height:1.9;">
+          <li>Under <strong>COMPUTER SETTINGS</strong>: both GPO names should appear in the <em>Applied Group Policy Objects</em> section</li>
+          <li>The <strong>CN</strong> (Common Name) and <strong>Domain</strong> of each applied GPO</li>
+          <li>No GPOs listed under <em>The following GPOs were not applied because they were filtered out</em></li>
+        </ul>
+
+        <div class="response-field">
+          <label class="response-label" for="d3-gpresult">D3 – gpresult /r Output (Applied GPOs section)</label>
+          <span class="response-hint">Paste the relevant section of the gpresult /r output showing the Applied Group Policy Objects list. Both TechStart-Password-Policy and your department GPO should appear. If running from the DC, the Computer Settings section is most relevant.</span>
+          <textarea class="response-input tall" id="d3-gpresult" name="d3-gpresult" placeholder="Paste gpresult /r output here (at minimum the 'Applied Group Policy Objects' section)...&#10;&#10;Expected output includes:&#10;  Applied Group Policy Objects&#10;  ----------------------------&#10;  TechStart-IT-AuditPolicy&#10;  TechStart-Password-Policy&#10;  Default Domain Policy&#10;  ..."></textarea>
+          <div class="char-counter" aria-live="polite" id="d3-counter">0 characters</div>
+        </div>
+
+        <div class="response-field">
+          <label class="response-label" for="d3-reflection">D3 – GPO Reflection (50–75 words)</label>
+          <span class="response-hint">Briefly explain: What is the LSDOU processing order and why does it matter for your TechStart domain? If the password policy GPO and the Default Domain Policy both define minimum password length, which one wins and why?</span>
+          <textarea class="response-input" id="d3-reflection" name="d3-reflection" placeholder="Explain LSDOU processing order and how GPO conflicts are resolved (50–75 words)..."></textarea>
+          <div class="char-counter" aria-live="polite" id="d3r-counter">0 characters</div>
+        </div>
+      </div>
+
+      <!-- Part D Hints -->
+      <details class="hints">
+        <summary>💡 Part D – Common Pitfalls &amp; Tips (click to expand)</summary>
+        <div class="hints-body">
+          <ul>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>Password policy must be linked at the domain root:</strong> This is the single most common GPO mistake students make. If you link a password policy GPO to the IT OU, it will configure the <em>local</em> password policy on computers in that OU — but domain user accounts will still use whatever policy is linked at the domain root (usually the Default Domain Policy). Always link password and account lockout policies at the domain level.</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>gpresult may show "Access Denied" on client VMs:</strong> Run <code>gpresult /r</code> in an elevated (Administrator) PowerShell or Command Prompt session. Non-elevated sessions may show incomplete results or access errors, especially for the Computer Settings section.</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>Policy changes may not apply immediately:</strong> After editing a GPO, run <code>gpupdate /force</code> on the target computer to force immediate policy refresh. Without this, changes may take up to 90 minutes (the default background refresh interval) to apply. Always run <code>gpupdate /force</code> before running <code>gpresult</code> to verify your changes.</li>
+            <li><span class="hint-icon" aria-hidden="true">⚠</span><strong>LSDOU and conflicting settings:</strong> If two GPOs define the same setting with different values, the GPO applied <em>last</em> wins (OU-linked GPOs override domain-linked GPOs for most settings). The exception is when a GPO is set to <strong>Enforced</strong> — enforced GPOs always win regardless of where they are linked in the hierarchy.</li>
+          </ul>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       DELIVERABLES & SUBMISSION
+  ═══════════════════════════════════════ -->
+  <section class="section" id="deliverables" aria-labelledby="h-deliverables">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">5</span>
+      <h2 id="h-deliverables">Deliverables &amp; Submission</h2>
+    </div>
+
+    <div class="info-box scenario">
+      <div class="info-box-title">📋 What to Submit</div>
+      <p>Submit a single <strong>PDF document</strong> (or DOCX) via the Canvas assignment named <strong>Lab 11 / Week 11 Investigation</strong>. Your submission should include all response fields completed below AND a set of organized, annotated screenshots. You may use the Save as PDF button at the top of this page to capture your typed responses, then combine with your screenshots in a document editor.</p>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:700;color:var(--primary-dark);margin:.75rem 0 .5rem;">Required Screenshot Checklist</h3>
+    <table class="deliverables-table" aria-label="Required screenshots checklist">
+      <thead><tr><th>Part</th><th>Required Screenshot</th><th>Points</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>AD DS role installation confirmation (Server Manager or PowerShell output)</td><td rowspan="4" style="vertical-align:middle;text-align:center;font-weight:700;">8</td></tr>
+        <tr><td>A</td><td>DC Promotion Wizard summary page showing techstart.local</td></tr>
+        <tr><td>A</td><td>Get-ADDomain and Get-ADForest output (pasted or screenshot)</td></tr>
+        <tr><td>A</td><td>DNS Manager showing techstart.local zone with SRV records</td></tr>
+        <tr><td>B</td><td>ADUC showing complete OU hierarchy fully expanded</td><td rowspan="2" style="vertical-align:middle;text-align:center;font-weight:700;">6</td></tr>
+        <tr><td>B</td><td>Get-ADOrganizationalUnit output confirming all OUs</td></tr>
+        <tr><td>C</td><td>ADUC New User wizard (at least one user being created via GUI)</td><td rowspan="3" style="vertical-align:middle;text-align:center;font-weight:700;">8</td></tr>
+        <tr><td>C</td><td>Get-ADUser output showing all 10+ users with DistinguishedName paths</td></tr>
+        <tr><td>C</td><td>Get-ADGroupMember output confirming AGDLP nesting (A→G→DL chain)</td></tr>
+        <tr><td>D</td><td>GPMC showing TechStart-Password-Policy linked at domain level</td><td rowspan="4" style="vertical-align:middle;text-align:center;font-weight:700;">8</td></tr>
+        <tr><td>D</td><td>GPME showing password policy settings (min length 12, lockout 5)</td></tr>
+        <tr><td>D</td><td>GPMC showing department GPO linked to OU</td></tr>
+        <tr><td>D</td><td>gpresult /r output showing both GPOs in Applied GPOs list</td></tr>
+        <tr><td colspan="2" style="font-weight:700;">Total</td><td style="font-weight:700;text-align:center;">30</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:1rem;font-weight:700;color:var(--primary-dark);margin:1.25rem 0 .5rem;">File Naming &amp; Formatting</h3>
+    <ul style="margin-left:1.25rem;font-size:.9rem;line-height:1.9;">
+      <li>File name: <code>LastName_FirstName_Lab11.pdf</code> (or .docx)</li>
+      <li>Include your name, student ID, and the date at the top of your document</li>
+      <li>Organize screenshots under clearly labeled headings matching Part A, B, C, D</li>
+      <li>Each screenshot must have a caption explaining what it shows</li>
+      <li>Obscure any sensitive passwords in screenshots (blur or black-bar)</li>
+      <li>Use monospace font for all pasted command output</li>
+    </ul>
+
+    <h3 style="font-size:1rem;font-weight:700;color:var(--primary-dark);margin:1.25rem 0 .5rem;">Submission Method</h3>
+    <p style="font-size:.9rem;">Submit via the Canvas assignment <strong>Lab 11 / Week 11 Investigation</strong>. The assignment accepts PDF and DOCX file uploads. Do not submit links to cloud storage. Submissions are due by <strong>Sunday, April 12, 2026, 11:59 PM</strong>.</p>
+
+    <div class="info-box tip" role="note" style="margin-top:1rem;">
+      <div class="info-box-title">🔗 Project 3 Connection</div>
+      <p>The Active Directory domain you build in this lab is the direct foundation for <strong>Project 3: Directory Services &amp; Security Implementation</strong> (assigned this week, 150 points). Consider keeping your Proxmox VMs running and your techstart.local domain intact — you will expand on this exact infrastructure for Project 3. Review the Project 3 specification document (available in Canvas as <strong>Project 3 Specification</strong>) before the end of the week to begin planning your domain design.</p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       GRADING SUMMARY
+  ═══════════════════════════════════════ -->
+  <section class="section" aria-labelledby="h-grading">
+    <div class="section-header">
+      <span class="section-number" aria-hidden="true">6</span>
+      <h2 id="h-grading">Grading Summary</h2>
+    </div>
+    <table class="grading-table" aria-label="Lab 11 grading summary">
+      <thead><tr><th>Part</th><th>Description</th><th>Points</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>AD DS Installation, DC Promotion, DNS Integration &amp; Verification</td><td>8</td></tr>
+        <tr><td>B</td><td>Organizational Unit Hierarchy Creation, Verification &amp; Design Rationale</td><td>6</td></tr>
+        <tr><td>C</td><td>Domain Users (10+), Security Groups, AGDLP Nesting &amp; Verification</td><td>8</td></tr>
+        <tr><td>D</td><td>GPO Creation &amp; Linking (Password Policy + Dept. GPO), gpresult Verification</td><td>8</td></tr>
+        <tr><td colspan="2"><strong>Total (Optional Extra Credit)</strong></td><td><strong>30</strong></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════ -->
+<footer style="background:var(--gray-900);color:var(--gray-400);text-align:center;padding:1.5rem 1rem;font-size:.82rem;">
+  <p>CSC 152 – Network OS and Administration &nbsp;|&nbsp; Mendocino College &nbsp;|&nbsp; Week 11 of 17</p>
+  <p style="margin-top:.3rem;">Lab 11: Active Directory Domain Services &nbsp;|&nbsp; 30 Points – Optional Extra Credit &nbsp;|&nbsp; Due: April 12, 2026</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── Character counters ── */
+  function attachCounter(textareaId, counterId) {
+    var ta = document.getElementById(textareaId);
+    var ct = document.getElementById(counterId);
+    if (!ta || !ct) return;
+    function update() {
+      var n = ta.value.length;
+      ct.textContent = n.toLocaleString() + ' character' + (n !== 1 ? 's' : '');
+    }
+    ta.addEventListener('input', update);
+    update();
+  }
+
+  var pairs = [
+    ['a1-screenshot','a1-counter'],
+    ['a2-screenshot','a2-counter'],
+    ['a3-get-addomain','a3a-counter'],
+    ['a3-get-adforest','a3b-counter'],
+    ['a3-dns','a3c-counter'],
+    ['b2-screenshot','b2-counter'],
+    ['b2-powershell','b2b-counter'],
+    ['b3-rationale','b3-counter'],
+    ['c1-aduc','c1a-counter'],
+    ['c1-ps','c1b-counter'],
+    ['c2-groups','c2a-counter'],
+    ['c2-membership','c2b-counter'],
+    ['c2-agdlp','c2c-counter'],
+    ['d1-gpmc','d1a-counter'],
+    ['d1-policy','d1b-counter'],
+    ['d2-gpmc','d2a-counter'],
+    ['d3-gpresult','d3-counter'],
+    ['d3-reflection','d3r-counter']
+  ];
+  pairs.forEach(function (p) { attachCounter(p[0], p[1]); });
+
+  /* ── Save as PDF ── */
+  window.savePDF = function () {
+    // Collect all response field values
+    var fields = document.querySelectorAll('textarea.response-input');
+    var hasContent = false;
+    fields.forEach(function (f) { if (f.value.trim()) hasContent = true; });
+
+    if (!hasContent) {
+      alert('No responses have been entered yet. Complete at least one response field before saving.');
+      return;
+    }
+
+    // Build a print-friendly window
+    var lines = [];
+    lines.push('<html><head><meta charset="UTF-8">');
+    lines.push('<title>Lab 11 – Active Directory Domain Services – Documentation</title>');
+    lines.push('<style>');
+    lines.push('body{font-family:Arial,sans-serif;font-size:11pt;line-height:1.5;margin:1in;color:#111;}');
+    lines.push('h1{font-size:16pt;border-bottom:2pt solid #1a4f7a;padding-bottom:6pt;color:#1a4f7a;}');
+    lines.push('h2{font-size:13pt;color:#1a4f7a;margin-top:18pt;}');
+    lines.push('h3{font-size:11pt;color:#333;margin-top:12pt;}');
+    lines.push('.field-block{margin-bottom:16pt;border:1pt solid #ccc;border-radius:4pt;padding:8pt;}');
+    lines.push('.field-label{font-weight:bold;font-size:10pt;color:#1a4f7a;margin-bottom:4pt;}');
+    lines.push('.field-content{font-size:10pt;white-space:pre-wrap;word-break:break-word;font-family:Consolas,monospace;background:#f8f8f8;padding:6pt;border-radius:3pt;min-height:40pt;}');
+    lines.push('.empty{color:#999;font-style:italic;}');
+    lines.push('.meta{font-size:9pt;color:#666;margin-bottom:12pt;}');
+    lines.push('@media print{body{margin:.5in;}}');
+    lines.push('</style></head><body>');
+    lines.push('<h1>Lab 11: Active Directory Domain Services – Documentation Report</h1>');
+    lines.push('<div class="meta">CSC 152 – Network OS and Administration &nbsp;|&nbsp; Mendocino College &nbsp;|&nbsp; Week 11 of 17</div>');
+    lines.push('<div class="meta">Generated: ' + new Date().toLocaleString() + '</div>');
+    lines.push('<p style="font-size:9pt;color:#666;border:1pt solid #f0ad4e;padding:6pt;background:#fdf8e8;border-radius:4pt;">This document captures your typed responses. Attach your annotated screenshots to complete your Lab 11 submission. Submit via the Canvas assignment <strong>Lab 11 / Week 11 Investigation</strong>.</p>');
+
+    var sections = [
+      { heading: 'Part A – AD DS Installation', ids: [
+        {id:'a1-screenshot', label:'A1 – AD DS Role Installation Screenshot Note'},
+        {id:'a2-screenshot', label:'A2 – DC Promotion Screenshot Note'},
+        {id:'a3-get-addomain', label:'A3a – Get-ADDomain Output'},
+        {id:'a3-get-adforest', label:'A3b – Get-ADForest Output'},
+        {id:'a3-dns', label:'A3c – DNS Zones and SRV Records Screenshot Note'}
+      ]},
+      { heading: 'Part B – Organizational Unit Structure', ids: [
+        {id:'b2-screenshot', label:'B2 – ADUC OU Hierarchy Screenshot Note'},
+        {id:'b2-powershell', label:'B2 – Get-ADOrganizationalUnit Output'},
+        {id:'b3-rationale', label:'B3 – OU Design Rationale'}
+      ]},
+      { heading: 'Part C – Domain Users, Groups & AGDLP', ids: [
+        {id:'c1-aduc', label:'C1a – ADUC User Creation Screenshot Note'},
+        {id:'c1-ps', label:'C1b – PowerShell User Creation Output'},
+        {id:'c2-groups', label:'C2a – Security Groups in ADUC Screenshot Note'},
+        {id:'c2-membership', label:'C2b – Group Membership Verification Output'},
+        {id:'c2-agdlp', label:'C2c – AGDLP Design Explanation'}
+      ]},
+      { heading: 'Part D – Group Policy Objects', ids: [
+        {id:'d1-gpmc', label:'D1a – Password Policy GPO in GPMC Screenshot Note'},
+        {id:'d1-policy', label:'D1b – Get-ADDefaultDomainPasswordPolicy Output'},
+        {id:'d2-gpmc', label:'D2a – Department GPO in GPMC Screenshot Note'},
+        {id:'d3-gpresult', label:'D3 – gpresult /r Output'},
+        {id:'d3-reflection', label:'D3 – GPO Reflection'}
+      ]}
+    ];
+
+    sections.forEach(function (sec) {
+      lines.push('<h2>' + sec.heading + '</h2>');
+      sec.ids.forEach(function (item) {
+        var el = document.getElementById(item.id);
+        var val = el ? el.value.trim() : '';
+        lines.push('<div class="field-block">');
+        lines.push('<div class="field-label">' + item.label + '</div>');
+        if (val) {
+          lines.push('<div class="field-content">' + val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>');
+        } else {
+          lines.push('<div class="field-content empty">[No response entered]</div>');
+        }
+        lines.push('</div>');
+      });
+    });
+
+    lines.push('</body></html>');
+
+    var win = window.open('', '_blank');
+    if (!win) {
+      alert('Pop-up blocked. Please allow pop-ups for this page and try again.');
+      return;
+    }
+    win.document.write(lines.join('\n'));
+    win.document.close();
+    win.focus();
+    setTimeout(function () { win.print(); }, 600);
+  };
+
+})();
+</script>
+</body>
+</html>

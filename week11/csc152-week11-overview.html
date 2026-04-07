@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 11 Overview – Directory Services & Active Directory | CSC 152</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --color-primary:       #1a3a5c;
+    --color-primary-mid:   #2e5c8e;
+    --color-primary-light: #4a7fb5;
+    --color-accent:        #e8a020;
+    --color-accent-light:  #fef3dc;
+    --color-success:       #2e7d32;
+    --color-success-light: #e8f5e9;
+    --color-warn:          #b45309;
+    --color-warn-light:    #fff8e1;
+    --color-info:          #1565c0;
+    --color-info-light:    #e3f0fb;
+    --color-surface:       #ffffff;
+    --color-bg:            #f4f6f9;
+    --color-border:        #d0d7e2;
+    --color-text:          #1a1a2e;
+    --color-text-muted:    #5a6478;
+    --nav-h:               56px;
+    --radius:              10px;
+    --shadow:              0 2px 10px rgba(0,0,0,0.09);
+    --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Cascadia Code', 'Consolas', monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-main);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute; top: -999px; left: 6px;
+    background: var(--color-primary); color: #fff;
+    padding: 8px 14px; border-radius: 0 0 6px 6px;
+    font-weight: 700; z-index: 9999; text-decoration: none;
+    transition: top 0.1s;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Top Nav ── */
+  .top-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--color-primary);
+    height: var(--nav-h);
+    display: flex; align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .top-nav .nav-brand {
+    color: #fff; font-weight: 700; font-size: 0.92rem;
+    white-space: nowrap; margin-right: 20px; flex-shrink: 0;
+  }
+  .top-nav nav { display: flex; flex-wrap: wrap; gap: 4px; }
+  .top-nav nav a {
+    color: rgba(255,255,255,0.85);
+    text-decoration: none;
+    font-size: 0.82rem;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .top-nav nav a:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .top-nav nav a:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+    color: #fff;
+    background: rgba(255,255,255,0.15);
+    border-color: var(--color-accent);
+  }
+
+  /* ── Scroll offset for anchors ── */
+  [id] { scroll-margin-top: calc(var(--nav-h) + 12px); }
+
+  /* ── Page Header ── */
+  .page-header {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-mid) 60%, var(--color-primary-light) 100%);
+    color: #fff;
+    padding: 48px 24px 40px;
+    text-align: center;
+  }
+  .course-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .page-header h1 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+  .page-header .subtitle {
+    font-size: 1rem;
+    opacity: 0.88;
+    margin-bottom: 22px;
+  }
+  .meta-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .meta-pill {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.32);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  /* ── Layout ── */
+  .page-body { max-width: 960px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  /* ── Section Cards ── */
+  .section-card {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+  .section-header {
+    background: var(--color-primary-mid);
+    color: #fff;
+    padding: 16px 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-header.accent  { background: #7b3f00; }
+  .section-header.success { background: var(--color-success); }
+  .section-header.info    { background: #0d47a1; }
+  .section-header.purple  { background: #4a148c; }
+  .section-header.teal    { background: #00695c; }
+  .section-icon { font-size: 1.6rem; flex-shrink: 0; }
+  .section-header .section-num {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.82;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .section-header h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+  }
+  .section-body { padding: 24px 22px; }
+
+  /* ── Welcome intro ── */
+  .intro-text { font-size: 1.02rem; line-height: 1.72; }
+  .intro-text p + p { margin-top: 12px; }
+  .highlight-box {
+    background: var(--color-info-light);
+    border-left: 4px solid var(--color-info);
+    border-radius: 0 6px 6px 0;
+    padding: 14px 18px;
+    margin-top: 18px;
+    font-size: 0.95rem;
+  }
+  .highlight-box strong { color: var(--color-info); }
+
+  /* ── Learning Goals ── */
+  .goals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .goal-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: var(--color-bg);
+    border-radius: 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+  }
+  .goal-num {
+    background: var(--color-primary-mid);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.82rem;
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .goal-text { font-size: 0.93rem; line-height: 1.5; }
+
+  /* ── Activities list ── */
+  .activity-group { margin-bottom: 20px; }
+  .activity-group-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .activity-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    font-size: 0.93rem;
+  }
+  .activity-item.required  { border-left: 4px solid var(--color-primary-light); }
+  .activity-item.due       { border-left: 4px solid #c62828; background: #fff8f8; }
+  .activity-item.assigned  { border-left: 4px solid var(--color-accent); background: var(--color-accent-light); }
+  .activity-item.optional  { border-left: 4px solid var(--color-success); background: var(--color-success-light); }
+  .activity-item.participation { border-left: 4px solid #6a1b9a; background: #f3e5f5; }
+  .act-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+  .act-body { flex: 1; }
+  .act-name { font-weight: 700; color: var(--color-text); line-height: 1.3; }
+  .act-meta { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 3px; }
+  .badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge-required     { background: var(--color-primary-light); color: #fff; }
+  .badge-due          { background: #c62828; color: #fff; }
+  .badge-assigned     { background: var(--color-accent); color: #fff; }
+  .badge-optional     { background: var(--color-success); color: #fff; }
+  .badge-participation{ background: #6a1b9a; color: #fff; }
+
+  /* ── Checklist toggle ── */
+  .checklist-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-primary-mid);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: background 0.15s;
+  }
+  .checklist-toggle-btn:hover { background: var(--color-primary); }
+  .checklist-toggle-btn:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+  .checklist-panel { display: none; }
+  .checklist-panel.open { display: block; }
+  .checklist-note {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+  .checklist { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .checklist li label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.12s;
+  }
+  .checklist li label:hover { background: #edf2f9; }
+  .checklist li input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--color-primary-mid);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .checklist li input[type="checkbox"]:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .checklist li.checked label {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+    background: var(--color-success-light);
+  }
+  .progress-bar-wrap {
+    background: var(--color-border);
+    border-radius: 8px;
+    height: 10px;
+    margin-top: 14px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--color-success);
+    border-radius: 8px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  .progress-label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-top: 5px;
+  }
+
+  /* ── Key Concepts ── */
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .concept-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-top: 3px solid var(--color-primary-light);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .concept-card h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-primary-mid);
+    margin-bottom: 5px;
+  }
+  .concept-card p { font-size: 0.84rem; color: var(--color-text-muted); line-height: 1.5; }
+
+  /* ── Schedule (collapsible) ── */
+  details.schedule-details {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  details.schedule-details + details.schedule-details { margin-top: 8px; }
+  details.schedule-details summary {
+    padding: 13px 18px;
+    background: var(--color-bg);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    list-style: none;
+    border-radius: 8px;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  details.schedule-details summary::-webkit-details-marker { display: none; }
+  details.schedule-details summary::before {
+    content: '▶';
+    font-size: 0.7rem;
+    color: var(--color-primary-mid);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  details.schedule-details[open] summary::before { transform: rotate(90deg); }
+  details.schedule-details summary:hover { background: #e8edf5; }
+  details.schedule-details summary:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .schedule-day-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary-light);
+    flex-shrink: 0;
+    min-width: 110px;
+  }
+  details.schedule-details .detail-body {
+    padding: 14px 18px 16px;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+  .schedule-tasks { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .schedule-tasks li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 0.9rem;
+  }
+  .schedule-tasks li::before {
+    content: '→';
+    color: var(--color-primary-light);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .schedule-note {
+    font-size: 0.82rem;
+    color: var(--color-warn);
+    background: var(--color-warn-light);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+  .schedule-intro {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    margin-bottom: 14px;
+    font-style: italic;
+  }
+
+  /* ── Time Budget ── */
+  .time-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin-top: 8px;
+  }
+  .time-table th {
+    background: var(--color-primary-mid);
+    color: #fff;
+    text-align: left;
+    padding: 9px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .time-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+  .time-table tr:last-child td { border-bottom: none; }
+  .time-table tr:nth-child(even) td { background: var(--color-bg); }
+  .time-table tr.total-row td {
+    font-weight: 800;
+    background: var(--color-accent-light);
+    color: var(--color-warn);
+    border-top: 2px solid var(--color-accent);
+  }
+  .time-hrs { text-align: right; white-space: nowrap; font-weight: 600; }
+
+  /* ── Looking Ahead ── */
+  .ahead-card {
+    background: linear-gradient(135deg, #0d47a1 0%, #1565c0 60%, #1976d2 100%);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 28px 26px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow);
+  }
+  .ahead-card h2 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ahead-card p { font-size: 0.95rem; line-height: 1.7; opacity: 0.95; }
+  .ahead-card p + p { margin-top: 10px; }
+  .ahead-bullets {
+    list-style: none;
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .ahead-bullets li {
+    display: flex;
+    gap: 10px;
+    font-size: 0.9rem;
+    opacity: 0.92;
+  }
+  .ahead-bullets li::before {
+    content: '→';
+    font-weight: 700;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  /* ── CSLO Banner ── */
+  .cslo-banner {
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-bottom: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+  .cslo-banner .cslo-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    margin-right: 4px;
+  }
+  .cslo-pill {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+  .cslo-pill strong { display: block; font-size: 0.78rem; opacity: 0.8; }
+
+  /* ── Footer ── */
+  .page-footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    padding: 24px 20px 12px;
+    border-top: 1px solid var(--color-border);
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .top-nav { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 4px; }
+    .top-nav .nav-brand { font-size: 0.82rem; }
+    .top-nav nav a { font-size: 0.75rem; padding: 4px 7px; }
+    .page-header { padding: 32px 16px 28px; }
+    .section-body { padding: 18px 16px; }
+    .goals-grid { grid-template-columns: 1fr; }
+    .concepts-grid { grid-template-columns: 1fr; }
+    .time-table { font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Skip Navigation -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- ══ TOP NAV ══ -->
+<div class="top-nav" role="navigation" aria-label="Page sections">
+  <span class="nav-brand">CSC 152 · Week 11</span>
+  <nav aria-label="Jump to section">
+    <a href="#sec-welcome">Welcome</a>
+    <a href="#sec-goals">Learning Goals</a>
+    <a href="#sec-activities">Activities</a>
+    <a href="#sec-concepts">Key Concepts</a>
+    <a href="#sec-schedule">Schedule</a>
+    <a href="#sec-ahead">Week 12</a>
+  </nav>
+</div>
+
+<!-- ══ PAGE HEADER ══ -->
+<header class="page-header" role="banner">
+  <div class="course-tag">CSC 152 · Week 11 of 17</div>
+  <h1>Week 11 Overview<br>Directory Services &amp; Active Directory</h1>
+  <p class="subtitle">Network Operating Systems and Administration · Mendocino College</p>
+  <div class="meta-pills">
+    <span class="meta-pill">📅 April 6–12, 2026</span>
+    <span class="meta-pill">⏱ ~7.5 hrs required work</span>
+    <span class="meta-pill">📋 CSLO 1 · CSLO 2</span>
+    <span class="meta-pill">🏁 Project 2 Due This Week</span>
+    <span class="meta-pill">🆕 Project 3 Assigned</span>
+  </div>
+</header>
+
+<!-- ══ MAIN CONTENT ══ -->
+<main id="main-content">
+<div class="page-body">
+
+  <!-- CSLO Banner -->
+  <div class="cslo-banner" role="region" aria-label="Course Student Learning Outcomes covered this week">
+    <span class="cslo-label">CSLOs This Week</span>
+    <div class="cslo-pill">
+      <strong>CSLO 1</strong>
+      Manage and maintain servers, including OS configuration, access control and virtualization
+    </div>
+    <div class="cslo-pill">
+      <strong>CSLO 2</strong>
+      Apply physical and network data security techniques
+    </div>
+  </div>
+
+  <!-- ══ SECTION 1 – WELCOME ══ -->
+  <section class="section-card" id="sec-welcome" aria-labelledby="hdr-welcome">
+    <div class="section-header">
+      <span class="section-icon" aria-hidden="true">👋</span>
+      <div>
+        <span class="section-num">Week 11 · Welcome</span>
+        <h2 id="hdr-welcome">Welcome to Week 11</h2>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="intro-text">
+        <p>
+          Welcome to Week 11! This week marks a significant milestone in the course: you move from
+          managing a single server in isolation to building a <strong>centralized directory service</strong>
+          that can manage thousands of users, computers, and resources across an entire organization.
+          The technology at the center of that shift is <strong>Active Directory Domain Services (AD DS)</strong>
+          — the backbone of identity management in virtually every Windows-based enterprise environment
+          you will encounter in your career.
+        </p>
+        <p>
+          Think of AD DS as three things working together: an enterprise <em>phone book</em> that
+          knows where every user, computer, and resource lives; a <em>security guard</em> that
+          authenticates every login and enforces access rules; and a <em>policy enforcer</em> that
+          pushes configuration settings to every machine in the organization — automatically. This week
+          you will build all three of those capabilities from scratch in your Proxmox lab environment.
+        </p>
+        <p>
+          Week 11 builds directly on the user and group administration skills from Week 6 and the
+          DNS and network services work from Weeks 8–9. You will install a Domain Controller,
+          design an Organizational Unit hierarchy, create domain users, join a client machine to
+          the domain, and implement Group Policy Objects. By Sunday you will have a functioning
+          AD DS domain — the same foundation that Project 3 will extend over the next four weeks.
+        </p>
+        <div class="highlight-box" role="note">
+          <strong>📌 Two important milestones this week:</strong>
+          <ul style="margin-top:8px; padding-left:18px; line-height:1.8;">
+            <li><strong>Project 2: Network Infrastructure &amp; Firewall Implementation</strong> is due this week — plan your time accordingly for final testing, documentation, and submission.</li>
+            <li><strong>Project 3: Directory Services &amp; Security Implementation</strong> is assigned this week. Read the full specification and begin planning your AD DS domain structure.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ SECTION 2 – LEARNING GOALS ══ -->
+  <section class="section-card" id="sec-goals" aria-labelledby="hdr-goals">
+    <div class="section-header" style="background:#1b5e20;">
+      <span class="section-icon" aria-hidden="true">🎯</span>
+      <div>
+        <span class="section-num">Week 11 · Learning Goals</span>
+        <h2 id="hdr-goals">What You Will Be Able to Do</h2>
+      </div>
+    </div>
+    <div class="section-body">
+      <p style="font-size:0.92rem; color:var(--color-text-muted); margin-bottom:18px;">
+        By the end of Week 11, you should be able to accomplish each of the following. These goals
+        span all five learning modules and directly support Quiz 11, Lab 11, Discussion 6, and
+        the Project 3 design work you will begin this week.
+      </p>
+      <div class="goals-grid" role="list" aria-label="Week 11 learning goals">
+
+        <div class="goal-item" role="listitem">
+          <span class="goal-num" aria-hidden="true">1</span>
+          <span class="goal-text">Explain what a directory service is and describe the role of Active Directory Domain Services in enterprise environments, including how it differs from a workgroup model.</span>
+        </div>
+
+        <div class="goal-item" role="listitem">
+          <span class="goal-num" aria-hidden="true">2</span>
+          <span class="goal-text">Describe the AD DS <strong>logical structure</strong> — forests, trees, domains, and Organizational Units — and the <strong>physical structure</strong> — domain controllers, sites, and site links.</span>
+        </div>
+
+        <div class="goal-item" role="listitem">
+          <span class="goal-num" aria-hidden="true">3</span>
+          <span class="goal-text">Explain the relationship between AD DS and DNS, including why DNS must be available before AD DS can be installed and what SRV records do.</span>
+        </div>
+
+        <div class="goal-item" role="listitem">
+          <span class="goal-num" aria-hidden="true">4</span>
+          <span class="goal-text">Install and configure the AD DS role on Windows Server and promote a server to a Domain Controller for a new forest using both the GUI wizard and PowerShell.</span>
+        </div>
+
+        <div class="goal-item" role="listitem">
+          <span class="goal-num" aria-hidden="true">5</span>
+          <span class="goal-text">Verify a Domain Controller installation using <code style="font-family:var(--font-mono); font-size:0.85em;">dcdiag</code>, <code style="font-family:var(--font-mono); font-size:0.85em;">nslookup</code>, Event Viewer, and Active Directory Users and Computers (ADUC).</span>
+        </div>
+
+        <div class="goal-item" role="listitem">
+          <span class="goal-num" aria-hidden="true">6</span>
+          <span class="goal-text">Design and create an Organizational Unit hierarchy that reflects real organizational structures and supports efficient GPO application and delegation of control.</span>
+        </div>
+
+        <div class="goal-item" role="listitem">
+          <span class="goal-num" aria-hidden="true">7</span>
+          <span class="goal-text">Create and manage domain user accounts and security groups using ADUC and PowerShell (<code style="font-family:var(--font-mono); font-size:0.85em;">New-ADUser</code>), and join a Windows client machine to the domain.</span>
+        </div>
+
+        <div class="goal-item" role="listitem">
+          <span class="goal-num" aria-hidden="true">8</span>
+          <span class="goal-text">Explain the Group Policy processing order (LSDOU) and create, link, and verify Group Policy Objects using GPMC, <code style="font-family:var(--font-mono); font-size:0.85em;">gpupdate /force</code>, and <code style="font-family:var(--font-mono); font-size:0.85em;">gpresult</code>.</span>
+        </div>
+
+        <div class="goal-item" role="listitem">
+          <span class="goal-num" aria-hidden="true">9</span>
+          <span class="goal-text">Identify key Windows Security Event IDs generated by AD DS (logon events, account changes, lockouts) and explain how Splunk can be used to monitor directory service health.</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ SECTION 3 – REQUIRED ACTIVITIES ══ -->
+  <section class="section-card" id="sec-activities" aria-labelledby="hdr-activities">
+    <div class="section-header" style="background:#4a148c;">
+      <span class="section-icon" aria-hidden="true">📋</span>
+      <div>
+        <span class="section-num">Week 11 · Required Activities</span>
+        <h2 id="hdr-activities">What to Complete This Week</h2>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <!-- Checklist Toggle -->
+      <button class="checklist-toggle-btn" id="checklist-toggle-btn"
+              aria-expanded="false" aria-controls="checklist-panel">
+        <span aria-hidden="true">☑</span>
+        Show My Progress Checklist
+      </button>
+
+      <div class="checklist-panel" id="checklist-panel" role="region" aria-label="Activity completion checklist">
+        <p class="checklist-note">
+          Check off items as you complete them. Your progress is saved in your browser only — it does not sync to Canvas.
+        </p>
+        <ul class="checklist" id="checklist" aria-label="Week 11 activity checklist">
+          <li id="cl-1"><label><input type="checkbox" aria-describedby="cl-1-desc"> <span id="cl-1-desc">Module 11.1 – Directory Services Concepts &amp; AD DS Architecture</span></label></li>
+          <li id="cl-2"><label><input type="checkbox" aria-describedby="cl-2-desc"> <span id="cl-2-desc">Module 11.2 – Domain Controller Installation &amp; Configuration</span></label></li>
+          <li id="cl-3"><label><input type="checkbox" aria-describedby="cl-3-desc"> <span id="cl-3-desc">Module 11.3 – Organizational Units, Domain Users &amp; Computers</span></label></li>
+          <li id="cl-4"><label><input type="checkbox" aria-describedby="cl-4-desc"> <span id="cl-4-desc">Module 11.4 – Group Policy Objects – Foundations</span></label></li>
+          <li id="cl-5"><label><input type="checkbox" aria-describedby="cl-5-desc"> <span id="cl-5-desc">Module 11.5 – Splunk &amp; Directory Service Monitoring (Introduction)</span></label></li>
+          <li id="cl-6"><label><input type="checkbox" aria-describedby="cl-6-desc"> <span id="cl-6-desc">Quiz 11: Active Directory (14 pts)</span></label></li>
+          <li id="cl-7"><label><input type="checkbox" aria-describedby="cl-7-desc"> <span id="cl-7-desc">Discussion 6: Directory Services in Enterprise (12.5 pts)</span></label></li>
+          <li id="cl-8"><label><input type="checkbox" aria-describedby="cl-8-desc"> <span id="cl-8-desc">Project 2: Network Infrastructure &amp; Firewall Implementation — final submission</span></label></li>
+          <li id="cl-9"><label><input type="checkbox" aria-describedby="cl-9-desc"> <span id="cl-9-desc">Read Project 3 specification &amp; begin domain design planning</span></label></li>
+          <li id="cl-10"><label><input type="checkbox" aria-describedby="cl-10-desc"> <span id="cl-10-desc">Begin Splunk Fundamentals 1 self-paced course (completion due Week 13)</span></label></li>
+        </ul>
+        <div class="progress-bar-wrap" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Checklist completion progress" id="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progress-bar-fill"></div>
+        </div>
+        <p class="progress-label" id="progress-label" aria-live="polite">0 of 10 items completed</p>
+      </div>
+
+      <!-- ── LEARNING MODULES ── -->
+      <div class="activity-group">
+        <p class="activity-group-label">Learning Modules (Self-Study)</p>
+        <ul class="activity-list" aria-label="Learning modules">
+
+          <li class="activity-item required">
+            <span class="act-icon" aria-hidden="true">📖</span>
+            <div class="act-body">
+              <div class="act-name">Module 11.1 – Directory Services Concepts &amp; AD DS Architecture
+                <span class="badge badge-required">Required</span>
+              </div>
+              <div class="act-meta">~1.25 hrs self-study · Readings, concept diagrams, mini-case, ungraded check-for-understanding · <strong>Template anchor module — complete first</strong></div>
+            </div>
+          </li>
+
+          <li class="activity-item required">
+            <span class="act-icon" aria-hidden="true">📖</span>
+            <div class="act-body">
+              <div class="act-name">Module 11.2 – Domain Controller Installation &amp; Configuration
+                <span class="badge badge-required">Required</span>
+              </div>
+              <div class="act-meta">~1.25 hrs self-study · Step-by-step walkthroughs, guided practice, ungraded check-for-understanding · Core content for in-class Zoom lab</div>
+            </div>
+          </li>
+
+          <li class="activity-item required">
+            <span class="act-icon" aria-hidden="true">📖</span>
+            <div class="act-body">
+              <div class="act-name">Module 11.3 – Organizational Units, Domain Users &amp; Computers
+                <span class="badge badge-required">Required</span>
+              </div>
+              <div class="act-meta">~1.25 hrs self-study · OU design, user/computer account management, domain join, guided practice</div>
+            </div>
+          </li>
+
+          <li class="activity-item required">
+            <span class="act-icon" aria-hidden="true">📖</span>
+            <div class="act-body">
+              <div class="act-name">Module 11.4 – Group Policy Objects – Foundations
+                <span class="badge badge-required">Required</span>
+              </div>
+              <div class="act-meta">~1.0 hr self-study · GPO concepts, LSDOU processing order, GPMC walkthrough, guided practice, ungraded check-for-understanding</div>
+            </div>
+          </li>
+
+          <li class="activity-item required">
+            <span class="act-icon" aria-hidden="true">📖</span>
+            <div class="act-body">
+              <div class="act-name">Module 11.5 – Splunk &amp; Directory Service Monitoring (Introduction)
+                <span class="badge badge-required">Required</span>
+              </div>
+              <div class="act-meta">~0.5 hrs self-study · AD DS event IDs overview, Splunk Fundamentals 1 orientation, ungraded check-for-understanding</div>
+            </div>
+          </li>
+
+        </ul>
+      </div>
+
+      <!-- ── GRADED ASSESSMENTS ── -->
+      <div class="activity-group">
+        <p class="activity-group-label">Graded Assessments</p>
+        <ul class="activity-list" aria-label="Graded assessments">
+
+          <li class="activity-item required">
+            <span class="act-icon" aria-hidden="true">📝</span>
+            <div class="act-body">
+              <div class="act-name">Quiz 11: Active Directory
+                <span class="badge badge-required">Required · 14 pts</span>
+              </div>
+              <div class="act-meta">Covers Modules 11.1–11.5 · Available Friday through Sunday · 2 attempts · ~15 minutes</div>
+            </div>
+          </li>
+
+          <li class="activity-item required">
+            <span class="act-icon" aria-hidden="true">💬</span>
+            <div class="act-body">
+              <div class="act-name">Discussion 6: Directory Services in Enterprise
+                <span class="badge badge-required">Required · 12.5 pts</span>
+              </div>
+              <div class="act-meta">Initial post due by Thursday · Respond to two classmates by Sunday · ~0.5 hrs</div>
+            </div>
+          </li>
+
+          <li class="activity-item optional">
+            <span class="act-icon" aria-hidden="true">🔬</span>
+            <div class="act-body">
+              <div class="act-name">Lab 11: Active Directory Implementation
+                <span class="badge badge-optional">Optional Extra Credit · 30 pts</span>
+              </div>
+              <div class="act-meta">Hands-on AD DS lab: DC installation, OU design, domain users, GPO creation and verification · Same format and submission requirements as required labs · Submit via Canvas by Sunday</div>
+            </div>
+          </li>
+
+        </ul>
+      </div>
+
+      <!-- ── PROJECTS ── -->
+      <div class="activity-group">
+        <p class="activity-group-label">Projects</p>
+        <ul class="activity-list" aria-label="Project deliverables">
+
+          <li class="activity-item due">
+            <span class="act-icon" aria-hidden="true">🏁</span>
+            <div class="act-body">
+              <div class="act-name">Project 2: Network Infrastructure &amp; Firewall Implementation
+                <span class="badge badge-due">Due This Week · 100 pts</span>
+              </div>
+              <div class="act-meta">Final submission due Sunday · Budget additional time this week for final testing, documentation, and submission · See the Project 2 specification for full requirements</div>
+            </div>
+          </li>
+
+          <li class="activity-item assigned">
+            <span class="act-icon" aria-hidden="true">🆕</span>
+            <div class="act-body">
+              <div class="act-name">Project 3: Directory Services &amp; Security Implementation
+                <span class="badge badge-assigned">Assigned This Week · 150 pts</span>
+              </div>
+              <div class="act-meta">Assigned this week · Final submission due Week 15 (per grading plan) · Read the full Project 3 specification and begin planning your AD DS domain structure this week</div>
+            </div>
+          </li>
+
+        </ul>
+      </div>
+
+      <!-- ── PARTICIPATION ── -->
+      <div class="activity-group">
+        <p class="activity-group-label">Participation / Engagement</p>
+        <ul class="activity-list" aria-label="Participation items">
+
+          <li class="activity-item participation">
+            <span class="act-icon" aria-hidden="true">🎓</span>
+            <div class="act-body">
+              <div class="act-name">Splunk Fundamentals 1 — Self-Paced Course (Begin This Week)
+                <span class="badge badge-participation">Participation Credit</span>
+              </div>
+              <div class="act-meta">Introduced in Module 11.5 · Access the free course at <strong>education.splunk.com</strong> (see Canvas for the link) · Deliverable: screenshot of your completion certificate · <strong>Due Week 13</strong> — you do not need to finish it this week, but you should start now</div>
+            </div>
+          </li>
+
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ SECTION 4 – KEY CONCEPTS ══ -->
+  <section class="section-card" id="sec-concepts" aria-labelledby="hdr-concepts">
+    <div class="section-header" style="background:#00695c;">
+      <span class="section-icon" aria-hidden="true">💡</span>
+      <div>
+        <span class="section-num">Week 11 · Key Concepts</span>
+        <h2 id="hdr-concepts">Ideas to Pay Attention To</h2>
+      </div>
+    </div>
+    <div class="section-body">
+      <p style="font-size:0.92rem; color:var(--color-text-muted); margin-bottom:18px;">
+        These are the most important ideas woven through all five modules this week. Keep them in
+        mind as you work through the readings, guided practices, and lab activities.
+      </p>
+      <div class="concepts-grid" role="list" aria-label="Key concepts">
+
+        <div class="concept-card" role="listitem">
+          <h3>Directory Services as Infrastructure</h3>
+          <p>A directory service is not just a user database — it is the authentication, authorization, and policy engine for an entire organization. AD DS is the dominant implementation in Windows enterprise environments.</p>
+        </div>
+
+        <div class="concept-card" role="listitem">
+          <h3>AD DS Logical vs. Physical Structure</h3>
+          <p>The logical structure (forest → tree → domain → OU → objects) controls administration and policy scope. The physical structure (domain controllers, sites, site links) controls replication and authentication performance. Both matter for design decisions.</p>
+        </div>
+
+        <div class="concept-card" role="listitem">
+          <h3>AD DS Depends on DNS</h3>
+          <p>Active Directory cannot function without DNS. Domain controllers register SRV records so clients can locate them. Misconfigured DNS is the most common cause of AD DS failures — always verify DNS first when troubleshooting.</p>
+        </div>
+
+        <div class="concept-card" role="listitem">
+          <h3>OUs Are for Administration; Groups Are for Access</h3>
+          <p>Organizational Units organize objects for GPO application and delegation of control. Security Groups control access to resources. Confusing the two is a very common mistake — make sure you understand the distinction.</p>
+        </div>
+
+        <div class="concept-card" role="listitem">
+          <h3>LSDOU — Group Policy Processing Order</h3>
+          <p>Group Policy is applied in a specific order: <strong>L</strong>ocal → <strong>S</strong>ite → <strong>D</strong>omain → <strong>O</strong>U. Later-applied policies win by default unless a higher-level policy is marked Enforced. Understanding LSDOU is essential for predicting and troubleshooting policy behavior.</p>
+        </div>
+
+        <div class="concept-card" role="listitem">
+          <h3>Verification Is Not Optional</h3>
+          <p>Every configuration step this week has a corresponding verification tool: <code style="font-family:var(--font-mono); font-size:0.85em;">dcdiag</code>, <code style="font-family:var(--font-mono); font-size:0.85em;">nslookup</code>, <code style="font-family:var(--font-mono); font-size:0.85em;">gpresult</code>, Event Viewer. Professionals always verify — do not skip these steps in your lab work.</p>
+        </div>
+
+        <div class="concept-card" role="listitem">
+          <h3>Least Privilege and Delegation</h3>
+          <p>AD DS enables fine-grained delegation of control — you can grant a help desk user the ability to reset passwords in one OU without making them a Domain Admin. This is a core security principle you will apply in Project 3.</p>
+        </div>
+
+        <div class="concept-card" role="listitem">
+          <h3>Monitoring Starts with Event IDs</h3>
+          <p>Windows Security Event Log entries (4624 successful logon, 4625 failed logon, 4740 account lockout, 4720 account created) are the raw data that security monitoring tools like Splunk analyze. Knowing what to look for is the first step toward meaningful monitoring.</p>
+        </div>
+
+        <div class="concept-card" role="listitem">
+          <h3>PowerShell Is the Professional Path</h3>
+          <p>Every GUI task this week has a PowerShell equivalent. In production environments, PowerShell is preferred for repeatability, automation, and scripted deployments. Practice both — the GUI builds understanding; PowerShell builds skill.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ SECTION 5 – SCHEDULE ══ -->
+  <section class="section-card" id="sec-schedule" aria-labelledby="hdr-schedule">
+    <div class="section-header" style="background:#b45309;">
+      <span class="section-icon" aria-hidden="true">📅</span>
+      <div>
+        <span class="section-num">Week 11 · Recommended Schedule</span>
+        <h2 id="hdr-schedule">Day-by-Day Study Roadmap</h2>
+      </div>
+    </div>
+    <div class="section-body">
+      <p class="schedule-intro">
+        This is a suggested roadmap to help you pace your work across the week. Expand each day
+        to see the recommended activities. Specific due dates are managed in Canvas — check Canvas
+        for all deadlines.
+      </p>
+
+      <!-- Time Budget Table -->
+      <details style="margin-bottom:18px; border:1px solid var(--color-border); border-radius:8px; overflow:hidden;">
+        <summary style="padding:12px 18px; background:var(--color-bg); cursor:pointer; font-weight:700; font-size:0.9rem; list-style:none; display:flex; align-items:center; gap:8px; user-select:none;"
+                 aria-label="Expand weekly time budget">
+          <span style="font-size:0.7rem; color:var(--color-primary-mid); transition:transform 0.2s;" id="budget-arrow">▶</span>
+          ⏱ Weekly Time Budget (~7.5 hours required, not including project work)
+        </summary>
+        <div style="padding:16px 18px; background:var(--color-surface); border-top:1px solid var(--color-border);">
+          <table class="time-table" aria-label="Weekly time budget">
+            <thead>
+              <tr>
+                <th scope="col">Activity</th>
+                <th scope="col" class="time-hrs">Est. Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>In-class Zoom session (lecture + lab)</td><td class="time-hrs">1.5 hrs</td></tr>
+              <tr><td>Module 11.1 – Self-study readings &amp; videos</td><td class="time-hrs">1.25 hrs</td></tr>
+              <tr><td>Module 11.2 – Self-study readings &amp; guided practice</td><td class="time-hrs">1.25 hrs</td></tr>
+              <tr><td>Module 11.3 – Self-study readings &amp; guided practice</td><td class="time-hrs">1.25 hrs</td></tr>
+              <tr><td>Module 11.4 – Self-study readings &amp; guided practice</td><td class="time-hrs">1.0 hr</td></tr>
+              <tr><td>Module 11.5 – Splunk intro &amp; Fundamentals 1 orientation</td><td class="time-hrs">0.5 hrs</td></tr>
+              <tr><td>Quiz 11: Active Directory</td><td class="time-hrs">0.25 hrs</td></tr>
+              <tr><td>Discussion 6: Directory Services in Enterprise</td><td class="time-hrs">0.5 hrs</td></tr>
+              <tr class="total-row"><td><strong>Total (required work, without project)</strong></td><td class="time-hrs"><strong>~7.5 hrs</strong></td></tr>
+              <tr><td style="color:var(--color-text-muted); font-size:0.85rem;">Project 2 final submission &amp; Project 3 spec review (additional)</td><td class="time-hrs" style="color:var(--color-text-muted); font-size:0.85rem;">1–3 hrs</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <!-- Day-by-Day -->
+      <details class="schedule-details" open>
+        <summary>
+          <span class="schedule-day-label">Monday – Tuesday</span>
+          Foundations &amp; Project 2 Final Review
+        </summary>
+        <div class="detail-body">
+          <ul class="schedule-tasks">
+            <li>Complete Module 11.1 readings, concept diagrams, and the Greenfield Company mini-case</li>
+            <li>Watch the recommended overview videos for Module 11.1 (listed by name in the module)</li>
+            <li>Complete the Module 11.1 ungraded check-for-understanding to confirm your grasp of AD DS structure and DNS dependency</li>
+            <li>Review your Project 2 work for final testing and documentation — identify any gaps before the Wednesday Zoom session</li>
+          </ul>
+          <div class="schedule-note">📌 Project 2 is due Sunday. Use Monday–Tuesday to catch any remaining issues so you have time to resolve them.</div>
+        </div>
+      </details>
+
+      <details class="schedule-details">
+        <summary>
+          <span class="schedule-day-label">Wednesday</span>
+          Domain Controller Installation &amp; Zoom Lab Session
+        </summary>
+        <div class="detail-body">
+          <ul class="schedule-tasks">
+            <li>Complete Module 11.2 readings and walkthroughs before the Zoom session</li>
+            <li>Attend the in-class Zoom session (1.5 hours): mini-lecture on AD DS architecture, followed by live lab — DC installation, OU creation, domain users, basic GPO, and verification</li>
+            <li>If you need additional time after the Zoom session, continue the DC installation guided practice asynchronously in your Proxmox environment</li>
+          </ul>
+          <div class="schedule-note">💡 The Zoom lab is the core hands-on session for the week. Come prepared by completing Module 11.2 readings first.</div>
+        </div>
+      </details>
+
+      <details class="schedule-details">
+        <summary>
+          <span class="schedule-day-label">Thursday</span>
+          OUs, Domain Users &amp; Discussion Initial Post
+        </summary>
+        <div class="detail-body">
+          <ul class="schedule-tasks">
+            <li>Complete Module 11.3 readings and guided practice: create an OU structure, add domain users via ADUC and PowerShell, join a Windows client VM to the domain</li>
+            <li>Verify your domain join with <code style="font-family:var(--font-mono); font-size:0.85em;">whoami /all</code> and confirm the computer object appears in ADUC</li>
+            <li>Post your initial response to Discussion 6: Directory Services in Enterprise (initial post due Thursday)</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="schedule-details">
+        <summary>
+          <span class="schedule-day-label">Friday</span>
+          Group Policy &amp; Quiz 11 Opens
+        </summary>
+        <div class="detail-body">
+          <ul class="schedule-tasks">
+            <li>Complete Module 11.4 readings and guided practice: create a Password Policy GPO at the domain level and a Desktop Restrictions GPO linked to an OU</li>
+            <li>Verify GPO application with <code style="font-family:var(--font-mono); font-size:0.85em;">gpupdate /force</code> and <code style="font-family:var(--font-mono); font-size:0.85em;">gpresult /r</code> on a joined client</li>
+            <li>Quiz 11 opens Friday — consider taking it Friday if you feel ready, while the material is fresh</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="schedule-details">
+        <summary>
+          <span class="schedule-day-label">Saturday</span>
+          Splunk Intro &amp; Lab 11 Work
+        </summary>
+        <div class="detail-body">
+          <ul class="schedule-tasks">
+            <li>Complete Module 11.5: review the key AD DS event IDs and the Splunk Fundamentals 1 orientation</li>
+            <li>Log in to education.splunk.com and begin the Splunk Fundamentals 1 self-paced course (completion due Week 13 — start now to avoid a last-minute rush)</li>
+            <li>If completing Lab 11 (optional extra credit), use Saturday to document your lab work with screenshots and prepare your submission</li>
+            <li>Take Quiz 11 if you have not yet done so</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="schedule-details">
+        <summary>
+          <span class="schedule-day-label">Sunday</span>
+          Final Submissions &amp; Peer Responses
+        </summary>
+        <div class="detail-body">
+          <ul class="schedule-tasks">
+            <li>Complete Quiz 11 (closes Sunday)</li>
+            <li>Submit Lab 11 via Canvas if completing the optional extra credit lab</li>
+            <li>Respond to at least two classmates in Discussion 6</li>
+            <li>Finalize and submit <strong>Project 2: Network Infrastructure &amp; Firewall Implementation</strong> — this is the final deadline</li>
+            <li>Read the full Project 3 specification and begin sketching your AD DS domain and OU design for Project 3</li>
+          </ul>
+          <div class="schedule-note">🏁 Project 2 final submission is due Sunday. Do not leave it until the last minute — allow time for final testing and documentation.</div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- ══ SECTION 6 – LOOKING AHEAD ══ -->
+  <div class="ahead-card" id="sec-ahead" role="region" aria-labelledby="hdr-ahead">
+    <h2 id="hdr-ahead"><span aria-hidden="true">🔭</span> Looking Ahead: Week 12</h2>
+    <p>
+      Week 12 extends your directory services knowledge into the open-source world with
+      <strong>LDAP and OpenLDAP</strong>. You will install and configure OpenLDAP on a Linux server,
+      applying the same directory service concepts from Module 11.1 in a cross-platform context,
+      and compare the LDAP protocol with AD DS to deepen your understanding of how directory
+      services work at the protocol level.
+    </p>
+    <p>
+      Week 12 also marks the beginning of the Splunk infrastructure you will use in Project 3:
+      you will <strong>install Splunk Enterprise on a Linux VM</strong>, laying the groundwork for
+      the centralized log monitoring and AD DS event analysis that Module 11.5 introduced this week.
+    </p>
+    <ul class="ahead-bullets" aria-label="Week 12 preview topics">
+      <li>LDAP protocol concepts and the Directory Information Tree (DIT)</li>
+      <li>OpenLDAP installation and configuration on Linux</li>
+      <li>Cross-platform directory service comparison: AD DS vs. OpenLDAP</li>
+      <li>Splunk Enterprise installation on a Linux VM</li>
+      <li>LDAP client authentication configuration</li>
+    </ul>
+  </div>
+
+</div><!-- /.page-body -->
+</main>
+
+<!-- ══ FOOTER ══ -->
+<footer class="page-footer" role="contentinfo">
+  <p>CSC 152 – Network Operating Systems and Administration · Mendocino College · Week 11 of 17</p>
+  <p style="margin-top:4px;">For due dates, submission links, and course announcements, refer to the Canvas course shell.</p>
+</footer>
+
+<!-- ══ JAVASCRIPT ══ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── Checklist toggle ── */
+  var btn = document.getElementById('checklist-toggle-btn');
+  var panel = document.getElementById('checklist-panel');
+  var items = document.querySelectorAll('#checklist li');
+  var fill = document.getElementById('progress-bar-fill');
+  var label = document.getElementById('progress-label');
+  var wrap = document.getElementById('progress-bar-wrap');
+
+  btn.addEventListener('click', function () {
+    var isOpen = panel.classList.toggle('open');
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    btn.querySelector('span').textContent = isOpen ? '☑' : '☑';
+    btn.childNodes[2].textContent = isOpen ? ' Hide Progress Checklist' : ' Show My Progress Checklist';
+  });
+
+  function updateProgress() {
+    var total = items.length;
+    var checked = 0;
+    items.forEach(function (li) {
+      var cb = li.querySelector('input[type="checkbox"]');
+      if (cb.checked) {
+        li.classList.add('checked');
+        checked++;
+      } else {
+        li.classList.remove('checked');
+      }
+    });
+    var pct = Math.round((checked / total) * 100);
+    fill.style.width = pct + '%';
+    wrap.setAttribute('aria-valuenow', pct);
+    label.textContent = checked + ' of ' + total + ' items completed';
+  }
+
+  items.forEach(function (li) {
+    var cb = li.querySelector('input[type="checkbox"]');
+    cb.addEventListener('change', updateProgress);
+  });
+
+  /* ── Schedule details arrow rotation via CSS open attr ── */
+  /* Handled by CSS [open] selector — no JS needed */
+
+  /* ── Budget details arrow ── */
+  var budgetDetails = document.querySelector('details:not(.schedule-details)');
+  if (budgetDetails) {
+    var arrow = document.getElementById('budget-arrow');
+    if (arrow) {
+      budgetDetails.addEventListener('toggle', function () {
+        arrow.style.transform = budgetDetails.open ? 'rotate(90deg)' : 'rotate(0deg)';
+      });
+    }
+  }
+
+})();
+</script>
+
+</body>
+</html>

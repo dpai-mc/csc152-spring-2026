@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 11.4 – Group Policy Objects: Foundations | CSC 152</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand:       #1a4f7a;
+    --brand-dark:  #0f3254;
+    --brand-light: #e8f0f8;
+    --accent:      #c8500a;
+    --accent-light:#fdf0e8;
+    --success:     #1a6b3a;
+    --success-bg:  #e8f5ee;
+    --warn:        #7a4f00;
+    --warn-bg:     #fff8e8;
+    --error:       #8b1a1a;
+    --error-bg:    #fdf0f0;
+    --neutral:     #4a5568;
+    --border:      #d0d8e4;
+    --code-bg:     #1e2a3a;
+    --code-fg:     #e2e8f0;
+    --radius:      6px;
+    --shadow:      0 2px 8px rgba(0,0,0,.12);
+    --nav-h:       56px;
+    --font-body:   'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono:   'Cascadia Code', 'Consolas', 'Courier New', monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #1a202c;
+    background: #f7f9fc;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute; top: -100%; left: 0;
+    background: var(--brand); color: #fff;
+    padding: .5rem 1rem; z-index: 9999;
+    font-weight: 600; border-radius: 0 0 var(--radius) 0;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Top Nav ── */
+  nav#top-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--brand-dark);
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    height: var(--nav-h);
+    display: flex; align-items: center;
+  }
+  .nav-inner {
+    width: 100%; max-width: 1100px; margin: 0 auto;
+    padding: 0 1rem;
+    display: flex; align-items: center; gap: .25rem;
+    overflow-x: auto; scrollbar-width: thin;
+  }
+  .nav-inner a {
+    color: #c9dff5; text-decoration: none;
+    font-size: .82rem; font-weight: 500;
+    padding: .35rem .65rem; border-radius: var(--radius);
+    white-space: nowrap; transition: background .15s, color .15s;
+    border: 2px solid transparent;
+  }
+  .nav-inner a:hover { background: rgba(255,255,255,.12); color: #fff; }
+  .nav-inner a:focus-visible {
+    outline: none; border-color: #7ec8ff; color: #fff;
+    background: rgba(255,255,255,.15);
+  }
+  .nav-sep { color: #4a7aaa; font-size: .8rem; user-select: none; }
+
+  /* ── Scroll offset for anchor targets ── */
+  .anchor-target {
+    display: block;
+    margin-top: calc(-1 * var(--nav-h) - 12px);
+    padding-top: calc(var(--nav-h) + 12px);
+    visibility: hidden; height: 0;
+  }
+
+  /* ── Page Layout ── */
+  .page-header {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: #fff; padding: 2.5rem 1rem 2rem;
+    text-align: center;
+  }
+  .page-header .module-tag {
+    display: inline-block;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 20px; padding: .2rem .9rem;
+    font-size: .8rem; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; margin-bottom: .75rem;
+  }
+  .page-header h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 700; margin-bottom: .5rem; }
+  .page-header .subtitle { font-size: 1rem; opacity: .85; }
+  .meta-row {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: .5rem 1.5rem; margin-top: 1rem; font-size: .85rem; opacity: .8;
+  }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+  /* ── Objective Box ── */
+  .obj-box {
+    background: var(--brand-light); border-left: 4px solid var(--brand);
+    border-radius: var(--radius); padding: 1.2rem 1.4rem; margin-bottom: 2rem;
+  }
+  .obj-box h2 { font-size: 1rem; color: var(--brand-dark); margin-bottom: .6rem; }
+  .obj-box ul { padding-left: 1.4rem; }
+  .obj-box li { margin-bottom: .3rem; font-size: .95rem; }
+  .cslo-tag {
+    display: inline-block; background: var(--brand); color: #fff;
+    font-size: .75rem; font-weight: 700; border-radius: 4px;
+    padding: .1rem .45rem; margin-left: .4rem; vertical-align: middle;
+  }
+
+  /* ── Section Cards ── */
+  .section-card {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: var(--shadow);
+    margin-bottom: 2rem; overflow: hidden;
+  }
+  .section-header {
+    background: linear-gradient(90deg, var(--brand) 0%, #2563a8 100%);
+    color: #fff; padding: 1rem 1.4rem;
+    display: flex; align-items: center; gap: .75rem;
+  }
+  .section-header .sec-num {
+    background: rgba(255,255,255,.22); border-radius: 50%;
+    width: 2rem; height: 2rem; display: flex; align-items: center;
+    justify-content: center; font-weight: 700; font-size: .9rem; flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 1.15rem; font-weight: 700; }
+  .section-body { padding: 1.4rem; }
+
+  /* ── Prose helpers ── */
+  h3 { font-size: 1.05rem; color: var(--brand-dark); margin: 1.4rem 0 .5rem; }
+  h4 { font-size: .97rem; color: var(--neutral); margin: 1.1rem 0 .4rem; font-weight: 600; }
+  p  { margin-bottom: .85rem; }
+  ul, ol { padding-left: 1.5rem; margin-bottom: .85rem; }
+  li { margin-bottom: .3rem; }
+  strong { color: #1a202c; }
+
+  /* ── Callout Boxes ── */
+  .callout {
+    border-radius: var(--radius); padding: .9rem 1.1rem;
+    margin: 1rem 0; display: flex; gap: .75rem; align-items: flex-start;
+  }
+  .callout .icon { font-size: 1.2rem; flex-shrink: 0; line-height: 1.5; }
+  .callout.info  { background: var(--brand-light); border-left: 4px solid var(--brand); }
+  .callout.warn  { background: var(--warn-bg);    border-left: 4px solid #c8920a; }
+  .callout.tip   { background: var(--success-bg); border-left: 4px solid var(--success); }
+  .callout.alert { background: var(--error-bg);   border-left: 4px solid #b91c1c; }
+  .callout p { margin: 0; font-size: .93rem; }
+
+  /* ── Code Blocks ── */
+  pre {
+    background: var(--code-bg); color: var(--code-fg);
+    border-radius: var(--radius); padding: 1rem 1.2rem;
+    overflow-x: auto; font-family: var(--font-mono);
+    font-size: .88rem; line-height: 1.6; margin: .75rem 0 1rem;
+    position: relative;
+  }
+  code { font-family: var(--font-mono); }
+  p code, li code, td code {
+    background: #edf2f7; color: #c53030;
+    padding: .1rem .35rem; border-radius: 3px; font-size: .88em;
+  }
+  .code-label {
+    background: #2d3f52; color: #90b4d4;
+    font-family: var(--font-mono); font-size: .75rem;
+    padding: .25rem .75rem; border-radius: var(--radius) var(--radius) 0 0;
+    display: inline-block; margin-bottom: -4px;
+  }
+
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; margin: 1rem 0; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th {
+    background: var(--brand); color: #fff;
+    padding: .6rem .9rem; text-align: left; font-weight: 600;
+  }
+  td { padding: .55rem .9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: #f7f9fc; }
+  tr:hover td { background: var(--brand-light); }
+
+  /* ── Tabs ── */
+  .tab-group { margin: 1rem 0; }
+  .tab-list {
+    display: flex; flex-wrap: wrap; gap: .35rem;
+    border-bottom: 2px solid var(--border); padding-bottom: 0; margin-bottom: 0;
+    list-style: none; padding-left: 0;
+  }
+  .tab-list li { margin: 0; }
+  .tab-btn {
+    background: none; border: 2px solid transparent;
+    border-bottom: none; padding: .5rem 1rem;
+    cursor: pointer; font-family: var(--font-body); font-size: .9rem;
+    font-weight: 600; color: var(--neutral); border-radius: var(--radius) var(--radius) 0 0;
+    transition: background .15s, color .15s;
+    position: relative; bottom: -2px;
+  }
+  .tab-btn:hover { background: var(--brand-light); color: var(--brand-dark); }
+  .tab-btn.active {
+    background: #fff; border-color: var(--border);
+    border-bottom-color: #fff; color: var(--brand-dark);
+  }
+  .tab-btn:focus-visible {
+    outline: 3px solid var(--brand); outline-offset: 2px;
+  }
+  .tab-panel {
+    display: none; background: #fff;
+    border: 2px solid var(--border); border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 1.2rem;
+  }
+  .tab-panel.active { display: block; }
+
+  /* ── Collapsible ── */
+  details {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    margin: .75rem 0; background: #fff;
+  }
+  summary {
+    padding: .75rem 1rem; cursor: pointer; font-weight: 600;
+    color: var(--brand-dark); list-style: none;
+    display: flex; justify-content: space-between; align-items: center;
+    border-radius: var(--radius);
+    transition: background .15s;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '▸'; transition: transform .2s; font-size: .85rem; }
+  details[open] summary::after { transform: rotate(90deg); }
+  details[open] summary { background: var(--brand-light); border-radius: var(--radius) var(--radius) 0 0; }
+  summary:hover { background: var(--brand-light); }
+  summary:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+  .details-body { padding: .75rem 1.1rem 1rem; border-top: 1px solid var(--border); }
+
+  /* ── LSDOU Visual ── */
+  .lsdou-diagram {
+    display: flex; flex-direction: column; gap: 0;
+    max-width: 480px; margin: 1rem auto;
+  }
+  .lsdou-layer {
+    display: flex; align-items: stretch; position: relative;
+  }
+  .lsdou-badge {
+    width: 48px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 900; color: #fff;
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+  .lsdou-content {
+    flex: 1; padding: .7rem 1rem;
+    border: 2px solid transparent; border-left: none;
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .lsdou-content strong { display: block; font-size: .95rem; }
+  .lsdou-content span { font-size: .83rem; opacity: .85; }
+  .lsdou-layer.l1 .lsdou-badge { background: #6b7280; }
+  .lsdou-layer.l1 .lsdou-content { background: #f3f4f6; border-color: #6b7280; }
+  .lsdou-layer.l2 .lsdou-badge { background: #0369a1; }
+  .lsdou-layer.l2 .lsdou-content { background: #e0f2fe; border-color: #0369a1; }
+  .lsdou-layer.l3 .lsdou-badge { background: #0f766e; }
+  .lsdou-layer.l3 .lsdou-content { background: #ccfbf1; border-color: #0f766e; }
+  .lsdou-layer.l4 .lsdou-badge { background: #7c3aed; }
+  .lsdou-layer.l4 .lsdou-content { background: #ede9fe; border-color: #7c3aed; }
+  .lsdou-arrow {
+    text-align: center; color: var(--neutral); font-size: 1.1rem;
+    line-height: 1; padding: .1rem 0;
+  }
+  .lsdou-note {
+    text-align: center; font-size: .82rem; color: var(--neutral);
+    margin-top: .5rem; font-style: italic;
+  }
+  .wins-badge {
+    display: inline-block; background: #7c3aed; color: #fff;
+    font-size: .72rem; font-weight: 700; border-radius: 10px;
+    padding: .1rem .5rem; margin-left: .4rem; vertical-align: middle;
+  }
+
+  /* ── GPO Inheritance Visual ── */
+  .inherit-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;
+  }
+  @media (max-width: 580px) { .inherit-grid { grid-template-columns: 1fr; } }
+  .inherit-card {
+    border: 2px solid var(--border); border-radius: var(--radius);
+    padding: .9rem 1rem; background: #fff;
+  }
+  .inherit-card h4 { margin-top: 0; font-size: .93rem; }
+  .inherit-card.block { border-color: #dc2626; }
+  .inherit-card.block h4 { color: #dc2626; }
+  .inherit-card.enforce { border-color: #7c3aed; }
+  .inherit-card.enforce h4 { color: #7c3aed; }
+
+  /* ── Config Sections Visual ── */
+  .config-split {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;
+  }
+  @media (max-width: 580px) { .config-split { grid-template-columns: 1fr; } }
+  .config-card {
+    border-radius: var(--radius); padding: 1rem;
+    border: 2px solid transparent;
+  }
+  .config-card.computer { background: #e0f2fe; border-color: #0369a1; }
+  .config-card.user     { background: #fef9c3; border-color: #ca8a04; }
+  .config-card h4 { margin-top: 0; }
+  .config-card.computer h4 { color: #0369a1; }
+  .config-card.user h4     { color: #92400e; }
+  .config-card ul { font-size: .88rem; margin-bottom: 0; }
+
+  /* ── Step List ── */
+  .step-list { list-style: none; padding: 0; counter-reset: steps; }
+  .step-list li {
+    counter-increment: steps; display: flex; gap: .75rem;
+    margin-bottom: .75rem; align-items: flex-start;
+  }
+  .step-list li::before {
+    content: counter(steps);
+    background: var(--brand); color: #fff;
+    width: 1.6rem; height: 1.6rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem;
+  }
+  .step-list li p { margin: 0; }
+
+  /* ── Knowledge Check ── */
+  .kc-wrap { margin: 1rem 0; }
+  .kc-question {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.2rem; margin-bottom: 1rem;
+  }
+  .kc-question p.q-text {
+    font-weight: 600; color: var(--brand-dark); margin-bottom: .75rem;
+  }
+  .kc-options { list-style: none; padding: 0; }
+  .kc-options li { margin-bottom: .4rem; }
+  .kc-options label {
+    display: flex; align-items: flex-start; gap: .6rem;
+    cursor: pointer; padding: .4rem .6rem; border-radius: 4px;
+    border: 1px solid var(--border); background: #f9fbfd;
+    transition: background .15s;
+    font-size: .93rem;
+  }
+  .kc-options label:hover { background: var(--brand-light); }
+  .kc-options input[type="radio"] { margin-top: .2rem; flex-shrink: 0; }
+  .kc-submit {
+    background: var(--brand); color: #fff; border: none;
+    padding: .5rem 1.2rem; border-radius: var(--radius);
+    font-family: var(--font-body); font-size: .9rem; font-weight: 600;
+    cursor: pointer; margin-top: .5rem; transition: background .15s;
+  }
+  .kc-submit:hover { background: var(--brand-dark); }
+  .kc-submit:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+  .kc-feedback {
+    display: none; margin-top: .75rem; padding: .75rem 1rem;
+    border-radius: var(--radius); font-size: .92rem; line-height: 1.5;
+  }
+  .kc-feedback.correct { background: var(--success-bg); border-left: 4px solid var(--success); color: var(--success); }
+  .kc-feedback.incorrect { background: var(--error-bg); border-left: 4px solid #dc2626; color: var(--error); }
+  .kc-score {
+    background: var(--brand-light); border: 1px solid var(--brand);
+    border-radius: var(--radius); padding: .75rem 1rem;
+    font-weight: 600; text-align: center; display: none; margin-top: .5rem;
+  }
+
+  /* ── Troubleshooting Case ── */
+  .case-scenario {
+    background: #fffbeb; border: 2px solid #f59e0b;
+    border-radius: var(--radius); padding: 1rem 1.2rem; margin-bottom: 1rem;
+  }
+  .case-scenario h4 { color: #92400e; margin-top: 0; }
+  .diag-step {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: .6rem; overflow: hidden;
+  }
+  .diag-step summary {
+    background: #f1f5f9; padding: .65rem 1rem;
+    font-size: .92rem;
+  }
+  .diag-step .details-body { padding: .75rem 1rem; }
+
+  /* ── GPMC Path ── */
+  .path-crumb {
+    display: inline-flex; flex-wrap: wrap; align-items: center;
+    gap: .2rem; font-family: var(--font-mono); font-size: .83rem;
+    background: #f1f5f9; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: .3rem .7rem; margin: .3rem 0;
+  }
+  .path-crumb span { color: var(--neutral); }
+  .path-crumb .sep { color: #94a3b8; }
+
+  /* ── Progress bar (decorative) ── */
+  .module-progress {
+    background: var(--brand-light); border-radius: var(--radius);
+    padding: .6rem 1rem; margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem; font-size: .85rem;
+  }
+  .progress-bar {
+    flex: 1; height: 8px; background: #d1dce8; border-radius: 4px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--brand); border-radius: 4px;
+    width: 80%; /* module 11.4 of 5 = 80% */
+  }
+
+  /* ── Footer ── */
+  .page-footer {
+    text-align: center; padding: 1.5rem;
+    font-size: .82rem; color: #718096;
+    border-top: 1px solid var(--border); margin-top: 2rem;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .section-body { padding: 1rem; }
+    pre { font-size: .8rem; }
+  }
+
+  /* ── Print ── */
+  @media print {
+    nav#top-nav, .kc-submit { display: none; }
+    .section-card { box-shadow: none; border: 1px solid #ccc; }
+    details { border: 1px solid #ccc; }
+    details[open] { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ═══════════════════════════════════════════════════
+     TOP NAVIGATION
+════════════════════════════════════════════════════ -->
+<nav id="top-nav" aria-label="Module sections">
+  <div class="nav-inner">
+    <a href="#sec-objectives">🎯 Objectives</a>
+    <span class="nav-sep">|</span>
+    <a href="#sec-what-are-gpos">1 What Are GPOs?</a>
+    <span class="nav-sep">|</span>
+    <a href="#sec-lsdou">2 LSDOU Order</a>
+    <span class="nav-sep">|</span>
+    <a href="#sec-inheritance">3 Inheritance</a>
+    <span class="nav-sep">|</span>
+    <a href="#sec-gpmc">4 Creating &amp; Linking</a>
+    <span class="nav-sep">|</span>
+    <a href="#sec-verify">5 Verification</a>
+    <span class="nav-sep">|</span>
+    <a href="#sec-knowledge-check">6 Knowledge Check</a>
+    <span class="nav-sep">|</span>
+    <a href="#sec-troubleshooting">7 Troubleshooting</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE HEADER
+════════════════════════════════════════════════════ -->
+<header class="page-header" role="banner">
+  <div class="module-tag">CSC 152 · Week 11 · Module 11.4</div>
+  <h1>Group Policy Objects – Foundations</h1>
+  <p class="subtitle">Centralized Configuration Management in Active Directory</p>
+  <div class="meta-row">
+    <span>📅 April 6–12, 2026</span>
+    <span>⏱ Estimated time: 1.0 hour</span>
+    <span>🏫 Mendocino College</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════ -->
+<main id="main-content">
+
+  <!-- Module progress indicator -->
+  <div class="module-progress" aria-label="Week 11 module progress">
+    <span>Week 11 Progress: Module 4 of 5</span>
+    <div class="progress-bar" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100">
+      <div class="progress-fill"></div>
+    </div>
+    <span>80%</span>
+  </div>
+
+  <!-- ── OBJECTIVES ── -->
+  <span class="anchor-target" id="sec-objectives" aria-hidden="true"></span>
+  <div class="obj-box" role="region" aria-labelledby="obj-heading">
+    <h2 id="obj-heading">🎯 Learning Objectives</h2>
+    <p>Upon completion of Module 11.4, you will be able to:</p>
+    <ul>
+      <li>Explain the Group Policy processing order (Local → Site → Domain → OU) and why it matters <span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span></li>
+      <li>Create and link Group Policy Objects to Organizational Units using the Group Policy Management Console</li>
+      <li>Configure common GPO settings including password policies, account lockout, and desktop restrictions</li>
+      <li>Verify Group Policy application using <code>gpresult</code> and <code>gpupdate /force</code></li>
+      <li>Describe GPO inheritance and how it can be blocked or enforced</li>
+      <li>Distinguish between the User Configuration and Computer Configuration sections of a GPO</li>
+    </ul>
+    <div class="callout info" style="margin-top:.75rem; margin-bottom:0;">
+      <span class="icon">📌</span>
+      <p><strong>Prerequisites:</strong> This module builds directly on Modules 11.2 and 11.3. You should have a functioning Domain Controller and an OU structure with domain user accounts before working through the GPMC walkthroughs.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 1 — WHAT ARE GPOs?
+  ════════════════════════════════════════════════════ -->
+  <span class="anchor-target" id="sec-what-are-gpos" aria-hidden="true"></span>
+  <article class="section-card" aria-labelledby="s1-heading">
+    <div class="section-header">
+      <div class="sec-num" aria-hidden="true">1</div>
+      <h2 id="s1-heading">What Are Group Policy Objects?</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>The Problem GPOs Solve</h3>
+      <p>Imagine you are the administrator for a company with 400 Windows computers spread across three departments. Without a centralized management tool, enforcing a consistent security configuration would require you to visit—or remotely connect to—every single machine and manually apply the same settings. When a new security requirement arrives (say, passwords must now be at least 14 characters), you would need to repeat that process on all 400 machines. This approach does not scale and is highly error-prone.</p>
+      <p><strong>Group Policy Objects (GPOs)</strong> solve this problem by letting you define configuration settings in one place—on the Domain Controller—and automatically push those settings to all targeted users and computers in the domain. GPOs are the primary mechanism for centralized configuration management in an Active Directory Domain Services (AD DS) environment.</p>
+
+      <h3>What Can GPOs Control?</h3>
+      <div class="table-wrap">
+        <table aria-label="Examples of GPO-controlled settings">
+          <thead>
+            <tr><th>Category</th><th>Example Settings</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Security</strong></td><td>Password length, complexity requirements, account lockout thresholds, audit policies</td></tr>
+            <tr><td><strong>Desktop Environment</strong></td><td>Disable Control Panel, set a standard wallpaper, restrict access to specific drives</td></tr>
+            <tr><td><strong>Software Deployment</strong></td><td>Automatically install or remove applications on domain computers</td></tr>
+            <tr><td><strong>Scripts</strong></td><td>Run logon/logoff scripts, startup/shutdown scripts</td></tr>
+            <tr><td><strong>Network Settings</strong></td><td>Map network drives, configure proxy settings, define Windows Firewall rules</td></tr>
+            <tr><td><strong>Windows Update</strong></td><td>Redirect clients to a WSUS server, set maintenance windows</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Where Do GPOs Live?</h3>
+      <p>GPOs are stored in two locations that work together:</p>
+      <ul>
+        <li><strong>Group Policy Container (GPC):</strong> An object in Active Directory (in the <code>System\Policies</code> container) that stores GPO metadata such as version numbers and status.</li>
+        <li><strong>Group Policy Template (GPT):</strong> A folder structure in the <code>SYSVOL</code> share on every Domain Controller (<code>\\domain\SYSVOL\domain\Policies\</code>) that stores the actual policy settings files, scripts, and templates.</li>
+      </ul>
+      <p>Both components must be consistent. When they fall out of sync, GPOs can fail to apply—a common troubleshooting scenario covered in Section 7.</p>
+
+      <div class="callout tip">
+        <span class="icon">💡</span>
+        <p><strong>Analogy:</strong> Think of a GPO as a rulebook that the Domain Controller hands to every user and computer in its jurisdiction. The rulebook says: "Here is how your computer must be configured and what you are and are not allowed to do." The domain controller does not need to be present 24/7—the client caches the policy and enforces it locally.</p>
+      </div>
+
+      <h3>Two Default GPOs You Should Know</h3>
+      <p>Every new AD DS domain is created with two built-in GPOs:</p>
+      <ul>
+        <li><strong>Default Domain Policy:</strong> Linked to the domain root. Contains the domain-wide password and account lockout policies. <em>Best practice: configure password policy here and only here.</em></li>
+        <li><strong>Default Domain Controllers Policy:</strong> Linked to the Domain Controllers OU. Configures audit and user rights assignment for domain controllers.</li>
+      </ul>
+      <div class="callout warn">
+        <span class="icon">⚠️</span>
+        <p><strong>Important:</strong> Microsoft recommends that you do <em>not</em> modify the Default Domain Policy or Default Domain Controllers Policy directly. Instead, create new GPOs for your custom settings and link them at the appropriate level. This preserves the defaults as a known-good baseline.</p>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 2 — LSDOU PROCESSING ORDER
+  ════════════════════════════════════════════════════ -->
+  <span class="anchor-target" id="sec-lsdou" aria-hidden="true"></span>
+  <article class="section-card" aria-labelledby="s2-heading">
+    <div class="section-header">
+      <div class="sec-num" aria-hidden="true">2</div>
+      <h2 id="s2-heading">LSDOU Processing Order</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>The LSDOU Mnemonic</h3>
+      <p>When a user logs on or a computer starts up, Windows applies Group Policy in a specific, fixed order. This order is remembered using the acronym <strong>LSDOU</strong>:</p>
+
+      <!-- LSDOU Visual Diagram -->
+      <div class="lsdou-diagram" role="img" aria-label="LSDOU processing order diagram: Local, Site, Domain, OU applied in sequence, with last applied winning">
+        <div class="lsdou-layer l1">
+          <div class="lsdou-badge" aria-hidden="true">L</div>
+          <div class="lsdou-content">
+            <strong>Local Policy</strong>
+            <span>Applied first. Stored on the local machine. Lowest precedence — easily overridden by any domain policy.</span>
+          </div>
+        </div>
+        <div class="lsdou-arrow" aria-hidden="true">↓</div>
+        <div class="lsdou-layer l2">
+          <div class="lsdou-badge" aria-hidden="true">S</div>
+          <div class="lsdou-content">
+            <strong>Site Policy</strong>
+            <span>AD site-level GPOs. Useful for location-specific settings (e.g., different printer mappings in each office).</span>
+          </div>
+        </div>
+        <div class="lsdou-arrow" aria-hidden="true">↓</div>
+        <div class="lsdou-layer l3">
+          <div class="lsdou-badge" aria-hidden="true">D</div>
+          <div class="lsdou-content">
+            <strong>Domain Policy</strong>
+            <span>Domain-wide GPOs. The Default Domain Policy lives here. Password policies <em>must</em> be set at this level to take effect.</span>
+          </div>
+        </div>
+        <div class="lsdou-arrow" aria-hidden="true">↓</div>
+        <div class="lsdou-layer l4">
+          <div class="lsdou-badge" aria-hidden="true">OU</div>
+          <div class="lsdou-content">
+            <strong>Organizational Unit Policy</strong>
+            <span>OU-level GPOs. Applied last. <span class="wins-badge">WINS</span> in conflicts (unless Enforced). Nested OUs process parent-first, child-last.</span>
+          </div>
+        </div>
+        <p class="lsdou-note">Processing order: Local → Site → Domain → OU &nbsp;|&nbsp; <em>Last applied wins in a conflict</em></p>
+      </div>
+
+      <h3>Why Order Matters: The "Last Applied Wins" Rule</h3>
+      <p>Because GPOs are applied sequentially, a setting configured in an OU-level GPO will <strong>override</strong> the same setting configured in a Domain-level GPO—unless special inheritance controls are in place (see Section 3). This is the "last applied wins" rule.</p>
+
+      <details>
+        <summary>Example: Password Policy Conflict</summary>
+        <div class="details-body">
+          <p>Suppose you configure a Domain GPO with a minimum password length of 8 characters. You then create an OU GPO for the <strong>IT</strong> OU with a minimum password length of 14 characters.</p>
+          <p><strong>Result:</strong> Users in the IT OU get a 14-character minimum because the OU GPO is applied last. Users in all other OUs get the 8-character minimum from the Domain GPO.</p>
+          <div class="callout warn">
+            <span class="icon">⚠️</span>
+            <p><strong>Exception:</strong> Password policies are special. The effective password policy for <em>domain user accounts</em> is always taken from the Domain level, regardless of OU GPOs—unless you use <strong>Fine-Grained Password Policies</strong> (an advanced topic). OU-level password policies only apply to local accounts on computers in that OU. This is a common source of confusion and is covered in the Troubleshooting section.</p>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Example: Nested OUs — Parent Before Child</summary>
+        <div class="details-body">
+          <p>Consider this OU hierarchy:</p>
+          <pre>corp.local (Domain)
+  └── Staff (OU)
+        └── Finance (Child OU)</pre>
+          <p>If GPOs are linked at both <strong>Staff</strong> and <strong>Finance</strong>, the processing order for a user in the Finance OU is:</p>
+          <ol>
+            <li>Local Policy</li>
+            <li>Site Policy (if any)</li>
+            <li>Domain Policy</li>
+            <li>Staff OU Policy <em>(parent OU — applied first)</em></li>
+            <li>Finance OU Policy <em>(child OU — applied last, wins conflicts)</em></li>
+          </ol>
+        </div>
+      </details>
+
+      <h3>Multiple GPOs at the Same Level</h3>
+      <p>You can link more than one GPO to the same container. When multiple GPOs are linked at the same level, they are processed in <strong>link order</strong>—the GPO with the lowest link order number is applied last (and therefore wins). You can adjust link order in the Group Policy Management Console.</p>
+
+      <div class="callout info">
+        <span class="icon">🧠</span>
+        <p><strong>Memory tip:</strong> <strong>L</strong>et <strong>S</strong>tudents <strong>D</strong>o <strong>O</strong>verrides — <em>Local, Site, Domain, OU</em>. The further down the hierarchy a GPO is linked, the more specific and higher-priority it becomes.</p>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 3 — GPO INHERITANCE
+  ════════════════════════════════════════════════════ -->
+  <span class="anchor-target" id="sec-inheritance" aria-hidden="true"></span>
+  <article class="section-card" aria-labelledby="s3-heading">
+    <div class="section-header">
+      <div class="sec-num" aria-hidden="true">3</div>
+      <h2 id="s3-heading">GPO Inheritance, Block &amp; Enforce</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>How Inheritance Works by Default</h3>
+      <p>By default, GPO settings <strong>flow down</strong> the OU hierarchy. A GPO linked to a parent OU automatically applies to all child OUs and their objects unless something interrupts that flow. This is called <strong>GPO inheritance</strong>.</p>
+      <p>For example, a GPO linked at the domain root applies to every user and computer in the domain—including those nested in child OUs—unless inheritance is blocked.</p>
+
+      <h3>Controlling Inheritance: Two Mechanisms</h3>
+      <div class="inherit-grid">
+        <div class="inherit-card block">
+          <h4>🚫 Block Inheritance</h4>
+          <p>Set on an <strong>OU</strong>. Prevents GPOs from parent containers (domain, parent OUs) from flowing into this OU.</p>
+          <p><strong>Use case:</strong> A subsidiary division that manages its own IT policy and does not want corporate-level GPOs interfering.</p>
+          <p><strong>Risk:</strong> Overuse of Block Inheritance makes policy management harder to reason about. Use sparingly.</p>
+        </div>
+        <div class="inherit-card enforce">
+          <h4>🔒 Enforced (No Override)</h4>
+          <p>Set on a <strong>GPO link</strong>. Forces the GPO's settings to apply regardless of any Block Inheritance settings on child OUs. Enforced GPOs always win in conflicts.</p>
+          <p><strong>Use case:</strong> Corporate security baseline that must apply everywhere, even in OUs that have Block Inheritance set.</p>
+          <p><strong>Note:</strong> Enforced GPOs are processed after all other GPOs, so they always take precedence.</p>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="icon">⚠️</span>
+        <p><strong>Interaction between Block Inheritance and Enforced:</strong> An Enforced GPO <em>overrides</em> Block Inheritance. If a parent OU has an Enforced GPO and a child OU has Block Inheritance set, the Enforced GPO still applies to the child OU. This is intentional—it allows administrators to guarantee that critical security policies cannot be blocked.</p>
+      </div>
+
+      <h3>User Configuration vs. Computer Configuration</h3>
+      <p>Every GPO is divided into two main sections. Understanding which section to use for a given setting is essential:</p>
+
+      <div class="config-split">
+        <div class="config-card computer">
+          <h4>🖥️ Computer Configuration</h4>
+          <p>Settings applied to the <strong>computer object</strong> when the machine starts up, regardless of who logs on.</p>
+          <ul>
+            <li>Password and account lockout policies</li>
+            <li>Windows Firewall rules</li>
+            <li>Startup/shutdown scripts</li>
+            <li>Software installation (machine-wide)</li>
+            <li>Security options (rename Administrator account, etc.)</li>
+            <li>Windows Update / WSUS configuration</li>
+          </ul>
+        </div>
+        <div class="config-card user">
+          <h4>👤 User Configuration</h4>
+          <p>Settings applied to the <strong>user object</strong> at logon, following the user across any computer they log into.</p>
+          <ul>
+            <li>Folder redirection</li>
+            <li>Logon/logoff scripts</li>
+            <li>Desktop restrictions (disable Control Panel, etc.)</li>
+            <li>Software installation (per-user)</li>
+            <li>Internet Explorer / Edge settings</li>
+            <li>Drive mappings</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <span class="icon">💡</span>
+        <p><strong>Key rule:</strong> Password policies (minimum length, complexity, lockout) must be configured under <strong>Computer Configuration</strong>, not User Configuration. They apply to the computer's local accounts and — when set at the domain level — to all domain user accounts. A password policy set under User Configuration has no effect on domain account passwords.</p>
+      </div>
+
+      <details>
+        <summary>Advanced: GPO Loopback Processing</summary>
+        <div class="details-body">
+          <p>By default, User Configuration settings follow the <em>user's</em> OU, not the computer's OU. <strong>Loopback Processing</strong> is an advanced setting that changes this behavior so that the User Configuration settings of GPOs linked to the <em>computer's</em> OU are applied to users who log on to that computer.</p>
+          <p>This is commonly used for kiosk machines, lab computers, or terminal servers where you want the desktop environment to be controlled by where the <em>computer</em> is, not where the <em>user</em> is.</p>
+          <p>Loopback has two modes: <strong>Replace</strong> (only the computer's User Configuration applies) and <strong>Merge</strong> (both the user's and computer's User Configuration apply, with the computer's winning conflicts).</p>
+        </div>
+      </details>
+
+    </div>
+  </article>
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 4 — CREATING AND LINKING GPOs
+  ════════════════════════════════════════════════════ -->
+  <span class="anchor-target" id="sec-gpmc" aria-hidden="true"></span>
+  <article class="section-card" aria-labelledby="s4-heading">
+    <div class="section-header">
+      <div class="sec-num" aria-hidden="true">4</div>
+      <h2 id="s4-heading">Creating &amp; Linking GPOs — GPMC Walkthrough</h2>
+    </div>
+    <div class="section-body">
+
+      <!-- Tab Group: GUI vs PowerShell -->
+      <div class="tab-group" role="region" aria-label="GPMC walkthrough tabs">
+        <ul class="tab-list" role="tablist" aria-label="Walkthrough method">
+          <li role="presentation">
+            <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-open-gpmc" id="tbtn-open-gpmc" onclick="switchTab(event,'gpmc-open')">Opening GPMC</button>
+          </li>
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-create-gpo" id="tbtn-create-gpo" onclick="switchTab(event,'gpmc-open')">Create &amp; Link a GPO</button>
+          </li>
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-password-gpo" id="tbtn-password-gpo" onclick="switchTab(event,'gpmc-open')">Password Policy GPO</button>
+          </li>
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-desktop-gpo" id="tbtn-desktop-gpo" onclick="switchTab(event,'gpmc-open')">Desktop Restriction GPO</button>
+          </li>
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-powershell-gpo" id="tbtn-powershell-gpo" onclick="switchTab(event,'gpmc-open')">PowerShell Method</button>
+          </li>
+        </ul>
+
+        <!-- Tab: Opening GPMC -->
+        <div class="tab-panel active" id="tab-open-gpmc" role="tabpanel" aria-labelledby="tbtn-open-gpmc">
+          <h3 style="margin-top:0">Opening the Group Policy Management Console</h3>
+          <p>The Group Policy Management Console (GPMC) is the central tool for creating, editing, linking, and managing GPOs. It is available on Domain Controllers and on any management workstation with the Remote Server Administration Tools (RSAT) installed.</p>
+          <p><strong>Three ways to open GPMC:</strong></p>
+          <ol class="step-list">
+            <li><p><strong>Server Manager:</strong> Open Server Manager → click <strong>Tools</strong> in the top-right menu → select <strong>Group Policy Management</strong>.</p></li>
+            <li><p><strong>Run dialog:</strong> Press <kbd>Win + R</kbd>, type <code>gpmc.msc</code>, and press Enter.</p></li>
+            <li><p><strong>PowerShell:</strong></p></li>
+          </ol>
+          <div class="code-label">PowerShell</div>
+          <pre>gpmc.msc</pre>
+
+          <h4>Navigating the GPMC Console Tree</h4>
+          <p>The left pane of GPMC shows a tree structure. Key nodes to know:</p>
+          <div class="table-wrap">
+            <table aria-label="GPMC console tree nodes">
+              <thead><tr><th>Node</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Forest: corp.local</strong></td><td>Top-level container for the entire forest</td></tr>
+                <tr><td><strong>Domains → corp.local</strong></td><td>Your domain; GPOs linked here apply domain-wide</td></tr>
+                <tr><td><strong>Group Policy Objects</strong></td><td>Central repository of all GPOs — create and store GPOs here</td></tr>
+                <tr><td><strong>Sites</strong></td><td>Link GPOs at the AD site level</td></tr>
+                <tr><td><strong>Group Policy Modeling</strong></td><td>Simulate what policies would apply to a user/computer</td></tr>
+                <tr><td><strong>Group Policy Results</strong></td><td>View what policies actually applied to a specific user/computer</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout info">
+            <span class="icon">📋</span>
+            <p>When you click on a GPO in the console tree, the right pane shows tabs: <strong>Scope</strong> (where it's linked), <strong>Details</strong> (status, GUID), <strong>Settings</strong> (a readable summary of configured settings), <strong>Delegation</strong> (who can edit/apply it), and <strong>Status</strong> (replication health).</p>
+          </div>
+        </div>
+
+        <!-- Tab: Create & Link -->
+        <div class="tab-panel" id="tab-create-gpo" role="tabpanel" aria-labelledby="tbtn-create-gpo">
+          <h3 style="margin-top:0">Creating and Linking a GPO to an OU</h3>
+          <p>There are two approaches: create the GPO in the <strong>Group Policy Objects</strong> container first and then link it, or right-click an OU and create-and-link in one step. Both are valid; the two-step approach is better practice for reusable GPOs.</p>
+
+          <h4>Method A: Create First, Then Link (Recommended)</h4>
+          <ol class="step-list">
+            <li><p>In GPMC, expand <strong>Forest → Domains → corp.local → Group Policy Objects</strong>.</p></li>
+            <li><p>Right-click <strong>Group Policy Objects</strong> → <strong>New</strong>.</p></li>
+            <li><p>Enter a descriptive name (e.g., <em>Password Policy – Domain</em>) → click <strong>OK</strong>.</p></li>
+            <li><p>The new GPO appears in the list. Right-click it → <strong>Edit</strong> to open the Group Policy Management Editor and configure settings (see the Password Policy tab).</p></li>
+            <li><p>After editing, close the editor. Now navigate to the OU (or domain) where you want to link it.</p></li>
+            <li><p>Right-click the target OU → <strong>Link an Existing GPO</strong>.</p></li>
+            <li><p>Select your GPO from the list → click <strong>OK</strong>. The GPO now appears under the OU with a link icon.</p></li>
+          </ol>
+
+          <h4>Method B: Create and Link in One Step</h4>
+          <ol class="step-list">
+            <li><p>Right-click the target OU (or domain) → <strong>Create a GPO in this domain, and Link it here…</strong></p></li>
+            <li><p>Enter the GPO name → click <strong>OK</strong>.</p></li>
+            <li><p>Right-click the new GPO link → <strong>Edit</strong> to configure settings.</p></li>
+          </ol>
+
+          <div class="callout tip">
+            <span class="icon">💡</span>
+            <p><strong>Naming convention tip:</strong> Use a consistent naming scheme such as <em>[Setting Type] – [Scope]</em> (e.g., <em>Password Policy – Domain</em>, <em>Desktop Restrictions – Staff OU</em>). This makes it immediately clear what a GPO does and where it applies without opening it.</p>
+          </div>
+        </div>
+
+        <!-- Tab: Password Policy GPO -->
+        <div class="tab-panel" id="tab-password-gpo" role="tabpanel" aria-labelledby="tbtn-password-gpo">
+          <h3 style="margin-top:0">Configuring a Password Policy GPO</h3>
+          <p>Password and account lockout policies must be set at the <strong>domain level</strong> (linked to the domain root, not an OU) to affect domain user accounts. Create a GPO named <em>Password Policy – Domain</em> and link it to the domain root.</p>
+
+          <h4>Navigate to Password Policy Settings</h4>
+          <p>In the Group Policy Management Editor, follow this path:</p>
+          <div class="path-crumb" aria-label="GPO path to password policy">
+            <span>Computer Configuration</span><span class="sep"> › </span>
+            <span>Policies</span><span class="sep"> › </span>
+            <span>Windows Settings</span><span class="sep"> › </span>
+            <span>Security Settings</span><span class="sep"> › </span>
+            <span>Account Policies</span><span class="sep"> › </span>
+            <span>Password Policy</span>
+          </div>
+
+          <h4>Recommended Password Policy Settings</h4>
+          <div class="table-wrap">
+            <table aria-label="Password policy settings">
+              <thead><tr><th>Setting</th><th>Recommended Value</th><th>Notes</th></tr></thead>
+              <tbody>
+                <tr><td>Enforce password history</td><td>12 passwords</td><td>Prevents reuse of the last 12 passwords</td></tr>
+                <tr><td>Maximum password age</td><td>90 days</td><td>Forces periodic password changes</td></tr>
+                <tr><td>Minimum password age</td><td>1 day</td><td>Prevents users from cycling through history immediately</td></tr>
+                <tr><td><strong>Minimum password length</strong></td><td><strong>10 characters</strong></td><td>Lab minimum; production often 14+</td></tr>
+                <tr><td><strong>Password must meet complexity requirements</strong></td><td><strong>Enabled</strong></td><td>Requires uppercase, lowercase, digit, and symbol</td></tr>
+                <tr><td>Store passwords using reversible encryption</td><td>Disabled</td><td>Always leave disabled for security</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4>Navigate to Account Lockout Policy Settings</h4>
+          <div class="path-crumb" aria-label="GPO path to account lockout policy">
+            <span>Computer Configuration</span><span class="sep"> › </span>
+            <span>Policies</span><span class="sep"> › </span>
+            <span>Windows Settings</span><span class="sep"> › </span>
+            <span>Security Settings</span><span class="sep"> › </span>
+            <span>Account Policies</span><span class="sep"> › </span>
+            <span>Account Lockout Policy</span>
+          </div>
+
+          <div class="table-wrap">
+            <table aria-label="Account lockout policy settings">
+              <thead><tr><th>Setting</th><th>Recommended Value</th><th>Notes</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Account lockout threshold</strong></td><td><strong>5 invalid attempts</strong></td><td>Locks account after 5 bad passwords</td></tr>
+                <tr><td>Account lockout duration</td><td>30 minutes</td><td>Auto-unlocks after 30 min; 0 = admin must unlock</td></tr>
+                <tr><td>Reset account lockout counter after</td><td>30 minutes</td><td>Resets the bad-attempt counter after 30 min</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout warn">
+            <span class="icon">⚠️</span>
+            <p><strong>Remember:</strong> Double-click each setting to open it, check <strong>"Define this policy setting"</strong>, set your value, and click OK. A setting that is not defined in a GPO is simply not configured by that GPO — it does not reset the setting to a default value.</p>
+          </div>
+        </div>
+
+        <!-- Tab: Desktop Restriction GPO -->
+        <div class="tab-panel" id="tab-desktop-gpo" role="tabpanel" aria-labelledby="tbtn-desktop-gpo">
+          <h3 style="margin-top:0">Configuring a Desktop Restriction GPO</h3>
+          <p>Create a GPO named <em>Desktop Restrictions – Staff</em> and link it to the <strong>Staff</strong> OU. This GPO will prevent users in the Staff OU from accessing the Control Panel and Settings app.</p>
+
+          <h4>Disable Control Panel Access</h4>
+          <p>Navigate to:</p>
+          <div class="path-crumb" aria-label="GPO path to prohibit control panel">
+            <span>User Configuration</span><span class="sep"> › </span>
+            <span>Policies</span><span class="sep"> › </span>
+            <span>Administrative Templates</span><span class="sep"> › </span>
+            <span>Control Panel</span>
+          </div>
+          <p>Double-click <strong>"Prohibit access to Control Panel and PC Settings"</strong> → set to <strong>Enabled</strong> → click OK.</p>
+
+          <h4>Additional Useful Desktop Restrictions</h4>
+          <div class="table-wrap">
+            <table aria-label="Desktop restriction settings and paths">
+              <thead><tr><th>Setting</th><th>Path (under User Configuration → Policies → Administrative Templates)</th></tr></thead>
+              <tbody>
+                <tr><td>Prevent access to the command prompt</td><td>System</td></tr>
+                <tr><td>Remove Run menu from Start Menu</td><td>Start Menu and Taskbar</td></tr>
+                <tr><td>Prevent users from adding or removing printers</td><td>Control Panel → Printers</td></tr>
+                <tr><td>Hide specified drives in My Computer</td><td>Windows Components → File Explorer</td></tr>
+                <tr><td>Disable changing wallpaper</td><td>Desktop</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout info">
+            <span class="icon">📋</span>
+            <p>Desktop restriction settings are under <strong>User Configuration</strong> because they follow the <em>user</em>, not the computer. If a Staff OU user logs onto a computer in the IT OU, these restrictions still apply to that user session.</p>
+          </div>
+        </div>
+
+        <!-- Tab: PowerShell Method -->
+        <div class="tab-panel" id="tab-powershell-gpo" role="tabpanel" aria-labelledby="tbtn-powershell-gpo">
+          <h3 style="margin-top:0">Managing GPOs with PowerShell</h3>
+          <p>The <strong>GroupPolicy</strong> PowerShell module provides cmdlets for creating, linking, configuring, and reporting on GPOs — useful for automation and scripted deployments.</p>
+
+          <h4>View All GPOs in the Domain</h4>
+          <div class="code-label">PowerShell</div>
+          <pre># List all GPOs with status and creation time
+Get-GPO -All | Select-Object DisplayName, GpoStatus, CreationTime | Format-Table -AutoSize</pre>
+
+          <h4>Create a New GPO</h4>
+          <div class="code-label">PowerShell</div>
+          <pre># Create a new GPO (stored in Group Policy Objects container)
+New-GPO -Name "Password Policy - Domain" -Comment "Domain-wide password policy"</pre>
+
+          <h4>Link a GPO to an OU or Domain</h4>
+          <div class="code-label">PowerShell</div>
+          <pre># Link GPO to the domain root
+New-GPLink -Name "Password Policy - Domain" -Target "DC=corp,DC=local"
+
+# Link GPO to a specific OU
+New-GPLink -Name "Desktop Restrictions - Staff" -Target "OU=Staff,DC=corp,DC=local"</pre>
+
+          <h4>Generate an HTML Report of a GPO's Settings</h4>
+          <div class="code-label">PowerShell</div>
+          <pre># Generate a readable HTML report of the Default Domain Policy
+Get-GPO -Name "Default Domain Policy" | `
+    Get-GPOReport -ReportType HTML -Path "C:\Reports\DefaultDomainPolicy.html"
+
+# Open the report in the default browser
+Start-Process "C:\Reports\DefaultDomainPolicy.html"</pre>
+
+          <h4>View GPO Links on an OU</h4>
+          <div class="code-label">PowerShell</div>
+          <pre># Show all GPOs linked to a specific OU
+Get-GPInheritance -Target "OU=Staff,DC=corp,DC=local" | Select-Object -ExpandProperty GpoLinks</pre>
+
+          <div class="callout tip">
+            <span class="icon">💡</span>
+            <p>Note that PowerShell can create and link GPOs but configuring individual policy settings (like specific registry-based Administrative Template settings) is more complex via PowerShell and is typically done through the GUI editor or via direct registry modification. For most production environments, GPO creation and linking is scripted; individual settings are configured in the editor.</p>
+          </div>
+        </div>
+      </div><!-- end tab-group -->
+
+    </div>
+  </article>
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 5 — VERIFICATION TOOLS
+  ════════════════════════════════════════════════════ -->
+  <span class="anchor-target" id="sec-verify" aria-hidden="true"></span>
+  <article class="section-card" aria-labelledby="s5-heading">
+    <div class="section-header">
+      <div class="sec-num" aria-hidden="true">5</div>
+      <h2 id="s5-heading">Verifying Group Policy Application</h2>
+    </div>
+    <div class="section-body">
+
+      <p>After creating and linking a GPO, you need to verify that it is actually being applied to the intended users and computers. Three command-line tools handle this workflow: <code>gpupdate</code>, <code>gpresult</code>, and the GPMC's Group Policy Results wizard.</p>
+
+      <h3>Tool 1: <code>gpupdate /force</code> — Force Immediate Refresh</h3>
+      <p>By default, Group Policy refreshes automatically every 90 minutes (with a random 30-minute offset) for computers, and at logon/startup. The <code>gpupdate /force</code> command bypasses this wait and immediately re-applies all GPOs.</p>
+
+      <div class="code-label">Command Prompt or PowerShell (run on the <em>client</em> machine)</div>
+      <pre># Force an immediate refresh of all Group Policies
+gpupdate /force
+
+# Force refresh of Computer Configuration only
+gpupdate /force /target:computer
+
+# Force refresh of User Configuration only
+gpupdate /force /target:user</pre>
+
+      <div class="callout info">
+        <span class="icon">📋</span>
+        <p>After running <code>gpupdate /force</code>, you will see output like:<br>
+        <code>Updating policy...</code><br>
+        <code>Computer Policy update has completed successfully.</code><br>
+        <code>User Policy update has completed successfully.</code><br>
+        A logoff or restart may be required for some settings (particularly those in the Computer Configuration) to take full effect.</p>
+      </div>
+
+      <h3>Tool 2: <code>gpresult /r</code> — Summary of Applied GPOs</h3>
+      <p><code>gpresult</code> queries the Resultant Set of Policy (RSoP) — the effective set of policies that actually applied to a user or computer after processing the LSDOU chain.</p>
+
+      <div class="code-label">Command Prompt or PowerShell (run on the target machine)</div>
+      <pre># Summary of applied GPOs for the current user and computer
+gpresult /r
+
+# Summary for a specific user (run as admin)
+gpresult /r /user CORP\jsmith
+
+# Verbose output — shows all settings, not just GPO names
+gpresult /v</pre>
+
+      <p>The <code>/r</code> output is divided into two sections:</p>
+      <ul>
+        <li><strong>COMPUTER SETTINGS:</strong> Lists the domain, site, and all GPOs applied at the computer level, in processing order.</li>
+        <li><strong>USER SETTINGS:</strong> Lists GPOs applied at the user level.</li>
+      </ul>
+      <p>Look for the <strong>"Applied Group Policy Objects"</strong> list and the <strong>"The following GPOs were not applied"</strong> section (which tells you why certain GPOs were filtered or denied).</p>
+
+      <h3>Tool 3: <code>gpresult /h report.html</code> — HTML Results Report</h3>
+      <p>For a more detailed and readable output, generate an HTML report. This is especially useful when troubleshooting complex policy interactions.</p>
+
+      <div class="code-label">Command Prompt or PowerShell (run as Administrator)</div>
+      <pre># Generate an HTML GPO results report for the current user/computer
+gpresult /h C:\Reports\gpo-report.html
+
+# Open the report immediately after generating it
+gpresult /h C:\Reports\gpo-report.html && start C:\Reports\gpo-report.html
+
+# Generate report for a specific user
+gpresult /h C:\Reports\gpo-report-jsmith.html /user CORP\jsmith</pre>
+
+      <p>The HTML report includes:</p>
+      <ul>
+        <li>Computer and user summary information</li>
+        <li>All applied and denied GPOs with reasons</li>
+        <li>Winning and losing GPO settings for each policy area</li>
+        <li>Security group memberships (which affect GPO filtering)</li>
+      </ul>
+
+      <h3>Tool 4: GPMC Group Policy Results Wizard</h3>
+      <p>The GPMC includes a graphical <strong>Group Policy Results</strong> wizard that performs the same function as <code>gpresult</code> but with a GUI interface. It can query a remote computer across the network.</p>
+      <ol class="step-list">
+        <li><p>In GPMC, right-click <strong>Group Policy Results</strong> → <strong>Group Policy Results Wizard</strong>.</p></li>
+        <li><p>Select <strong>Another computer</strong> and enter the target computer name, or use <strong>This computer</strong>.</p></li>
+        <li><p>Select the user whose policy you want to review.</p></li>
+        <li><p>Review the <strong>Summary</strong>, <strong>Settings</strong>, and <strong>Policy Events</strong> tabs in the results pane.</p></li>
+      </ol>
+
+      <div class="callout tip">
+        <span class="icon">💡</span>
+        <p><strong>Quick reference — which tool to use:</strong></p>
+        <ul style="margin:0">
+          <li>Need to apply a new GPO immediately? → <code>gpupdate /force</code></li>
+          <li>Quick check of what GPOs applied? → <code>gpresult /r</code></li>
+          <li>Detailed report for troubleshooting? → <code>gpresult /h report.html</code></li>
+          <li>Remote machine, GUI preferred? → GPMC Group Policy Results Wizard</li>
+        </ul>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 6 — KNOWLEDGE CHECK
+  ════════════════════════════════════════════════════ -->
+  <span class="anchor-target" id="sec-knowledge-check" aria-hidden="true"></span>
+  <article class="section-card" aria-labelledby="s6-heading">
+    <div class="section-header">
+      <div class="sec-num" aria-hidden="true">6</div>
+      <h2 id="s6-heading">Knowledge Check</h2>
+    </div>
+    <div class="section-body">
+
+      <div class="callout info" style="margin-bottom:1.2rem;">
+        <span class="icon">📝</span>
+        <p>This is an <strong>ungraded</strong> self-check. Select your answer for each question and click <strong>Check Answer</strong> to see immediate feedback. Use this to confirm your understanding before moving on to the Troubleshooting section.</p>
+      </div>
+
+      <div class="kc-wrap" id="kc-container">
+
+        <!-- Q1 -->
+        <div class="kc-question" id="kc-q1">
+          <p class="q-text">Question 1 of 4: What does the acronym LSDOU stand for, and in which order are GPOs applied?</p>
+          <ul class="kc-options" role="radiogroup" aria-labelledby="kc-q1-label">
+            <li><label><input type="radio" name="kc1" value="a"> Local → Site → Domain → OU</label></li>
+            <li><label><input type="radio" name="kc1" value="b"> Local → Server → Domain → OU</label></li>
+            <li><label><input type="radio" name="kc1" value="c"> Link → Site → Domain → Object Unit</label></li>
+            <li><label><input type="radio" name="kc1" value="d"> OU → Domain → Site → Local</label></li>
+          </ul>
+          <button class="kc-submit" onclick="checkKC('kc1','a','kc1-fb')">Check Answer</button>
+          <div class="kc-feedback" id="kc1-fb" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="kc-question" id="kc-q2">
+          <p class="q-text">Question 2 of 4: A password policy GPO is linked to the <strong>IT</strong> OU. Domain users in the IT OU log in but report that the new password requirements are not being enforced. What is the most likely cause?</p>
+          <ul class="kc-options" role="radiogroup">
+            <li><label><input type="radio" name="kc2" value="a"> The GPO is linked to the wrong OU — it should be linked to the Domain Controllers OU.</label></li>
+            <li><label><input type="radio" name="kc2" value="b"> Password policies for domain accounts must be linked at the domain level, not at an OU level.</label></li>
+            <li><label><input type="radio" name="kc2" value="c"> The GPO needs to be set to Enforced before password policies take effect.</label></li>
+            <li><label><input type="radio" name="kc2" value="d"> The users need to log off and log back on before any GPO takes effect.</label></li>
+          </ul>
+          <button class="kc-submit" onclick="checkKC('kc2','b','kc2-fb')">Check Answer</button>
+          <div class="kc-feedback" id="kc2-fb" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="kc-question" id="kc-q3">
+          <p class="q-text">Question 3 of 4: Which command forces an immediate Group Policy refresh on a Windows client machine?</p>
+          <ul class="kc-options" role="radiogroup">
+            <li><label><input type="radio" name="kc3" value="a"> <code>gpresult /force</code></label></li>
+            <li><label><input type="radio" name="kc3" value="b"> <code>gpupdate /refresh</code></label></li>
+            <li><label><input type="radio" name="kc3" value="c"> <code>gpupdate /force</code></label></li>
+            <li><label><input type="radio" name="kc3" value="d"> <code>gupdate /all</code></label></li>
+          </ul>
+          <button class="kc-submit" onclick="checkKC('kc3','c','kc3-fb')">Check Answer</button>
+          <div class="kc-feedback" id="kc3-fb" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="kc-question" id="kc-q4">
+          <p class="q-text">Question 4 of 4: A GPO linked to the domain root has a setting configured. An administrator sets <strong>Block Inheritance</strong> on the Finance OU. A second GPO linked to the domain root is marked as <strong>Enforced</strong>. Which of the following is true for users in the Finance OU?</p>
+          <ul class="kc-options" role="radiogroup">
+            <li><label><input type="radio" name="kc4" value="a"> Neither domain GPO applies because Block Inheritance stops all domain-level GPOs.</label></li>
+            <li><label><input type="radio" name="kc4" value="b"> Both domain GPOs apply because Block Inheritance has no effect on domain-level GPOs.</label></li>
+            <li><label><input type="radio" name="kc4" value="c"> Only the Enforced GPO applies; the non-enforced domain GPO is blocked by Block Inheritance.</label></li>
+            <li><label><input type="radio" name="kc4" value="d"> The Finance OU's own GPOs are also blocked along with the domain GPOs.</label></li>
+          </ul>
+          <button class="kc-submit" onclick="checkKC('kc4','c','kc4-fb')">Check Answer</button>
+          <div class="kc-feedback" id="kc4-fb" role="alert" aria-live="polite"></div>
+        </div>
+
+        <div class="kc-score" id="kc-score-display" aria-live="polite"></div>
+
+      </div><!-- end kc-wrap -->
+
+    </div>
+  </article>
+
+  <!-- ═══════════════════════════════════════════════════
+       SECTION 7 — TROUBLESHOOTING MINI-CASE
+  ════════════════════════════════════════════════════ -->
+  <span class="anchor-target" id="sec-troubleshooting" aria-hidden="true"></span>
+  <article class="section-card" aria-labelledby="s7-heading">
+    <div class="section-header">
+      <div class="sec-num" aria-hidden="true">7</div>
+      <h2 id="s7-heading">Troubleshooting Mini-Case: GPO Not Applying</h2>
+    </div>
+    <div class="section-body">
+
+      <div class="case-scenario" role="region" aria-labelledby="case-heading">
+        <h4 id="case-heading">🔍 Scenario: Password Policy Not Enforcing</h4>
+        <p>You are the domain administrator for <strong>corp.local</strong>. Last week you created a GPO named <em>Password Policy – IT</em> and linked it to the <strong>IT</strong> OU. The GPO is configured with a minimum password length of 14 characters and complexity enabled.</p>
+        <p>Today, a user in the IT OU successfully changed their password to <strong>pass1</strong> — only 5 characters, no complexity. The new password policy is clearly not being enforced. A help desk ticket has been escalated to you.</p>
+        <p><strong>Your task:</strong> Work through the diagnostic steps below (click each one to reveal the explanation and action) to identify the root cause and resolution.</p>
+      </div>
+
+      <h3>Diagnostic Steps — Click to Reveal</h3>
+
+      <details class="diag-step">
+        <summary>Step 1: Confirm the GPO exists and is linked</summary>
+        <div class="details-body">
+          <p><strong>Action:</strong> Open GPMC. Navigate to the IT OU and check the <strong>Linked Group Policy Objects</strong> tab. Confirm that <em>Password Policy – IT</em> appears in the list and that its <strong>Link Enabled</strong> status is <strong>Yes</strong>.</p>
+          <p><strong>Also check:</strong> In the <strong>Group Policy Objects</strong> container, click the GPO and check the <strong>Details</strong> tab. Confirm <strong>GPO Status</strong> is not set to "All settings disabled" or "Computer configuration settings disabled."</p>
+          <p><strong>Possible finding:</strong> The GPO is linked and enabled. This step rules out a missing or disabled link. ✅</p>
+        </div>
+      </details>
+
+      <details class="diag-step">
+        <summary>Step 2: Check where the password policy is actually being applied</summary>
+        <div class="details-body">
+          <p><strong>Root cause identified:</strong> This is the most likely cause. Password policies for <strong>domain user accounts</strong> are a special case in Active Directory. The effective password policy for domain accounts is <em>always</em> taken from the GPO linked to the <strong>domain root</strong> — not from OU-level GPOs.</p>
+          <p>A password policy GPO linked to the IT OU only affects the <strong>local account password policy</strong> on computers in that OU — it has no effect on domain account passwords.</p>
+          <p><strong>Resolution:</strong> Create (or modify) a GPO linked at the <strong>domain level</strong> (e.g., the Default Domain Policy or a new GPO linked to the domain root) with the desired password settings. The OU-level GPO is not the right place for this setting.</p>
+          <div class="callout alert">
+            <span class="icon">🚨</span>
+            <p><strong>Important distinction:</strong> If you need <em>different</em> password policies for different groups of users (e.g., IT staff require 14-char passwords, regular staff require 10-char passwords), you cannot achieve this with standard GPOs. You must use <strong>Fine-Grained Password Policies</strong> (configured in Active Directory Administrative Center, not GPMC), which apply to security groups or specific user objects.</p>
+          </div>
+        </div>
+      </details>
+
+      <details class="diag-step">
+        <summary>Step 3: Run gpresult on the affected user's machine</summary>
+        <div class="details-body">
+          <p><strong>Action:</strong> Log on to (or remotely connect to) a computer in the IT OU. Open an elevated command prompt and run:</p>
+          <div class="code-label">Command Prompt (elevated)</div>
+          <pre>gpresult /r /user CORP\affected.user</pre>
+          <p><strong>What to look for:</strong></p>
+          <ul>
+            <li>Under <strong>COMPUTER SETTINGS → Applied Group Policy Objects</strong>: Is <em>Password Policy – IT</em> listed? If not, the GPO is being filtered or not reaching this computer.</li>
+            <li>Under <strong>"The following GPOs were not applied"</strong>: If the GPO appears here, the reason column will tell you why (e.g., "Denied (Security)" means the computer or user account is not in the correct security group for the GPO's security filtering).</li>
+          </ul>
+          <p><strong>Possible finding:</strong> The GPO appears under "Applied GPOs" for the computer — confirming it is being processed. This reinforces Step 2's finding: the GPO is applying, but password policies at the OU level don't affect domain account passwords regardless.</p>
+        </div>
+      </details>
+
+      <details class="diag-step">
+        <summary>Step 4: Check for Block Inheritance on the IT OU</summary>
+        <div class="details-body">
+          <p><strong>Action:</strong> In GPMC, click the IT OU. Check the <strong>Group Policy Inheritance</strong> tab. If Block Inheritance is set, the OU name in the console tree will show a blue exclamation mark icon.</p>
+          <p><strong>Why this matters:</strong> If Block Inheritance is set on the IT OU, domain-level GPOs (including the Default Domain Policy) are not flowing into the IT OU. This could mean that even a correctly configured domain-level password policy is being blocked.</p>
+          <p><strong>Resolution if found:</strong> Either remove Block Inheritance from the IT OU, or set the domain-level password policy GPO to <strong>Enforced</strong> so it overrides the Block Inheritance setting.</p>
+        </div>
+      </details>
+
+      <details class="diag-step">
+        <summary>Step 5: Verify the Default Domain Policy password settings</summary>
+        <div class="details-body">
+          <p><strong>Action:</strong> In GPMC, click <strong>Default Domain Policy</strong> → <strong>Settings</strong> tab. Expand <strong>Computer Configuration → Windows Settings → Security Settings → Account Policies → Password Policy</strong>. Confirm the settings match what you intend to enforce.</p>
+          <div class="code-label">PowerShell (alternative verification)</div>
+          <pre># View current effective password policy for the domain
+Get-ADDefaultDomainPasswordPolicy -Identity corp.local</pre>
+          <p><strong>Possible finding:</strong> The Default Domain Policy has a minimum password length of only 7 characters (the Windows default). Your new OU-level GPO with 14 characters is not overriding this for domain accounts — it cannot. The Default Domain Policy must be updated (or a new domain-level GPO must be created and linked at the domain root).</p>
+        </div>
+      </details>
+
+      <details class="diag-step">
+        <summary>Step 6: Apply the fix and verify</summary>
+        <div class="details-body">
+          <p><strong>Fix:</strong></p>
+          <ol>
+            <li>In GPMC, either edit the Default Domain Policy directly (or, per best practice, create a new GPO named <em>Password Policy – Domain</em> and link it to the domain root).</li>
+            <li>Set minimum password length to 14, complexity enabled, lockout threshold to 5.</li>
+            <li>On the client machine, run <code>gpupdate /force</code>.</li>
+            <li>Run <code>gpresult /r</code> and confirm the domain-level password policy GPO appears under Applied GPOs.</li>
+            <li>Test by attempting to set a weak password — it should now be rejected by the domain controller.</li>
+          </ol>
+          <div class="callout tip">
+            <span class="icon">✅</span>
+            <p><strong>Lesson learned:</strong> Password policies for domain accounts must always be configured at the domain level. OU-level password policy GPOs only affect local accounts on machines in that OU. When in doubt, run <code>gpresult /h report.html</code> and review the full RSoP report — it will show you exactly which settings came from which GPO.</p>
+          </div>
+        </div>
+      </details>
+
+      <h3>Summary: Common GPO Troubleshooting Checklist</h3>
+      <div class="table-wrap">
+        <table aria-label="GPO troubleshooting checklist">
+          <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Diagnostic Step</th></tr></thead>
+          <tbody>
+            <tr><td>GPO not applying at all</td><td>GPO not linked, link disabled, or GPO status disabled</td><td>Check GPMC Scope tab; check GPO Details status</td></tr>
+            <tr><td>GPO applying to wrong users</td><td>Security filtering or WMI filter issue</td><td>Check Security Filtering in GPMC; run <code>gpresult /r</code></td></tr>
+            <tr><td>Password policy not enforcing for domain users</td><td>Policy linked at OU level instead of domain level</td><td>Move policy link to domain root; check Default Domain Policy</td></tr>
+            <tr><td>Domain GPO not reaching child OU</td><td>Block Inheritance set on the OU</td><td>Check Group Policy Inheritance tab in GPMC</td></tr>
+            <tr><td>Enforced GPO not winning</td><td>Enforced flag not set on the GPO link</td><td>Right-click the GPO link → confirm Enforced is checked</td></tr>
+            <tr><td>Settings applied but not taking effect</td><td>Logoff/restart required for Computer Config settings</td><td>Run <code>gpupdate /force</code>; restart if needed</td></tr>
+            <tr><td>GPO applied but settings wrong</td><td>Conflicting GPO higher in LSDOU chain winning</td><td>Run <code>gpresult /h report.html</code>; check winning GPO column</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ── Guided Practice Reminder ── -->
+  <div class="callout tip" style="margin-bottom:2rem;">
+    <span class="icon">🛠️</span>
+    <div>
+      <p><strong>Guided Practice Activity (40–50 minutes):</strong> In your Proxmox lab environment, complete the following on the domain you built in Modules 11.2–11.3:</p>
+      <ol style="margin:.5rem 0 0 1.2rem; font-size:.93rem;">
+        <li>Create a GPO named <em>Password Policy – Domain</em> and link it at the domain level. Configure minimum password length (10 characters), complexity enabled, and account lockout after 5 attempts.</li>
+        <li>Create a second GPO named <em>Desktop Restrictions – Staff</em> linked to one OU. Disable access to Control Panel.</li>
+        <li>On a joined client VM, run <code>gpupdate /force</code> and verify with <code>gpresult /r</code>.</li>
+        <li>Generate an HTML report with <code>gpresult /h C:\gpo-report.html</code> and review it.</li>
+        <li>Document all steps with screenshots for your Lab 11 submission.</li>
+      </ol>
+      <p style="margin-top:.5rem; font-size:.88rem;"><em>This guided practice is preparation for Lab 11 and Project 3. It is not separately graded, but the screenshots are part of your Lab 11 deliverable.</em></p>
+    </div>
+  </div>
+
+  <!-- ── Connection to Assessments ── -->
+  <div class="obj-box" role="region" aria-labelledby="assess-heading">
+    <h2 id="assess-heading">📊 Connection to Graded Assessments</h2>
+    <ul>
+      <li><strong>Lab 11 / Week 11 Investigation:</strong> GPO creation, linking, and verification are core lab deliverables. Use your guided practice screenshots.</li>
+      <li><strong>Quiz 11</strong> (14 pts, due Sunday April 12): LSDOU processing order, GPO creation and linking, verification commands, and inheritance concepts are covered.</li>
+      <li><strong>Project 3: Directory Services &amp; Security Implementation</strong> (assigned this week, 150 pts): GPO implementation is an explicit Project 3 requirement. Module 11.4 directly prepares you for that deliverable. Read the full Project 3 specification now and begin planning your GPO structure.</li>
+    </ul>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════ -->
+<footer class="page-footer" role="contentinfo">
+  <p>CSC 152 – Network Operating Systems and Administration &nbsp;|&nbsp; Week 11, Module 11.4 &nbsp;|&nbsp; Mendocino College &nbsp;|&nbsp; Spring 2026</p>
+  <p style="margin-top:.3rem;">Instructor: David Pai &nbsp;|&nbsp; <em>Continue to Module 11.5 – Splunk &amp; Directory Service Monitoring</em></p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+/* ── Tab switching ── */
+function switchTab(evt, groupId) {
+  const btn = evt.currentTarget;
+  const tabGroup = btn.closest('.tab-group');
+  // deactivate all buttons and panels in this group
+  tabGroup.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
+  tabGroup.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  // activate clicked button
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+  // activate corresponding panel
+  const panelId = btn.getAttribute('aria-controls');
+  const panel = document.getElementById(panelId);
+  if (panel) panel.classList.add('active');
+}
+
+// Wire up tab buttons properly on load
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.tab-group').forEach(function(group) {
+    const btns = group.querySelectorAll('.tab-btn');
+    const panels = group.querySelectorAll('.tab-panel');
+    btns.forEach(function(btn, i) {
+      // Set correct aria-controls to match panel id
+      if (panels[i]) {
+        btn.setAttribute('aria-controls', panels[i].id);
+      }
+      btn.addEventListener('click', function(e) {
+        // Deactivate all
+        btns.forEach(function(b) {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        panels.forEach(function(p) { p.classList.remove('active'); });
+        // Activate this
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        if (panels[i]) panels[i].classList.add('active');
+      });
+      // Keyboard: arrow keys to navigate tabs
+      btn.addEventListener('keydown', function(e) {
+        let idx = i;
+        if (e.key === 'ArrowRight') { idx = (i + 1) % btns.length; }
+        else if (e.key === 'ArrowLeft') { idx = (i - 1 + btns.length) % btns.length; }
+        else { return; }
+        btns[idx].focus();
+        btns[idx].click();
+      });
+    });
+  });
+});
+
+/* ── Knowledge Check ── */
+var kcAnswered = {};
+var kcCorrect = 0;
+var kcTotal = 4;
+
+var kcFeedback = {
+  kc1: {
+    correct: '✅ Correct! LSDOU stands for <strong>L</strong>ocal → <strong>S</strong>ite → <strong>D</strong>omain → <strong>O</strong>U. This is the fixed order in which Windows applies Group Policy. Because OU policies are applied last, they win in conflicts with domain-level policies (unless Enforced is set). Memory tip: <em>Let Students Do Overrides</em>.',
+    a: null,
+    b: '❌ Not quite. The "S" in LSDOU stands for <strong>Site</strong> (Active Directory site), not Server. The correct order is Local → Site → Domain → OU.',
+    c: '❌ Not quite. LSDOU stands for <strong>L</strong>ocal, <strong>S</strong>ite, <strong>D</strong>omain, <strong>O</strong>rganizational Unit — these are the four levels of the AD hierarchy where GPOs can be linked, in processing order.',
+    d: '❌ The order is reversed. GPOs are applied starting from the broadest scope (Local) down to the most specific (OU). Because OU is applied last, it wins in conflicts — not the other way around.'
+  },
+  kc2: {
+    correct: '✅ Correct! This is a critical concept. For <strong>domain user accounts</strong>, the effective password policy always comes from the domain level — specifically the GPO linked to the domain root. A password policy GPO linked to an OU only affects local accounts on computers in that OU, not domain account passwords. To enforce different password policies per group, you need Fine-Grained Password Policies.',
+    a: '❌ Not quite. The Domain Controllers OU is for policies that govern the behavior of domain controllers themselves (like audit policies), not for end-user password policies. Password policies for domain accounts must be linked at the domain root.',
+    c: '❌ Setting a GPO to Enforced controls whether it overrides Block Inheritance — it does not change where password policies must be linked. The fundamental issue is that OU-level GPOs cannot set domain account password policies regardless of Enforced status.',
+    d: '❌ While a logoff/logon does refresh User Configuration policies, the real issue here is structural: OU-level password policy GPOs simply do not affect domain account passwords, regardless of refresh timing.'
+  },
+  kc3: {
+    correct: '✅ Correct! <code>gpupdate /force</code> is the command to immediately re-apply all Group Policy settings on the local machine, bypassing the normal 90-minute refresh interval. You can add <code>/target:computer</code> or <code>/target:user</code> to refresh only one section.',
+    a: '❌ There is no <code>gpresult /force</code> command. <code>gpresult</code> is a <em>reporting</em> tool — it shows you what policies have been applied, but it does not refresh them. The correct refresh command is <code>gpupdate /force</code>.',
+    b: '❌ The correct syntax is <code>gpupdate /force</code>, not <code>/refresh</code>. The <code>/refresh</code> switch does not exist for <code>gpupdate</code>.',
+    d: '❌ <code>gupdate</code> is not a valid command (note the missing "p"). The correct command is <code>gpupdate /force</code> — be careful with the spelling.'
+  },
+  kc4: {
+    correct: '✅ Correct! This is exactly how the interaction between Block Inheritance and Enforced works. Block Inheritance on the Finance OU stops non-enforced domain GPOs from flowing in. However, an <strong>Enforced</strong> GPO overrides Block Inheritance — it always applies, regardless of any Block Inheritance setting on child OUs. This is intentional: it lets administrators guarantee that critical policies (like security baselines) cannot be blocked.',
+    a: '❌ Not quite. Block Inheritance stops <em>non-enforced</em> parent GPOs, but it cannot stop a GPO that has been marked as <strong>Enforced</strong>. The Enforced GPO will still apply to the Finance OU.',
+    b: '❌ Block Inheritance does have an effect — it stops non-enforced parent GPOs from flowing into the OU. Only Enforced GPOs bypass Block Inheritance.',
+    d: '❌ Block Inheritance only affects GPOs flowing <em>in</em> from parent containers. GPOs linked directly to the Finance OU itself are not affected by Block Inheritance — they still apply normally.'
+  }
+};
+
+function checkKC(qId, correctVal, fbId) {
+  if (kcAnswered[qId]) return; // prevent re-answering
+
+  var selected = document.querySelector('input[name="' + qId + '"]:checked');
+  if (!selected) {
+    alert('Please select an answer before checking.');
+    return;
+  }
+
+  var val = selected.value;
+  var fb = document.getElementById(fbId);
+  var isCorrect = (val === correctVal);
+
+  fb.innerHTML = isCorrect
+    ? kcFeedback[qId].correct
+    : (kcFeedback[qId][val] || '❌ That\'s not quite right. The correct answer is <strong>' + correctVal.toUpperCase() + '</strong>. ' + kcFeedback[qId].correct.replace('✅ Correct! ', ''));
+
+  fb.className = 'kc-feedback ' + (isCorrect ? 'correct' : 'incorrect');
+  fb.style.display = 'block';
+
+  if (isCorrect) kcCorrect++;
+  kcAnswered[qId] = true;
+
+  // Disable radio buttons for this question
+  document.querySelectorAll('input[name="' + qId + '"]').forEach(function(r) {
+    r.disabled = true;
+  });
+  // Disable submit button
+  fb.previousElementSibling.disabled = true;
+  fb.previousElementSibling.style.opacity = '0.5';
+  fb.previousElementSibling.style.cursor = 'default';
+
+  // Show score if all answered
+  if (Object.keys(kcAnswered).length === kcTotal) {
+    var scoreEl = document.getElementById('kc-score-display');
+    var pct = Math.round((kcCorrect / kcTotal) * 100);
+    var msg = kcCorrect === kcTotal
+      ? '🎉 Perfect score! ' + kcCorrect + '/' + kcTotal + ' correct (' + pct + '%). Excellent work — you are ready for the Troubleshooting section.'
+      : kcCorrect >= 3
+        ? '👍 Good job! ' + kcCorrect + '/' + kcTotal + ' correct (' + pct + '%). Review the explanations for any missed questions before moving on.'
+        : '📖 ' + kcCorrect + '/' + kcTotal + ' correct (' + pct + '%). Review Sections 2 and 3 before continuing to the Troubleshooting section.';
+    scoreEl.textContent = msg;
+    scoreEl.style.display = 'block';
+  }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE NORMALIZATION PASS — 2026-04-06
+  File: csc152-week11-learning-module-11-1.html
+  Role: Week 11 HTML/UX template anchor module
+
+  CHANGES MADE IN THIS PASS:
+  1. Nav bar — replaced full-text section links with compact section numbers (1–7);
+     added title="" rollover hints and aria-label attributes on each link for
+     screen-reader context. Adjusted nav-link CSS for square/centered number display.
+  2. Structure audit — confirmed: single <h1>, logical h2/h3 hierarchy, <main> wrapping,
+     <nav aria-label="Module sections">, all section cards labeled with aria-labelledby.
+     No changes required.
+  3. Scroll offset — existing .section-anchor spans with negative margin-top achieve the
+     same effect as scroll-margin-top and are retained as the equivalent mechanism.
+  4. Color/contrast audit — light background (#f4f6f9) with dark text (#1c1c1e): passes
+     WCAG AA. Nav bar (#1a3a5c bg / #fff text): passes AA. Accent orange (#e07b00) used
+     only for decorative highlights and focus outlines, not for text on light backgrounds.
+     No contrast failures found.
+  5. Interactive elements audit — tab widgets have full ARIA tablist/tab/tabpanel markup
+     and arrow-key navigation. Collapsibles use native <details>/<summary> (inherently
+     keyboard accessible). Knowledge check buttons have focus-visible outlines and
+     provide immediate, explanatory feedback (not just correct/incorrect). Reveal button
+     uses aria-expanded + aria-controls. No changes required.
+  6. Code examples — CLI commands in Section 5 appear as inline <code> elements within
+     descriptive list items (e.g., nslookup, dcdiag, ipconfig, nltest). These are brief
+     command references, not standalone code blocks, and are appropriate as inline <code>.
+     No pre/code wrapping change applied. If a future pass adds multi-line PowerShell
+     or config file examples, those should use <pre><code>...</code></pre>.
+  7. Canvas safety audit — no external script/style/CDN references found. No <a> links
+     to external URLs or other Canvas items found. No localStorage/sessionStorage usage
+     found. No changes required.
+
+  REMAINING CONCERNS FOR HUMAN REVIEW:
+  - The .section-anchor negative-margin approach works in most browsers but is a CSS
+    hack. If future Canvas iframe restrictions change overflow behavior, switch to
+    scroll-margin-top on the section <article> elements instead.
+  - Emoji in section headers (📚 🏗️ etc.) are decorative and aria-hidden="true";
+    verify screen reader behavior in NVDA/JAWS if students report confusion.
+  - Resources section lists Microsoft Learn and YouTube (Professor Messer) by name
+    only (no links), per Canvas linking rules. Confirm that Canvas course page supplies
+    the actual links.
+  - Date references in .meta-pills ("April 6–12, 2026") and connections banner are
+    hardcoded. Update if week dates change.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 11.1 – Directory Services Concepts & AD DS Architecture | CSC 152</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --color-primary:     #1a3a5c;
+    --color-primary-lt:  #2563a8;
+    --color-accent:      #e07b00;
+    --color-accent-lt:   #f5a623;
+    --color-success:     #1a6e3c;
+    --color-success-bg:  #e8f5ee;
+    --color-error:       #8b1a1a;
+    --color-error-bg:    #fdf0f0;
+    --color-info:        #1a3a5c;
+    --color-info-bg:     #eef3fa;
+    --color-warn-bg:     #fff8e6;
+    --color-warn-border: #e07b00;
+    --color-bg:          #f4f6f9;
+    --color-surface:     #ffffff;
+    --color-border:      #d0d7e2;
+    --color-text:        #1c1c1e;
+    --color-text-muted:  #4a5568;
+    --color-nav-bg:      #1a3a5c;
+    --color-nav-text:    #ffffff;
+    --color-nav-hover:   #e07b00;
+    --nav-height:        56px;
+    --radius:            8px;
+    --shadow:            0 2px 8px rgba(0,0,0,0.10);
+    --font-body:         'Segoe UI', Arial, sans-serif;
+    --font-mono:         'Consolas', 'Courier New', monospace;
+    --max-width:         900px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  /* ── Skip Link ── */
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: 0;
+    background: var(--color-accent);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 0 0 var(--radius) 0;
+    font-weight: 700;
+    z-index: 9999;
+    transition: top 0.2s;
+    text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* ── Top Navigation ── */
+  nav#top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--color-nav-bg);
+    height: var(--nav-height);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    overflow-x: auto;
+    gap: 4px;
+  }
+
+  nav#top-nav .nav-label {
+    color: #a8c0d8;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  nav#top-nav a {
+    color: var(--color-nav-text);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 5px 0;
+    min-width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+    border: 2px solid transparent;
+  }
+  nav#top-nav a:hover { background: rgba(255,255,255,0.15); color: var(--color-accent-lt); }
+  nav#top-nav a:focus-visible {
+    outline: none;
+    border-color: var(--color-accent-lt);
+    background: rgba(255,255,255,0.15);
+    color: var(--color-accent-lt);
+  }
+
+  /* ── Page Header ── */
+  .page-header {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #2a5298 100%);
+    color: #fff;
+    padding: 40px 24px 32px;
+    text-align: center;
+  }
+  .page-header .course-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .page-header h1 {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 10px;
+  }
+  .page-header .subtitle {
+    font-size: 0.95rem;
+    opacity: 0.85;
+    margin-bottom: 18px;
+  }
+  .meta-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .meta-pill {
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 13px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  /* ── Main Content ── */
+  main {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 28px 16px 60px;
+  }
+
+  /* ── Section Anchors (offset for sticky nav) ── */
+  .section-anchor {
+    display: block;
+    height: calc(var(--nav-height) + 12px);
+    margin-top: calc(-1 * (var(--nav-height) + 12px));
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /* ── Section Cards ── */
+  .section-card {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 22px;
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .section-header .section-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .section-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .section-header .section-num {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .section-body { padding: 22px; }
+
+  /* ── Objectives Banner ── */
+  .objectives-banner {
+    background: var(--color-info-bg);
+    border-left: 4px solid var(--color-primary-lt);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+  }
+  .objectives-banner h3 {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-primary-lt);
+    margin-bottom: 8px;
+  }
+  .objectives-banner ul {
+    list-style: none;
+    padding: 0;
+  }
+  .objectives-banner ul li {
+    padding: 3px 0 3px 20px;
+    position: relative;
+    font-size: 0.9rem;
+    color: var(--color-text);
+  }
+  .objectives-banner ul li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--color-primary-lt);
+    font-weight: 700;
+  }
+
+  /* ── Typography ── */
+  h3.subsection-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin: 22px 0 10px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid var(--color-border);
+  }
+  h3.subsection-title:first-child { margin-top: 0; }
+
+  p { margin-bottom: 14px; }
+  p:last-child { margin-bottom: 0; }
+
+  strong { color: var(--color-primary); }
+
+  ul.content-list, ol.content-list {
+    padding-left: 22px;
+    margin-bottom: 14px;
+  }
+  ul.content-list li, ol.content-list li {
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+  }
+
+  code {
+    font-family: var(--font-mono);
+    background: #eef0f4;
+    border: 1px solid #d0d7e2;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.88em;
+    color: #c0392b;
+  }
+
+  /* ── Callout Boxes ── */
+  .callout {
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 0.93rem;
+  }
+  .callout-info    { background: var(--color-info-bg);  border-left: 4px solid var(--color-primary-lt); }
+  .callout-warn    { background: var(--color-warn-bg);  border-left: 4px solid var(--color-warn-border); }
+  .callout-success { background: var(--color-success-bg); border-left: 4px solid var(--color-success); }
+  .callout .callout-title {
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 6px;
+  }
+  .callout-info    .callout-title { color: var(--color-primary-lt); }
+  .callout-warn    .callout-title { color: var(--color-warn-border); }
+  .callout-success .callout-title { color: var(--color-success); }
+
+  /* ── Comparison Table ── */
+  .table-wrap { overflow-x: auto; margin: 16px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  th {
+    background: var(--color-primary);
+    color: #fff;
+    padding: 11px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f7f9fc; }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── Toggle / Collapsible ── */
+  details.collapsible {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    margin: 12px 0;
+    overflow: hidden;
+  }
+  details.collapsible summary {
+    background: #eef3fa;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--color-primary);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    user-select: none;
+    border-radius: var(--radius);
+    transition: background 0.15s;
+  }
+  details.collapsible summary::-webkit-details-marker { display: none; }
+  details.collapsible summary::before {
+    content: "▶";
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  details.collapsible[open] summary::before { transform: rotate(90deg); }
+  details.collapsible summary:hover { background: #dce8f7; }
+  details.collapsible summary:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: -3px;
+  }
+  details.collapsible .details-body {
+    padding: 16px 18px;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* ── Tab Widget ── */
+  .tab-widget { margin: 16px 0; }
+  .tab-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tab-btn {
+    background: none;
+    border: 2px solid transparent;
+    border-bottom: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 9px 16px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+    bottom: -2px;
+  }
+  .tab-btn:hover { background: #eef3fa; color: var(--color-primary); }
+  .tab-btn[aria-selected="true"] {
+    background: var(--color-surface);
+    color: var(--color-primary);
+    border-color: var(--color-border);
+    border-bottom-color: var(--color-surface);
+  }
+  .tab-btn:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .tab-panel {
+    display: none;
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 18px;
+    background: var(--color-surface);
+  }
+  .tab-panel.active { display: block; }
+
+  /* ── Hierarchy Diagrams ── */
+  .hierarchy-diagram {
+    background: #f0f4fa;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+  .hierarchy-diagram .diag-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  /* Logical hierarchy */
+  .logic-tree { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .logic-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 520px;
+  }
+  .logic-box {
+    border-radius: var(--radius);
+    padding: 10px 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-align: center;
+    width: 100%;
+    max-width: 340px;
+    position: relative;
+  }
+  .logic-box.level-forest  { background: #1a3a5c; color: #fff; }
+  .logic-box.level-tree    { background: #2563a8; color: #fff; }
+  .logic-box.level-domain  { background: #3b82c4; color: #fff; }
+  .logic-box.level-ou      { background: #6aaddc; color: #1a3a5c; }
+  .logic-box.level-objects { background: #b8d8f0; color: #1a3a5c; }
+  .logic-box .box-label { font-size: 0.7rem; font-weight: 400; opacity: 0.85; display: block; }
+  .logic-connector {
+    width: 2px;
+    height: 22px;
+    background: var(--color-primary-lt);
+    flex-shrink: 0;
+  }
+  .logic-annotation {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin: 2px 0 4px;
+    font-style: italic;
+    max-width: 380px;
+    padding: 0 10px;
+  }
+
+  /* Physical structure grid */
+  .phys-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .phys-card {
+    background: var(--color-surface);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius);
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .phys-card .phys-icon { font-size: 2rem; margin-bottom: 6px; display: block; }
+  .phys-card .phys-name {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--color-primary);
+    margin-bottom: 6px;
+  }
+  .phys-card .phys-desc { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
+  .phys-link-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--color-primary-lt);
+    margin: 0 4px;
+  }
+  .phys-flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    margin-top: 14px;
+    background: #eef3fa;
+    border-radius: var(--radius);
+    padding: 10px;
+  }
+  .phys-flow-item {
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .phys-flow-arrow { color: var(--color-accent); font-weight: 900; font-size: 1.1rem; }
+
+  /* DNS relationship diagram */
+  .dns-diagram {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin: 14px 0;
+  }
+  .dns-box {
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    text-align: center;
+    min-width: 130px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .dns-box.dns-client   { background: #eef3fa; border: 2px solid #2563a8; color: #1a3a5c; }
+  .dns-box.dns-server   { background: #1a3a5c; color: #fff; }
+  .dns-box.dns-dc       { background: #2563a8; color: #fff; }
+  .dns-box .dns-sub     { font-size: 0.72rem; font-weight: 400; opacity: 0.85; display: block; margin-top: 3px; }
+  .dns-arrow { font-size: 1.5rem; color: var(--color-accent); }
+
+  /* ── Knowledge Check ── */
+  .kc-container { margin: 0; }
+  .kc-progress {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  .kc-question {
+    background: #f7f9fc;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .kc-question .q-text {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-primary);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .kc-question .q-num {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .kc-options { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .kc-option-btn {
+    width: 100%;
+    text-align: left;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    font-family: var(--font-body);
+    color: var(--color-text);
+    line-height: 1.5;
+  }
+  .kc-option-btn:hover:not(:disabled) { border-color: var(--color-primary-lt); background: #eef3fa; }
+  .kc-option-btn:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .kc-option-btn.correct   { border-color: var(--color-success); background: var(--color-success-bg); color: var(--color-success); font-weight: 700; }
+  .kc-option-btn.incorrect { border-color: var(--color-error);   background: var(--color-error-bg);   color: var(--color-error);   font-weight: 700; }
+  .kc-option-btn:disabled  { cursor: default; }
+  .kc-feedback {
+    display: none;
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+  .kc-feedback.show { display: block; }
+  .kc-feedback.fb-correct   { background: var(--color-success-bg); border-left: 4px solid var(--color-success); color: #134d2b; }
+  .kc-feedback.fb-incorrect { background: var(--color-error-bg);   border-left: 4px solid var(--color-error);   color: var(--color-error); }
+  .kc-feedback .fb-label { font-weight: 700; margin-bottom: 4px; }
+
+  .kc-score-bar {
+    display: none;
+    background: var(--color-info-bg);
+    border: 1px solid var(--color-primary-lt);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    text-align: center;
+    margin-top: 16px;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-size: 1rem;
+  }
+  .kc-score-bar.show { display: block; }
+  .kc-reset-btn {
+    display: none;
+    margin: 12px auto 0;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 10px 24px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background 0.15s;
+  }
+  .kc-reset-btn:hover { background: var(--color-primary-lt); }
+  .kc-reset-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+  .kc-reset-btn.show { display: block; }
+
+  /* ── Mini Case ── */
+  .scenario-box {
+    background: var(--color-warn-bg);
+    border: 1px solid var(--color-warn-border);
+    border-left: 5px solid var(--color-warn-border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin: 16px 0;
+  }
+  .scenario-box .scenario-title {
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-accent);
+    margin-bottom: 10px;
+  }
+
+  .reflect-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .reflect-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .reflect-card .rc-q {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-primary);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .reflect-card .rc-q .rc-num {
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .reflect-card .rc-hint { font-size: 0.8rem; color: var(--color-text-muted); }
+
+  .reveal-btn {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 11px 22px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background 0.15s;
+    margin-top: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .reveal-btn:hover { background: #c96f00; }
+  .reveal-btn:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+  .reveal-btn .btn-icon { font-size: 1rem; }
+
+  .model-answer {
+    display: none;
+    margin-top: 16px;
+    background: var(--color-success-bg);
+    border: 1px solid var(--color-success);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .model-answer.show { display: block; }
+  .model-answer h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-success);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .model-answer h5 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin: 14px 0 6px;
+  }
+  .model-answer h5:first-of-type { margin-top: 0; }
+  .model-answer p, .model-answer li { font-size: 0.88rem; }
+  .model-answer ul { padding-left: 20px; margin-bottom: 10px; }
+
+  /* ── Resources List ── */
+  .resource-list { list-style: none; padding: 0; }
+  .resource-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.9rem;
+  }
+  .resource-list li:last-child { border-bottom: none; }
+  .resource-list .res-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+  .resource-list .res-name { font-weight: 700; color: var(--color-primary); }
+  .resource-list .res-meta { font-size: 0.78rem; color: var(--color-text-muted); }
+  .resource-list .res-note { font-size: 0.82rem; color: var(--color-text); margin-top: 2px; }
+
+  /* ── Connections Banner ── */
+  .connections-banner {
+    background: linear-gradient(90deg, #1a3a5c 0%, #2563a8 100%);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-top: 28px;
+  }
+  .connections-banner h3 {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.8;
+    margin-bottom: 12px;
+  }
+  .conn-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+  }
+  .conn-item {
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.83rem;
+  }
+  .conn-item .conn-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    opacity: 0.7;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .conn-item .conn-name { font-weight: 700; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    border-top: 1px solid var(--color-border);
+    max-width: var(--max-width);
+    margin: 0 auto;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .section-body { padding: 16px; }
+    .page-header  { padding: 28px 16px 22px; }
+    .phys-grid    { grid-template-columns: 1fr 1fr; }
+    .reflect-grid { grid-template-columns: 1fr; }
+    .conn-grid    { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 400px) {
+    .phys-grid  { grid-template-columns: 1fr; }
+    .conn-grid  { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ═══ TOP NAVIGATION ═══ -->
+<nav id="top-nav" aria-label="Module sections">
+  <span class="nav-label">11.1</span>
+  <a href="#sec-directory" title="Section 1 – What Is a Directory Service?" aria-label="Section 1: What Is a Directory Service?">1</a>
+  <a href="#sec-workgroup" title="Section 2 – Workgroup vs. Domain Model" aria-label="Section 2: Workgroup vs. Domain Model">2</a>
+  <a href="#sec-logical" title="Section 3 – AD DS Logical Structure" aria-label="Section 3: AD DS Logical Structure">3</a>
+  <a href="#sec-physical" title="Section 4 – AD DS Physical Structure" aria-label="Section 4: AD DS Physical Structure">4</a>
+  <a href="#sec-dns" title="Section 5 – AD DS and DNS" aria-label="Section 5: AD DS and DNS">5</a>
+  <a href="#sec-kc" title="Section 6 – Knowledge Check" aria-label="Section 6: Knowledge Check">6</a>
+  <a href="#sec-minicase" title="Section 7 – Mini-Case: Greenfield Manufacturing" aria-label="Section 7: Mini-Case: Greenfield Manufacturing">7</a>
+</nav>
+
+<!-- ═══ PAGE HEADER ═══ -->
+<header class="page-header" role="banner">
+  <div class="course-tag">CSC 152 · Week 11 of 17</div>
+  <h1>Module 11.1 – Directory Services Concepts<br>&amp; AD DS Architecture</h1>
+  <p class="subtitle">Network Operating Systems and Administration · Mendocino College</p>
+  <div class="meta-pills">
+    <span class="meta-pill">📅 April 6–12, 2026</span>
+    <span class="meta-pill">⏱ ~1.25 hrs self-study</span>
+    <span class="meta-pill">🎯 CSLO 1 · CSLO 2</span>
+    <span class="meta-pill">🔖 Template Anchor Module</span>
+  </div>
+</header>
+
+<main id="main-content">
+
+  <!-- Objectives -->
+  <div class="objectives-banner" role="region" aria-label="Module objectives">
+    <h3>By the end of this module you will be able to:</h3>
+    <ul>
+      <li>Explain the purpose and role of directory services in enterprise environments</li>
+      <li>Describe the AD DS logical structure: forests, trees, domains, Organizational Units, and objects</li>
+      <li>Describe the AD DS physical structure: domain controllers, sites, site links, and the Global Catalog</li>
+      <li>Distinguish between the workgroup model and the domain model</li>
+      <li>Explain the relationship between AD DS and DNS, and the impact of DNS misconfiguration</li>
+    </ul>
+  </div>
+
+  <!-- ═══ SECTION 1: WHAT IS A DIRECTORY SERVICE? ═══ -->
+  <span class="section-anchor" id="sec-directory"></span>
+  <article class="section-card" aria-labelledby="hdr-directory">
+    <div class="section-header">
+      <span class="section-icon" aria-hidden="true">📚</span>
+      <div>
+        <span class="section-num">Section 1</span>
+        <h2 id="hdr-directory">What Is a Directory Service?</h2>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <h3 class="subsection-title">Definition</h3>
+      <p>A <strong>directory service</strong> is a specialized database that stores, organizes, and provides access to information about network resources — users, computers, printers, groups, policies, and more. Unlike a general-purpose relational database, a directory service is optimized for <em>frequent reads</em> and <em>hierarchical lookups</em> rather than complex transactional writes.</p>
+
+      <div class="callout callout-info">
+        <div class="callout-title">💡 The Three-Role Analogy</div>
+        Think of a directory service as three things in one:
+        <ul class="content-list" style="margin-top:8px;">
+          <li><strong>Phone Book</strong> — It stores the names, locations, and attributes of every resource on the network. "Where is the printer in Building B? What is Maria's email address?"</li>
+          <li><strong>Security Guard</strong> — It authenticates every user and device that wants to access the network, verifying identity before granting entry.</li>
+          <li><strong>Policy Enforcer</strong> — It distributes and enforces configuration policies across thousands of machines simultaneously, ensuring every workstation meets organizational standards.</li>
+        </ul>
+      </div>
+
+      <h3 class="subsection-title">Why Organizations Depend on Directory Services</h3>
+      <ul class="content-list">
+        <li><strong>Centralized authentication</strong> — One set of credentials works across all systems (Single Sign-On)</li>
+        <li><strong>Scalability</strong> — Manage thousands of users and devices from a single administrative console</li>
+        <li><strong>Policy consistency</strong> — Push configuration changes to every machine in the organization instantly</li>
+        <li><strong>Delegation</strong> — Grant specific administrative rights to specific people without handing over full control</li>
+        <li><strong>Audit and compliance</strong> — Track who accessed what and when, supporting regulatory requirements</li>
+      </ul>
+
+      <h3 class="subsection-title">A Brief History: X.500 → LDAP → Active Directory</h3>
+
+      <details class="collapsible">
+        <summary>X.500 — The Origin (1988)</summary>
+        <div class="details-body">
+          <p>In 1988, the International Telecommunication Union (ITU) and ISO published the <strong>X.500</strong> standards — a set of protocols defining how a global directory of network resources should be structured and accessed. X.500 introduced the concept of a hierarchical <strong>Directory Information Tree (DIT)</strong>, where entries are organized from a root down through countries, organizations, and individual objects.</p>
+          <p>X.500 was powerful but complex and required the OSI network stack, which was expensive and difficult to implement. It never saw widespread adoption in its original form, but its data model — the idea of a tree-structured directory with named objects and attributes — became the conceptual foundation for everything that followed.</p>
+        </div>
+      </details>
+
+      <details class="collapsible">
+        <summary>LDAP — Lightweight Directory Access Protocol (1993–present)</summary>
+        <div class="details-body">
+          <p>To make X.500's directory model practical for the growing TCP/IP internet, researchers at the University of Michigan developed the <strong>Lightweight Directory Access Protocol (LDAP)</strong> in 1993. LDAP kept X.500's hierarchical data model and naming conventions but replaced the heavy OSI transport with standard TCP/IP, running on <strong>port 389</strong> (or port 636 for LDAPS, the encrypted variant).</p>
+          <p>LDAP became an open standard (RFC 4511) and is today the universal language for querying and modifying directory services. Both Microsoft Active Directory and open-source OpenLDAP speak LDAP. When you query AD for a user's attributes, you are making an LDAP query — even if you never see the raw protocol.</p>
+          <p>Key LDAP concepts you will encounter throughout Weeks 11–12:</p>
+          <ul class="content-list">
+            <li><strong>DN (Distinguished Name)</strong> — The unique full path to an object, e.g., <code>CN=Maria Garcia,OU=HR,DC=corp,DC=local</code></li>
+            <li><strong>CN (Common Name)</strong> — The name of the object itself</li>
+            <li><strong>OU (Organizational Unit)</strong> — A container within the directory tree</li>
+            <li><strong>DC (Domain Component)</strong> — A component of the domain name</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="collapsible">
+        <summary>Active Directory — Microsoft's Implementation (1999–present)</summary>
+        <div class="details-body">
+          <p>Microsoft introduced <strong>Active Directory</strong> with Windows 2000 Server in 1999, building a full enterprise directory service on top of LDAP, Kerberos authentication, and DNS. Active Directory is not a replacement for LDAP — it <em>implements</em> LDAP as its access protocol while adding Microsoft-specific extensions, replication mechanisms, Group Policy infrastructure, and deep integration with Windows operating systems.</p>
+          <p>The specific component we work with in this course is <strong>Active Directory Domain Services (AD DS)</strong> — the core directory service role that handles authentication, authorization, and policy for a Windows domain. Microsoft has since added other Active Directory services (AD CS, AD FS, AD LDS, AD RMS), but AD DS is the foundation of Windows enterprise environments and the subject of Week 11.</p>
+          <p>Today, AD DS is used in the vast majority of enterprise Windows environments worldwide. Even organizations moving to cloud-based identity (Azure AD / Microsoft Entra ID) typically maintain an on-premises AD DS instance or synchronize with it.</p>
+        </div>
+      </details>
+
+    </div>
+  </article>
+
+  <!-- ═══ SECTION 2: WORKGROUP VS DOMAIN ═══ -->
+  <span class="section-anchor" id="sec-workgroup"></span>
+  <article class="section-card" aria-labelledby="hdr-workgroup">
+    <div class="section-header">
+      <span class="section-icon" aria-hidden="true">⚖️</span>
+      <div>
+        <span class="section-num">Section 2</span>
+        <h2 id="hdr-workgroup">Workgroup vs. Domain Model</h2>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <p>Before deploying Active Directory, it is essential to understand <em>why</em> organizations move to a domain model. The workgroup model works fine for a handful of computers — but it breaks down quickly as organizations grow.</p>
+
+      <div class="tab-widget" role="region" aria-label="Workgroup vs Domain comparison">
+        <ul class="tab-list" role="tablist" aria-label="Comparison views">
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="true" aria-controls="tab-table" id="btn-table">Comparison Table</button>
+          </li>
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-workgroup" id="btn-workgroup">Workgroup Detail</button>
+          </li>
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-domain" id="btn-domain">Domain Detail</button>
+          </li>
+        </ul>
+
+        <div id="tab-table" role="tabpanel" aria-labelledby="btn-table" class="tab-panel active">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Characteristic</th>
+                  <th>Workgroup Model</th>
+                  <th>Domain Model</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Authentication</strong></td>
+                  <td>Local SAM database on each machine</td>
+                  <td>Centralized via Domain Controller (Kerberos)</td>
+                </tr>
+                <tr>
+                  <td><strong>User accounts</strong></td>
+                  <td>Separate account on every computer</td>
+                  <td>Single domain account works on all computers</td>
+                </tr>
+                <tr>
+                  <td><strong>Password management</strong></td>
+                  <td>Changed separately on each machine</td>
+                  <td>Changed once; applies everywhere</td>
+                </tr>
+                <tr>
+                  <td><strong>Policy enforcement</strong></td>
+                  <td>Local Group Policy per machine only</td>
+                  <td>Centralized GPOs pushed to all machines</td>
+                </tr>
+                <tr>
+                  <td><strong>Administration</strong></td>
+                  <td>Each machine administered independently</td>
+                  <td>Centralized administration from DC</td>
+                </tr>
+                <tr>
+                  <td><strong>Scalability</strong></td>
+                  <td>Practical up to ~10–15 computers</td>
+                  <td>Scales to millions of objects</td>
+                </tr>
+                <tr>
+                  <td><strong>Single Sign-On</strong></td>
+                  <td>Not available</td>
+                  <td>Full SSO across all domain resources</td>
+                </tr>
+                <tr>
+                  <td><strong>Security auditing</strong></td>
+                  <td>Per-machine logs only</td>
+                  <td>Centralized security event logging</td>
+                </tr>
+                <tr>
+                  <td><strong>Infrastructure required</strong></td>
+                  <td>None — peer-to-peer</td>
+                  <td>At least one Domain Controller + DNS</td>
+                </tr>
+                <tr>
+                  <td><strong>Typical use case</strong></td>
+                  <td>Home networks, very small offices</td>
+                  <td>Any organization with 10+ computers</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="tab-workgroup" role="tabpanel" aria-labelledby="btn-workgroup" class="tab-panel">
+          <h3 class="subsection-title" style="margin-top:0;">The Workgroup Model — How It Works</h3>
+          <p>In a workgroup, every Windows computer maintains its own local <strong>Security Accounts Manager (SAM)</strong> database containing local user accounts and passwords. When a user on Computer A wants to access a shared folder on Computer B, Computer B checks its own SAM — not any central authority — to verify the credentials.</p>
+          <p>This creates an immediate scaling problem: if you have 50 computers and want a user named "jsmith" to log in to any of them, you must create and maintain a "jsmith" account on all 50 machines. Change the password once? You must change it 50 times.</p>
+          <div class="callout callout-warn">
+            <div class="callout-title">⚠️ The 10-Computer Rule</div>
+            Microsoft's own documentation suggests workgroups are practical only for networks of approximately 10–15 computers. Beyond that, the administrative burden becomes unmanageable and security becomes inconsistent.
+          </div>
+          <p><strong>Workgroup characteristics:</strong></p>
+          <ul class="content-list">
+            <li>All computers are peers — no hierarchy or central authority</li>
+            <li>Each computer name must be unique on the local network</li>
+            <li>Maximum 20 simultaneous connections in Windows home/pro editions</li>
+            <li>No centralized policy enforcement or auditing</li>
+            <li>No Single Sign-On capability</li>
+          </ul>
+        </div>
+
+        <div id="tab-domain" role="tabpanel" aria-labelledby="btn-domain" class="tab-panel">
+          <h3 class="subsection-title" style="margin-top:0;">The Domain Model — How It Works</h3>
+          <p>In a domain, a <strong>Domain Controller (DC)</strong> acts as the central authority for authentication and policy. User accounts, computer accounts, and security policies are stored in the AD DS database on the DC. When a user logs in at any domain-joined workstation, the workstation contacts the DC, which authenticates the user using <strong>Kerberos</strong> and issues a ticket granting access to network resources.</p>
+          <p>The user carries their identity with them across the entire domain. Log in at any workstation, access any authorized file server, printer, or application — with the same username and password, managed in one place.</p>
+          <div class="callout callout-success">
+            <div class="callout-title">✅ Key Domain Benefits</div>
+            <ul class="content-list" style="margin-top:4px;">
+              <li><strong>One account, one password</strong> — managed centrally</li>
+              <li><strong>Group Policy</strong> — push settings to every machine simultaneously</li>
+              <li><strong>Delegation</strong> — give help desk staff password-reset rights without making them admins</li>
+              <li><strong>Centralized auditing</strong> — know who logged in where and when</li>
+              <li><strong>Software deployment</strong> — push applications to machines via GPO</li>
+            </ul>
+          </div>
+          <p>The trade-off: a domain requires infrastructure — at minimum one Domain Controller and a DNS server (often the same machine). This is a worthwhile investment for any organization with more than a handful of computers.</p>
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ═══ SECTION 3: AD DS LOGICAL STRUCTURE ═══ -->
+  <span class="section-anchor" id="sec-logical"></span>
+  <article class="section-card" aria-labelledby="hdr-logical">
+    <div class="section-header">
+      <span class="section-icon" aria-hidden="true">🏗️</span>
+      <div>
+        <span class="section-num">Section 3</span>
+        <h2 id="hdr-logical">AD DS Logical Structure</h2>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <p>The <strong>logical structure</strong> of AD DS defines how directory objects are organized conceptually — independent of physical hardware or network topology. Understanding this hierarchy is essential before you can make design decisions in Project 3.</p>
+
+      <!-- Logical Hierarchy Diagram -->
+      <div class="hierarchy-diagram" role="img" aria-label="AD DS logical hierarchy: Forest contains Trees, Trees contain Domains, Domains contain Organizational Units, OUs contain Objects">
+        <div class="diag-title">AD DS Logical Hierarchy (top = broadest scope)</div>
+        <div class="logic-tree">
+          <div class="logic-node">
+            <div class="logic-box level-forest">
+              🌲 Forest
+              <span class="box-label">Highest boundary of trust and schema</span>
+            </div>
+            <div class="logic-annotation">Contains one or more Trees sharing a common schema and Global Catalog</div>
+            <div class="logic-connector" aria-hidden="true"></div>
+          </div>
+          <div class="logic-node">
+            <div class="logic-box level-tree">
+              🌳 Tree
+              <span class="box-label">Contiguous DNS namespace</span>
+            </div>
+            <div class="logic-annotation">One or more domains with a contiguous DNS name (e.g., corp.local, sales.corp.local)</div>
+            <div class="logic-connector" aria-hidden="true"></div>
+          </div>
+          <div class="logic-node">
+            <div class="logic-box level-domain">
+              🏢 Domain
+              <span class="box-label">Core administrative boundary</span>
+            </div>
+            <div class="logic-annotation">Replication boundary, policy boundary, and security boundary (e.g., corp.local)</div>
+            <div class="logic-connector" aria-hidden="true"></div>
+          </div>
+          <div class="logic-node">
+            <div class="logic-box level-ou">
+              📁 Organizational Unit (OU)
+              <span class="box-label">Administrative container within a domain</span>
+            </div>
+            <div class="logic-annotation">Groups objects for GPO application, delegation, and logical organization (e.g., IT, HR, Finance)</div>
+            <div class="logic-connector" aria-hidden="true"></div>
+          </div>
+          <div class="logic-node">
+            <div class="logic-box level-objects">
+              👤💻🖨️ Objects
+              <span class="box-label">Leaf-level directory entries</span>
+            </div>
+            <div class="logic-annotation">Users, computers, groups, printers, shared folders — the actual managed resources</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed descriptions -->
+      <h3 class="subsection-title">Layer-by-Layer Breakdown</h3>
+
+      <details class="collapsible">
+        <summary>🌲 Forest — The Security and Schema Boundary</summary>
+        <div class="details-body">
+          <p>The <strong>forest</strong> is the outermost container in AD DS and represents the ultimate security boundary. All domain controllers in a forest share:</p>
+          <ul class="content-list">
+            <li><strong>A common schema</strong> — the definition of every object class and attribute that can exist in the directory (e.g., "a User object has these attributes: sAMAccountName, mail, telephoneNumber…")</li>
+            <li><strong>A common Global Catalog</strong> — a partial replica of all objects in all domains, enabling forest-wide searches</li>
+            <li><strong>Automatic two-way transitive trusts</strong> between all domains in the forest</li>
+          </ul>
+          <p>The first domain created in a forest is called the <strong>Forest Root Domain</strong>. In most small-to-medium organizations, there is only one forest and one domain — the forest root domain IS the only domain.</p>
+          <div class="callout callout-warn">
+            <div class="callout-title">⚠️ Important Security Note</div>
+            The forest is the true security boundary in AD DS — not the domain. A compromised domain administrator in one domain can potentially affect other domains in the same forest. Organizations with strict security separation requirements (e.g., a company and its acquired subsidiary) use separate forests.
+          </div>
+        </div>
+      </details>
+
+      <details class="collapsible">
+        <summary>🌳 Tree — A Contiguous DNS Namespace</summary>
+        <div class="details-body">
+          <p>A <strong>tree</strong> is a collection of one or more domains that share a <em>contiguous DNS namespace</em>. For example:</p>
+          <ul class="content-list">
+            <li><code>corp.local</code> — root domain of the tree</li>
+            <li><code>sales.corp.local</code> — child domain, part of the same tree</li>
+            <li><code>eu.sales.corp.local</code> — grandchild domain, still the same tree</li>
+          </ul>
+          <p>A forest can contain multiple trees with different root DNS names (e.g., <code>corp.local</code> and <code>fabrikam.local</code>). These trees are connected by <strong>tree-root trusts</strong>.</p>
+          <p>For most organizations deploying AD DS for the first time, the distinction between a tree and a forest is academic — they will have one tree with one domain. The tree/forest distinction becomes important during mergers, acquisitions, or very large enterprise deployments.</p>
+        </div>
+      </details>
+
+      <details class="collapsible">
+        <summary>🏢 Domain — The Core Administrative Unit</summary>
+        <div class="details-body">
+          <p>The <strong>domain</strong> is the most important unit in day-to-day AD DS administration. It serves as:</p>
+          <ul class="content-list">
+            <li><strong>A replication boundary</strong> — full AD DS data replicates between all DCs within a domain; only partial data crosses domain boundaries</li>
+            <li><strong>A policy boundary</strong> — domain-level Group Policy (e.g., Default Domain Password Policy) applies to all objects in the domain</li>
+            <li><strong>An administrative boundary</strong> — Domain Admins have full control within their domain</li>
+            <li><strong>An authentication boundary</strong> — Kerberos tickets are issued within the domain context</li>
+          </ul>
+          <p>Every domain has a unique DNS name (e.g., <code>corp.local</code>) and a <strong>NetBIOS name</strong> (e.g., <code>CORP</code>) for backward compatibility. The domain is identified in LDAP paths by its DC components: <code>DC=corp,DC=local</code>.</p>
+          <p><strong>When do you need multiple domains?</strong> Multiple domains are justified when you need different password policies at the domain level, different administrative boundaries, or distinct replication topologies. For most organizations with 200–500 users, a <em>single domain</em> is the correct answer — complexity without benefit is a design anti-pattern.</p>
+        </div>
+      </details>
+
+      <details class="collapsible">
+        <summary>📁 Organizational Unit (OU) — The Administrative Container</summary>
+        <div class="details-body">
+          <p>An <strong>Organizational Unit</strong> is a container object within a domain used to organize other objects (users, computers, groups, printers, and even other OUs). OUs serve two primary purposes:</p>
+          <ol class="content-list">
+            <li><strong>Group Policy application</strong> — GPOs are linked to OUs; all objects in the OU receive the policy</li>
+            <li><strong>Delegation of control</strong> — you can grant a non-admin user administrative rights over a specific OU without making them a Domain Admin</li>
+          </ol>
+          <p><strong>Common OU design strategies:</strong></p>
+          <ul class="content-list">
+            <li><strong>By department</strong> — IT, HR, Finance, Sales (good for policy differentiation)</li>
+            <li><strong>By geography</strong> — NewYork, Chicago, London (good for delegation to site admins)</li>
+            <li><strong>By object type</strong> — Users, Computers, Servers (simple; less flexible for GPO)</li>
+            <li><strong>Hybrid</strong> — Geography at top level, departments within each location (most common in practice)</li>
+          </ul>
+          <div class="callout callout-warn">
+            <div class="callout-title">⚠️ OUs vs. Security Groups — A Common Confusion</div>
+            <strong>OUs</strong> are for organizing objects and applying GPOs/delegation. <strong>Security Groups</strong> are for granting access to resources (file shares, printers, applications). You cannot assign file share permissions to an OU. You cannot link a GPO to a Security Group. They serve different purposes and are not interchangeable.
+          </div>
+        </div>
+      </details>
+
+      <details class="collapsible">
+        <summary>👤💻 Objects — The Leaf Entries</summary>
+        <div class="details-body">
+          <p><strong>Objects</strong> are the individual items stored in the directory. Every object belongs to an <em>object class</em> defined in the schema, which determines what attributes the object can have.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Object Type</th><th>Description</th><th>Key Attributes</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>User</strong></td>
+                  <td>Represents a person who can log in to the domain</td>
+                  <td>sAMAccountName, userPrincipalName, password, group memberships</td>
+                </tr>
+                <tr>
+                  <td><strong>Computer</strong></td>
+                  <td>Represents a domain-joined machine</td>
+                  <td>Computer name, OS version, last logon, group memberships</td>
+                </tr>
+                <tr>
+                  <td><strong>Group</strong></td>
+                  <td>Collection of users/computers for access control</td>
+                  <td>Group type (Security/Distribution), scope (Domain Local/Global/Universal)</td>
+                </tr>
+                <tr>
+                  <td><strong>Printer</strong></td>
+                  <td>Published network printer</td>
+                  <td>Location, driver, share name</td>
+                </tr>
+                <tr>
+                  <td><strong>Shared Folder</strong></td>
+                  <td>Published network share</td>
+                  <td>UNC path, description</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </article>
+
+  <!-- ═══ SECTION 4: AD DS PHYSICAL STRUCTURE ═══ -->
+  <span class="section-anchor" id="sec-physical"></span>
+  <article class="section-card" aria-labelledby="hdr-physical">
+    <div class="section-header">
+      <span class="section-icon" aria-hidden="true">🖥️</span>
+      <div>
+        <span class="section-num">Section 4</span>
+        <h2 id="hdr-physical">AD DS Physical Structure</h2>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <p>While the <em>logical</em> structure defines how objects are organized conceptually, the <strong>physical structure</strong> defines how AD DS maps to the actual network infrastructure — servers, network links, and geographic locations. Physical structure decisions directly impact <strong>replication efficiency</strong> and <strong>authentication performance</strong>.</p>
+
+      <h3 class="subsection-title">Physical Structure Components</h3>
+
+      <div class="phys-grid" role="list" aria-label="AD DS physical structure components">
+        <div class="phys-card" role="listitem">
+          <span class="phys-icon" aria-hidden="true">🖥️</span>
+          <div class="phys-name">Domain Controller (DC)</div>
+          <div class="phys-desc">A Windows Server running the AD DS role. Stores a full writable copy of the domain database (NTDS.DIT). Authenticates users and enforces policies. Every domain needs at least one DC; production environments need two or more for redundancy.</div>
+        </div>
+        <div class="phys-card" role="listitem">
+          <span class="phys-icon" aria-hidden="true">🏙️</span>
+          <div class="phys-name">Site</div>
+          <div class="phys-desc">A logical grouping of IP subnets that share fast, reliable network connectivity. Sites map to physical locations (buildings, campuses, branch offices). AD DS uses site information to route authentication and replication traffic efficiently.</div>
+        </div>
+        <div class="phys-card" role="listitem">
+          <span class="phys-icon" aria-hidden="true">🔗</span>
+          <div class="phys-name">Site Link</div>
+          <div class="phys-desc">Represents the WAN connection between two sites. Configured with a cost (lower = preferred), a replication schedule, and a replication interval. AD DS uses site links to schedule inter-site replication during off-peak hours.</div>
+        </div>
+        <div class="phys-card" role="listitem">
+          <span class="phys-icon" aria-hidden="true">🌍</span>
+          <div class="phys-name">Global Catalog (GC)</div>
+          <div class="phys-desc">A special DC that holds a full copy of all objects in its own domain and a partial (read-only) copy of objects from all other domains in the forest. Required for user logon (to resolve Universal Group memberships) and forest-wide object searches.</div>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">Why Physical Structure Matters</h3>
+
+      <div class="tab-widget" role="region" aria-label="Physical structure impact areas">
+        <ul class="tab-list" role="tablist" aria-label="Impact areas">
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="true" aria-controls="tab-replication" id="btn-replication">Replication</button>
+          </li>
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-auth" id="btn-auth">Authentication</button>
+          </li>
+          <li role="presentation">
+            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-gc" id="btn-gc">Global Catalog</button>
+          </li>
+        </ul>
+        <div id="tab-replication" role="tabpanel" aria-labelledby="btn-replication" class="tab-panel active">
+          <h3 class="subsection-title" style="margin-top:0;">AD DS Replication</h3>
+          <p>Every change made to the AD DS database — a new user account, a password change, a GPO update — must be replicated to all Domain Controllers in the domain. AD DS uses a <strong>multi-master replication model</strong>: changes can be made on any writable DC, and those changes propagate to all other DCs.</p>
+          <p><strong>Intra-site replication</strong> (within a site) happens automatically within minutes using the <strong>Knowledge Consistency Checker (KCC)</strong>, which builds an efficient replication topology. Because intra-site connections are assumed to be fast and cheap, replication is triggered immediately on change notification.</p>
+          <p><strong>Inter-site replication</strong> (between sites, across WAN links) is controlled by site link configuration. Administrators schedule replication during off-peak hours (e.g., 2:00 AM) to avoid consuming WAN bandwidth during business hours. The cost assigned to site links determines which path replication traffic takes when multiple paths exist.</p>
+          <div class="phys-flow" role="img" aria-label="Replication flow: Change on DC1 notifies DC2, DC2 requests update, DC1 sends changes, DC2 applies changes">
+            <span class="phys-flow-item">Change on DC1</span>
+            <span class="phys-flow-arrow">→</span>
+            <span class="phys-flow-item">Notification to DC2</span>
+            <span class="phys-flow-arrow">→</span>
+            <span class="phys-flow-item">DC2 Requests Update</span>
+            <span class="phys-flow-arrow">→</span>
+            <span class="phys-flow-item">Changes Applied</span>
+          </div>
+        </div>
+        <div id="tab-auth" role="tabpanel" aria-labelledby="btn-auth" class="tab-panel">
+          <h3 class="subsection-title" style="margin-top:0;">Authentication and Site Awareness</h3>
+          <p>When a user at a workstation presses Ctrl+Alt+Del and enters their domain credentials, the workstation contacts a Domain Controller to authenticate. AD DS is <strong>site-aware</strong>: it will always attempt to contact a DC in the <em>same site</em> as the workstation first, before trying DCs in remote sites.</p>
+          <p>This matters enormously for performance. Consider a branch office in Sacramento connected to a main office in San Francisco via a 10 Mbps WAN link. If there is no DC in Sacramento, every single logon attempt must traverse the WAN — creating delays, consuming bandwidth, and potentially failing entirely if the WAN link goes down.</p>
+          <p><strong>Best practice:</strong> Place at least one Domain Controller at every physical location with more than 25–30 users, or at any location where WAN reliability is a concern. This is called placing a <strong>local DC</strong> for the site.</p>
+          <div class="callout callout-warn">
+            <div class="callout-title">⚠️ No Local DC = No Logon if WAN is Down</div>
+            If a branch office has no local DC and the WAN link to the main office fails, users at that branch cannot log in to the domain. (Cached credentials allow some logins, but access to network resources is lost.) This is a critical availability consideration in DC placement decisions.
+          </div>
+        </div>
+        <div id="tab-gc" role="tabpanel" aria-labelledby="btn-gc" class="tab-panel">
+          <h3 class="subsection-title" style="margin-top:0;">The Global Catalog Server</h3>
+          <p>The <strong>Global Catalog (GC)</strong> is a domain controller that has been designated to hold a partial replica of all objects in all domains in the forest. It serves two critical functions:</p>
+          <ol class="content-list">
+            <li><strong>User logon</strong> — When a user logs in, the authenticating DC must contact a GC server to look up the user's Universal Group memberships. Without a reachable GC, logon fails (except for members of the Domain Admins group).</li>
+            <li><strong>Forest-wide searches</strong> — Applications like Microsoft Exchange and Outlook use the GC as a global address book. Queries to the GC (port 3268) can find objects anywhere in the forest.</li>
+          </ol>
+          <p>In a single-domain forest, every DC is automatically a GC server. In multi-domain forests, GC placement must be planned — typically at least one GC per site.</p>
+          <p><strong>GC vs. regular DC:</strong> A regular DC holds the full database for its own domain only. A GC holds the full database for its domain <em>plus</em> a read-only subset of attributes for all other domains. The GC listens on LDAP port 3268 (or 3269 for LDAPS) in addition to the standard port 389.</p>
+        </div>
+      </div>
+
+      <h3 class="subsection-title">FSMO Roles — A Brief Introduction</h3>
+      <details class="collapsible">
+        <summary>What are FSMO Roles? (Click to expand)</summary>
+        <div class="details-body">
+          <p>Although AD DS uses multi-master replication for most changes, five operations are <em>single-master</em> — meaning only one DC in the forest or domain can perform them at a time. These are the <strong>Flexible Single Master Operations (FSMO)</strong> roles, also called Operations Master roles.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Role</th><th>Scope</th><th>Responsibility</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Schema Master</strong></td><td>Forest-wide (1 per forest)</td><td>Controls all updates to the AD schema</td></tr>
+                <tr><td><strong>Domain Naming Master</strong></td><td>Forest-wide (1 per forest)</td><td>Controls adding/removing domains from the forest</td></tr>
+                <tr><td><strong>PDC Emulator</strong></td><td>Per domain</td><td>Time synchronization, password changes, account lockouts</td></tr>
+                <tr><td><strong>RID Master</strong></td><td>Per domain</td><td>Allocates pools of Relative IDs used to create security principals</td></tr>
+                <tr><td><strong>Infrastructure Master</strong></td><td>Per domain</td><td>Updates cross-domain object references</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>In a new single-domain forest, all five FSMO roles are held by the first DC promoted. You will not need to manually manage FSMO roles in this course, but you should know they exist — they appear in Quiz 11 and in real-world troubleshooting.</p>
+        </div>
+      </details>
+
+    </div>
+  </article>
+
+  <!-- ═══ SECTION 5: AD DS AND DNS ═══ -->
+  <span class="section-anchor" id="sec-dns"></span>
+  <article class="section-card" aria-labelledby="hdr-dns">
+    <div class="section-header">
+      <span class="section-icon" aria-hidden="true">🌐</span>
+      <div>
+        <span class="section-num">Section 5</span>
+        <h2 id="hdr-dns">AD DS and DNS</h2>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <div class="callout callout-warn">
+        <div class="callout-title">🔑 The Golden Rule of Active Directory</div>
+        <strong>AD DS requires DNS. DNS is not optional.</strong> Without a properly configured DNS server, Active Directory cannot function. This is the single most common source of AD DS installation failures and post-deployment problems.
+      </div>
+
+      <h3 class="subsection-title">Why AD DS Requires DNS</h3>
+      <p>Active Directory uses DNS for two fundamental purposes:</p>
+      <ol class="content-list">
+        <li><strong>Domain name resolution</strong> — The domain itself is identified by a DNS name (e.g., <code>corp.local</code>). Every client that wants to join or communicate with the domain must be able to resolve this DNS name.</li>
+        <li><strong>Service location via SRV records</strong> — AD DS registers special <strong>Service (SRV) records</strong> in DNS that tell clients where to find domain controllers, Kerberos servers, and LDAP servers. Without these records, clients cannot locate the DC — even if the DC is running and healthy.</li>
+      </ol>
+
+      <!-- DNS diagram -->
+      <div class="hierarchy-diagram" role="img" aria-label="DNS resolution flow: Client queries DNS for SRV record, DNS returns DC address, Client contacts DC for authentication">
+        <div class="diag-title">How a Client Finds a Domain Controller Using DNS</div>
+        <div class="dns-diagram">
+          <div class="dns-box dns-client">
+            💻 Client Workstation
+            <span class="dns-sub">Wants to log in to corp.local</span>
+          </div>
+          <div class="dns-arrow" aria-hidden="true">→</div>
+          <div class="dns-box dns-server">
+            🌐 DNS Server
+            <span class="dns-sub">Resolves _ldap._tcp.corp.local SRV</span>
+          </div>
+          <div class="dns-arrow" aria-hidden="true">→</div>
+          <div class="dns-box dns-dc">
+            🖥️ Domain Controller
+            <span class="dns-sub">dc01.corp.local (192.168.1.10)</span>
+          </div>
+        </div>
+        <p style="text-align:center; font-size:0.8rem; color:var(--color-text-muted); margin-top:10px;">The client queries DNS for the SRV record <code>_ldap._tcp.corp.local</code> to discover the DC's address, then contacts the DC directly for Kerberos authentication.</p>
+      </div>
+
+      <h3 class="subsection-title">Key DNS Records Registered by AD DS</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Record Type</th><th>Example</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>SRV</strong></td>
+              <td><code>_ldap._tcp.corp.local</code></td>
+              <td>Locates LDAP service (DC) for the domain</td>
+            </tr>
+            <tr>
+              <td><strong>SRV</strong></td>
+              <td><code>_kerberos._tcp.corp.local</code></td>
+              <td>Locates Kerberos Key Distribution Center (KDC)</td>
+            </tr>
+            <tr>
+              <td><strong>SRV</strong></td>
+              <td><code>_ldap._tcp.gc._msdcs.corp.local</code></td>
+              <td>Locates Global Catalog servers</td>
+            </tr>
+            <tr>
+              <td><strong>A / AAAA</strong></td>
+              <td><code>dc01.corp.local → 192.168.1.10</code></td>
+              <td>Resolves DC hostname to IP address</td>
+            </tr>
+            <tr>
+              <td><strong>NS</strong></td>
+              <td><code>corp.local NS dc01.corp.local</code></td>
+              <td>Identifies authoritative DNS server for the domain zone</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="subsection-title">What Happens When DNS Is Misconfigured</h3>
+      <details class="collapsible">
+        <summary>Scenario: DNS Misconfiguration Failure Modes</summary>
+        <div class="details-body">
+          <p>DNS misconfiguration is responsible for a large proportion of AD DS problems. Here are the most common failure modes:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Misconfiguration</th><th>Symptom</th><th>Diagnosis</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Client points to wrong DNS server (e.g., ISP DNS instead of DC)</td>
+                  <td>Cannot join domain; "domain not found" error</td>
+                  <td><code>nslookup corp.local</code> fails or returns wrong result</td>
+                </tr>
+                <tr>
+                  <td>SRV records not registered on DC</td>
+                  <td>Clients cannot locate DC; logon fails intermittently</td>
+                  <td><code>nslookup -type=SRV _ldap._tcp.corp.local</code> returns no results</td>
+                </tr>
+                <tr>
+                  <td>DC uses external DNS as forwarder but has no internal zone</td>
+                  <td>Internet works but AD DS queries fail</td>
+                  <td>DNS zone for <code>corp.local</code> not found on DC</td>
+                </tr>
+                <tr>
+                  <td>DC's own NIC points to external DNS (not itself)</td>
+                  <td>AD DS services fail to start after reboot</td>
+                  <td>DC NIC DNS setting should be 127.0.0.1 or its own IP</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout-info">
+            <div class="callout-title">🛠️ Verification Commands</div>
+            <ul class="content-list" style="margin-top:4px;">
+              <li><code>nslookup -type=SRV _ldap._tcp.corp.local</code> — verify DC SRV record</li>
+              <li><code>dcdiag /test:dns</code> — comprehensive DNS health check for the DC</li>
+              <li><code>ipconfig /all</code> — verify client DNS server setting</li>
+              <li><code>nltest /dsgetdc:corp.local</code> — verify DC discovery from a client</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+
+      <h3 class="subsection-title">AD DS DNS Best Practices</h3>
+      <ul class="content-list">
+        <li>Install DNS on the Domain Controller during AD DS promotion (the wizard does this automatically)</li>
+        <li>Configure the DC's own NIC to use itself as the primary DNS server (<code>127.0.0.1</code> or its own IP)</li>
+        <li>Configure all domain-joined clients and servers to use the DC's IP as their DNS server</li>
+        <li>Use a secondary DNS server (a second DC) for redundancy — never rely on a single DNS server</li>
+        <li>For internet name resolution, configure DNS forwarders on the DC (e.g., forward to 8.8.8.8 for external names)</li>
+        <li>Do not point domain clients to public DNS servers (8.8.8.8, 1.1.1.1) as their primary DNS — they will not be able to find the DC</li>
+      </ul>
+
+    </div>
+  </article>
+
+  <!-- ═══ SECTION 6: KNOWLEDGE CHECK ═══ -->
+  <span class="section-anchor" id="sec-kc"></span>
+  <article class="section-card" aria-labelledby="hdr-kc">
+    <div class="section-header">
+      <span class="section-icon" aria-hidden="true">✅</span>
+      <div>
+        <span class="section-num">Section 6</span>
+        <h2 id="hdr-kc">Knowledge Check</h2>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <div class="callout callout-info" style="margin-bottom:18px;">
+        <div class="callout-title">📝 Ungraded Self-Check</div>
+        This is an ungraded check for understanding. Select an answer for each question to see immediate explanatory feedback. Your responses are not submitted or recorded. Use this to identify concepts to review before Quiz 11.
+      </div>
+
+      <div class="kc-container" id="kc-container" role="region" aria-label="Knowledge check questions">
+        <div class="kc-progress" id="kc-progress" aria-live="polite">Question 1 of 5</div>
+
+        <!-- Q1 -->
+        <div class="kc-question" id="kc-q1" role="group" aria-labelledby="kc-q1-text">
+          <span class="q-num">Question 1 of 5</span>
+          <div class="q-text" id="kc-q1-text">Which component of the AD DS logical structure represents the highest-level boundary for schema, configuration, and the Global Catalog?</div>
+          <ul class="kc-options" role="list">
+            <li role="listitem"><button class="kc-option-btn" data-q="1" data-opt="a" aria-label="Option A: Domain">A. Domain</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="1" data-opt="b" aria-label="Option B: Forest">B. Forest</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="1" data-opt="c" aria-label="Option C: Organizational Unit">C. Organizational Unit</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="1" data-opt="d" aria-label="Option D: Tree">D. Tree</button></li>
+          </ul>
+          <div class="kc-feedback" id="kc-fb1" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="kc-question" id="kc-q2" role="group" aria-labelledby="kc-q2-text">
+          <span class="q-num">Question 2 of 5</span>
+          <div class="q-text" id="kc-q2-text">True or False: A domain can belong to more than one forest simultaneously.</div>
+          <ul class="kc-options" role="list">
+            <li role="listitem"><button class="kc-option-btn" data-q="2" data-opt="a" aria-label="Option A: True">A. True</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="2" data-opt="b" aria-label="Option B: False">B. False</button></li>
+          </ul>
+          <div class="kc-feedback" id="kc-fb2" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="kc-question" id="kc-q3" role="group" aria-labelledby="kc-q3-text">
+          <span class="q-num">Question 3 of 5</span>
+          <div class="q-text" id="kc-q3-text">What network service must be operational before Active Directory Domain Services can be successfully installed and function correctly?</div>
+          <ul class="kc-options" role="list">
+            <li role="listitem"><button class="kc-option-btn" data-q="3" data-opt="a" aria-label="Option A: DHCP">A. DHCP</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="3" data-opt="b" aria-label="Option B: DNS">B. DNS</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="3" data-opt="c" aria-label="Option C: NTP">C. NTP (Network Time Protocol)</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="3" data-opt="d" aria-label="Option D: FTP">D. FTP</button></li>
+          </ul>
+          <div class="kc-feedback" id="kc-fb3" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="kc-question" id="kc-q4" role="group" aria-labelledby="kc-q4-text">
+          <span class="q-num">Question 4 of 5</span>
+          <div class="q-text" id="kc-q4-text">Which AD DS physical structure component defines replication and authentication traffic boundaries based on network topology, and is used to ensure clients authenticate against a nearby Domain Controller?</div>
+          <ul class="kc-options" role="list">
+            <li role="listitem"><button class="kc-option-btn" data-q="4" data-opt="a" aria-label="Option A: Organizational Unit">A. Organizational Unit</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="4" data-opt="b" aria-label="Option B: Domain">B. Domain</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="4" data-opt="c" aria-label="Option C: Site">C. Site</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="4" data-opt="d" aria-label="Option D: Forest">D. Forest</button></li>
+          </ul>
+          <div class="kc-feedback" id="kc-fb4" role="alert" aria-live="polite"></div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="kc-question" id="kc-q5" role="group" aria-labelledby="kc-q5-text">
+          <span class="q-num">Question 5 of 5</span>
+          <div class="q-text" id="kc-q5-text">A company has 12 computers and 8 employees in a single office. All users share files using Windows built-in sharing and each has a local account on every computer. This is an example of which network model?</div>
+          <ul class="kc-options" role="list">
+            <li role="listitem"><button class="kc-option-btn" data-q="5" data-opt="a" aria-label="Option A: Domain model">A. Domain model</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="5" data-opt="b" aria-label="Option B: Workgroup model">B. Workgroup model</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="5" data-opt="c" aria-label="Option C: Forest model">C. Forest model</button></li>
+            <li role="listitem"><button class="kc-option-btn" data-q="5" data-opt="d" aria-label="Option D: Hybrid model">D. Hybrid model</button></li>
+          </ul>
+          <div class="kc-feedback" id="kc-fb5" role="alert" aria-live="polite"></div>
+        </div>
+
+        <div class="kc-score-bar" id="kc-score" role="status" aria-live="polite"></div>
+        <button class="kc-reset-btn" id="kc-reset" aria-label="Reset knowledge check and try again">↺ Try Again</button>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ═══ SECTION 7: MINI-CASE ═══ -->
+  <span class="section-anchor" id="sec-minicase"></span>
+  <article class="section-card" aria-labelledby="hdr-minicase">
+    <div class="section-header">
+      <span class="section-icon" aria-hidden="true">🏭</span>
+      <div>
+        <span class="section-num">Section 7</span>
+        <h2 id="hdr-minicase">Mini-Case: Greenfield Manufacturing Company</h2>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <div class="callout callout-info" style="margin-bottom:18px;">
+        <div class="callout-title">🔗 Connection to Project 3</div>
+        This mini-case previews the domain design task you will complete in <strong>Project 3: Directory Services &amp; Security Implementation</strong>. The design thinking you practice here — how many domains, what OU structure, where to place DCs — is exactly what Project 3 Part A asks you to do for your own lab environment.
+      </div>
+
+      <h3 class="subsection-title">The Scenario</h3>
+      <div class="scenario-box" role="region" aria-label="Greenfield Company scenario">
+        <div class="scenario-title">📋 Scenario Description</div>
+        <p><strong>Greenfield Manufacturing Co.</strong> is a small metal fabrication company with <strong>200 employees</strong> spread across <strong>three offices</strong>:</p>
+        <ul class="content-list" style="margin-top:10px;">
+          <li><strong>Headquarters (HQ) — Sacramento, CA:</strong> 120 employees including executive leadership, HR, Finance, and IT. Connected to the internet via a 1 Gbps fiber connection.</li>
+          <li><strong>Plant Office — Stockton, CA:</strong> 55 employees in manufacturing operations, quality control, and plant administration. Connected to HQ via a <strong>50 Mbps MPLS WAN link</strong>.</li>
+          <li><strong>Sales Office — San Francisco, CA:</strong> 25 employees in sales, marketing, and customer support. Connected to HQ via a <strong>20 Mbps MPLS WAN link</strong>.</li>
+        </ul>
+        <p style="margin-top:12px;">Currently, all three offices use a <strong>workgroup model</strong>. Each employee has a local account on their own computer. Sharing files requires setting up individual passwords on each machine. The IT administrator (one person) spends significant time traveling between sites to manage machines individually.</p>
+        <p>The company has decided to implement <strong>Active Directory Domain Services</strong>. You have been brought in as the AD DS architect. The company uses Windows Server 2022 and Windows 11 workstations throughout.</p>
+      </div>
+
+      <h3 class="subsection-title">Guided Reflection Questions</h3>
+      <p>Before looking at the model answer, consider each question carefully. Use what you have learned in Sections 1–5 to reason through your answers.</p>
+
+      <div class="reflect-grid">
+        <div class="reflect-card">
+          <div class="rc-q">
+            <span class="rc-num">1</span>
+            How many AD DS domains does Greenfield need?
+          </div>
+          <div class="rc-hint">Consider: size, administrative complexity, and whether there is any reason to create separate security or policy boundaries between locations.</div>
+        </div>
+        <div class="reflect-card">
+          <div class="rc-q">
+            <span class="rc-num">2</span>
+            What OU structure would you recommend?
+          </div>
+          <div class="rc-hint">Consider: the three locations, the departments mentioned, and how GPOs and delegation will need to work for the IT admin.</div>
+        </div>
+        <div class="reflect-card">
+          <div class="rc-q">
+            <span class="rc-num">3</span>
+            Where should Domain Controllers be placed?
+          </div>
+          <div class="rc-hint">Consider: the WAN link speeds, what happens if a WAN link fails, and the number of users at each location.</div>
+        </div>
+        <div class="reflect-card">
+          <div class="rc-q">
+            <span class="rc-num">4</span>
+            How many AD DS Sites should be configured?
+          </div>
+          <div class="rc-hint">Consider: the physical network topology and the purpose of Sites in controlling replication and authentication traffic.</div>
+        </div>
+      </div>
+
+      <button class="reveal-btn" id="reveal-answer-btn" aria-expanded="false" aria-controls="model-answer">
+        <span class="btn-icon">🔍</span>
+        Reveal Model Answer
+      </button>
+
+      <div class="model-answer" id="model-answer" aria-live="polite">
+        <h4>✅ Model Answer — Greenfield Manufacturing Co.</h4>
+
+        <h5>1. How Many Domains?</h5>
+        <p><strong>Recommendation: One domain.</strong></p>
+        <p>With 200 employees across three offices, all under the same company, there is no justification for multiple domains. The company has a single IT administrator, a single set of security policies, and no regulatory or organizational reason to create separate administrative boundaries. Creating multiple domains would add significant complexity (inter-domain trusts, separate domain admin accounts, more complex replication) without any benefit.</p>
+        <p>Suggested domain name: <code>greenfield.local</code> (or <code>greenfield.com</code> if using a registered public DNS name — best practice for modern deployments).</p>
+
+        <h5>2. Recommended OU Structure</h5>
+        <p>A <strong>geography-first, department-second hybrid</strong> structure is appropriate. This allows the IT admin to delegate control to a local point of contact at each site and to apply site-specific GPOs (e.g., different mapped drives, different printer deployments).</p>
+        <ul>
+          <li><code>greenfield.local</code>
+            <ul>
+              <li><code>OU=HQ-Sacramento</code>
+                <ul>
+                  <li><code>OU=Executives</code></li>
+                  <li><code>OU=HR</code></li>
+                  <li><code>OU=Finance</code></li>
+                  <li><code>OU=IT</code></li>
+                  <li><code>OU=Computers-HQ</code></li>
+                </ul>
+              </li>
+              <li><code>OU=Plant-Stockton</code>
+                <ul>
+                  <li><code>OU=Manufacturing</code></li>
+                  <li><code>OU=QualityControl</code></li>
+                  <li><code>OU=Computers-Stockton</code></li>
+                </ul>
+              </li>
+              <li><code>OU=Sales-SanFrancisco</code>
+                <ul>
+                  <li><code>OU=Sales</code></li>
+                  <li><code>OU=Marketing</code></li>
+                  <li><code>OU=Computers-SF</code></li>
+                </ul>
+              </li>
+              <li><code>OU=Servers</code> (all server computer objects)</li>
+              <li><code>OU=ServiceAccounts</code> (service and system accounts)</li>
+            </ul>
+          </li>
+        </ul>
+        <p>Separating computer objects into their own sub-OUs (e.g., <code>Computers-HQ</code>) allows computer-targeted GPOs (desktop restrictions, software deployment) to be applied independently of user-targeted GPOs.</p>
+
+        <h5>3. Domain Controller Placement</h5>
+        <p><strong>Recommendation: At least one DC at each of the three locations.</strong></p>
+        <ul>
+          <li><strong>HQ Sacramento:</strong> Two DCs (DC01 and DC02) for redundancy. DC01 is the primary DC and holds all FSMO roles. DC02 provides failover and load distribution. Both are Global Catalog servers.</li>
+          <li><strong>Plant Stockton (55 users):</strong> One DC (DC03). With 55 users on a 50 Mbps WAN link, a local DC is essential. If the WAN fails, plant employees can still log in and access local resources. DC03 should also be a Global Catalog server.</li>
+          <li><strong>Sales SF (25 users):</strong> One DC (DC04). The 20 Mbps WAN link is adequate for light traffic, but 25 users logging in simultaneously would create noticeable delays without a local DC, and a WAN outage would prevent all logins. DC04 should be a Global Catalog server.</li>
+        </ul>
+
+        <h5>4. AD DS Sites Configuration</h5>
+        <p><strong>Recommendation: Three Sites, two Site Links.</strong></p>
+        <ul>
+          <li><strong>Site: Sacramento-HQ</strong> — subnet covering HQ IP range</li>
+          <li><strong>Site: Stockton-Plant</strong> — subnet covering Plant IP range</li>
+          <li><strong>Site: SanFrancisco-Sales</strong> — subnet covering SF IP range</li>
+          <li><strong>Site Link: HQ-to-Stockton</strong> — cost 100, replicate every 180 minutes, schedule off-peak hours</li>
+          <li><strong>Site Link: HQ-to-SF</strong> — cost 150 (lower bandwidth = higher cost), replicate every 180 minutes, schedule off-peak hours</li>
+        </ul>
+        <p>With three properly defined sites, AD DS will automatically ensure that Sacramento users authenticate against DC01/DC02, Stockton users authenticate against DC03, and SF users authenticate against DC04. Replication will be scheduled across the WAN links during off-peak hours to minimize bandwidth consumption.</p>
+
+        <div class="callout callout-success" style="margin-top:14px;">
+          <div class="callout-title">💡 Key Design Principle Illustrated</div>
+          Notice that the answer to "How many domains?" was one — even though there are three locations. <strong>Location does not equal domain.</strong> Location is addressed by Sites and DC placement, not by creating additional domains. This is one of the most important AD DS design principles, and it applies directly to Project 3.
+        </div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- Readings & Resources -->
+  <article class="section-card" aria-labelledby="hdr-resources">
+    <div class="section-header" style="background: #2e5c8e;">
+      <span class="section-icon" aria-hidden="true">📖</span>
+      <div>
+        <span class="section-num">Required Readings</span>
+        <h2 id="hdr-resources">Module 11.1 Resources</h2>
+      </div>
+    </div>
+    <div class="section-body">
+      <p style="font-size:0.9rem; color:var(--color-text-muted); margin-bottom:16px;">Estimated reading/viewing time: <strong>45–60 minutes.</strong> All resources are referenced in Canvas by name. Do not begin Module 11.2 until you have completed these readings.</p>
+      <ul class="resource-list" aria-label="Required readings and resources">
+        <li>
+          <span class="res-icon" aria-hidden="true">📄</span>
+          <div>
+            <div class="res-name">Active Directory Domain Services Overview</div>
+            <div class="res-meta">Microsoft Learn · ~20 minutes</div>
+            <div class="res-note">Comprehensive overview of AD DS concepts, components, and use cases. Focus on the logical and physical structure sections.</div>
+          </div>
+        </li>
+        <li>
+          <span class="res-icon" aria-hidden="true">📄</span>
+          <div>
+            <div class="res-name">Understanding Active Directory Logical Structure</div>
+            <div class="res-meta">Microsoft Learn · ~15 minutes</div>
+            <div class="res-note">Deep dive into forests, trees, domains, and OUs. Read alongside Section 3 of this module.</div>
+          </div>
+        </li>
+        <li>
+          <span class="res-icon" aria-hidden="true">🎬</span>
+          <div>
+            <div class="res-name">Active Directory Overview Video</div>
+            <div class="res-meta">Professor Messer (YouTube) · ~10 minutes</div>
+            <div class="res-note">Excellent visual walkthrough of AD DS concepts. Recommended to watch after completing the readings to reinforce understanding.</div>
+          </div>
+        </li>
+        <li>
+          <span class="res-icon" aria-hidden="true">📄</span>
+          <div>
+            <div class="res-name">Workgroup vs. Domain — Comparison Guide</div>
+            <div class="res-meta">Petri IT Knowledgebase · ~10 minutes</div>
+            <div class="res-note">Practical comparison with real-world examples. Reinforces Section 2 of this module.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </article>
+
+  <!-- Connections Banner -->
+  <div class="connections-banner" role="region" aria-label="Assessment and module connections">
+    <h3>Module 11.1 Connections to Graded Assessments</h3>
+    <div class="conn-grid">
+      <div class="conn-item">
+        <span class="conn-label">Quiz</span>
+        <span class="conn-name">Quiz 11: Active Directory</span>
+        <div style="font-size:0.78rem; opacity:0.8; margin-top:3px;">AD DS structure &amp; DNS questions are heavily represented. Available Fri–Sun, April 10–12. 14 pts.</div>
+      </div>
+      <div class="conn-item">
+        <span class="conn-label">Discussion</span>
+        <span class="conn-name">Discussion 7: Directory Services in the Real World</span>
+        <div style="font-size:0.78rem; opacity:0.8; margin-top:3px;">Workgroup vs. domain concepts from this module support your post. Initial post due Thursday. 3 pts.</div>
+      </div>
+      <div class="conn-item">
+        <span class="conn-label">Project — Assigned This Week</span>
+        <span class="conn-name">Project 3: Directory Services &amp; Security Implementation</span>
+        <div style="font-size:0.78rem; opacity:0.8; margin-top:3px;">Part A (domain &amp; OU design) directly applies the architectural framework from this module. 150 pts.</div>
+      </div>
+      <div class="conn-item">
+        <span class="conn-label">Project — Due This Week</span>
+        <span class="conn-name">Project 2: Network Infrastructure &amp; Firewall Implementation</span>
+        <div style="font-size:0.78rem; opacity:0.8; margin-top:3px;">Final submission due Sunday, April 12, 11:59 PM. 100 pts.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>CSC 152 – Network Operating Systems and Administration · Mendocino College · Week 11 Module 11.1</p>
+  <p style="margin-top:4px;">Module content aligned with CSLO 1 and CSLO 2. This module is the HTML/UX template anchor for all Week 11 Canvas pages.</p>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Tab Widget ── */
+  function initTabs(widget) {
+    var btns   = Array.from(widget.querySelectorAll('.tab-btn'));
+    var panels = Array.from(widget.querySelectorAll('.tab-panel'));
+
+    function activateTab(btn) {
+      btns.forEach(function (b) {
+        b.setAttribute('aria-selected', 'false');
+        b.tabIndex = -1;
+      });
+      panels.forEach(function (p) { p.classList.remove('active'); });
+      btn.setAttribute('aria-selected', 'true');
+      btn.tabIndex = 0;
+      var target = widget.querySelector('#' + btn.getAttribute('aria-controls'));
+      if (target) target.classList.add('active');
+    }
+
+    btns.forEach(function (btn, idx) {
+      btn.tabIndex = (idx === 0) ? 0 : -1;
+      btn.addEventListener('click', function () { activateTab(btn); });
+      btn.addEventListener('keydown', function (e) {
+        var dir = 0;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  dir =  1;
+        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    dir = -1;
+        if (dir !== 0) {
+          e.preventDefault();
+          var next = (idx + dir + btns.length) % btns.length;
+          activateTab(btns[next]);
+          btns[next].focus();
+        }
+        if (e.key === 'Home') { e.preventDefault(); activateTab(btns[0]); btns[0].focus(); }
+        if (e.key === 'End')  { e.preventDefault(); var last = btns.length - 1; activateTab(btns[last]); btns[last].focus(); }
+      });
+    });
+  }
+
+  document.querySelectorAll('.tab-widget').forEach(initTabs);
+
+  /* ── Knowledge Check ── */
+  var answers = {
+    1: { correct: 'b', feedback: {
+      a: { cls: 'fb-incorrect', title: '✗ Not quite.', text: 'A Domain is an important administrative boundary, but it is not the highest level. A domain lives inside a tree, which lives inside a forest. The Forest is the top-level container and defines the schema and Global Catalog boundaries.' },
+      b: { cls: 'fb-correct',   title: '✓ Correct!',   text: 'The Forest is the highest-level component in the AD DS logical hierarchy. All domains in a forest share a common schema, a common Global Catalog, and automatic two-way transitive trusts. The forest is also the true security boundary — not the domain.' },
+      c: { cls: 'fb-incorrect', title: '✗ Not quite.', text: 'An Organizational Unit (OU) is a container within a domain used to organize objects and apply Group Policy. It is near the bottom of the logical hierarchy, not the top.' },
+      d: { cls: 'fb-incorrect', title: '✗ Not quite.', text: 'A Tree is a collection of domains sharing a contiguous DNS namespace, and it lives inside a Forest. The Forest is the broader, higher-level boundary that can contain multiple trees.' }
+    }},
+    2: { correct: 'b', feedback: {
+      a: { cls: 'fb-incorrect', title: '✗ Incorrect.', text: 'A domain belongs to exactly one forest — the forest it was created in. The forest defines the outermost boundary of the AD DS structure, and a domain cannot span or belong to multiple forests. If two organizations need to share resources, they use cross-forest trusts rather than merging domains.' },
+      b: { cls: 'fb-correct',   title: '✓ Correct!',   text: 'False. A domain belongs to exactly one forest. This is a fundamental constraint of AD DS architecture. The forest is the ultimate boundary, and every domain is created within and remains part of a single forest. To connect two forests, administrators configure cross-forest trusts.' }
+    }},
+    3: { correct: 'b', feedback: {
+      a: { cls: 'fb-incorrect', title: '✗ Not the answer.', text: 'DHCP (Dynamic Host Configuration Protocol) automatically assigns IP addresses to clients and is very useful in a domain environment, but it is not required for AD DS to function. Servers and DCs typically use static IP addresses. DNS is the critical dependency.' },
+      b: { cls: 'fb-correct',   title: '✓ Correct!',   text: 'DNS is required. Active Directory uses DNS to register Service (SRV) records that allow clients to locate Domain Controllers, Kerberos servers, and other AD DS services. Without DNS, clients cannot find the DC, domain joins fail, and user authentication fails. The AD DS promotion wizard will install and configure DNS automatically if it is not already present.' },
+      c: { cls: 'fb-incorrect', title: '✗ Close, but not the primary answer.', text: 'NTP (time synchronization) is important for Kerberos authentication — Kerberos tickets expire quickly and require clocks to be synchronized within 5 minutes. However, AD DS includes its own time synchronization (the PDC Emulator role), and NTP is configured after AD DS is running. DNS must be in place before AD DS can even be installed.' },
+      d: { cls: 'fb-incorrect', title: '✗ Incorrect.', text: 'FTP (File Transfer Protocol) is a file transfer service and has no relationship to Active Directory Domain Services. DNS is the network service that AD DS fundamentally depends on.' }
+    }},
+    4: { correct: 'c', feedback: {
+      a: { cls: 'fb-incorrect', title: '✗ Incorrect.', text: 'An Organizational Unit (OU) is part of the logical structure, not the physical structure. OUs are used to organize objects within a domain and apply Group Policy — they have nothing to do with network topology or replication routing.' },
+      b: { cls: 'fb-incorrect', title: '✗ Incorrect.', text: 'A Domain is a logical structure component that defines administrative and replication boundaries, but it does not map to physical network topology. A single domain can span multiple physical locations. Sites are the physical structure component that maps to network topology.' },
+      c: { cls: 'fb-correct',   title: '✓ Correct!',   text: 'A Site is the AD DS physical structure component that represents a group of IP subnets with fast, reliable connectivity — typically corresponding to a physical location like a building or campus. AD DS uses site information to route authentication requests to the nearest DC and to schedule inter-site replication during off-peak hours. Properly configured sites are essential for performance in multi-location organizations.' },
+      d: { cls: 'fb-incorrect', title: '✗ Incorrect.', text: 'A Forest is the highest-level logical structure component. While it encompasses all domains and their physical infrastructure, it does not itself define network topology boundaries for replication or authentication routing. Sites serve that purpose.' }
+    }},
+    5: { correct: 'b', feedback: {
+      a: { cls: 'fb-incorrect', title: '✗ Not quite.', text: 'The domain model requires a Domain Controller and centralized authentication via Active Directory. In the scenario described, there is no DC — users have local accounts on each individual machine. This is the defining characteristic of the workgroup model.' },
+      b: { cls: 'fb-correct',   title: '✓ Correct!',   text: 'This is the workgroup model. The key indicators are: (1) each user has a local account on every computer — there is no centralized authentication, and (2) file sharing is done peer-to-peer without a central server. With 12 computers this is still manageable, but it would become very difficult to administer if the company grows — which is exactly why organizations migrate to the domain model.' },
+      c: { cls: 'fb-incorrect', title: '✗ Incorrect.', text: 'A Forest is a component of Active Directory, not a standalone network model. The forest exists within a domain model deployment and refers to the top-level AD DS container. The scenario describes a peer-to-peer arrangement with no Active Directory at all.' },
+      d: { cls: 'fb-incorrect', title: '✗ Incorrect.', text: '"Hybrid model" is not a standard AD DS term for this scenario. The setup described — local accounts on each machine, peer-to-peer sharing, no central authentication — is a classic workgroup model. A hybrid model in the modern sense typically refers to a mix of on-premises Active Directory and cloud-based identity (e.g., Azure AD), which is not what is described here.' }
+    }}
+  };
+
+  var answered = {};
+  var totalQ   = 5;
+
+  function handleAnswer(btn) {
+    var q   = parseInt(btn.getAttribute('data-q'), 10);
+    var opt = btn.getAttribute('data-opt');
+    if (answered[q]) return;
+    answered[q] = opt;
+
+    var qData   = answers[q];
+    var fbData  = qData.feedback[opt];
+    var isRight = (opt === qData.correct);
+
+    // Disable all options for this question
+    var qEl = document.getElementById('kc-q' + q);
+    qEl.querySelectorAll('.kc-option-btn').forEach(function (b) {
+      b.disabled = true;
+      if (b.getAttribute('data-opt') === qData.correct) {
+        b.classList.add('correct');
+      }
+    });
+    if (!isRight) btn.classList.add('incorrect');
+
+    // Show feedback
+    var fb = document.getElementById('kc-fb' + q);
+    fb.className = 'kc-feedback show ' + fbData.cls;
+    fb.innerHTML = '<div class="fb-label">' + fbData.title + '</div>' + fbData.text;
+
+    // Update progress
+    var count = Object.keys(answered).length;
+    var prog  = document.getElementById('kc-progress');
+    if (count < totalQ) {
+      prog.textContent = 'Question ' + (count + 1) + ' of ' + totalQ;
+    } else {
+      prog.textContent = 'All questions answered';
+      showScore();
+    }
+  }
+
+  function showScore() {
+    var correct = 0;
+    Object.keys(answered).forEach(function (q) {
+      if (answered[q] === answers[parseInt(q, 10)].correct) correct++;
+    });
+    var scoreEl = document.getElementById('kc-score');
+    var pct     = Math.round((correct / totalQ) * 100);
+    var msg     = '';
+    if (pct === 100) msg = '🎉 Perfect score! You are well-prepared for Quiz 11.';
+    else if (pct >= 80) msg = '👍 Great work! Review any questions you missed before Quiz 11.';
+    else if (pct >= 60) msg = '📚 Good effort. Review the sections for questions you missed.';
+    else msg = '📖 Keep studying! Re-read Sections 3–5 and try again.';
+    scoreEl.innerHTML = 'You answered ' + correct + ' of ' + totalQ + ' correctly (' + pct + '%). ' + msg;
+    scoreEl.classList.add('show');
+    var resetBtn = document.getElementById('kc-reset');
+    resetBtn.classList.add('show');
+    resetBtn.focus();
+  }
+
+  document.querySelectorAll('.kc-option-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () { handleAnswer(btn); });
+  });
+
+  document.getElementById('kc-reset').addEventListener('click', function () {
+    answered = {};
+    // Reset all questions
+    for (var q = 1; q <= totalQ; q++) {
+      var qEl = document.getElementById('kc-q' + q);
+      qEl.querySelectorAll('.kc-option-btn').forEach(function (b) {
+        b.disabled = false;
+        b.classList.remove('correct', 'incorrect');
+      });
+      var fb = document.getElementById('kc-fb' + q);
+      fb.className = 'kc-feedback';
+      fb.innerHTML = '';
+    }
+    var scoreEl = document.getElementById('kc-score');
+    scoreEl.className = 'kc-score-bar';
+    scoreEl.innerHTML = '';
+    var resetBtn = document.getElementById('kc-reset');
+    resetBtn.classList.remove('show');
+    document.getElementById('kc-progress').textContent = 'Question 1 of 5';
+    // Return focus to first question
+    document.querySelector('#kc-q1 .kc-option-btn').focus();
+  });
+
+  /* ── Reveal Model Answer ── */
+  var revealBtn = document.getElementById('reveal-answer-btn');
+  var modelAns  = document.getElementById('model-answer');
+
+  revealBtn.addEventListener('click', function () {
+    var isOpen = modelAns.classList.contains('show');
+    if (isOpen) {
+      modelAns.classList.remove('show');
+      revealBtn.setAttribute('aria-expanded', 'false');
+      revealBtn.innerHTML = '<span class="btn-icon">🔍</span> Reveal Model Answer';
+    } else {
+      modelAns.classList.add('show');
+      revealBtn.setAttribute('aria-expanded', 'true');
+      revealBtn.innerHTML = '<span class="btn-icon">🔼</span> Hide Model Answer';
+      // Move focus into the answer
+      modelAns.querySelector('h4').setAttribute('tabindex', '-1');
+      modelAns.querySelector('h4').focus();
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
