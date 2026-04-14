@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 12.5: Splunk Enterprise Server Installation — CSC 152</title>
+<style>
+:root{
+--primary:#1a5276;--primary-light:#2980b9;--primary-dark:#0e2f44;
+--accent:#e67e22;--accent-light:#f39c12;--accent-dark:#d35400;
+--success:#27ae60;--success-light:#2ecc71;--success-bg:#eafaf1;
+--warning:#f39c12;--warning-bg:#fef9e7;
+--danger:#c0392b;--danger-light:#e74c3c;--danger-bg:#fdedec;
+--info:#2980b9;--info-bg:#ebf5fb;
+--text:#2c3e50;--text-light:#5d6d7e;--text-lighter:#85929e;
+--bg:#ffffff;--bg-light:#f8f9fa;--bg-alt:#ecf0f1;
+--border:#d5dbdb;--border-light:#e8e8e8;
+--shadow:0 2px 4px rgba(0,0,0,.1);--shadow-md:0 4px 8px rgba(0,0,0,.12);
+--radius:8px;--radius-sm:4px;
+--font-main:'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Helvetica Neue',Arial,sans-serif;
+--font-mono:'Cascadia Code','Fira Code','Source Code Pro','Consolas','Courier New',monospace;
+--max-width:900px;--nav-height:56px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--nav-height) + 16px);}
+body{font-family:var(--font-main);font-size:1rem;line-height:1.7;color:var(--text);background:var(--bg-light);}
+/* ── Navigation ── */
+.top-nav{position:sticky;top:0;z-index:1000;background:var(--primary-dark);display:flex;align-items:center;gap:6px;padding:0 16px;height:var(--nav-height);overflow-x:auto;white-space:nowrap;box-shadow:var(--shadow-md);}
+.top-nav a{color:#fff;text-decoration:none;font-size:.82rem;padding:6px 10px;border-radius:var(--radius-sm);transition:background .2s;}
+.top-nav a:hover,.top-nav a:focus-visible{background:rgba(255,255,255,.15);outline:none;}
+.top-nav .nav-label{color:var(--accent-light);font-weight:700;font-size:.85rem;margin-right:4px;flex-shrink:0;}
+/* ── Layout ── */
+.page-wrapper{max-width:var(--max-width);margin:0 auto;padding:24px 20px 60px;}
+/* ── Module Header ── */
+.module-header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:#fff;border-radius:var(--radius);padding:32px 28px;margin-bottom:28px;box-shadow:var(--shadow-md);}
+.module-header .label{font-size:.85rem;text-transform:uppercase;letter-spacing:1.5px;opacity:.85;margin-bottom:4px;}
+.module-header h1{font-size:1.65rem;margin-bottom:8px;line-height:1.3;}
+.module-header .meta{font-size:.88rem;opacity:.85;line-height:1.6;}
+.module-header .meta span{margin-right:18px;}
+/* ── Sections ── */
+.section{background:var(--bg);border-radius:var(--radius);padding:28px 26px;margin-bottom:24px;box-shadow:var(--shadow);border:1px solid var(--border-light);}
+.section h2{font-size:1.35rem;color:var(--primary);margin-bottom:16px;padding-bottom:10px;border-bottom:3px solid var(--accent);}
+.section h3{font-size:1.1rem;color:var(--primary-dark);margin:20px 0 10px;}
+.section h4{font-size:1rem;color:var(--primary);margin:16px 0 8px;}
+p,.list-styled li{margin-bottom:10px;}
+/* ── Styled Lists ── */
+.list-styled{padding-left:22px;}
+.list-styled li{margin-bottom:8px;}
+ol.list-styled{list-style:decimal;}
+ul.list-styled{list-style:disc;}
+/* ── Code Blocks ── */
+pre{background:#1e293b;color:#e2e8f0;border-radius:var(--radius-sm);padding:16px 18px;overflow-x:auto;margin:12px 0;font-size:.88rem;line-height:1.55;border-left:4px solid var(--accent);}
+pre code{font-family:var(--font-mono);color:inherit;background:none;padding:0;}
+code{font-family:var(--font-mono);background:var(--bg-alt);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:.9em;}
+pre code .comment{color:#94a3b8;font-style:italic;}
+/* ── Info / Tip / Warning / Danger Boxes ── */
+.callout{border-radius:var(--radius-sm);padding:16px 18px;margin:14px 0;font-size:.95rem;line-height:1.6;display:flex;gap:12px;align-items:flex-start;}
+.callout .icon{font-size:1.3rem;flex-shrink:0;margin-top:2px;}
+.callout-info{background:var(--info-bg);border-left:4px solid var(--info);}
+.callout-tip{background:var(--success-bg);border-left:4px solid var(--success);}
+.callout-warning{background:var(--warning-bg);border-left:4px solid var(--warning);}
+.callout-danger{background:var(--danger-bg);border-left:4px solid var(--danger);}
+/* ── Tables ── */
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.93rem;}
+th,td{padding:10px 14px;text-align:left;border:1px solid var(--border);}
+th{background:var(--primary);color:#fff;font-weight:600;}
+tr:nth-child(even){background:var(--bg-light);}
+/* ── Timeline Graphic ── */
+.timeline-track{display:flex;align-items:flex-start;gap:0;margin:18px 0;overflow-x:auto;padding-bottom:8px;}
+.tl-node{display:flex;flex-direction:column;align-items:center;min-width:130px;flex:1;position:relative;}
+.tl-node .tl-dot{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;font-weight:700;z-index:2;position:relative;}
+.tl-node .tl-dot.past{background:var(--success);}
+.tl-node .tl-dot.current{background:var(--accent);box-shadow:0 0 0 4px rgba(230,126,34,.3);}
+.tl-node .tl-dot.future{background:var(--text-lighter);}
+.tl-node .tl-label{margin-top:8px;font-size:.78rem;text-align:center;color:var(--text);font-weight:600;line-height:1.35;}
+.tl-node .tl-sub{font-size:.72rem;color:var(--text-light);text-align:center;line-height:1.3;margin-top:2px;}
+.tl-connector{flex:0 0 40px;display:flex;align-items:center;justify-content:center;padding-top:8px;}
+.tl-connector .tl-arrow{width:40px;height:3px;background:var(--border);position:relative;}
+.tl-connector .tl-arrow::after{content:'';position:absolute;right:-2px;top:-4px;border:5px solid transparent;border-left:7px solid var(--border);}
+/* ── Checklist ── */
+.checklist{list-style:none;padding:0;}
+.checklist li{padding:8px 0 8px 32px;position:relative;border-bottom:1px solid var(--border-light);}
+.checklist li:last-child{border-bottom:none;}
+.checklist li::before{content:'☐';position:absolute;left:4px;top:8px;font-size:1.1rem;color:var(--primary);}
+/* ── Interactive Activities ── */
+.activity-area{background:var(--bg-light);border:2px dashed var(--primary-light);border-radius:var(--radius);padding:22px 22px;margin:18px 0;}
+.activity-area h3{color:var(--primary);margin-top:0;}
+/* Buttons */
+.btn{display:inline-block;padding:10px 20px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:.92rem;font-weight:600;transition:background .2s,transform .1s;font-family:var(--font-main);}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-light);}
+.btn-accent{background:var(--accent);color:#fff;}
+.btn-accent:hover{background:var(--accent-dark);}
+.btn-sm{padding:7px 14px;font-size:.84rem;}
+.btn-outline{background:transparent;border:2px solid var(--primary);color:var(--primary);}
+.btn-outline:hover{background:var(--primary);color:#fff;}
+/* Feedback */
+.feedback{margin-top:10px;padding:12px 16px;border-radius:var(--radius-sm);font-size:.93rem;display:none;line-height:1.55;}
+.feedback.correct{background:var(--success-bg);border-left:4px solid var(--success);display:block;}
+.feedback.incorrect{background:var(--danger-bg);border-left:4px solid var(--danger);display:block;}
+.feedback.neutral{background:var(--info-bg);border-left:4px solid var(--info);display:block;}
+/* Drag-and-drop / Sequencing */
+.seq-container{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+.seq-item{background:var(--bg);border:2px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;cursor:grab;user-select:none;font-size:.92rem;display:flex;align-items:center;gap:10px;transition:border-color .2s,box-shadow .2s;}
+.seq-item:active{cursor:grabbing;}
+.seq-item .seq-num{background:var(--primary);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.seq-item.correct-pos{border-color:var(--success);background:var(--success-bg);}
+.seq-item.incorrect-pos{border-color:var(--danger);background:var(--danger-bg);}
+.seq-item.dragging{opacity:.5;border-style:dashed;}
+/* Quiz options */
+.quiz-option{display:block;padding:10px 14px;margin:6px 0;border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color .2s,background .2s;font-size:.93rem;}
+.quiz-option:hover{border-color:var(--primary-light);background:var(--bg-light);}
+.quiz-option.selected{border-color:var(--primary);background:var(--info-bg);font-weight:600;}
+.quiz-option.correct-answer{border-color:var(--success);background:var(--success-bg);}
+.quiz-option.wrong-answer{border-color:var(--danger);background:var(--danger-bg);}
+.quiz-option.disabled{pointer-events:none;opacity:.85;}
+/* Scenario cards */
+.scenario-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin:14px 0;box-shadow:var(--shadow);}
+.scenario-card h4{margin-top:0;}
+/* ── Objectives Box ── */
+.objectives-box{background:var(--info-bg);border-left:4px solid var(--info);border-radius:var(--radius-sm);padding:18px 20px;margin:16px 0;}
+.objectives-box h3{margin-top:0;color:var(--primary-dark);}
+.objectives-box ul{padding-left:20px;}
+.objectives-box li{margin-bottom:6px;}
+/* ── Footer ── */
+.module-footer{text-align:center;padding:24px 16px;font-size:.82rem;color:var(--text-lighter);border-top:1px solid var(--border-light);margin-top:32px;}
+/* ── Responsive ── */
+@media(max-width:600px){
+.page-wrapper{padding:14px 10px 40px;}
+.section{padding:18px 14px;}
+.module-header{padding:22px 16px;}
+.module-header h1{font-size:1.3rem;}
+.top-nav{padding:0 8px;}
+.top-nav a{font-size:.75rem;padding:5px 7px;}
+.timeline-track{flex-wrap:wrap;gap:4px;}
+.tl-connector{flex:0 0 20px;}
+.tl-connector .tl-arrow{width:20px;}
+pre{font-size:.8rem;padding:12px;}
+}
+/* ── Screen Reader Only ── */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+/* ── Print ── */
+@media print{.top-nav{display:none;}.section{break-inside:avoid;}}
+</style>
+</head>
+<body>
+
+<!-- ════════════════ NAVIGATION ════════════════ -->
+<nav class="top-nav" role="navigation" aria-label="Module sections">
+<span class="nav-label">12.5</span>
+<a href="#overview">Overview</a>
+<a href="#timeline">Timeline</a>
+<a href="#install">Install</a>
+<a href="#webui">Web UI</a>
+<a href="#receiver">Receiver Port</a>
+<a href="#firewall">Firewall</a>
+<a href="#verify">Verify</a>
+<a href="#activity1">Sequencing</a>
+<a href="#activity2">Port Quiz</a>
+<a href="#activity3">Scenario</a>
+<a href="#knowledge-check">Knowledge Check</a>
+</nav>
+
+<!-- ════════════════ PAGE WRAPPER ════════════════ -->
+<div class="page-wrapper">
+
+<!-- ── Module Header ── -->
+<header class="module-header">
+<div class="label">Module 12.5</div>
+<h1>Splunk Enterprise Server Installation</h1>
+<div class="meta">
+<span>📅 Week 12: April 6–12, 2026</span>
+<span>⏱ Estimated Time: ~1.0 hour</span><br>
+<span>📘 CSC 152 — Network Operating Systems and Administration</span>
+<span>👤 Instructor: David Pai</span>
+</div>
+</header>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 1 – OVERVIEW & OBJECTIVES              -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="overview">
+<h2>§1 &nbsp;Module Overview</h2>
+
+<p>This is the fifth and final module of Week 12. It shifts focus from directory services to <strong>centralized security monitoring infrastructure</strong>. You will install Splunk Enterprise on a Linux VM in your Proxmox lab environment, access the web interface, enable the receiving port for forwarder data, and configure pfSense firewall rules to allow Splunk traffic.</p>
+
+<p>Completing this module now means you will have a <strong>working Splunk server ready</strong> when Universal Forwarders are deployed in Week 13 and when Project 3 (Security Hardening &amp; Monitoring with Splunk) is assigned.</p>
+
+<div class="objectives-box">
+<h3>🎯 Learning Objective</h3>
+<ul>
+<li><strong>Objective 8:</strong> Install Splunk Enterprise on a Linux VM and confirm web UI access and receiver port configuration.</li>
+</ul>
+<p><strong>CSLO Alignment:</strong> CSLO 1 (Manage and maintain servers, including OS configuration, access control and virtualization) · CSLO 2 (Apply physical and network data security techniques)</p>
+</div>
+
+<div class="callout callout-info">
+<span class="icon" aria-hidden="true">📋</span>
+<div><strong>Prerequisites:</strong> Before starting this module, you should have completed Module 12.2 (OpenLDAP installation) or be comfortable with Linux package management (<code>apt install</code>, <code>dpkg</code>), <code>systemctl</code> service management, and pfSense firewall rule creation from Week 9.</div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 2 – WHY SPLUNK NOW? (TIMELINE)         -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="timeline">
+<h2>§2 &nbsp;Why Splunk Now? — Course Timeline</h2>
+
+<p>Splunk has been introduced gradually throughout this course using a <strong>progressive scaffolding</strong> approach. You have already experienced Splunk as a <em>consumer</em> of data; now you become the <em>administrator</em> who deploys and manages the platform.</p>
+
+<h3>Your Splunk Journey</h3>
+
+<div class="timeline-track" role="img" aria-label="Splunk deployment timeline showing five phases: Week 9 shared instance, Weeks 9 through 10 basic searches, Week 11 Fundamentals 1, Week 12 own server (current), and Week 13 forwarders leading to Project 3.">
+<div class="tl-node">
+<div class="tl-dot past" aria-hidden="true">1</div>
+<div class="tl-label">Week 9</div>
+<div class="tl-sub">Shared Splunk Instance<br>First SPL Searches</div>
+</div>
+<div class="tl-connector"><div class="tl-arrow"></div></div>
+<div class="tl-node">
+<div class="tl-dot past" aria-hidden="true">2</div>
+<div class="tl-label">Weeks 9–10</div>
+<div class="tl-sub">pfSense Syslog<br>Basic SPL Queries</div>
+</div>
+<div class="tl-connector"><div class="tl-arrow"></div></div>
+<div class="tl-node">
+<div class="tl-dot past" aria-hidden="true">3</div>
+<div class="tl-label">Week 11</div>
+<div class="tl-sub">Splunk Fundamentals 1<br>Self-Paced Course</div>
+</div>
+<div class="tl-connector"><div class="tl-arrow"></div></div>
+<div class="tl-node">
+<div class="tl-dot current" aria-hidden="true">4</div>
+<div class="tl-label">Week 12 (Now)</div>
+<div class="tl-sub">Install Your Own<br>Splunk Server</div>
+</div>
+<div class="tl-connector"><div class="tl-arrow"></div></div>
+<div class="tl-node">
+<div class="tl-dot future" aria-hidden="true">5</div>
+<div class="tl-label">Week 13+</div>
+<div class="tl-sub">Universal Forwarders<br>Dashboards · Project 3</div>
+</div>
+</div>
+
+<table>
+<caption class="sr-only">Splunk integration phases in CSC 152</caption>
+<thead>
+<tr><th>Phase</th><th>When</th><th>What You Did / Will Do</th><th>Your Role</th></tr>
+</thead>
+<tbody>
+<tr><td>Phase 1: Awareness</td><td>Weeks 2–7</td><td>Learned <em>why</em> centralized logging matters; reviewed raw logs manually</td><td>Observer</td></tr>
+<tr><td>Phase 2: Introduction</td><td>Weeks 8–10</td><td>Used instructor-hosted Splunk; ran basic SPL searches on pfSense data</td><td>Consumer</td></tr>
+<tr><td>Phase 3: Self-Study</td><td>Week 11</td><td>Completed Splunk Fundamentals 1 (assigned homework)</td><td>Learner</td></tr>
+<tr><td style="background:var(--warning-bg);font-weight:700;">Phase 4: Deployment</td><td style="background:var(--warning-bg);font-weight:700;">Week 12 (now)</td><td style="background:var(--warning-bg);font-weight:700;">Install Splunk Enterprise on your own Linux VM; enable receiver port</td><td style="background:var(--warning-bg);font-weight:700;">Administrator</td></tr>
+<tr><td>Phase 5: Integration</td><td>Weeks 13–15</td><td>Deploy Universal Forwarders; build dashboards; configure alerts (Project 3)</td><td>Security Analyst</td></tr>
+<tr><td>Phase 6: Mastery</td><td>Weeks 16–17</td><td>Validate monitoring; present in Project 4 capstone</td><td>Engineer</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-tip">
+<span class="icon" aria-hidden="true">💡</span>
+<div><strong>Key Insight:</strong> By installing Splunk <em>this week</em>, you separate the infrastructure setup from the analytical work. When Project 3 is assigned next week, you can focus on forwarders, dashboards, and alerts instead of troubleshooting installation issues.</div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 3 – SPLUNK ENTERPRISE INSTALLATION      -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="install">
+<h2>§3 &nbsp;Splunk Enterprise Installation on Linux</h2>
+
+<h3>3.1 &nbsp;Splunk Architecture — Quick Review</h3>
+<p>Before installing, recall the three main Splunk components you learned about in Week 9 and Splunk Fundamentals 1:</p>
+<table>
+<thead>
+<tr><th>Component</th><th>Role</th><th>Default Port(s)</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Splunk Enterprise</strong> (Indexer + Search Head)</td><td>Receives, indexes, and searches log data; hosts the web UI</td><td>8000 (Web), 8089 (Mgmt), 9997 (Receiving)</td></tr>
+<tr><td><strong>Universal Forwarder</strong></td><td>Lightweight agent on endpoints; collects and forwards log data</td><td>9997 (outbound to indexer), 8089 (mgmt)</td></tr>
+<tr><td><strong>Syslog Input</strong></td><td>Receives syslog from network devices (e.g., pfSense)</td><td>514 (UDP/TCP)</td></tr>
+</tbody>
+</table>
+
+<p>In this module, you install <strong>Splunk Enterprise</strong> — which acts as both the indexer and search head in our lab environment. The Universal Forwarders will be deployed in Week 13.</p>
+
+<h3>3.2 &nbsp;VM Preparation</h3>
+<p>You will install Splunk on a Linux VM in your Proxmox lab environment. This can be an existing Ubuntu Server VM on your <strong>Servers subnet</strong> or a new dedicated VM. Recommended minimum resources:</p>
+
+<table>
+<thead><tr><th>Resource</th><th>Minimum</th><th>Recommended</th></tr></thead>
+<tbody>
+<tr><td>CPU</td><td>1 vCPU</td><td>2 vCPUs</td></tr>
+<tr><td>RAM</td><td>2 GB</td><td>4 GB</td></tr>
+<tr><td>Disk</td><td>20 GB</td><td>30 GB</td></tr>
+<tr><td>OS</td><td colspan="2">Ubuntu Server 22.04 LTS (or your existing lab Linux server)</td></tr>
+<tr><td>Network</td><td colspan="2">Connected to Servers subnet; static IP configured</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-info">
+<span class="icon" aria-hidden="true">ℹ️</span>
+<div><strong>Reuse an Existing VM?</strong> If you already have a Linux server on your Servers subnet with sufficient resources, you can install Splunk there rather than creating a new VM. Many administrators run Splunk alongside other services in lab environments.</div>
+</div>
+
+<h3>3.3 &nbsp;Step-by-Step Installation (.deb Package Path)</h3>
+
+<h4>Step 1: Download the Splunk Enterprise .deb Package</h4>
+<p>Splunk Enterprise is available as a free download. The free license allows 500 MB/day of indexing, which is sufficient for our lab. Your instructor may provide a direct download link or a local copy on the lab network.</p>
+
+<pre><code><span class="comment"># Navigate to a temporary directory</span>
+cd /tmp
+
+<span class="comment"># Download Splunk Enterprise .deb package</span>
+<span class="comment"># (Your instructor will provide the current URL or a local mirror)</span>
+wget -O splunk-latest-linux-amd64.deb "https://download.splunk.com/products/splunk/releases/9.2.0/linux/splunk-9.2.0-7c27215a528f-linux-2.6-amd64.deb"</code></pre>
+
+<div class="callout callout-warning">
+<span class="icon" aria-hidden="true">⚠️</span>
+<div><strong>Version Note:</strong> The filename and URL above are examples. Your instructor will confirm the exact version to download. The installation steps are the same regardless of the minor version number.</div>
+</div>
+
+<h4>Step 2: Install the .deb Package</h4>
+<p>The <code>dpkg</code> command installs the package to <code>/opt/splunk</code>:</p>
+<pre><code><span class="comment"># Install the Splunk Enterprise package</span>
+sudo dpkg -i splunk-latest-linux-amd64.deb</code></pre>
+
+<p>Expected output includes lines showing the package being unpacked and installed to <code>/opt/splunk</code>. No errors should appear. If you see dependency errors, run <code>sudo apt --fix-broken install</code> and retry.</p>
+
+<h4>Step 3: Start Splunk and Accept the License</h4>
+<p>The first start requires accepting the license agreement and creating an administrator account:</p>
+<pre><code><span class="comment"># Start Splunk for the first time</span>
+<span class="comment"># --accept-license: accepts the Splunk license agreement</span>
+<span class="comment"># --answer-yes: answers "yes" to prompts automatically</span>
+sudo /opt/splunk/bin/splunk start --accept-license --answer-yes</code></pre>
+
+<p>During this first start, Splunk will prompt you to create an <strong>administrator account</strong>:</p>
+<pre><code>Please enter an administrator username: admin
+Password must contain at least:
+   * 8 total printable ASCII characters.
+Please enter a new password:
+Please confirm new password:</code></pre>
+
+<div class="callout callout-danger">
+<span class="icon" aria-hidden="true">🔐</span>
+<div><strong>Document Your Credentials!</strong> Record the admin username and password immediately. You will need these credentials for the web UI, for configuring forwarders in Week 13, and for Project 3. Store them securely — consider adding them to your lab documentation.</div>
+</div>
+
+<p>When startup completes, you will see:</p>
+<pre><code>Splunk&gt; See your world.  Maybe wish you hadn't.
+
+Checking prerequisites...
+	Checking mgmt port [8089]: open
+	Checking appserver port [127.0.0.1:8065]: open
+	Checking kvstore port [8191]: open
+	Checking configuration... Done.
+	Waiting for web server at [http://127.0.0.1:8000] to be available.. Done
+
+If you get stuck, we're here to help.
+Look for answers here: http://docs.splunk.com
+
+The Splunk web interface is at http://&lt;your-server-ip&gt;:8000</code></pre>
+
+<h4>Step 4: Enable Boot-Start</h4>
+<p>Configure Splunk to start automatically when the VM boots. This ensures your Splunk server survives reboots:</p>
+<pre><code><span class="comment"># Enable Splunk to start at boot (creates a systemd unit file)</span>
+sudo /opt/splunk/bin/splunk enable boot-start -user splunk --accept-license --answer-yes</code></pre>
+
+<p>This command creates a <code>systemd</code> service unit so that Splunk starts automatically. The <code>-user splunk</code> flag runs the Splunk process as the <code>splunk</code> user (created during installation) rather than root, following the principle of least privilege.</p>
+
+<div class="callout callout-tip">
+<span class="icon" aria-hidden="true">💡</span>
+<div><strong>Service Management:</strong> After enabling boot-start, you can manage Splunk using standard <code>systemctl</code> commands:
+<br><code>sudo systemctl status Splunkd</code> — Check service status
+<br><code>sudo systemctl restart Splunkd</code> — Restart the service
+<br><code>sudo systemctl stop Splunkd</code> — Stop the service</div>
+</div>
+
+<h3>3.4 &nbsp;Installation Summary</h3>
+<p>Here is the complete installation sequence for quick reference:</p>
+<pre><code><span class="comment"># 1. Download (URL provided by instructor)</span>
+cd /tmp
+wget -O splunk-latest-linux-amd64.deb "&lt;instructor-provided-URL&gt;"
+
+<span class="comment"># 2. Install</span>
+sudo dpkg -i splunk-latest-linux-amd64.deb
+
+<span class="comment"># 3. First start (accept license + create admin account)</span>
+sudo /opt/splunk/bin/splunk start --accept-license --answer-yes
+
+<span class="comment"># 4. Enable boot-start</span>
+sudo /opt/splunk/bin/splunk enable boot-start -user splunk --accept-license --answer-yes</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 4 – ACCESSING THE WEB UI                -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="webui">
+<h2>§4 &nbsp;Accessing the Splunk Web UI</h2>
+
+<h3>4.1 &nbsp;Connecting to the Web Interface</h3>
+<p>Splunk's web interface runs on <strong>port 8000</strong> by default. Open a web browser on any machine that can reach your Splunk server's IP address and navigate to:</p>
+<pre><code>http://&lt;splunk-server-ip&gt;:8000</code></pre>
+
+<p>For example, if your Splunk server's IP is <code>10.0.1.50</code>:</p>
+<pre><code>http://10.0.1.50:8000</code></pre>
+
+<p>Log in with the administrator credentials you created during installation.</p>
+
+<div class="callout callout-warning">
+<span class="icon" aria-hidden="true">⚠️</span>
+<div><strong>Cannot Connect?</strong> If the web UI does not load, check these common causes:
+<br>1. Is the Splunk service running? Run <code>sudo systemctl status Splunkd</code>
+<br>2. Is port 8000 open on the Linux VM's local firewall (if <code>ufw</code> is enabled)?
+<br>3. Is there a pfSense rule allowing traffic to port 8000? (See §6 below)
+<br>4. Are you on the correct network subnet to reach the Servers network?</div>
+</div>
+
+<h3>4.2 &nbsp;Brief Web UI Tour</h3>
+<p>After logging in, familiarize yourself with these key areas. This builds on what you saw in the shared instance during Week 9:</p>
+
+<table>
+<thead><tr><th>UI Area</th><th>Location</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><strong>Splunk Home</strong></td><td>Default landing page</td><td>Quick access to apps, search, and dashboards</td></tr>
+<tr><td><strong>Search &amp; Reporting</strong></td><td>Left sidebar or Apps menu</td><td>Run SPL queries, create reports and dashboards (your primary workspace for Project 3)</td></tr>
+<tr><td><strong>Settings</strong></td><td>Top navigation bar</td><td>System configuration: data inputs, forwarding/receiving, indexes, users</td></tr>
+<tr><td><strong>Activity → Jobs</strong></td><td>Top navigation bar</td><td>View running and completed search jobs</td></tr>
+<tr><td><strong>Messages</strong></td><td>Top-right bell icon</td><td>System messages and alerts (you may see license-related messages on the free tier)</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-info">
+<span class="icon" aria-hidden="true">ℹ️</span>
+<div><strong>Free License Note:</strong> Under the free license (500 MB/day indexing), some features like authentication, alerting via email, and distributed search are disabled. For our lab environment, this is sufficient. If your instructor has provided an Academic Alliance developer license (10 GB/day), follow the separate license installation instructions provided.</div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 5 – ENABLING THE RECEIVING PORT         -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="receiver">
+<h2>§5 &nbsp;Enabling the Receiving Port (9997)</h2>
+
+<h3>5.1 &nbsp;What Is the Receiving Port?</h3>
+<p>The <strong>receiving port</strong> is the TCP port on which Splunk Enterprise listens for data from <strong>Universal Forwarders</strong>. When you deploy forwarders on your Linux and Windows servers in Week 13, those forwarders will send log data to this port.</p>
+
+<table>
+<thead><tr><th>Port</th><th>Direction</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><strong>9997</strong></td><td>Forwarder → Indexer (inbound)</td><td>Log data transmission from Universal Forwarders</td></tr>
+<tr><td>8089</td><td>Bidirectional</td><td>Splunk management port (forwarder-to-indexer communication, REST API)</td></tr>
+<tr><td>8000</td><td>Client → Splunk (inbound)</td><td>Web UI access</td></tr>
+</tbody>
+</table>
+
+<p>Port 9997 is the <strong>industry-standard default</strong> for Splunk forwarder-to-indexer communication. It is <em>not</em> enabled by default after installation — you must explicitly configure it.</p>
+
+<h3>5.2 &nbsp;Enabling via the Web UI</h3>
+<p>Follow these steps in the Splunk web interface:</p>
+<ol class="list-styled">
+<li>Log into the Splunk web UI at <code>http://&lt;splunk-server-ip&gt;:8000</code></li>
+<li>Click <strong>Settings</strong> in the top navigation bar</li>
+<li>Under the <strong>Data</strong> section, click <strong>Forwarding and receiving</strong></li>
+<li>In the <strong>Receive data</strong> section, click <strong>Configure receiving</strong></li>
+<li>Click the <strong>New Receiving Port</strong> button (upper right)</li>
+<li>Enter <strong>9997</strong> in the port field</li>
+<li>Click <strong>Save</strong></li>
+</ol>
+
+<p>You should now see port 9997 listed as an active receiving port with a status of <strong>Enabled</strong>.</p>
+
+<h3>5.3 &nbsp;Verifying the Receiving Port</h3>
+<p>Confirm that Splunk is actually listening on port 9997 from the Linux command line:</p>
+<pre><code><span class="comment"># Check if Splunk is listening on port 9997</span>
+sudo ss -tlnp | grep 9997</code></pre>
+
+<p>Expected output:</p>
+<pre><code>LISTEN  0  128  *:9997  *:*  users:(("splunkd",pid=12345,fd=6))</code></pre>
+
+<p>You can also verify from within Splunk:</p>
+<pre><code><span class="comment"># Using the Splunk CLI to check listening ports</span>
+sudo /opt/splunk/bin/splunk display listen</code></pre>
+
+<p>Expected output:</p>
+<pre><code>Receiving is enabled on port(s): 9997</code></pre>
+
+<div class="callout callout-tip">
+<span class="icon" aria-hidden="true">💡</span>
+<div><strong>Why 9997 and Not 514?</strong> Port 514 is used for <em>syslog</em> — the protocol pfSense uses to send logs. Port 9997 is Splunk's proprietary <em>forwarder-to-indexer</em> protocol, which is encrypted, compressed, and supports acknowledgment. In Project 3, you will use <em>both</em>: syslog (514) for pfSense and the forwarder protocol (9997) for Linux and Windows servers.</div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 6 – FIREWALL CONFIGURATION              -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="firewall">
+<h2>§6 &nbsp;Firewall Configuration for Splunk</h2>
+
+<p>Your pfSense firewall (deployed in Week 9 / Project 2) must allow traffic to reach the Splunk server on the required ports. This section applies the firewall rule creation skills you practiced in Module 9.3.</p>
+
+<h3>6.1 &nbsp;Required Firewall Rules</h3>
+<p>Create the following rules on the appropriate pfSense interfaces. The exact interface depends on your network topology from Project 2 (Management, Servers, Clients subnets):</p>
+
+<table>
+<thead>
+<tr><th>Rule #</th><th>Source</th><th>Destination</th><th>Port</th><th>Protocol</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Management subnet</td><td>Splunk server IP</td><td>8000</td><td>TCP</td><td>Web UI access for administrators</td></tr>
+<tr><td>2</td><td>Servers subnet</td><td>Splunk server IP</td><td>9997</td><td>TCP</td><td>Universal Forwarder data from Linux/Windows servers</td></tr>
+<tr><td>3</td><td>Servers subnet</td><td>Splunk server IP</td><td>8089</td><td>TCP</td><td>Forwarder management communication</td></tr>
+<tr><td>4</td><td>Clients subnet</td><td>Splunk server IP</td><td>9997</td><td>TCP</td><td>Universal Forwarder data from client machines (if applicable)</td></tr>
+<tr><td>5</td><td>pfSense (self)</td><td>Splunk server IP</td><td>514</td><td>UDP</td><td>pfSense syslog forwarding (configured in Week 9)</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-warning">
+<span class="icon" aria-hidden="true">⚠️</span>
+<div><strong>Principle of Least Privilege:</strong> Only open ports from the subnets that <em>need</em> access. For example, the Clients subnet probably does not need access to port 8000 (Web UI) — only administrators on the Management subnet should access the Splunk dashboard. This is the same principle you applied when designing firewall rules in Project 2.</div>
+</div>
+
+<h3>6.2 &nbsp;Creating the Rules in pfSense</h3>
+<p>For each rule, navigate in pfSense:</p>
+<ol class="list-styled">
+<li>Log into the pfSense web UI</li>
+<li>Navigate to <strong>Firewall → Rules</strong></li>
+<li>Select the appropriate <strong>interface tab</strong> (e.g., MANAGEMENT, SERVERS, or CLIENTS)</li>
+<li>Click <strong>Add</strong> (up arrow for top, down arrow for bottom)</li>
+<li>Set <strong>Action</strong> to <em>Pass</em></li>
+<li>Set <strong>Protocol</strong> to <em>TCP</em> (or <em>UDP</em> for syslog)</li>
+<li>Set <strong>Source</strong> to the appropriate subnet or alias</li>
+<li>Set <strong>Destination</strong> to the Splunk server IP (or create an alias)</li>
+<li>Set <strong>Destination Port Range</strong> to the specific port (e.g., 8000, 9997, 8089)</li>
+<li>Add a <strong>Description</strong> (e.g., "Allow Splunk Web UI from Management")</li>
+<li>Click <strong>Save</strong>, then click <strong>Apply Changes</strong></li>
+</ol>
+
+<div class="callout callout-tip">
+<span class="icon" aria-hidden="true">💡</span>
+<div><strong>Use Aliases:</strong> Consider creating a pfSense alias called <code>Splunk_Ports</code> containing 8000, 8089, and 9997. This simplifies rule management — a single rule with the alias covers all three ports from a given subnet. You can also create a <code>Splunk_Server</code> host alias for the server IP.</div>
+</div>
+
+<h3>6.3 &nbsp;Verifying Firewall Rules</h3>
+<p>After creating the rules, verify connectivity from each relevant subnet:</p>
+<pre><code><span class="comment"># From a machine on the Management subnet, test web UI port</span>
+nc -zv &lt;splunk-server-ip&gt; 8000
+
+<span class="comment"># From a machine on the Servers subnet, test receiving port</span>
+nc -zv &lt;splunk-server-ip&gt; 9997
+
+<span class="comment"># From a machine on the Servers subnet, test management port</span>
+nc -zv &lt;splunk-server-ip&gt; 8089</code></pre>
+
+<p>Successful output looks like:</p>
+<pre><code>Connection to 10.0.1.50 9997 port [tcp/*] succeeded!</code></pre>
+
+<p>If the connection fails, check:</p>
+<ul class="list-styled">
+<li>pfSense rule order (rules are processed top-to-bottom; first match wins)</li>
+<li>Whether you clicked <strong>Apply Changes</strong> after adding rules</li>
+<li>Whether the Linux VM's local firewall (<code>ufw</code>) is also blocking the port</li>
+<li>pfSense logs: <strong>Status → System Logs → Firewall</strong> — look for blocked entries matching your Splunk server IP</li>
+</ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 7 – VERIFICATION CHECKLIST              -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="verify">
+<h2>§7 &nbsp;Verification Checklist</h2>
+
+<p>Before moving on, confirm every item below. This checklist ensures your Splunk infrastructure is ready for Universal Forwarder deployment in Week 13 and Project 3:</p>
+
+<ul class="checklist" role="list">
+<li><strong>Splunk service is running</strong> — <code>sudo systemctl status Splunkd</code> shows <em>active (running)</em></li>
+<li><strong>Boot-start is enabled</strong> — Splunk will survive VM reboots</li>
+<li><strong>Web UI is accessible</strong> — Navigate to <code>http://&lt;splunk-ip&gt;:8000</code> from the Management subnet and log in successfully</li>
+<li><strong>Port 9997 is listening</strong> — <code>sudo ss -tlnp | grep 9997</code> shows Splunk listening</li>
+<li><strong>Port 8089 is listening</strong> — <code>sudo ss -tlnp | grep 8089</code> shows Splunk management port</li>
+<li><strong>pfSense rules are in place</strong> — Rules for ports 8000, 8089, and 9997 exist on appropriate interfaces</li>
+<li><strong>Firewall rules are verified</strong> — <code>nc -zv</code> tests succeed from relevant subnets</li>
+<li><strong>Admin credentials are documented</strong> — Username and password stored securely in your lab documentation</li>
+<li><strong>Splunk server IP is documented</strong> — Record the IP address for use when configuring forwarders next week</li>
+</ul>
+
+<div class="callout callout-info">
+<span class="icon" aria-hidden="true">📸</span>
+<div><strong>Screenshot Recommendation:</strong> Take screenshots of the Splunk home page (showing successful login), the receiving port configuration page, and your pfSense firewall rules. These will be useful for Lab 12 (if completing the extra credit) and for Project 3 documentation.</div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- INTERACTIVE ACTIVITY 1 – STEP SEQUENCING        -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section activity-area" id="activity1">
+<h2>🔧 Activity 1: Installation Step Sequencing</h2>
+<p>Drag and drop the steps below into the correct order for installing Splunk Enterprise on a Linux VM. Click <strong>Check Order</strong> when finished.</p>
+
+<div id="seq-container" class="seq-container" role="list" aria-label="Drag items to reorder the Splunk installation steps">
+<!-- Items are shuffled via JS on load -->
+</div>
+<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+<button class="btn btn-primary" id="seq-check" type="button">Check Order</button>
+<button class="btn btn-outline" id="seq-reset" type="button">Reset</button>
+</div>
+<div id="seq-feedback" class="feedback" role="status" aria-live="polite"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- INTERACTIVE ACTIVITY 2 – PORT IDENTIFICATION    -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section activity-area" id="activity2">
+<h2>🔌 Activity 2: Splunk Port Identification Quiz</h2>
+<p>Match each Splunk port to its purpose. Select the correct answer for each question.</p>
+
+<!-- Q1 -->
+<div class="scenario-card" id="port-q1">
+<h4>Question 1 of 4: Port 8000</h4>
+<p>What is the primary purpose of port <strong>8000</strong> in a Splunk deployment?</p>
+<div class="quiz-option" data-correct="true" tabindex="0" role="button">Web UI — browser-based administration and search interface</div>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Forwarder data — receives log data from Universal Forwarders</div>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Syslog — receives syslog messages from network devices</div>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Management — REST API and forwarder management communication</div>
+<div class="feedback" id="port-q1-fb" role="status" aria-live="polite"></div>
+</div>
+
+<!-- Q2 -->
+<div class="scenario-card" id="port-q2">
+<h4>Question 2 of 4: Port 9997</h4>
+<p>What is the primary purpose of port <strong>9997</strong>?</p>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Web UI — browser-based administration and search interface</div>
+<div class="quiz-option" data-correct="true" tabindex="0" role="button">Forwarder data — receives log data from Universal Forwarders</div>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Syslog — receives syslog messages from network devices</div>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Management — REST API and forwarder management communication</div>
+<div class="feedback" id="port-q2-fb" role="status" aria-live="polite"></div>
+</div>
+
+<!-- Q3 -->
+<div class="scenario-card" id="port-q3">
+<h4>Question 3 of 4: Port 8089</h4>
+<p>What is the primary purpose of port <strong>8089</strong>?</p>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Web UI — browser-based administration and search interface</div>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Forwarder data — receives log data from Universal Forwarders</div>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Syslog — receives syslog messages from network devices</div>
+<div class="quiz-option" data-correct="true" tabindex="0" role="button">Management — REST API and forwarder management communication</div>
+<div class="feedback" id="port-q3-fb" role="status" aria-live="polite"></div>
+</div>
+
+<!-- Q4 -->
+<div class="scenario-card" id="port-q4">
+<h4>Question 4 of 4: Port 514</h4>
+<p>What is the primary purpose of port <strong>514</strong> in the context of Splunk and pfSense?</p>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Web UI — browser-based administration and search interface</div>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Forwarder data — receives log data from Universal Forwarders</div>
+<div class="quiz-option" data-correct="true" tabindex="0" role="button">Syslog — receives syslog messages from network devices like pfSense</div>
+<div class="quiz-option" data-correct="false" tabindex="0" role="button">Management — REST API and forwarder management communication</div>
+<div class="feedback" id="port-q4-fb" role="status" aria-live="polite"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- INTERACTIVE ACTIVITY 3 – FIREWALL SCENARIO      -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section activity-area" id="activity3">
+<h2>🛡️ Activity 3: Missing Firewall Rule Scenario</h2>
+
+<div class="scenario-card">
+<h4>Scenario: The Forwarder That Cannot Connect</h4>
+<p>You have completed the Splunk Enterprise installation on your Linux VM (<code>10.0.1.50</code>) and verified that port 9997 is listening. You then install a Universal Forwarder on your Windows Server (<code>10.0.1.20</code>, Servers subnet) and configure it to send data to <code>10.0.1.50:9997</code>.</p>
+<p>However, when you check Splunk, <strong>no data appears from the Windows forwarder</strong>. You run <code>nc -zv 10.0.1.50 9997</code> from the Windows Server and it <strong>times out</strong>.</p>
+<p>You check your pfSense rules and find the following:</p>
+
+<table>
+<thead><tr><th>#</th><th>Interface</th><th>Source</th><th>Destination</th><th>Port</th><th>Action</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>MANAGEMENT</td><td>Management net</td><td>10.0.1.50</td><td>8000</td><td>Pass</td><td>Splunk Web UI</td></tr>
+<tr><td>2</td><td>MANAGEMENT</td><td>Management net</td><td>10.0.1.50</td><td>8089</td><td>Pass</td><td>Splunk Mgmt</td></tr>
+<tr><td>3</td><td>SERVERS</td><td>Servers net</td><td>10.0.1.50</td><td>8089</td><td>Pass</td><td>Splunk Mgmt from Servers</td></tr>
+</tbody>
+</table>
+
+<p><strong>Which firewall rule is missing?</strong> Select the best answer:</p>
+
+<div class="quiz-option" data-q="scenario" data-correct="false" tabindex="0" role="button">A. A rule on the MANAGEMENT interface allowing port 9997 from Management net to 10.0.1.50</div>
+<div class="quiz-option" data-q="scenario" data-correct="true" tabindex="0" role="button">B. A rule on the SERVERS interface allowing port 9997 from Servers net to 10.0.1.50</div>
+<div class="quiz-option" data-q="scenario" data-correct="false" tabindex="0" role="button">C. A rule on the SERVERS interface allowing port 8000 from Servers net to 10.0.1.50</div>
+<div class="quiz-option" data-q="scenario" data-correct="false" tabindex="0" role="button">D. A rule on the MANAGEMENT interface allowing port 514 (UDP) from pfSense to 10.0.1.50</div>
+
+<div class="feedback" id="scenario-fb" role="status" aria-live="polite"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- KNOWLEDGE CHECK                                 -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section" id="knowledge-check">
+<h2>✅ Knowledge Check (Ungraded)</h2>
+<p>Answer the following three questions to confirm your understanding of this module's key concepts. Click <strong>Check Answer</strong> for immediate feedback.</p>
+
+<!-- KC Q1 -->
+<div class="scenario-card" id="kc-q1">
+<h4>Question 1 of 3</h4>
+<p>Which three TCP ports must be open on your firewall for a complete Splunk Enterprise deployment with Universal Forwarders? (Select one answer.)</p>
+<div class="quiz-option" data-q="kc1" data-correct="false" tabindex="0" role="button">A. 22, 80, 443</div>
+<div class="quiz-option" data-q="kc1" data-correct="false" tabindex="0" role="button">B. 514, 8000, 8089</div>
+<div class="quiz-option" data-q="kc1" data-correct="true" tabindex="0" role="button">C. 8000, 8089, 9997</div>
+<div class="quiz-option" data-q="kc1" data-correct="false" tabindex="0" role="button">D. 389, 636, 9997</div>
+<div class="feedback" id="kc1-fb" role="status" aria-live="polite"></div>
+</div>
+
+<!-- KC Q2 -->
+<div class="scenario-card" id="kc-q2">
+<h4>Question 2 of 3</h4>
+<p>What is the purpose of enabling the <strong>receiving port (9997)</strong> on Splunk Enterprise?</p>
+<div class="quiz-option" data-q="kc2" data-correct="false" tabindex="0" role="button">A. It allows administrators to access the Splunk web interface</div>
+<div class="quiz-option" data-q="kc2" data-correct="false" tabindex="0" role="button">B. It enables Splunk to send alerts via email</div>
+<div class="quiz-option" data-q="kc2" data-correct="true" tabindex="0" role="button">C. It allows Splunk to listen for and accept data from Universal Forwarders</div>
+<div class="quiz-option" data-q="kc2" data-correct="false" tabindex="0" role="button">D. It opens a syslog listener for pfSense log forwarding</div>
+<div class="feedback" id="kc2-fb" role="status" aria-live="polite"></div>
+</div>
+
+<!-- KC Q3 -->
+<div class="scenario-card" id="kc-q3">
+<h4>Question 3 of 3</h4>
+<p>In Week 13, you will install Universal Forwarders on your Linux and Windows servers. How do those forwarders relate to the Splunk Enterprise server you installed today?</p>
+<div class="quiz-option" data-q="kc3" data-correct="false" tabindex="0" role="button">A. The forwarders replace Splunk Enterprise — only one is needed</div>
+<div class="quiz-option" data-q="kc3" data-correct="false" tabindex="0" role="button">B. The forwarders are full Splunk installations that independently index and search data</div>
+<div class="quiz-option" data-q="kc3" data-correct="true" tabindex="0" role="button">C. The forwarders are lightweight agents that collect logs on endpoints and send them to the Splunk Enterprise server for indexing and searching</div>
+<div class="quiz-option" data-q="kc3" data-correct="false" tabindex="0" role="button">D. The forwarders receive data from Splunk Enterprise and distribute it to endpoints</div>
+<div class="feedback" id="kc3-fb" role="status" aria-live="polite"></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- LOOKING AHEAD                                   -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="section">
+<h2>👀 Looking Ahead</h2>
+
+<h3>This Week's Remaining Deliverables</h3>
+<table>
+<thead><tr><th>Item</th><th>Type</th><th>Points</th><th>Due</th></tr></thead>
+<tbody>
+<tr><td>Quiz 12: LDAP &amp; Directory Services</td><td>Required</td><td>14 pts</td><td>Sunday, April 12, 2026, 11:59 PM</td></tr>
+<tr><td>Lab 12: OpenLDAP Configuration (includes Splunk install task)</td><td>Extra Credit</td><td>30 pts EC</td><td>Sunday, April 12, 2026, 11:59 PM</td></tr>
+</tbody>
+</table>
+
+<h3>Week 13 Preview</h3>
+<p>Next week you will:</p>
+<ul class="list-styled">
+<li>Learn virtualization concepts (Type 1 vs. Type 2 hypervisors) and cloud computing models</li>
+<li><strong>Install Splunk Universal Forwarders</strong> on your Linux and Windows servers — sending data to the Splunk Enterprise instance you built today</li>
+<li>Create your <strong>first Splunk dashboard panel</strong></li>
+<li>Receive the <strong>Project 3 specification</strong> (Security Hardening &amp; Monitoring with Splunk, 75 pts, due Week 15)</li>
+</ul>
+
+<div class="callout callout-tip">
+<span class="icon" aria-hidden="true">🚀</span>
+<div><strong>Head Start:</strong> If you want to preview Project 3, review the Project 3 specification document (available in the course materials). Having your Splunk server already running gives you a significant advantage — you can begin Project 3 Part B (Splunk Deployment &amp; Configuration) as soon as it is assigned.</div>
+</div>
+</section>
+
+<!-- ── Footer ── -->
+<footer class="module-footer">
+<p>CSC 152: Network Operating Systems and Administration — Mendocino College</p>
+<p>Module 12.5: Splunk Enterprise Server Installation &nbsp;|&nbsp; Week 12: April 6–12, 2026</p>
+<p>Instructor: David Pai &nbsp;|&nbsp; dpai@mendocino.edu</p>
+</footer>
+
+</div><!-- /.page-wrapper -->
+
+<!-- ════════════════ JAVASCRIPT ════════════════ -->
+<script>
+(function(){
+"use strict";
+
+/* ─────────────────────────────────────────────
+   ACTIVITY 1 – Step Sequencing (Drag & Drop)
+   ───────────────────────────────────────────── */
+const correctOrder=[
+  "Download the Splunk Enterprise .deb package (wget)",
+  "Install the package with dpkg -i",
+  "Start Splunk and accept the license (splunk start --accept-license)",
+  "Create the administrator account (username and password)",
+  "Enable boot-start (splunk enable boot-start)",
+  "Access the web UI on port 8000 and log in",
+  "Enable the receiving port 9997 via Settings",
+  "Verify port 9997 is listening (ss -tlnp | grep 9997)"
+];
+
+const seqContainer=document.getElementById("seq-container");
+const seqCheck=document.getElementById("seq-check");
+const seqReset=document.getElementById("seq-reset");
+const seqFeedback=document.getElementById("seq-feedback");
+
+function shuffle(a){let c=a.slice();for(let i=c.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[c[i],c[j]]=[c[j],c[i]];}return c;}
+
+function renderSeq(items){
+  seqContainer.innerHTML="";
+  items.forEach((txt,i)=>{
+    const el=document.createElement("div");
+    el.className="seq-item";
+    el.setAttribute("draggable","true");
+    el.setAttribute("role","listitem");
+    el.setAttribute("aria-label","Step: "+txt);
+    el.dataset.text=txt;
+    el.innerHTML='<span class="seq-num">'+(i+1)+'</span><span>'+txt+'</span>';
+    seqContainer.appendChild(el);
+  });
+  attachDragListeners();
+}
+
+let dragEl=null;
+function attachDragListeners(){
+  const items=seqContainer.querySelectorAll(".seq-item");
+  items.forEach(item=>{
+    item.addEventListener("dragstart",function(e){dragEl=this;this.classList.add("dragging");e.dataTransfer.effectAllowed="move";});
+    item.addEventListener("dragend",function(){this.classList.remove("dragging");dragEl=null;renumber();});
+    item.addEventListener("dragover",function(e){e.preventDefault();e.dataTransfer.dropEffect="move";});
+    item.addEventListener("drop",function(e){
+      e.preventDefault();
+      if(dragEl&&dragEl!==this){
+        const allItems=[...seqContainer.querySelectorAll(".seq-item")];
+        const fromIdx=allItems.indexOf(dragEl);
+        const toIdx=allItems.indexOf(this);
+        if(fromIdx<toIdx){this.after(dragEl);}else{this.before(dragEl);}
+      }
+      renumber();
+    });
+    /* Touch support */
+    item.addEventListener("touchstart",function(e){dragEl=this;this.classList.add("dragging");},{passive:true});
+    item.addEventListener("touchmove",function(e){
+      e.preventDefault();
+      const touch=e.touches[0];
+      const target=document.elementFromPoint(touch.clientX,touch.clientY);
+      if(target&&target.closest&&target.closest(".seq-item")&&target.closest(".seq-item")!==dragEl){
+        const t=target.closest(".seq-item");
+        const allItems=[...seqContainer.querySelectorAll(".seq-item")];
+        const fromIdx=allItems.indexOf(dragEl);
+        const toIdx=allItems.indexOf(t);
+        if(fromIdx<toIdx){t.after(dragEl);}else{t.before(dragEl);}
+        renumber();
+      }
+    });
+    item.addEventListener("touchend",function(){this.classList.remove("dragging");dragEl=null;renumber();},{passive:true});
+  });
+}
+
+function renumber(){
+  seqContainer.querySelectorAll(".seq-item").forEach((el,i)=>{
+    el.querySelector(".seq-num").textContent=i+1;
+    el.classList.remove("correct-pos","incorrect-pos");
+  });
+}
+
+seqCheck.addEventListener("click",function(){
+  const items=[...seqContainer.querySelectorAll(".seq-item")];
+  let allCorrect=true;
+  items.forEach((el,i)=>{
+    if(el.dataset.text===correctOrder[i]){el.classList.add("correct-pos");el.classList.remove("incorrect-pos");}
+    else{el.classList.add("incorrect-pos");el.classList.remove("correct-pos");allCorrect=false;}
+  });
+  if(allCorrect){
+    seqFeedback.className="feedback correct";
+    seqFeedback.innerHTML="<strong>✅ Perfect!</strong> You placed all 8 steps in the correct order. This is the sequence you will follow (or have already followed) when installing Splunk Enterprise in your lab.";
+  }else{
+    seqFeedback.className="feedback incorrect";
+    seqFeedback.innerHTML="<strong>❌ Not quite.</strong> Steps highlighted in red are out of order. Remember: download → install → first start (license + admin account) → boot-start → web UI → enable receiving port → verify. Try again!";
+  }
+});
+
+seqReset.addEventListener("click",function(){
+  seqFeedback.className="feedback";seqFeedback.innerHTML="";
+  renderSeq(shuffle(correctOrder));
+});
+
+/* Initial render */
+renderSeq(shuffle(correctOrder));
+
+/* ─────────────────────────────────────────────
+   GENERIC QUIZ OPTION HANDLER
+   ───────────────────────────────────────────── */
+const portExplanations={
+  "port-q1":{correct:"<strong>✅ Correct!</strong> Port 8000 is the Splunk Web UI port. Administrators and analysts use a browser to access search, dashboards, and settings on this port.",wrong:"<strong>❌ Incorrect.</strong> Port 8000 is the <em>Web UI</em> port — used for browser-based access to Splunk's search, dashboards, and configuration pages."},
+  "port-q2":{correct:"<strong>✅ Correct!</strong> Port 9997 is the default receiving port for Universal Forwarder data. Forwarders on Linux and Windows send collected log data to the indexer on this port.",wrong:"<strong>❌ Incorrect.</strong> Port 9997 is the <em>forwarder data</em> port — Universal Forwarders send log data to the Splunk indexer on this port."},
+  "port-q3":{correct:"<strong>✅ Correct!</strong> Port 8089 is the Splunk management (splunkd REST API) port. It handles forwarder-to-indexer management communication and REST API calls.",wrong:"<strong>❌ Incorrect.</strong> Port 8089 is the <em>management</em> port — used for the splunkd REST API and forwarder management communication."},
+  "port-q4":{correct:"<strong>✅ Correct!</strong> Port 514 (typically UDP) is the standard syslog port. pfSense sends its firewall, DHCP, and system logs to Splunk via syslog on this port.",wrong:"<strong>❌ Incorrect.</strong> Port 514 is the <em>syslog</em> port — network devices like pfSense use it to forward log messages."},
+  "scenario":{correct:"<strong>✅ Correct!</strong> The Windows Server is on the Servers subnet and needs to reach port 9997 on the Splunk server. The existing rules only allow 8089 from the Servers subnet — there is no rule for 9997. Adding a Pass rule on the SERVERS interface for TCP port 9997 to 10.0.1.50 will fix the issue.",wrong:"<strong>❌ Incorrect.</strong> The Universal Forwarder on the Windows Server (Servers subnet) sends data on port <strong>9997</strong>. The existing rules allow 8089 from Servers but <em>not</em> 9997. The fix is to add a rule on the <strong>SERVERS</strong> interface allowing TCP 9997 to the Splunk server."},
+  "kc1":{correct:"<strong>✅ Correct!</strong> The three essential Splunk ports are: 8000 (Web UI), 8089 (Management/REST API), and 9997 (Forwarder data receiving). Port 514 is also needed for syslog from pfSense, but it uses UDP and is separate from the core Splunk forwarder architecture.",wrong:"<strong>❌ Incorrect.</strong> The three TCP ports for a Splunk deployment with Universal Forwarders are <strong>8000</strong> (Web UI), <strong>8089</strong> (Management), and <strong>9997</strong> (Forwarder data)."},
+  "kc2":{correct:"<strong>✅ Correct!</strong> The receiving port (9997) is how Splunk Enterprise accepts incoming data from Universal Forwarders deployed on endpoints. Without this port enabled, forwarders have nowhere to send their data.",wrong:"<strong>❌ Incorrect.</strong> The receiving port (9997) allows Splunk Enterprise to <em>listen for and accept data from Universal Forwarders</em>. It is not related to the web UI (8000), email alerts, or syslog (514)."},
+  "kc3":{correct:"<strong>✅ Correct!</strong> Universal Forwarders are lightweight agents that collect logs (auth logs, event logs, application logs) on each endpoint and forward them to the Splunk Enterprise server over port 9997. The Enterprise server handles all indexing, searching, and visualization. This is the architecture you will build in Week 13 and Project 3.",wrong:"<strong>❌ Incorrect.</strong> Universal Forwarders are <em>lightweight agents</em> — they collect logs on endpoints and send them to the Splunk Enterprise server for centralized indexing and searching. They do not replace Splunk Enterprise or index data independently."}
+};
+
+document.querySelectorAll(".scenario-card").forEach(card=>{
+  const cardId=card.id;
+  const fbId=cardId.replace("port-","").replace("kc-","");
+  const options=card.querySelectorAll(".quiz-option");
+  let answered=false;
+
+  options.forEach(opt=>{
+    function handleSelect(){
+      if(answered)return;
+      answered=true;
+      const isCorrect=opt.dataset.correct==="true";
+      options.forEach(o=>{
+        o.classList.add("disabled");
+        if(o.dataset.correct==="true")o.classList.add("correct-answer");
+        if(o===opt&&!isCorrect)o.classList.add("wrong-answer");
+      });
+      /* Determine feedback key */
+      let key=cardId;
+      if(opt.dataset.q==="scenario")key="scenario";
+      else if(opt.dataset.q)key=opt.dataset.q;
+      const fbEl=card.querySelector(".feedback");
+      if(fbEl&&portExplanations[key]){
+        fbEl.className="feedback "+(isCorrect?"correct":"incorrect");
+        fbEl.innerHTML=isCorrect?portExplanations[key].correct:portExplanations[key].wrong;
+      }
+    }
+    opt.addEventListener("click",handleSelect);
+    opt.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();handleSelect();}});
+  });
+});
+
+})();
+</script>
+</body>
+</html>
