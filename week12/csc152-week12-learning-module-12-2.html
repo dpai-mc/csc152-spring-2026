@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 12.2 – OpenLDAP Installation &amp; Configuration | CSC 152</title>
+<style>
+:root {
+  --brand: #2D3B45;
+  --accent: #0076B6;
+  --accent-dark: #00548A;
+  --accent-light: #E8F4FA;
+  --success: #0B8235;
+  --success-light: #E6F4EA;
+  --warn: #C53030;
+  --warn-light: #FFF0F0;
+  --neutral: #F5F5F5;
+  --border: #D5D5D5;
+  --text: #2D3B45;
+  --text-light: #6B7780;
+  --white: #FFFFFF;
+  --radius: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,.12);
+  --max-w: 960px;
+  --nav-h: 48px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; line-height: 1.65; color: var(--text); background: var(--white); }
+
+/* ── Sticky Nav ── */
+.topnav { position: sticky; top: 0; z-index: 900; background: var(--brand); display: flex; flex-wrap: wrap; align-items: center; gap: 0; padding: 0 12px; height: auto; min-height: var(--nav-h); box-shadow: 0 2px 4px rgba(0,0,0,.15); }
+.topnav a { color: #fff; text-decoration: none; font-size: .82rem; padding: 10px 10px; white-space: nowrap; border-bottom: 2px solid transparent; transition: border-color .2s, background .2s; }
+.topnav a:hover, .topnav a:focus { background: rgba(255,255,255,.1); border-bottom-color: #fff; }
+.topnav a:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+.topnav-toggle { display: none; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; padding: 8px; margin-left: auto; }
+
+/* ── Page Wrapper ── */
+.page-wrapper { max-width: var(--max-w); margin: 0 auto; padding: 28px 20px 60px; }
+
+/* ── Header ── */
+.mod-header { margin-bottom: 28px; border-bottom: 3px solid var(--accent); padding-bottom: 16px; }
+.mod-header .label { font-size: .85rem; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.mod-header h1 { font-size: 1.85rem; color: var(--brand); line-height: 1.25; }
+.mod-header .meta { margin-top: 6px; font-size: .85rem; color: var(--text-light); display: flex; flex-wrap: wrap; gap: 16px; }
+
+/* ── Objective Box ── */
+.obj-box { background: var(--accent-light); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 32px; }
+.obj-box h2 { font-size: 1.05rem; margin-bottom: 8px; color: var(--accent-dark); }
+.obj-box ul { margin-left: 20px; margin-bottom: 8px; }
+.obj-box li { margin-bottom: 4px; }
+.cslo-tag { display: inline-block; background: var(--accent); color: #fff; font-size: .72rem; font-weight: 700; padding: 2px 9px; border-radius: 10px; margin-right: 4px; letter-spacing: .3px; }
+
+/* ── Sections ── */
+.section { margin-bottom: 40px; }
+.section > h2 { font-size: 1.35rem; color: var(--brand); border-bottom: 2px solid var(--border); padding-bottom: 6px; margin-bottom: 16px; }
+.section > h3 { font-size: 1.1rem; color: var(--brand); margin: 20px 0 10px; }
+.section > h4 { font-size: .98rem; color: var(--text); margin: 16px 0 8px; font-weight: 600; }
+
+/* ── Code Blocks ── */
+pre { background: #1E1E1E; color: #D4D4D4; border-radius: var(--radius); padding: 16px 18px; overflow-x: auto; font-size: .88rem; line-height: 1.55; margin: 12px 0 16px; box-shadow: var(--shadow); }
+pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+code { background: #EEF1F3; color: #C53030; padding: 1px 5px; border-radius: 3px; font-size: .92em; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+pre code .comment { color: #6A9955; }
+pre code .cmd { color: #DCDCAA; }
+pre code .flag { color: #9CDCFE; }
+pre code .output { color: #6A9955; font-style: italic; }
+
+/* ── Info / Tip / Warning Boxes ── */
+.info-box, .tip-box, .warn-box { border-radius: var(--radius); padding: 14px 18px; margin: 14px 0 18px; font-size: .93rem; }
+.info-box { background: var(--accent-light); border-left: 4px solid var(--accent); }
+.tip-box { background: var(--success-light); border-left: 4px solid var(--success); }
+.warn-box { background: var(--warn-light); border-left: 4px solid var(--warn); }
+.info-box strong, .tip-box strong, .warn-box strong { display: block; margin-bottom: 2px; }
+
+/* ── Tables ── */
+.resp-table { width: 100%; overflow-x: auto; margin: 12px 0 18px; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
+th { background: var(--brand); color: #fff; font-weight: 600; font-size: .84rem; }
+tr:nth-child(even) { background: var(--neutral); }
+caption { caption-side: top; text-align: left; font-weight: 600; font-size: .92rem; margin-bottom: 6px; color: var(--text); }
+
+/* ── Accordion / Collapsible ── */
+details { border: 1px solid var(--border); border-radius: var(--radius); margin: 12px 0; background: var(--white); }
+details[open] { box-shadow: var(--shadow); }
+summary { cursor: pointer; padding: 12px 16px; font-weight: 600; font-size: .95rem; background: var(--neutral); border-radius: var(--radius); list-style: none; display: flex; align-items: center; gap: 8px; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "▸"; display: inline-block; transition: transform .2s; font-size: 1rem; flex-shrink: 0; }
+details[open] > summary::before { transform: rotate(90deg); }
+summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.details-body { padding: 14px 18px; }
+
+/* ── Step Reveal Widget ── */
+.step-reveal { border: 1px solid var(--border); border-radius: var(--radius); margin: 16px 0; overflow: hidden; }
+.step-reveal-header { background: var(--accent); color: #fff; padding: 10px 16px; font-weight: 600; font-size: .95rem; }
+.step-item { border-top: 1px solid var(--border); }
+.step-btn { width: 100%; background: var(--neutral); border: none; padding: 12px 16px; text-align: left; cursor: pointer; font-size: .93rem; font-weight: 600; display: flex; align-items: center; gap: 10px; transition: background .2s; }
+.step-btn:hover { background: #E8E8E8; }
+.step-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.step-num { background: var(--accent); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .8rem; flex-shrink: 0; }
+.step-content { display: none; padding: 12px 18px 16px 52px; font-size: .93rem; background: var(--white); }
+.step-content.open { display: block; }
+
+/* ── Knowledge Check ── */
+.kc-wrap { background: var(--neutral); border: 2px solid var(--accent); border-radius: var(--radius); padding: 22px 20px; margin: 24px 0; }
+.kc-wrap h3 { font-size: 1.1rem; color: var(--accent-dark); margin-bottom: 14px; }
+.kc-q { margin-bottom: 20px; }
+.kc-q > p { font-weight: 600; margin-bottom: 8px; }
+.kc-q label { display: block; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: background .15s; font-size: .93rem; }
+.kc-q label:hover { background: #E0E0E0; }
+.kc-q input[type="radio"] { margin-right: 6px; }
+.kc-feedback { display: none; margin-top: 8px; padding: 10px 14px; border-radius: 4px; font-size: .9rem; }
+.kc-feedback.correct { background: var(--success-light); border-left: 4px solid var(--success); display: block; }
+.kc-feedback.incorrect { background: var(--warn-light); border-left: 4px solid var(--warn); display: block; }
+.kc-btn { background: var(--accent); color: #fff; border: none; padding: 8px 20px; border-radius: var(--radius); cursor: pointer; font-size: .9rem; font-weight: 600; margin-top: 4px; transition: background .2s; }
+.kc-btn:hover { background: var(--accent-dark); }
+.kc-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* ── Component Diagram Box ── */
+.diagram-box { background: var(--neutral); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin: 14px 0 18px; text-align: center; }
+.diagram-box .dia-title { font-weight: 700; font-size: .92rem; margin-bottom: 12px; color: var(--brand); }
+.comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 700px; margin: 0 auto; }
+.comp-card { background: var(--white); border: 2px solid var(--accent); border-radius: var(--radius); padding: 14px; text-align: left; }
+.comp-card.server-card { border-color: var(--accent); }
+.comp-card.client-card { border-color: var(--success); }
+.comp-card h4 { font-size: .9rem; margin-bottom: 6px; }
+.comp-card ul { margin-left: 18px; font-size: .88rem; }
+.comp-card ul li { margin-bottom: 3px; }
+.comp-card .card-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 2px 8px; border-radius: 8px; color: #fff; display: inline-block; margin-bottom: 6px; }
+.comp-card.server-card .card-label { background: var(--accent); }
+.comp-card.client-card .card-label { background: var(--success); }
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .topnav a { font-size: .76rem; padding: 8px 6px; }
+  .mod-header h1 { font-size: 1.45rem; }
+  .comp-grid { grid-template-columns: 1fr; }
+  pre { font-size: .82rem; padding: 12px; }
+}
+@media (max-width: 520px) {
+  .topnav { flex-direction: column; align-items: flex-start; padding-bottom: 4px; }
+  .topnav.collapsed a { display: none; }
+  .topnav.collapsed .topnav-toggle { display: block; }
+  .topnav-toggle { display: block; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ NAVIGATION ════════════════════ -->
+<nav class="topnav" aria-label="Module navigation" id="topnav">
+  <button class="topnav-toggle" aria-label="Toggle navigation" aria-expanded="false" onclick="(function(b){var n=document.getElementById('topnav');n.classList.toggle('collapsed');b.setAttribute('aria-expanded',n.classList.contains('collapsed')?'false':'true');})(this)">☰</button>
+  <a href="#components">Components</a>
+  <a href="#install-ubuntu">Install (Ubuntu)</a>
+  <a href="#install-rocky">Install (Rocky)</a>
+  <a href="#cnconfig">cn=config</a>
+  <a href="#mdb">MDB Backend</a>
+  <a href="#verify">Verify</a>
+  <a href="#troubleshoot">Troubleshoot</a>
+  <a href="#kc">Knowledge Check</a>
+  <a href="#next">Next</a>
+</nav>
+
+<!-- ════════════════════ MAIN CONTENT ════════════════════ -->
+<main id="main-content" class="page-wrapper">
+
+<header class="mod-header">
+  <div class="label">Week 12 · Module 12.2</div>
+  <h1>OpenLDAP Installation &amp; Configuration</h1>
+  <div class="meta">
+    <span>CSC 152 – Network OS and Administration</span>
+    <span>Est. Time: 1.5 hours</span>
+  </div>
+</header>
+
+<div class="obj-box">
+  <h2>Learning Objectives</h2>
+  <ul>
+    <li><strong>Objective 3:</strong> Install and perform initial configuration of OpenLDAP (<code>slapd</code>) on a Linux server.</li>
+  </ul>
+  <span class="cslo-tag">CSLO 1</span>
+  <span class="cslo-tag">CSLO 2</span>
+</div>
+
+<div class="info-box">
+  <strong>📋 Where This Module Fits</strong>
+  In Module 12.1 you learned <em>what</em> LDAP is, how the protocol works, and how directory data is organized in a DIT. In this module you move from theory to practice: you will install the OpenLDAP server (<code>slapd</code>), configure it, and verify that it is running and reachable. Everything you build here becomes the foundation for Module 12.3 (populating the directory) and Module 12.4 (client authentication).
+</div>
+
+<!-- ═══════════ §1: OpenLDAP Components ═══════════ -->
+<section class="section" id="components">
+  <h2>§1 – OpenLDAP Components Overview</h2>
+  <p>OpenLDAP is not a single program—it is a suite of related components. Before you install anything, it helps to know what each piece does and where it runs.</p>
+
+  <div class="diagram-box">
+    <div class="dia-title">OpenLDAP Component Map</div>
+    <div class="comp-grid">
+      <div class="comp-card server-card">
+        <span class="card-label">Server-Side</span>
+        <h4><code>slapd</code> – Standalone LDAP Daemon</h4>
+        <ul>
+          <li>The LDAP server process</li>
+          <li>Listens on ports 389 (LDAP) and 636 (LDAPS)</li>
+          <li>Handles bind, search, add, modify, delete operations</li>
+          <li>Reads its configuration from <code>cn=config</code></li>
+        </ul>
+        <h4 style="margin-top:10px;">Server Utilities (<code>slap*</code>)</h4>
+        <ul>
+          <li><code>slapcat</code> – Export directory to LDIF (offline backup)</li>
+          <li><code>slapadd</code> – Bulk-import LDIF (offline, slapd must be stopped)</li>
+          <li><code>slappasswd</code> – Generate hashed passwords</li>
+          <li><code>slaptest</code> – Validate configuration syntax</li>
+        </ul>
+      </div>
+      <div class="comp-card client-card">
+        <span class="card-label">Client-Side</span>
+        <h4>LDAP Client Utilities (<code>ldap*</code>)</h4>
+        <ul>
+          <li><code>ldapsearch</code> – Query the directory</li>
+          <li><code>ldapadd</code> – Add new entries (via LDIF)</li>
+          <li><code>ldapmodify</code> – Modify existing entries</li>
+          <li><code>ldapdelete</code> – Remove entries</li>
+          <li><code>ldapwhoami</code> – Test bind credentials</li>
+        </ul>
+        <p style="margin-top:8px;font-size:.88rem;">These tools connect to <code>slapd</code> over the network (or locally) and speak the LDAP protocol. They are installed via the <code>ldap-utils</code> package.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip-box">
+    <strong>💡 Naming Convention Tip</strong>
+    Server-side tools start with <code>slap</code> (from <strong>s</strong>tand<strong>a</strong>lone <strong>l</strong>dap <strong>d</strong>aemon). Client-side tools start with <code>ldap</code>. If you remember this pattern, you will always know which side of the connection a tool operates on.
+  </div>
+
+  <div class="info-box">
+    <strong>🔗 Key Distinction: <code>slap*</code> vs. <code>ldap*</code></strong>
+    The <code>slap*</code> utilities (like <code>slapadd</code> and <code>slapcat</code>) work <em>directly on the database files</em>—they bypass the LDAP protocol entirely and require <code>slapd</code> to be <strong>stopped</strong>. The <code>ldap*</code> utilities (like <code>ldapadd</code> and <code>ldapsearch</code>) communicate <em>through the LDAP protocol</em> and work while <code>slapd</code> is <strong>running</strong>. In day-to-day administration you will use the <code>ldap*</code> tools; the <code>slap*</code> tools are primarily for bulk operations and disaster recovery.
+  </div>
+</section>
+
+<!-- ═══════════ §2: Installation on Ubuntu Server ═══════════ -->
+<section class="section" id="install-ubuntu">
+  <h2>§2 – Installation on Ubuntu Server</h2>
+  <p>The Ubuntu path is the primary installation method used in this course and in the Proxmox lab environment. The process has two phases: <strong>package installation</strong> and <strong>interactive reconfiguration</strong>.</p>
+
+  <h3>Phase 1 – Install the Packages</h3>
+  <p>Two packages are needed: <code>slapd</code> (the server) and <code>ldap-utils</code> (the client tools).</p>
+  <pre><code><span class="comment"># Update package lists first</span>
+<span class="cmd">sudo apt update</span>
+
+<span class="comment"># Install OpenLDAP server and client utilities</span>
+<span class="cmd">sudo apt install slapd ldap-utils -y</span></code></pre>
+
+  <p>During installation, Ubuntu will prompt you for an administrator password. Enter a strong password and remember it—this becomes the password for the <code>cn=admin</code> entry. However, the initial install uses minimal defaults (it auto-generates a domain based on the system hostname). We will override these defaults in Phase 2.</p>
+
+  <div class="warn-box">
+    <strong>⚠️ Don't Skip Phase 2</strong>
+    The default installation creates a directory base DN derived from the server's hostname, which is often not what you want. Always run <code>dpkg-reconfigure slapd</code> to set your desired domain name and configuration options.
+  </div>
+
+  <h3>Phase 2 – Reconfigure with <code>dpkg-reconfigure</code></h3>
+  <p>The <code>dpkg-reconfigure slapd</code> command walks you through a series of prompts that set the foundational parameters for your LDAP directory. Run it with:</p>
+  <pre><code><span class="cmd">sudo dpkg-reconfigure slapd</span></code></pre>
+
+  <p>Use the step-by-step walkthrough below to understand each prompt. Click any step to reveal its explanation.</p>
+
+  <!-- Step Reveal Widget -->
+  <div class="step-reveal" role="region" aria-label="dpkg-reconfigure slapd step-by-step walkthrough">
+    <div class="step-reveal-header">dpkg-reconfigure slapd — Prompt-by-Prompt Walkthrough</div>
+
+    <div class="step-item">
+      <button class="step-btn" aria-expanded="false" onclick="toggleStep(this)">
+        <span class="step-num">1</span>
+        Omit OpenLDAP server configuration?
+      </button>
+      <div class="step-content" role="region">
+        <p><strong>Answer: No</strong></p>
+        <p>This is a double-negative question that confuses many administrators. Selecting <strong>No</strong> means "do <em>not</em> omit the configuration"—in other words, <em>proceed with configuration</em>. If you accidentally select Yes, the installer skips all remaining prompts and leaves the default (usually unwanted) settings in place.</p>
+      </div>
+    </div>
+
+    <div class="step-item">
+      <button class="step-btn" aria-expanded="false" onclick="toggleStep(this)">
+        <span class="step-num">2</span>
+        DNS domain name
+      </button>
+      <div class="step-content" role="region">
+        <p><strong>Enter your chosen domain, e.g.: <code>lab.local</code></strong></p>
+        <p>This value is converted into the <strong>base DN</strong> for your directory. For example:</p>
+        <ul>
+          <li><code>lab.local</code> → base DN: <code>dc=lab,dc=local</code></li>
+          <li><code>mendocino.edu</code> → base DN: <code>dc=mendocino,dc=edu</code></li>
+        </ul>
+        <p>Choose a domain name that matches your lab environment or project plan. For in-class labs, use <code>lab.local</code> unless your instructor specifies otherwise.</p>
+      </div>
+    </div>
+
+    <div class="step-item">
+      <button class="step-btn" aria-expanded="false" onclick="toggleStep(this)">
+        <span class="step-num">3</span>
+        Organization name
+      </button>
+      <div class="step-content" role="region">
+        <p><strong>Enter your organization name, e.g.: <code>CSC152 Lab</code></strong></p>
+        <p>This is a human-readable label stored in the directory's root entry. It populates the <code>o</code> (organization) attribute. It does not affect the base DN or directory structure—it is purely descriptive.</p>
+      </div>
+    </div>
+
+    <div class="step-item">
+      <button class="step-btn" aria-expanded="false" onclick="toggleStep(this)">
+        <span class="step-num">4</span>
+        Administrator password
+      </button>
+      <div class="step-content" role="region">
+        <p><strong>Enter a strong password (you will be asked to confirm it)</strong></p>
+        <p>This sets the password for the <code>cn=admin,dc=lab,dc=local</code> entry—the root administrator of your directory. You will use this password every time you bind as admin with the <code>ldap*</code> tools (e.g., <code>ldapadd -D "cn=admin,dc=lab,dc=local" -W</code>).</p>
+        <div class="warn-box" style="margin-top:8px;">
+          <strong>⚠️ Document This Password</strong>
+          If you forget this password, you will need to reconfigure slapd from scratch. Record it in a secure location.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-item">
+      <button class="step-btn" aria-expanded="false" onclick="toggleStep(this)">
+        <span class="step-num">5</span>
+        Do you want the database to be removed when slapd is purged?
+      </button>
+      <div class="step-content" role="region">
+        <p><strong>Answer: No</strong></p>
+        <p>Selecting <strong>No</strong> preserves your directory data if you ever uninstall the <code>slapd</code> package. This is the safer choice—you can always manually delete the database files later if needed. In a production environment, you would almost never want package removal to silently destroy your directory.</p>
+      </div>
+    </div>
+
+    <div class="step-item">
+      <button class="step-btn" aria-expanded="false" onclick="toggleStep(this)">
+        <span class="step-num">6</span>
+        Move old database?
+      </button>
+      <div class="step-content" role="region">
+        <p><strong>Answer: Yes</strong></p>
+        <p>If a previous database exists (from the initial install or a prior configuration), this prompt asks whether to move it to <code>/var/backups</code> before creating the new one. Selecting <strong>Yes</strong> is safe—it backs up the old data rather than deleting it, and creates a clean database with your new settings.</p>
+      </div>
+    </div>
+  </div><!-- /step-reveal -->
+
+  <h3>What Happens Behind the Scenes</h3>
+  <p>When <code>dpkg-reconfigure slapd</code> completes, it:</p>
+  <ol>
+    <li>Creates a new <code>cn=config</code> configuration database (under <code>/etc/ldap/slapd.d/</code>)</li>
+    <li>Creates the MDB data directory (under <code>/var/lib/ldap/</code>)</li>
+    <li>Populates the root entry (e.g., <code>dc=lab,dc=local</code>) and the admin entry (<code>cn=admin,dc=lab,dc=local</code>)</li>
+    <li>Restarts the <code>slapd</code> service with the new configuration</li>
+  </ol>
+
+  <div class="tip-box">
+    <strong>💡 Verify Immediately</strong>
+    After reconfiguration, always verify the installation (covered in §6 below) before proceeding to populate the directory. Catching configuration errors now saves significant troubleshooting time later.
+  </div>
+</section>
+
+<!-- ═══════════ §3: Installation on Rocky Linux ═══════════ -->
+<section class="section" id="install-rocky">
+  <h2>§3 – Installation on Rocky Linux (Alternative Path)</h2>
+  <p>If your lab environment uses Rocky Linux (or CentOS/RHEL), expand the section below for the alternative installation procedure.</p>
+
+  <details>
+    <summary>Rocky Linux / RHEL Installation Steps</summary>
+    <div class="details-body">
+      <div class="info-box">
+        <strong>📋 Note</strong>
+        The Ubuntu path is the primary method for this course. The Rocky Linux path is provided for reference and for students who may encounter RHEL-family systems in the workplace. The concepts (<code>slapd</code>, <code>cn=config</code>, MDB backend) are identical—only the package names and initial configuration method differ.
+      </div>
+
+      <h4>Step 1 – Install Packages</h4>
+      <pre><code><span class="comment"># Install OpenLDAP server and client packages</span>
+<span class="cmd">sudo dnf install openldap-servers openldap-clients -y</span>
+
+<span class="comment"># Start and enable the slapd service</span>
+<span class="cmd">sudo systemctl start slapd</span>
+<span class="cmd">sudo systemctl enable slapd</span></code></pre>
+
+      <h4>Step 2 – Set the Admin Password</h4>
+      <p>Rocky Linux does not have a <code>dpkg-reconfigure</code> equivalent. You set the admin password by generating a hash and applying it via LDIF:</p>
+      <pre><code><span class="comment"># Generate a password hash</span>
+<span class="cmd">slappasswd</span>
+<span class="output">New password: ********</span>
+<span class="output">Re-enter new password: ********</span>
+<span class="output">{SSHA}xxxxxxxxxxxxxxxxxxxxxxxxx</span></code></pre>
+
+      <p>Create a file named <code>chrootpw.ldif</code>:</p>
+      <pre><code>dn: olcDatabase={0}config,cn=config
+changetype: modify
+add: olcRootPW
+olcRootPW: {SSHA}xxxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+
+      <p>Apply it:</p>
+      <pre><code><span class="cmd">sudo ldapadd -Y EXTERNAL -H ldapi:/// -f chrootpw.ldif</span></code></pre>
+
+      <h4>Step 3 – Import Base Schemas</h4>
+      <pre><code><span class="cmd">sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/cosine.ldif</span>
+<span class="cmd">sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/nis.ldif</span>
+<span class="cmd">sudo ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/inetorgperson.ldif</span></code></pre>
+
+      <h4>Step 4 – Configure the Domain and Backend</h4>
+      <p>Create an LDIF file to set the base DN, admin DN, and MDB backend parameters, then apply it with <code>ldapmodify -Y EXTERNAL</code>. The specific LDIF content mirrors the settings that Ubuntu's <code>dpkg-reconfigure</code> handles automatically.</p>
+
+      <h4>Step 5 – Verify</h4>
+      <p>Use the same verification steps described in §6 below (<code>systemctl status slapd</code>, <code>ldapsearch</code> for naming contexts, port check).</p>
+    </div>
+  </details>
+</section>
+
+<!-- ═══════════ §4: cn=config (OLC) ═══════════ -->
+<section class="section" id="cnconfig">
+  <h2>§4 – Understanding <code>cn=config</code> (OLC – On-Line Configuration)</h2>
+
+  <p>If you have read older LDAP tutorials, you may have encountered references to a file called <code>slapd.conf</code>. This was the original, static configuration file for OpenLDAP. Modern OpenLDAP replaces it with a dynamic system called <strong>cn=config</strong>, also known as <strong>OLC</strong> (On-Line Configuration).</p>
+
+  <h3>Why <code>cn=config</code> Replaced <code>slapd.conf</code></h3>
+
+  <div class="resp-table">
+    <table>
+      <caption>Static slapd.conf vs. Dynamic cn=config</caption>
+      <thead>
+        <tr>
+          <th scope="col">Aspect</th>
+          <th scope="col"><code>slapd.conf</code> (Legacy)</th>
+          <th scope="col"><code>cn=config</code> (Modern / OLC)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Configuration format</td>
+          <td>Single flat text file</td>
+          <td>LDIF entries stored in a directory tree under <code>/etc/ldap/slapd.d/</code></td>
+        </tr>
+        <tr>
+          <td>Applying changes</td>
+          <td>Edit file, then <strong>restart slapd</strong></td>
+          <td>Apply LDIF with <code>ldapmodify</code>—changes take effect <strong>immediately, no restart needed</strong></td>
+        </tr>
+        <tr>
+          <td>Service interruption</td>
+          <td>Every configuration change causes downtime</td>
+          <td>Zero downtime for configuration changes</td>
+        </tr>
+        <tr>
+          <td>Replication</td>
+          <td>Cannot be replicated</td>
+          <td>Configuration can be replicated to other servers</td>
+        </tr>
+        <tr>
+          <td>Status</td>
+          <td><strong>Deprecated</strong> in modern OpenLDAP</td>
+          <td><strong>Default and recommended</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>How <code>cn=config</code> Is Organized</h3>
+  <p>The configuration is itself an LDAP directory—a small DIT stored on disk as LDIF files. The root of this DIT is <code>cn=config</code>, and it contains entries for global settings, backends, databases, overlays, and schemas.</p>
+
+  <pre><code><span class="comment"># Simplified cn=config tree structure</span>
+cn=config                          <span class="comment"># Global settings</span>
+├── cn=module{0},cn=config         <span class="comment"># Loaded modules</span>
+├── cn=schema,cn=config            <span class="comment"># Schema definitions</span>
+│   ├── cn={0}core                 <span class="comment"># Core schema</span>
+│   ├── cn={1}cosine               <span class="comment"># COSINE schema</span>
+│   ├── cn={2}nis                  <span class="comment"># NIS schema (posixAccount, etc.)</span>
+│   └── cn={3}inetorgperson        <span class="comment"># inetOrgPerson schema</span>
+├── olcDatabase={-1}frontend       <span class="comment"># Frontend (global) database settings</span>
+├── olcDatabase={0}config          <span class="comment"># The config database itself</span>
+└── olcDatabase={1}mdb             <span class="comment"># Your data database (MDB backend)</span></code></pre>
+
+  <h3>Viewing the Current Configuration</h3>
+  <p>You can query the <code>cn=config</code> DIT using <code>ldapsearch</code> with SASL EXTERNAL authentication (which uses the Unix socket and requires root privileges):</p>
+
+  <pre><code><span class="comment"># View the top-level configuration entries</span>
+<span class="cmd">sudo ldapsearch -Y EXTERNAL -H ldapi:/// -b "cn=config" -LLL -s one dn</span></code></pre>
+
+  <p>To see the full configuration of your MDB database:</p>
+  <pre><code><span class="comment"># View the MDB database configuration</span>
+<span class="cmd">sudo ldapsearch -Y EXTERNAL -H ldapi:/// \
+  -b "olcDatabase={1}mdb,cn=config" -LLL</span></code></pre>
+
+  <div class="warn-box">
+    <strong>⚠️ Do Not Edit Files in <code>/etc/ldap/slapd.d/</code> Directly</strong>
+    Although <code>cn=config</code> is stored as LDIF files on disk, you should <strong>never</strong> edit these files with a text editor while <code>slapd</code> is running. Always use <code>ldapmodify</code> to make changes. Direct file editing can corrupt the configuration and cause <code>slapd</code> to fail on restart.
+  </div>
+
+  <h3>Making Configuration Changes with <code>ldapmodify</code></h3>
+  <p>To change a configuration setting, you write a small LDIF file describing the modification and apply it. For example, to change the log level:</p>
+
+  <pre><code><span class="comment"># File: loglevel.ldif</span>
+dn: cn=config
+changetype: modify
+replace: olcLogLevel
+olcLogLevel: stats</code></pre>
+
+  <pre><code><span class="comment"># Apply the change (no restart needed)</span>
+<span class="cmd">sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f loglevel.ldif</span></code></pre>
+
+  <div class="tip-box">
+    <strong>💡 Connecting to Module 12.1</strong>
+    Notice that <code>cn=config</code> uses the same LDIF format you learned in Module 12.1 (§8). The <code>dn:</code>, <code>changetype:</code>, and attribute-value syntax are identical. Configuring OpenLDAP is literally "using LDAP to manage LDAP."
+  </div>
+</section>
+
+<!-- ═══════════ §5: MDB Backend ═══════════ -->
+<section class="section" id="mdb">
+  <h2>§5 – MDB Backend Database</h2>
+
+  <p><strong>MDB</strong> (Memory-Mapped Database, based on LMDB – Lightning Memory-Mapped Database) is the modern default backend for OpenLDAP. When you ran <code>dpkg-reconfigure slapd</code>, it automatically created an MDB database for your directory data.</p>
+
+  <h3>Why MDB?</h3>
+  <ul>
+    <li><strong>Performance:</strong> MDB uses memory-mapped files for extremely fast read operations—ideal for a directory service that is read-heavy.</li>
+    <li><strong>Reliability:</strong> Crash-resistant with copy-on-write semantics; no recovery needed after unclean shutdown.</li>
+    <li><strong>Simplicity:</strong> No tuning of cache sizes or transaction logs required (unlike the older BDB/HDB backends).</li>
+    <li><strong>Default:</strong> MDB has been the recommended backend since OpenLDAP 2.4 and is the only backend actively maintained.</li>
+  </ul>
+
+  <h3>Database Directory</h3>
+  <p>The MDB data files are stored in <code>/var/lib/ldap/</code>. This directory contains:</p>
+
+  <pre><code><span class="cmd">ls -la /var/lib/ldap/</span>
+<span class="output">total 52</span>
+<span class="output">drwx------  2 openldap openldap  4096 Apr 13 10:22 .</span>
+<span class="output">drwxr-xr-x 42 root     root      4096 Apr 13 10:20 ..</span>
+<span class="output">-rw-------  1 openldap openldap 45056 Apr 13 10:22 data.mdb</span>
+<span class="output">-rw-------  1 openldap openldap  8192 Apr 13 10:22 lock.mdb</span></code></pre>
+
+  <div class="resp-table">
+    <table>
+      <caption>MDB Database Files</caption>
+      <thead>
+        <tr>
+          <th scope="col">File</th>
+          <th scope="col">Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>data.mdb</code></td>
+          <td>The actual directory data (all your entries, attributes, and indexes)</td>
+        </tr>
+        <tr>
+          <td><code>lock.mdb</code></td>
+          <td>Lock file for concurrent access management</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warn-box">
+    <strong>⚠️ Ownership Matters</strong>
+    The <code>/var/lib/ldap/</code> directory and its contents must be owned by the <code>openldap</code> user and group. If ownership is incorrect, <code>slapd</code> will fail to start with a "permission denied" error. If you ever need to restore files or troubleshoot, verify ownership with <code>ls -la /var/lib/ldap/</code> and correct it with <code>sudo chown -R openldap:openldap /var/lib/ldap/</code>.
+  </div>
+
+  <h3>Index Configuration</h3>
+  <p>Indexes speed up searches on frequently queried attributes. Without indexes, <code>slapd</code> must scan every entry in the database for each search—fine for 10 entries, but unacceptable for 10,000.</p>
+  <p>The default configuration typically includes indexes on <code>objectClass</code> and <code>cn</code>. For a directory serving as an authentication source, you should also index <code>uid</code>, <code>uidNumber</code>, <code>gidNumber</code>, and <code>memberUid</code>.</p>
+
+  <p>Indexes are configured via <code>cn=config</code> by modifying the <code>olcDbIndex</code> attribute on the MDB database entry:</p>
+
+  <pre><code><span class="comment"># File: add-indexes.ldif</span>
+dn: olcDatabase={1}mdb,cn=config
+changetype: modify
+add: olcDbIndex
+olcDbIndex: uid eq
+-
+add: olcDbIndex
+olcDbIndex: uidNumber eq
+-
+add: olcDbIndex
+olcDbIndex: gidNumber eq
+-
+add: olcDbIndex
+olcDbIndex: memberUid eq</code></pre>
+
+  <pre><code><span class="comment"># Apply the index configuration</span>
+<span class="cmd">sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f add-indexes.ldif</span></code></pre>
+
+  <div class="tip-box">
+    <strong>💡 Index Types</strong>
+    The <code>eq</code> index type supports equality searches (e.g., <code>(uid=jdoe)</code>). Other types include <code>pres</code> (presence: "does this attribute exist?"), <code>sub</code> (substring: <code>(cn=*doe*)</code>), and <code>approx</code> (approximate match). For authentication use cases, <code>eq</code> indexes on key identifiers are the most important.
+  </div>
+</section>
+
+<!-- ═══════════ §6: Verifying the Installation ═══════════ -->
+<section class="section" id="verify">
+  <h2>§6 – Verifying the Installation</h2>
+  <p>After installation and reconfiguration, you should perform three verification checks before moving on: <strong>service status</strong>, <strong>directory query</strong>, and <strong>listening ports</strong>.</p>
+
+  <h3>Check 1 – Service Status</h3>
+  <pre><code><span class="cmd">sudo systemctl status slapd</span></code></pre>
+
+  <p>You should see output indicating the service is <strong>active (running)</strong>:</p>
+  <pre><code><span class="output">● slapd.service - OpenLDAP Server Daemon</span>
+<span class="output">     Loaded: loaded (/lib/systemd/system/slapd.service; enabled; ...)</span>
+<span class="output">     Active: active (running) since Mon 2026-04-13 10:22:15 UTC; 5min ago</span>
+<span class="output">   Main PID: 1234 (slapd)</span>
+<span class="output">     Tasks: 4 (limit: 4915)</span>
+<span class="output">     Memory: 5.2M</span>
+<span class="output">     CGroup: /system.slice/slapd.service</span>
+<span class="output">             └─1234 /usr/sbin/slapd -h ldap:/// ldapi:/// -g openldap -u openldap</span></code></pre>
+
+  <div class="info-box">
+    <strong>🔍 What to Look For</strong>
+    <ul style="margin-top:6px;">
+      <li><strong>Active: active (running)</strong> – The service is up.</li>
+      <li><strong>enabled</strong> – The service will start automatically on boot.</li>
+      <li>The <code>-h ldap:/// ldapi:///</code> flags show that slapd is listening on both the network LDAP port (389) and the local Unix socket (<code>ldapi</code>).</li>
+    </ul>
+  </div>
+
+  <h3>Check 2 – Query Naming Contexts</h3>
+  <p>This command queries the Root DSE (the "top" of the server's information) to confirm what directory databases are available:</p>
+
+  <pre><code><span class="cmd">ldapsearch -x -LLL -b "" -s base namingContexts</span></code></pre>
+
+  <p>Expected output:</p>
+  <pre><code><span class="output">dn:</span>
+<span class="output">namingContexts: dc=lab,dc=local</span></code></pre>
+
+  <p>If you see your base DN listed, the directory was configured correctly. If the output is empty or shows a different base DN, re-run <code>dpkg-reconfigure slapd</code>.</p>
+
+  <div class="tip-box">
+    <strong>💡 Command Breakdown</strong>
+    <ul style="margin-top:6px;">
+      <li><code>-x</code> – Use simple authentication (anonymous bind, no password needed for this query)</li>
+      <li><code>-LLL</code> – Produce clean LDIF output (no comments, no version line)</li>
+      <li><code>-b ""</code> – Start the search at the root (empty base DN = Root DSE)</li>
+      <li><code>-s base</code> – Search scope is "base only" (just the Root DSE entry itself)</li>
+      <li><code>namingContexts</code> – The specific attribute to retrieve</li>
+    </ul>
+  </div>
+
+  <h3>Check 3 – Verify Listening Ports</h3>
+  <p>Confirm that <code>slapd</code> is listening on the expected ports:</p>
+
+  <pre><code><span class="cmd">sudo ss -tlnp | grep slapd</span></code></pre>
+
+  <p>Expected output:</p>
+  <pre><code><span class="output">LISTEN  0  2048  0.0.0.0:389  0.0.0.0:*  users:(("slapd",pid=1234,fd=8))</span>
+<span class="output">LISTEN  0  2048     [::]:389     [::]:*  users:(("slapd",pid=1234,fd=9))</span></code></pre>
+
+  <p>This confirms <code>slapd</code> is listening on port 389 on all network interfaces (both IPv4 and IPv6).</p>
+
+  <div class="info-box">
+    <strong>🔍 About <code>ss -tlnp</code></strong>
+    <ul style="margin-top:6px;">
+      <li><code>-t</code> – Show TCP sockets</li>
+      <li><code>-l</code> – Show only listening sockets</li>
+      <li><code>-n</code> – Show port numbers (not service names)</li>
+      <li><code>-p</code> – Show the process using each socket (requires <code>sudo</code>)</li>
+    </ul>
+  </div>
+
+  <h3>Verification Summary Checklist</h3>
+  <div class="tip-box">
+    <strong>✅ Installation Verification Checklist</strong>
+    <ul style="margin-top:6px;">
+      <li>☐ <code>systemctl status slapd</code> shows <strong>active (running)</strong></li>
+      <li>☐ <code>ldapsearch -x -LLL -b "" -s base namingContexts</code> returns your base DN</li>
+      <li>☐ <code>ss -tlnp | grep slapd</code> shows port 389 listening</li>
+      <li>☐ Admin password is documented in a secure location</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════ §7: Troubleshooting ═══════════ -->
+<section class="section" id="troubleshoot">
+  <h2>§7 – Troubleshooting Common Installation Errors</h2>
+  <p>Even with careful configuration, things can go wrong. The table below covers the most common installation issues and how to diagnose and fix them.</p>
+
+  <div class="resp-table">
+    <table>
+      <caption>Common OpenLDAP Installation Issues</caption>
+      <thead>
+        <tr>
+          <th scope="col" style="width:25%;">Symptom</th>
+          <th scope="col" style="width:35%;">Likely Cause</th>
+          <th scope="col" style="width:40%;">Diagnostic Steps &amp; Fix</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>slapd</code> fails to start; <code>systemctl status</code> shows "failed"</td>
+          <td>Permission error on <code>/var/lib/ldap/</code>, or corrupted <code>cn=config</code> files</td>
+          <td>
+            1. Check logs: <code>sudo journalctl -u slapd -e</code><br>
+            2. Verify ownership: <code>ls -la /var/lib/ldap/</code> (must be <code>openldap:openldap</code>)<br>
+            3. Fix ownership: <code>sudo chown -R openldap:openldap /var/lib/ldap/</code><br>
+            4. If config is corrupted, re-run <code>sudo dpkg-reconfigure slapd</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>ldapsearch</code> returns "Can't contact LDAP server"</td>
+          <td><code>slapd</code> is not running, or a firewall is blocking port 389</td>
+          <td>
+            1. Check service: <code>sudo systemctl status slapd</code><br>
+            2. Start if needed: <code>sudo systemctl start slapd</code><br>
+            3. Check ports: <code>sudo ss -tlnp | grep 389</code><br>
+            4. Check local firewall: <code>sudo ufw status</code> (Ubuntu) or pfSense rules
+          </td>
+        </tr>
+        <tr>
+          <td><code>dpkg-reconfigure slapd</code> fails with database errors</td>
+          <td>Old database files conflict with new configuration</td>
+          <td>
+            1. Stop slapd: <code>sudo systemctl stop slapd</code><br>
+            2. Back up existing data: <code>sudo cp -r /var/lib/ldap/ /var/lib/ldap.bak/</code><br>
+            3. Remove old database: <code>sudo rm -rf /var/lib/ldap/*</code><br>
+            4. Re-run: <code>sudo dpkg-reconfigure slapd</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>namingContexts</code> query returns wrong base DN</td>
+          <td><code>dpkg-reconfigure</code> was not run, or the wrong domain was entered</td>
+          <td>
+            Re-run <code>sudo dpkg-reconfigure slapd</code> with the correct DNS domain name. Select "Yes" when asked to move the old database.
+          </td>
+        </tr>
+        <tr>
+          <td>"Invalid credentials" when binding as admin</td>
+          <td>Wrong password or wrong admin DN</td>
+          <td>
+            1. Verify your admin DN matches your base DN: <code>cn=admin,dc=lab,dc=local</code><br>
+            2. Test with: <code>ldapwhoami -x -D "cn=admin,dc=lab,dc=local" -W</code><br>
+            3. If password is lost, re-run <code>sudo dpkg-reconfigure slapd</code> to set a new one
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tip-box">
+    <strong>💡 The Universal First Step: Check the Logs</strong>
+    For almost any <code>slapd</code> issue, your first diagnostic command should be:
+    <pre style="margin-top:8px;"><code><span class="cmd">sudo journalctl -u slapd -e --no-pager</span></code></pre>
+    The <code>-e</code> flag jumps to the end (most recent entries) and <code>--no-pager</code> outputs everything to the terminal. The error messages in the journal are usually specific enough to identify the problem.
+  </div>
+</section>
+
+<!-- ═══════════ KNOWLEDGE CHECK ═══════════ -->
+<section class="section" id="kc">
+  <h2>Knowledge Check</h2>
+  <p>Test your understanding of the concepts covered in this module. This is <strong>ungraded</strong>—use it to identify areas you may want to review before Quiz 12.</p>
+
+  <div class="kc-wrap" role="region" aria-label="Knowledge check questions">
+    <h3>Module 12.2 – Self-Assessment (4 Questions)</h3>
+
+    <!-- Q1 -->
+    <div class="kc-q" id="kc-q1">
+      <p>1. Which OpenLDAP component is the server daemon that listens for LDAP connections and processes client requests?</p>
+      <label><input type="radio" name="q1" value="a"> <code>ldapsearch</code></label>
+      <label><input type="radio" name="q1" value="b"> <code>slapd</code></label>
+      <label><input type="radio" name="q1" value="c"> <code>slapcat</code></label>
+      <label><input type="radio" name="q1" value="d"> <code>ldapmodify</code></label>
+      <button class="kc-btn" onclick="checkAnswer('q1','b', 'Correct! <code>slapd</code> (Standalone LDAP Daemon) is the server process. <code>ldapsearch</code> and <code>ldapmodify</code> are client utilities, and <code>slapcat</code> is a server-side offline export tool.', 'Not quite. Remember the naming convention: server-side tools start with <strong>slap</strong>, but <code>slapd</code> specifically is the daemon (server process). <code>slapcat</code> is a server utility but it exports data offline—it does not listen for connections.')">Check Answer</button>
+      <div class="kc-feedback" id="kc-q1-fb"></div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="kc-q" id="kc-q2">
+      <p>2. What is the primary advantage of the <code>cn=config</code> (OLC) model over the legacy <code>slapd.conf</code> file?</p>
+      <label><input type="radio" name="q2" value="a"> <code>cn=config</code> uses a simpler syntax that is easier to read</label>
+      <label><input type="radio" name="q2" value="b"> <code>cn=config</code> allows configuration changes without restarting <code>slapd</code></label>
+      <label><input type="radio" name="q2" value="c"> <code>cn=config</code> does not require root privileges to modify</label>
+      <label><input type="radio" name="q2" value="d"> <code>cn=config</code> stores configuration in a relational database</label>
+      <button class="kc-btn" onclick="checkAnswer('q2','b', 'Correct! The key benefit of <code>cn=config</code> is <strong>dynamic, zero-downtime configuration</strong>. Changes applied via <code>ldapmodify</code> take effect immediately without restarting the <code>slapd</code> service. The legacy <code>slapd.conf</code> required a service restart for every change.', 'Not quite. While <code>cn=config</code> has many benefits, its primary advantage is that configuration changes are applied <strong>live</strong>—no service restart required. This is critical in production environments where directory availability must be maintained 24/7.')">Check Answer</button>
+      <div class="kc-feedback" id="kc-q2-fb"></div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="kc-q" id="kc-q3">
+      <p>3. Which command verifies that your OpenLDAP server is configured with the correct base DN after installation?</p>
+      <label><input type="radio" name="q3" value="a"> <code>sudo systemctl status slapd</code></label>
+      <label><input type="radio" name="q3" value="b"> <code>sudo slaptest -u</code></label>
+      <label><input type="radio" name="q3" value="c"> <code>ldapsearch -x -LLL -b "" -s base namingContexts</code></label>
+      <label><input type="radio" name="q3" value="d"> <code>sudo ss -tlnp | grep slapd</code></label>
+      <button class="kc-btn" onclick="checkAnswer('q3','c', 'Correct! Querying the Root DSE for <code>namingContexts</code> returns the base DN(s) configured on the server. This confirms that <code>dpkg-reconfigure</code> set the domain correctly. The other commands are useful verification steps (service status, port listening), but they do not reveal the configured base DN.', 'Not quite. <code>systemctl status</code> checks if the service is running, and <code>ss -tlnp</code> checks listening ports—both are important but do not show the base DN. The command <code>ldapsearch -x -LLL -b &quot;&quot; -s base namingContexts</code> queries the Root DSE to reveal which directory databases are available and their base DNs.')">Check Answer</button>
+      <div class="kc-feedback" id="kc-q3-fb"></div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="kc-q" id="kc-q4">
+      <p>4. What is the default backend database used by modern OpenLDAP, and where are its data files stored on Ubuntu?</p>
+      <label><input type="radio" name="q4" value="a"> BDB backend, stored in <code>/etc/ldap/</code></label>
+      <label><input type="radio" name="q4" value="b"> MDB backend, stored in <code>/var/lib/ldap/</code></label>
+      <label><input type="radio" name="q4" value="c"> HDB backend, stored in <code>/var/lib/ldap/</code></label>
+      <label><input type="radio" name="q4" value="d"> MDB backend, stored in <code>/etc/ldap/slapd.d/</code></label>
+      <button class="kc-btn" onclick="checkAnswer('q4','b', 'Correct! <strong>MDB</strong> (Memory-Mapped Database / LMDB) is the modern default backend. Its data files (<code>data.mdb</code> and <code>lock.mdb</code>) are stored in <code>/var/lib/ldap/</code>. Note that <code>/etc/ldap/slapd.d/</code> stores the <em>configuration</em> (cn=config), not the directory data.', 'Not quite. BDB and HDB are older, deprecated backends. The modern default is <strong>MDB</strong>. Also, pay attention to the directory paths: <code>/var/lib/ldap/</code> stores the <em>data</em>, while <code>/etc/ldap/slapd.d/</code> stores the <em>configuration</em>. These are different and should not be confused.')">Check Answer</button>
+      <div class="kc-feedback" id="kc-q4-fb"></div>
+    </div>
+
+  </div><!-- /kc-wrap -->
+</section>
+
+<!-- ═══════════ WHAT'S NEXT ═══════════ -->
+<section class="section" id="next">
+  <h2>What&rsquo;s Next</h2>
+  <p>In <strong>Module 12.3 &ndash; Populating &amp; Querying the LDAP Directory</strong>, you will put your running OpenLDAP server to work. You will design a directory structure, write LDIF files to create organizational units, users, and groups, load them into the directory with <code>ldapadd</code>, and master <code>ldapsearch</code> queries with filters and scopes. The installation you verified in this module is the foundation for everything that follows.</p>
+
+  <div class="info-box">
+    <strong>📋 Before Moving On</strong>
+    Make sure you have completed the verification checklist in §6. If any check fails, use the troubleshooting table in §7 to resolve the issue before proceeding. Module 12.3 requires a working, verified <code>slapd</code> installation.
+  </div>
+</section>
+
+</main>
+
+<!-- ════════════════════ SCRIPTS ════════════════════ -->
+<script>
+/* ── Step Reveal Toggle ── */
+function toggleStep(btn){
+  var content=btn.nextElementSibling;
+  var isOpen=content.classList.contains('open');
+  content.classList.toggle('open');
+  btn.setAttribute('aria-expanded',!isOpen);
+}
+
+/* ── Knowledge Check ── */
+function checkAnswer(qName,correctVal,correctMsg,incorrectMsg){
+  var radios=document.querySelectorAll('input[name="'+qName+'"]');
+  var fb=document.getElementById('kc-'+qName+'-fb');
+  var selected=null;
+  for(var i=0;i<radios.length;i++){
+    if(radios[i].checked){selected=radios[i].value;break;}
+  }
+  if(!selected){
+    fb.className='kc-feedback incorrect';
+    fb.innerHTML='<strong>Please select an answer before checking.</strong>';
+    return;
+  }
+  if(selected===correctVal){
+    fb.className='kc-feedback correct';
+    fb.innerHTML='<strong>✓ Correct!</strong> '+correctMsg;
+  }else{
+    fb.className='kc-feedback incorrect';
+    fb.innerHTML='<strong>✗ Incorrect.</strong> '+incorrectMsg;
+  }
+}
+</script>
+
+</body>
+</html>

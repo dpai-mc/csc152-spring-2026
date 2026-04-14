@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 12.1 – LDAP Protocol Fundamentals &amp; DIT Structure | CSC 152</title>
+<style>
+/* ===== CSS Reset & Base ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#1a1a2e;background:#f8f9fb}
+
+/* ===== Skip Link ===== */
+.skip-link{position:absolute;top:-100%;left:8px;background:#0d3b66;color:#fff;padding:8px 16px;z-index:1100;border-radius:0 0 4px 4px;font-weight:600;text-decoration:none}
+.skip-link:focus{top:0}
+
+/* ===== Sticky Nav ===== */
+.top-nav{position:sticky;top:0;z-index:1000;background:#0d3b66;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.nav-inner{max-width:1120px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;padding:0 16px}
+.nav-brand{color:#fff;font-weight:700;font-size:.95rem;padding:10px 12px 10px 0;white-space:nowrap;border-right:1px solid rgba(255,255,255,.25);margin-right:4px}
+.nav-links{display:flex;flex-wrap:wrap;list-style:none;gap:2px}
+.nav-links a{display:block;color:#d4e4f7;text-decoration:none;padding:10px 10px;font-size:.82rem;border-radius:3px;transition:background .15s,color .15s}
+.nav-links a:hover,.nav-links a:focus{background:rgba(255,255,255,.15);color:#fff;outline:none}
+.nav-links a:focus-visible{outline:2px solid #f0c040;outline-offset:2px}
+
+/* ===== Page Shell ===== */
+.page-wrapper{max-width:960px;margin:0 auto;padding:24px 20px 64px}
+
+/* ===== Module Header ===== */
+.mod-header{background:linear-gradient(135deg,#0d3b66 0%,#1a5f9e 100%);color:#fff;border-radius:8px;padding:32px 28px 28px;margin-bottom:32px}
+.mod-header .label{font-size:.8rem;text-transform:uppercase;letter-spacing:1.5px;opacity:.85;margin-bottom:4px}
+.mod-header h1{font-size:1.65rem;font-weight:700;line-height:1.3;margin-bottom:8px}
+.mod-header .meta{font-size:.85rem;opacity:.85;line-height:1.5}
+.mod-header .meta span{margin-right:18px}
+
+/* ===== Objectives Box ===== */
+.obj-box{background:#e8f0fe;border-left:4px solid #1a5f9e;border-radius:0 6px 6px 0;padding:20px 24px;margin-bottom:32px}
+.obj-box h2{font-size:1.05rem;color:#0d3b66;margin-bottom:10px}
+.obj-box ul{padding-left:20px}
+.obj-box li{margin-bottom:6px;font-size:.93rem}
+.obj-box .cslo-tag{display:inline-block;background:#0d3b66;color:#fff;font-size:.72rem;padding:2px 8px;border-radius:3px;margin-top:10px;letter-spacing:.5px}
+
+/* ===== Section Headings ===== */
+.section{margin-bottom:40px}
+.section h2{font-size:1.3rem;color:#0d3b66;border-bottom:3px solid #d4e4f7;padding-bottom:6px;margin-bottom:16px}
+.section h3{font-size:1.05rem;color:#1a5f9e;margin:20px 0 10px}
+.section h4{font-size:.95rem;color:#333;margin:14px 0 8px;font-weight:600}
+
+/* ===== Prose ===== */
+.section p,.section li{font-size:.93rem}
+.section p{margin-bottom:12px}
+.section ul,.section ol{padding-left:22px;margin-bottom:14px}
+.section li{margin-bottom:5px}
+
+/* ===== Comparison Table ===== */
+.cmp-table{width:100%;border-collapse:collapse;margin:14px 0 18px;font-size:.88rem}
+.cmp-table th,.cmp-table td{border:1px solid #c8d6e5;padding:9px 12px;text-align:left;vertical-align:top}
+.cmp-table th{background:#e8f0fe;color:#0d3b66;font-weight:600}
+.cmp-table tr:nth-child(even) td{background:#f4f7fb}
+
+/* ===== Code / Pre ===== */
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px 18px;border-radius:6px;overflow-x:auto;font-size:.84rem;line-height:1.55;margin:12px 0 16px;white-space:pre;tab-size:4}
+code{font-family:'Cascadia Code','Fira Code','Courier New',monospace}
+p code,li code{background:#e8f0fe;color:#0d3b66;padding:1px 5px;border-radius:3px;font-size:.87em}
+
+/* ===== Diagram Boxes ===== */
+.diagram-box{background:#fff;border:1px solid #c8d6e5;border-radius:6px;padding:20px;margin:16px 0 20px;overflow-x:auto}
+.diagram-box pre{background:transparent;color:#1a1a2e;padding:0;margin:0;font-size:.82rem;line-height:1.5}
+.diagram-box .caption{font-size:.82rem;color:#555;margin-top:10px;font-style:italic;text-align:center}
+
+/* ===== Callout Boxes ===== */
+.callout{border-radius:6px;padding:16px 20px;margin:16px 0;font-size:.9rem}
+.callout-info{background:#e8f0fe;border-left:4px solid #1a5f9e}
+.callout-warn{background:#fff8e1;border-left:4px solid #f0a500}
+.callout-tip{background:#e6f9e8;border-left:4px solid #2e7d32}
+.callout strong{display:block;margin-bottom:4px}
+
+/* ===== Collapsible / Accordion ===== */
+details{border:1px solid #c8d6e5;border-radius:6px;margin:12px 0;background:#fff}
+details[open]{box-shadow:0 1px 4px rgba(0,0,0,.08)}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:.93rem;color:#0d3b66;list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:'▸';font-size:1rem;transition:transform .2s}
+details[open]>summary::before{transform:rotate(90deg)}
+summary:focus-visible{outline:2px solid #f0c040;outline-offset:2px;border-radius:4px}
+details .detail-body{padding:4px 16px 16px}
+
+/* ===== Mini-Case Box ===== */
+.minicase{background:#fdf6ec;border:1px solid #e8d5b7;border-radius:6px;padding:20px 24px;margin:18px 0}
+.minicase h3{color:#8b5e0f;margin-top:0}
+
+/* ===== Knowledge Check ===== */
+.kc-container{background:#fff;border:2px solid #1a5f9e;border-radius:8px;padding:24px;margin:24px 0}
+.kc-container h2{color:#0d3b66;margin-bottom:16px;font-size:1.15rem}
+.kc-question{background:#f4f7fb;border-radius:6px;padding:16px 18px;margin-bottom:16px}
+.kc-question p.q-stem{font-weight:600;margin-bottom:10px;font-size:.93rem}
+.kc-question label{display:block;padding:5px 8px;margin:3px 0;border-radius:4px;font-size:.9rem;cursor:pointer}
+.kc-question label:hover{background:#e8f0fe}
+.kc-question input[type="radio"]{margin-right:8px}
+.kc-btn{display:inline-block;background:#0d3b66;color:#fff;border:none;padding:8px 20px;border-radius:4px;font-size:.88rem;cursor:pointer;margin-top:6px}
+.kc-btn:hover{background:#1a5f9e}
+.kc-btn:focus-visible{outline:2px solid #f0c040;outline-offset:2px}
+.kc-feedback{margin-top:10px;padding:12px 14px;border-radius:5px;font-size:.88rem;display:none}
+.kc-feedback.correct{background:#e6f9e8;border:1px solid #2e7d32;color:#1b5e20}
+.kc-feedback.incorrect{background:#fdecea;border:1px solid #c62828;color:#b71c1c}
+
+/* ===== Footer ===== */
+.mod-footer{border-top:2px solid #d4e4f7;margin-top:48px;padding-top:20px;font-size:.84rem;color:#555}
+.mod-footer .nav-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.mod-footer a{color:#1a5f9e;text-decoration:none;font-weight:600}
+.mod-footer a:hover{text-decoration:underline}
+.mod-footer a:focus-visible{outline:2px solid #f0c040;outline-offset:2px}
+
+/* ===== Responsive ===== */
+@media(max-width:680px){
+  .nav-brand{font-size:.82rem;padding:8px 8px 8px 0}
+  .nav-links a{padding:8px 7px;font-size:.76rem}
+  .mod-header{padding:24px 18px 20px}
+  .mod-header h1{font-size:1.3rem}
+  .page-wrapper{padding:16px 12px 48px}
+  pre{font-size:.78rem;padding:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- Skip Link -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<nav class="top-nav" aria-label="Module navigation">
+  <div class="nav-inner">
+    <span class="nav-brand">Module 12.1</span>
+    <ul class="nav-links" role="list">
+      <li><a href="#what-is-directory">Directory Services</a></li>
+      <li><a href="#history">X.500 → LDAP</a></li>
+      <li><a href="#operations">Operations</a></li>
+      <li><a href="#ports">Ports &amp; TLS</a></li>
+      <li><a href="#dit">DIT</a></li>
+      <li><a href="#dn-rdn">DNs &amp; RDNs</a></li>
+      <li><a href="#schema">Schema</a></li>
+      <li><a href="#ldif">LDIF</a></li>
+      <li><a href="#minicase">Mini-Case</a></li>
+      <li><a href="#knowledge-check">Knowledge Check</a></li>
+      <li><a href="#readings">Readings</a></li>
+      <li><a href="#next">What&rsquo;s Next</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main-content" class="page-wrapper">
+
+  <header class="mod-header">
+    <div class="label">Week 12 · Module 12.1</div>
+    <h1>LDAP Protocol Fundamentals &amp; DIT Structure</h1>
+    <div class="meta">
+      <span>CSC 152 – Network OS and Administration</span>
+      <span>Est. Time: 1.25 hours</span>
+    </div>
+  </header>
+
+  <div class="obj-box">
+    <h2>Learning Objectives</h2>
+    <ul>
+      <li><strong>Objective 1:</strong> Explain the LDAP protocol, including its purpose, operation model, and relationship to X.500.</li>
+      <li><strong>Objective 2:</strong> Describe the LDAP Directory Information Tree (DIT) structure, including DNs, RDNs, and common object classes.</li>
+    </ul>
+    <span class="cslo-tag">CSLO 1</span> <span class="cslo-tag">CSLO 2</span>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>Building on Week 11</strong>
+    In Week 11 you installed Active Directory Domain Services and worked with domains, OUs, users, and Group Policy. This week we explore the open-standards counterpart&mdash;LDAP and OpenLDAP. Many concepts (hierarchical structure, OUs, centralized authentication) will feel familiar. The key shift is from a GUI-centric, proprietary platform to a CLI-centric, standards-based one.
+  </div>
+
+  <section class="section" id="what-is-directory">
+    <h2>§1 &ndash; What Is a Directory Service?</h2>
+
+    <p>A <strong>directory service</strong> is a specialized database designed to store, organize, and provide access to information about network resources&mdash;users, groups, computers, printers, and more. Think of it as a combination of:</p>
+    <ul>
+      <li>A <strong>phone book</strong>&mdash;you look up a person&rsquo;s name and get their phone number, email, and office location.</li>
+      <li>A <strong>security guard</strong>&mdash;it verifies who you are (authentication) and what you&rsquo;re allowed to do (authorization).</li>
+      <li>A <strong>policy enforcer</strong>&mdash;it can push configuration rules to every computer in the organization.</li>
+    </ul>
+
+    <h3>Directory Service vs. Relational Database</h3>
+    <p>Although both store data, they are optimized for very different workloads:</p>
+
+    <table class="cmp-table">
+      <caption class="sr-only">Comparison of directory services and relational databases</caption>
+      <thead>
+        <tr><th>Characteristic</th><th>Directory Service</th><th>Relational Database</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Data model</td><td>Hierarchical (tree)</td><td>Tabular (rows &amp; columns)</td></tr>
+        <tr><td>Optimized for</td><td>Reads / lookups (read-heavy)</td><td>Reads <em>and</em> writes (balanced or write-heavy)</td></tr>
+        <tr><td>Schema</td><td>Object-class based; enforced by server</td><td>Table-based; enforced by constraints</td></tr>
+        <tr><td>Query language</td><td>LDAP search filters</td><td>SQL</td></tr>
+        <tr><td>Typical data</td><td>Users, groups, devices, certificates</td><td>Orders, inventory, transactions</td></tr>
+        <tr><td>Replication</td><td>Built-in multi-site replication</td><td>Varies by product</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-tip">
+      <strong>Week 11 Connection</strong>
+      Active Directory is Microsoft&rsquo;s directory service. It uses the LDAP protocol internally. This week, you will work with LDAP directly&mdash;without the AD wrapper.
+    </div>
+  </section>
+
+  <section class="section" id="history">
+    <h2>§2 &ndash; From X.500 DAP to LDAP</h2>
+
+    <p>LDAP did not appear out of thin air. It evolved from an earlier, more complex standard:</p>
+
+    <h3>X.500 Directory Access Protocol (DAP)</h3>
+    <ul>
+      <li>Developed in the late 1980s by the ITU-T and ISO.</li>
+      <li>Ran over the full <strong>OSI protocol stack</strong>&mdash;heavyweight, complex, and expensive to implement.</li>
+      <li>Defined the concepts we still use today: hierarchical tree, distinguished names, object classes, and attributes.</li>
+    </ul>
+
+    <h3>LDAP &ndash; The Lightweight Alternative</h3>
+    <ul>
+      <li>Created in the early 1990s at the University of Michigan as a simpler front-end to X.500.</li>
+      <li>Runs over <strong>TCP/IP</strong> instead of the OSI stack&mdash;hence &ldquo;Lightweight.&rdquo;</li>
+      <li>Current version: <strong>LDAP v3</strong>, defined in <strong>RFC 4511</strong> (2006).</li>
+      <li>LDAP v2 is deprecated and should not be used.</li>
+    </ul>
+
+    <div class="diagram-box">
+<pre>
+ Timeline
+ ────────────────────────────────────────────────────────
+ 1988        1993          1997          2003       2006
+  │           │             │             │           │
+  ▼           ▼             ▼             ▼           ▼
+ X.500     LDAPv1       LDAPv3       Active      RFC 4511
+ DAP       (RFC 1487)   (RFC 2251)   Directory   (LDAPv3
+ published  Lightweight   Widely       2003 R2     revised)
+            TCP/IP        adopted
+            alternative
+</pre>
+      <div class="caption">Figure 1 &ndash; Evolution from X.500 DAP to modern LDAP v3</div>
+    </div>
+
+    <p>The key takeaway: <strong>LDAP kept the powerful data model of X.500 but made it practical</strong> by running over the same TCP/IP networks you already manage.</p>
+  </section>
+
+  <section class="section" id="operations">
+    <h2>§3 &ndash; LDAP Operation Model</h2>
+
+    <p>LDAP defines a small set of operations that clients use to interact with the directory server. Every LDAP session follows a predictable pattern: connect, authenticate, perform operations, disconnect.</p>
+
+    <table class="cmp-table">
+      <caption class="sr-only">LDAP operations summary</caption>
+      <thead>
+        <tr><th>Operation</th><th>Purpose</th><th>Analogy</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Bind</strong></td><td>Authenticate to the directory (provide credentials)</td><td>Logging in</td></tr>
+        <tr><td><strong>Search</strong></td><td>Query the directory for entries matching a filter</td><td>Looking up a contact</td></tr>
+        <tr><td><strong>Add</strong></td><td>Create a new entry in the directory</td><td>Adding a new employee record</td></tr>
+        <tr><td><strong>Modify</strong></td><td>Change attributes of an existing entry</td><td>Updating a phone number</td></tr>
+        <tr><td><strong>Delete</strong></td><td>Remove an entry from the directory</td><td>Removing a departed employee</td></tr>
+        <tr><td><strong>Compare</strong></td><td>Check whether an entry has a specific attribute value (returns true/false)</td><td>Asking &ldquo;Is this person in the Admins group?&rdquo;</td></tr>
+        <tr><td><strong>Unbind</strong></td><td>End the LDAP session and close the connection</td><td>Logging out</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Request–Response Sequence</h3>
+    <div class="diagram-box">
+<pre>
+  LDAP Client                          LDAP Server (slapd)
+      │                                       │
+      │──── Bind Request (DN + password) ────▶│
+      │◀─── Bind Response (success/fail) ─────│
+      │                                       │
+      │──── Search Request (base, scope,      │
+      │     filter, attributes)          ────▶│
+      │◀─── Search Result Entry ──────────────│
+      │◀─── Search Result Entry ──────────────│
+      │◀─── Search Result Done ───────────────│
+      │                                       │
+      │──── Modify Request ──────────────────▶│
+      │◀─── Modify Response ─────────────────│
+      │                                       │
+      │──── Unbind Request ─────────────────▶│
+      │              (connection closed)       │
+</pre>
+      <div class="caption">Figure 2 &ndash; Typical LDAP session: Bind → Search → Modify → Unbind</div>
+    </div>
+
+    <details>
+      <summary>Bind Types: Simple vs. SASL</summary>
+      <div class="detail-body">
+        <ul>
+          <li><strong>Simple Bind:</strong> The client sends a DN and a plaintext password. This is the most common method in lab environments. <em>Always use TLS when using simple bind in production!</em></li>
+          <li><strong>SASL Bind:</strong> The client uses the Simple Authentication and Security Layer framework, which supports mechanisms like GSSAPI (Kerberos), DIGEST-MD5, and EXTERNAL (TLS client certificates). SASL is more secure but more complex to configure.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>Anonymous Bind</summary>
+      <div class="detail-body">
+        <p>An <strong>anonymous bind</strong> sends no credentials at all. The server may allow limited read access to public attributes (like a phone directory). Many production servers disable anonymous binds for security. In OpenLDAP, you control this through Access Control Lists (ACLs).</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="ports">
+    <h2>§4 &ndash; LDAP Ports &amp; Transport Security</h2>
+
+    <table class="cmp-table">
+      <caption class="sr-only">LDAP ports and transport security</caption>
+      <thead>
+        <tr><th>Port</th><th>Protocol</th><th>Encryption</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>389</strong></td><td>LDAP</td><td>None (plaintext) <em>or</em> StartTLS</td><td>Default LDAP port. Can be upgraded to TLS mid-session with StartTLS.</td></tr>
+        <tr><td><strong>636</strong></td><td>LDAPS</td><td>TLS from connection start</td><td>LDAP over TLS. The entire session is encrypted. Sometimes called &ldquo;LDAP over SSL&rdquo; (legacy term).</td></tr>
+      </tbody>
+    </table>
+
+    <h3>StartTLS vs. LDAPS</h3>
+    <ul>
+      <li><strong>StartTLS</strong> &ndash; The client connects on port 389 in plaintext, then issues a StartTLS command to upgrade the connection to TLS. If the upgrade fails, the client can decide whether to continue unencrypted or abort.</li>
+      <li><strong>LDAPS</strong> &ndash; The client connects on port 636 and the TLS handshake happens immediately, before any LDAP traffic. The connection is encrypted from the first byte.</li>
+    </ul>
+
+    <div class="callout callout-warn">
+      <strong>Why Encryption Matters</strong>
+      Simple bind sends passwords in cleartext. Without TLS, anyone capturing network traffic between the client and server can read those passwords. In production environments, always use either StartTLS or LDAPS. We will configure TLS for LDAP in Week 14 (Server Security &amp; Hardening). For this week&rsquo;s lab work on an isolated network, plaintext LDAP on port 389 is acceptable.
+    </div>
+
+    <div class="callout callout-info">
+      <strong>Week 8–9 Connection</strong>
+      Remember your network configuration and firewall work? If your LDAP server and client are on different pfSense subnets, you will need a firewall rule allowing TCP port 389 (and/or 636) between those subnets.
+    </div>
+  </section>
+
+  <section class="section" id="dit">
+    <h2>§5 &ndash; The Directory Information Tree (DIT)</h2>
+
+    <p>Every LDAP directory organizes its data in a <strong>hierarchical tree structure</strong> called the <strong>Directory Information Tree (DIT)</strong>. If you are familiar with a file system (Week 3) or Active Directory&rsquo;s domain/OU structure (Week 11), the DIT will feel natural.</p>
+
+    <h3>Key Components</h3>
+    <ul>
+      <li><strong>Root DSE</strong> (Directory Server Entry) &ndash; The very top of the tree. It is a special entry with no DN (an empty string). It describes the server&rsquo;s capabilities, supported LDAP versions, and naming contexts. You queried it in the verification step: <code>ldapsearch -x -LLL -b "" -s base namingContexts</code>.</li>
+      <li><strong>Base DN</strong> (Base Distinguished Name) &ndash; The top of <em>your</em> directory data. For example: <code>dc=mendocino,dc=edu</code>. This is analogous to the root domain in Active Directory.</li>
+      <li><strong>Organizational Units (OUs)</strong> &ndash; Containers that group related entries. Common OUs include <code>ou=People</code>, <code>ou=Groups</code>, and <code>ou=Services</code>. These work the same way as AD OUs from Week 11.</li>
+      <li><strong>Leaf Entries</strong> &ndash; The actual objects: users, groups, devices. They sit at the bottom of the tree.</li>
+    </ul>
+
+    <h3>Sample DIT Diagram</h3>
+    <div class="diagram-box">
+<pre>
+                    Root DSE ("")
+                        │
+               dc=mendocino,dc=edu          ← Base DN
+              ┌─────────┼──────────┐
+              │         │          │
+         ou=People  ou=Groups  ou=Services
+           │   │        │          │
+          ▼   ▼        ▼          ▼
+     uid=jdoe uid=asmith cn=staff  cn=ldap-proxy
+     (user)   (user)   (group)    (service acct)
+</pre>
+      <div class="caption">Figure 3 &ndash; A simple LDAP Directory Information Tree</div>
+    </div>
+
+    <details>
+      <summary>DIT vs. Active Directory Structure</summary>
+      <div class="detail-body">
+        <table class="cmp-table">
+          <thead><tr><th>Concept</th><th>Active Directory (Week 11)</th><th>LDAP / OpenLDAP (Week 12)</th></tr></thead>
+          <tbody>
+            <tr><td>Top of tree</td><td>Forest root domain (e.g., <code>corp.local</code>)</td><td>Base DN (e.g., <code>dc=mendocino,dc=edu</code>)</td></tr>
+            <tr><td>Containers</td><td>OUs created in ADUC or PowerShell</td><td>OU entries created via LDIF</td></tr>
+            <tr><td>User objects</td><td><code>user</code> class (AD-specific)</td><td><code>inetOrgPerson</code> + <code>posixAccount</code></td></tr>
+            <tr><td>Group objects</td><td><code>group</code> class (security/distribution)</td><td><code>posixGroup</code></td></tr>
+            <tr><td>Management tool</td><td>ADUC (GUI) / PowerShell</td><td><code>ldapadd</code>, <code>ldapmodify</code> (CLI) / LDIF files</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="dn-rdn">
+    <h2>§6 &ndash; Distinguished Names (DNs) &amp; Relative Distinguished Names (RDNs)</h2>
+
+    <p>Every entry in the DIT has a globally unique identifier called its <strong>Distinguished Name (DN)</strong>. The DN describes the full path from the entry up to the base of the tree&mdash;similar to an absolute file path in Linux (Week 3).</p>
+
+    <h3>DN Syntax</h3>
+    <pre><code>uid=jdoe,ou=People,dc=mendocino,dc=edu</code></pre>
+    <p>Read this <strong>left to right</strong>, from the specific entry up to the base:</p>
+    <ul>
+      <li><code>uid=jdoe</code> &ndash; the entry itself (the user &ldquo;jdoe&rdquo;)</li>
+      <li><code>ou=People</code> &ndash; the OU containing this user</li>
+      <li><code>dc=mendocino,dc=edu</code> &ndash; the base DN (domain components)</li>
+    </ul>
+
+    <h3>Relative Distinguished Name (RDN)</h3>
+    <p>The <strong>RDN</strong> is the <em>leftmost</em> component of the DN. It uniquely identifies the entry within its parent container.</p>
+    <ul>
+      <li>For <code>uid=jdoe,ou=People,dc=mendocino,dc=edu</code>, the RDN is <code>uid=jdoe</code>.</li>
+      <li>For <code>ou=People,dc=mendocino,dc=edu</code>, the RDN is <code>ou=People</code>.</li>
+    </ul>
+
+    <h3>Analogy: DN as a File Path</h3>
+    <div class="diagram-box">
+<pre>
+  Linux file path:    /home/people/jdoe
+                       ──── ────── ────
+                       base  dir   file   (read left → right)
+
+  LDAP DN:            uid=jdoe, ou=People, dc=mendocino,dc=edu
+                      ──────── ────────── ─────────────────────
+                       entry    parent OU   base DN   (read left → right = specific → general)
+</pre>
+      <div class="caption">Figure 4 &ndash; Comparing LDAP DNs to Linux file paths (note: order is reversed)</div>
+    </div>
+
+    <div class="callout callout-info">
+      <strong>Common DN Attribute Types</strong>
+      <ul style="margin-top:6px">
+        <li><code>dc</code> = Domain Component (e.g., <code>dc=mendocino</code>)</li>
+        <li><code>ou</code> = Organizational Unit (e.g., <code>ou=People</code>)</li>
+        <li><code>uid</code> = User ID (e.g., <code>uid=jdoe</code>)</li>
+        <li><code>cn</code> = Common Name (e.g., <code>cn=staff</code> for a group)</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="schema">
+    <h2>§7 &ndash; Object Classes, Attributes &amp; Schema</h2>
+
+    <p>Every LDAP entry must belong to one or more <strong>object classes</strong>. An object class defines which attributes an entry <em>must</em> have (required) and which it <em>may</em> have (optional). The LDAP server enforces these rules&mdash;this is called <strong>schema enforcement</strong>.</p>
+
+    <h3>Structural vs. Auxiliary Object Classes</h3>
+    <table class="cmp-table">
+      <thead><tr><th>Type</th><th>Description</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Structural</strong></td><td>Defines the fundamental nature of the entry (what <em>kind</em> of thing it is)</td><td>Every entry must have exactly <strong>one</strong> structural class (inherited chains count as one)</td></tr>
+        <tr><td><strong>Auxiliary</strong></td><td>Adds extra attributes to an entry without changing its fundamental type</td><td>An entry may have <strong>zero or more</strong> auxiliary classes</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Common Object Classes for This Course</h3>
+
+    <details>
+      <summary><code>organizationalUnit</code> &ndash; Container for grouping entries</summary>
+      <div class="detail-body">
+        <p><strong>Type:</strong> Structural</p>
+        <p><strong>Purpose:</strong> Represents an OU in the DIT (like an AD OU).</p>
+        <table class="cmp-table">
+          <thead><tr><th>Attribute</th><th>Required / Optional</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>ou</code></td><td>Required</td><td>Name of the organizational unit</td></tr>
+            <tr><td><code>description</code></td><td>Optional</td><td>Human-readable description</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>inetOrgPerson</code> &ndash; A person in the organization</summary>
+      <div class="detail-body">
+        <p><strong>Type:</strong> Structural (inherits from <code>organizationalPerson</code> → <code>person</code>)</p>
+        <p><strong>Purpose:</strong> Stores standard identity information for a person.</p>
+        <table class="cmp-table">
+          <thead><tr><th>Attribute</th><th>Required / Optional</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>cn</code></td><td>Required</td><td>Common name (full name)</td></tr>
+            <tr><td><code>sn</code></td><td>Required</td><td>Surname (last name)</td></tr>
+            <tr><td><code>uid</code></td><td>Optional</td><td>User login ID</td></tr>
+            <tr><td><code>mail</code></td><td>Optional</td><td>Email address</td></tr>
+            <tr><td><code>telephoneNumber</code></td><td>Optional</td><td>Phone number</td></tr>
+            <tr><td><code>userPassword</code></td><td>Optional</td><td>Hashed password</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>posixAccount</code> &ndash; Linux/UNIX account attributes (Auxiliary)</summary>
+      <div class="detail-body">
+        <p><strong>Type:</strong> Auxiliary</p>
+        <p><strong>Purpose:</strong> Adds UNIX account attributes so the LDAP entry can be used for Linux login. This is the LDAP equivalent of an <code>/etc/passwd</code> entry (Week 6 connection).</p>
+        <table class="cmp-table">
+          <thead><tr><th>Attribute</th><th>Required / Optional</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>uid</code></td><td>Required</td><td>Login username</td></tr>
+            <tr><td><code>uidNumber</code></td><td>Required</td><td>Numeric user ID (like Linux UID)</td></tr>
+            <tr><td><code>gidNumber</code></td><td>Required</td><td>Primary group ID (like Linux GID)</td></tr>
+            <tr><td><code>homeDirectory</code></td><td>Required</td><td>Path to home directory (e.g., <code>/home/jdoe</code>)</td></tr>
+            <tr><td><code>loginShell</code></td><td>Optional</td><td>Default shell (e.g., <code>/bin/bash</code>)</td></tr>
+            <tr><td><code>cn</code></td><td>Required</td><td>Common name</td></tr>
+          </tbody>
+        </table>
+        <div class="callout callout-tip" style="margin-top:10px">
+          <strong>Week 6 Callback</strong>
+          Remember <code>useradd -m -s /bin/bash -u 1001 -g 1001 jdoe</code>? Those same attributes (UID, GID, home directory, shell) are now stored in LDAP instead of <code>/etc/passwd</code>.
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>posixGroup</code> &ndash; Linux/UNIX group (Structural)</summary>
+      <div class="detail-body">
+        <p><strong>Type:</strong> Structural</p>
+        <p><strong>Purpose:</strong> Represents a UNIX group. Equivalent to an <code>/etc/group</code> entry.</p>
+        <table class="cmp-table">
+          <thead><tr><th>Attribute</th><th>Required / Optional</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>cn</code></td><td>Required</td><td>Group name</td></tr>
+            <tr><td><code>gidNumber</code></td><td>Required</td><td>Numeric group ID</td></tr>
+            <tr><td><code>memberUid</code></td><td>Optional</td><td>Username(s) of group members (multi-valued)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <h3>How Object Classes Work Together</h3>
+    <p>A typical LDAP user entry for Linux authentication combines a <strong>structural</strong> class with an <strong>auxiliary</strong> class:</p>
+    <pre><code>objectClass: inetOrgPerson      ← structural (identity info)
+objectClass: posixAccount        ← auxiliary  (Linux account info)</code></pre>
+    <p>The server merges the required and optional attributes from both classes. If any <em>required</em> attribute is missing, the server rejects the entry.</p>
+  </section>
+
+  <section class="section" id="ldif">
+    <h2>§8 &ndash; LDIF &ndash; LDAP Data Interchange Format</h2>
+
+    <p><strong>LDIF</strong> (LDAP Data Interchange Format) is the standard text format for representing LDAP entries and changes. You will write LDIF files to add, modify, and delete entries in your OpenLDAP directory. Think of LDIF as the &ldquo;language&rdquo; you use to talk to the directory when you are not using a GUI.</p>
+
+    <h3>LDIF Syntax Rules</h3>
+    <ol>
+      <li>Each entry starts with a <code>dn:</code> line specifying the Distinguished Name.</li>
+      <li>Attributes follow as <code>attributeName: value</code> pairs, one per line.</li>
+      <li>Entries are separated by a <strong>blank line</strong>.</li>
+      <li>Lines beginning with <code>#</code> are comments.</li>
+      <li>Long lines can be wrapped by starting the continuation line with a single space.</li>
+    </ol>
+
+    <h3>LDIF for Adding Entries</h3>
+    <p>The following LDIF file creates an OU and a user:</p>
+    <pre><code># Create the People OU
+dn: ou=People,dc=mendocino,dc=edu
+objectClass: organizationalUnit
+ou: People
+
+# Create user jdoe
+dn: uid=jdoe,ou=People,dc=mendocino,dc=edu
+objectClass: inetOrgPerson
+objectClass: posixAccount
+uid: jdoe
+cn: Jane Doe
+sn: Doe
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/jdoe
+loginShell: /bin/bash
+mail: jdoe@mendocino.edu
+userPassword: {SSHA}hashed_password_here</code></pre>
+
+    <div class="callout callout-tip">
+      <strong>Generating Hashed Passwords</strong>
+      Never put plaintext passwords in LDIF files. Use the <code>slappasswd</code> command to generate a salted hash:
+      <pre style="margin-top:8px"><code>$ slappasswd
+New password: ********
+Re-enter new password: ********
+{SSHA}W3ipHbBxOzK8rYbAqsIZdOmNOPkCczSy</code></pre>
+      Copy the output (including the <code>{SSHA}</code> prefix) into your LDIF file as the <code>userPassword</code> value.
+    </div>
+
+    <p>To load this file into the directory:</p>
+    <pre><code>ldapadd -x -D "cn=admin,dc=mendocino,dc=edu" -W -f users.ldif</code></pre>
+    <ul>
+      <li><code>-x</code> &ndash; use simple authentication</li>
+      <li><code>-D</code> &ndash; bind DN (the admin account)</li>
+      <li><code>-W</code> &ndash; prompt for password</li>
+      <li><code>-f</code> &ndash; read entries from a file</li>
+    </ul>
+
+    <h3>LDIF for Modifying Entries</h3>
+    <p>Modifications use <code>changetype: modify</code> with <code>add</code>, <code>replace</code>, or <code>delete</code> operations:</p>
+    <pre><code># Change Jane Doe's phone number
+dn: uid=jdoe,ou=People,dc=mendocino,dc=edu
+changetype: modify
+replace: telephoneNumber
+telephoneNumber: 707-555-1234</code></pre>
+
+    <p>Load with <code>ldapmodify</code>:</p>
+    <pre><code>ldapmodify -x -D "cn=admin,dc=mendocino,dc=edu" -W -f modify.ldif</code></pre>
+
+    <h3>LDIF for Deleting Entries</h3>
+    <pre><code># Delete user jdoe
+dn: uid=jdoe,ou=People,dc=mendocino,dc=edu
+changetype: delete</code></pre>
+    <p>Or use the command directly:</p>
+    <pre><code>ldapdelete -x -D "cn=admin,dc=mendocino,dc=edu" -W "uid=jdoe,ou=People,dc=mendocino,dc=edu"</code></pre>
+
+    <div class="callout callout-warn">
+      <strong>Blank Lines Matter!</strong>
+      In LDIF, a blank line signals the end of one entry and the start of the next. An accidental blank line in the middle of an entry will cause a parsing error. Always double-check your LDIF files before loading them.
+    </div>
+  </section>
+
+  <section class="section" id="minicase">
+    <h2>§9 &ndash; Mini-Case: Designing a DIT for Mendocino Widgets, Inc.</h2>
+
+    <div class="minicase">
+      <h3>Scenario</h3>
+      <p><strong>Mendocino Widgets, Inc.</strong> is a small manufacturing company with 60 employees in three departments:</p>
+      <ul>
+        <li><strong>Engineering</strong> (25 employees) &ndash; designs and tests widgets</li>
+        <li><strong>Sales</strong> (20 employees) &ndash; manages customer accounts and orders</li>
+        <li><strong>Administration</strong> (15 employees) &ndash; handles HR, finance, and office management</li>
+      </ul>
+      <p>The company also has three shared Linux servers that need centralized authentication. The IT team has chosen the domain <code>widgets.local</code> for their LDAP directory.</p>
+
+      <h3>Your Task</h3>
+      <p>On paper or in a text editor, design a DIT for Mendocino Widgets, Inc. Your design should include:</p>
+      <ol>
+        <li>The base DN</li>
+        <li>At least three OUs that logically organize the company&rsquo;s users and groups</li>
+        <li>Sample DNs for two users and one group</li>
+      </ol>
+      <p>Take a few minutes to sketch your tree before revealing the suggested solution below.</p>
+    </div>
+
+    <details>
+      <summary>Reveal Suggested Solution</summary>
+      <div class="detail-body">
+        <h4>Recommended DIT Structure</h4>
+        <div class="diagram-box">
+<pre>
+                 dc=widgets,dc=local             ← Base DN
+              ┌──────────┼──────────┐
+              │          │          │
+         ou=People   ou=Groups  ou=Services
+         ┌────┼────┐     │
+         │    │    │     │
+  ou=Eng ou=Sales ou=Admin  cn=engineering
+  │       │       │         cn=sales
+  │       │       │         cn=admin-staff
+uid=mchen uid=jpark uid=lnguyen
+</pre>
+          <div class="caption">Figure 5 &ndash; Suggested DIT for Mendocino Widgets, Inc.</div>
+        </div>
+
+        <h4>Sample DNs</h4>
+        <ul>
+          <li><strong>User:</strong> <code>uid=mchen,ou=Engineering,ou=People,dc=widgets,dc=local</code></li>
+          <li><strong>User:</strong> <code>uid=jpark,ou=Sales,ou=People,dc=widgets,dc=local</code></li>
+          <li><strong>Group:</strong> <code>cn=engineering,ou=Groups,dc=widgets,dc=local</code></li>
+        </ul>
+
+        <h4>Design Notes</h4>
+        <ul>
+          <li><strong>ou=People</strong> with department sub-OUs keeps users organized and allows different access policies per department.</li>
+          <li><strong>ou=Groups</strong> separates group entries from user entries, making searches cleaner.</li>
+          <li><strong>ou=Services</strong> is a good practice for service accounts (like an LDAP proxy account) that are not real people.</li>
+          <li>An alternative valid design places all users directly under <code>ou=People</code> (flat structure) and uses group membership to indicate department. Both approaches are acceptable.</li>
+        </ul>
+
+        <h4>Sample LDIF for One User</h4>
+        <pre><code>dn: uid=mchen,ou=Engineering,ou=People,dc=widgets,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+uid: mchen
+cn: Maria Chen
+sn: Chen
+uidNumber: 1001
+gidNumber: 2001
+homeDirectory: /home/mchen
+loginShell: /bin/bash
+mail: mchen@widgets.local
+userPassword: {SSHA}example_hash_here</code></pre>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="knowledge-check">
+    <h2>Knowledge Check</h2>
+    <p>Test your understanding of Module 12.1 concepts. Select the best answer for each question, then click <strong>Check Answer</strong> to see explanatory feedback. These questions are <strong>ungraded</strong>.</p>
+
+    <div class="kc-container">
+
+      <div class="kc-question" id="q1">
+        <p class="q-stem">1. Which LDAP operation does a client use to authenticate to the directory server?</p>
+        <label><input type="radio" name="q1" value="a"> Search</label>
+        <label><input type="radio" name="q1" value="b"> Compare</label>
+        <label><input type="radio" name="q1" value="c"> Bind</label>
+        <label><input type="radio" name="q1" value="d"> Add</label>
+        <button class="kc-btn" type="button" onclick="checkAnswer('q1','c','Correct! The <strong>Bind</strong> operation authenticates the client to the LDAP server by providing a DN and credentials. This must happen before the client can perform privileged operations like Add, Modify, or Delete.','Incorrect. The correct answer is <strong>Bind</strong>. The Bind operation is how a client authenticates to the directory. Search retrieves entries, Compare checks a single attribute value, and Add creates new entries.')">Check Answer</button>
+        <div class="kc-feedback" id="q1-fb"></div>
+      </div>
+
+      <div class="kc-question" id="q2">
+        <p class="q-stem">2. Given the DN <code>uid=asmith,ou=People,dc=lab,dc=local</code>, what is the RDN?</p>
+        <label><input type="radio" name="q2" value="a"> <code>dc=lab,dc=local</code></label>
+        <label><input type="radio" name="q2" value="b"> <code>ou=People</code></label>
+        <label><input type="radio" name="q2" value="c"> <code>uid=asmith,ou=People</code></label>
+        <label><input type="radio" name="q2" value="d"> <code>uid=asmith</code></label>
+        <button class="kc-btn" type="button" onclick="checkAnswer('q2','d','Correct! The <strong>Relative Distinguished Name (RDN)</strong> is always the leftmost component of the DN. In this case, <code>uid=asmith</code> uniquely identifies this entry within the <code>ou=People</code> container.','Incorrect. The RDN is the <strong>leftmost</strong> component of the DN: <code>uid=asmith</code>. It uniquely identifies the entry within its parent container (<code>ou=People</code>). The full DN provides the complete path; the RDN is just the entry\'s own name.')">Check Answer</button>
+        <div class="kc-feedback" id="q2-fb"></div>
+      </div>
+
+      <div class="kc-question" id="q3">
+        <p class="q-stem">3. Which object class is an <strong>auxiliary</strong> class that adds Linux/UNIX account attributes (uidNumber, gidNumber, homeDirectory) to a user entry?</p>
+        <label><input type="radio" name="q3" value="a"> <code>inetOrgPerson</code></label>
+        <label><input type="radio" name="q3" value="b"> <code>organizationalUnit</code></label>
+        <label><input type="radio" name="q3" value="c"> <code>posixAccount</code></label>
+        <label><input type="radio" name="q3" value="d"> <code>posixGroup</code></label>
+        <button class="kc-btn" type="button" onclick="checkAnswer('q3','c','Correct! <strong>posixAccount</strong> is an auxiliary object class that adds UNIX account attributes like <code>uidNumber</code>, <code>gidNumber</code>, <code>homeDirectory</code>, and <code>loginShell</code>. It is typically combined with the structural class <code>inetOrgPerson</code> to create a complete user entry for Linux authentication.','Incorrect. The correct answer is <strong>posixAccount</strong>. It is an auxiliary class that provides Linux/UNIX attributes. <code>inetOrgPerson</code> is a structural class for identity info. <code>organizationalUnit</code> is for OUs. <code>posixGroup</code> is a structural class for groups.')">Check Answer</button>
+        <div class="kc-feedback" id="q3-fb"></div>
+      </div>
+
+      <div class="kc-question" id="q4">
+        <p class="q-stem">4. What separates one entry from the next in an LDIF file?</p>
+        <label><input type="radio" name="q4" value="a"> A semicolon (<code>;</code>)</label>
+        <label><input type="radio" name="q4" value="b"> A line containing only <code>---</code></label>
+        <label><input type="radio" name="q4" value="c"> A blank line</label>
+        <label><input type="radio" name="q4" value="d"> The keyword <code>END</code></label>
+        <button class="kc-btn" type="button" onclick="checkAnswer('q4','c','Correct! In LDIF format, a <strong>blank line</strong> separates entries. This is one of the most common sources of errors — an accidental blank line in the middle of an entry will cause the LDAP tools to interpret it as two separate (and likely invalid) entries.','Incorrect. LDIF uses a <strong>blank line</strong> to separate entries. There are no semicolons, dashes, or END keywords. Remember: a blank line = end of entry. Be careful not to insert accidental blank lines within an entry!')">Check Answer</button>
+        <div class="kc-feedback" id="q4-fb"></div>
+      </div>
+
+      <div class="kc-question" id="q5">
+        <p class="q-stem">5. A production LDAP server uses port 636. Which statement best describes what happens on this port?</p>
+        <label><input type="radio" name="q5" value="a"> LDAP traffic is sent in plaintext; the client must issue a StartTLS command to encrypt.</label>
+        <label><input type="radio" name="q5" value="b"> The TLS handshake occurs immediately upon connection; all LDAP traffic is encrypted from the start.</label>
+        <label><input type="radio" name="q5" value="c"> Port 636 is used only for LDAP replication between servers, not for client connections.</label>
+        <label><input type="radio" name="q5" value="d"> Port 636 is the default port for unencrypted LDAP connections.</label>
+        <button class="kc-btn" type="button" onclick="checkAnswer('q5','b','Correct! Port <strong>636 (LDAPS)</strong> establishes a TLS-encrypted connection immediately — the TLS handshake happens before any LDAP data is exchanged. This is different from StartTLS on port 389, where the connection starts as plaintext and is upgraded to TLS mid-session.','Incorrect. Port 636 is <strong>LDAPS</strong> — LDAP over TLS. The TLS handshake occurs <strong>immediately</strong> upon connection, so all traffic is encrypted from the first byte. Port 389 is the default plaintext/StartTLS port. StartTLS upgrades an existing plaintext connection on 389 to TLS.')">Check Answer</button>
+        <div class="kc-feedback" id="q5-fb"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section" id="readings">
+    <h2>Readings &amp; Resources</h2>
+    <p>Complete the following to reinforce the concepts covered in this module.</p>
+    <ol>
+      <li><strong>Z. Cliffe Schreuders &ndash; &ldquo;Lightweight Directory Access Protocol (LDAP)&rdquo;</strong> (10+ min, 2021) &mdash; Explains the LDAP protocol as a network rule set for querying hierarchical tree databases, introduces DIT as the tree structure defined by schema, and covers attributes and object classes. <a href="https://www.youtube.com/watch?v=dCBabesIXo8" target="_blank" rel="noopener noreferrer">Watch on YouTube</a>.</li>
+      <li><strong>&ldquo;LDAP for Rocket Scientists&rdquo;</strong> (zytrax.com) &ndash; Chapter 1: Overview (~15 min) &mdash; Comprehensive reference; focus on the introductory chapter for now. <a href="https://www.zytrax.com/books/ldap/" target="_blank" rel="noopener noreferrer">Read at zytrax.com</a>.</li>
+    </ol>
+  </section>
+
+  <section class="section" id="next">
+    <h2>What&rsquo;s Next</h2>
+    <p>In <strong>Module 12.2 &ndash; OpenLDAP Installation &amp; Configuration</strong>, you will install the OpenLDAP server (<code>slapd</code>) on a Linux VM, configure it using the <code>cn=config</code> dynamic configuration model, and verify your installation. The concepts you learned here&mdash;DIT structure, DNs, object classes, and LDIF&mdash;will be applied hands-on as you build and populate your own directory.</p>
+  </section>
+
+  <footer class="mod-footer">
+    <p>CSC 152 &ndash; Network OS and Administration &bull; Week 12 &bull; Mendocino College &bull; Spring 2026</p>
+    <p><strong>CSLO Alignment:</strong> CSLO 1 (Manage and maintain servers, including operating system (OS) configuration, access control and virtualization) &bull; CSLO 2 (Apply physical and network data security techniques)</p>
+  </footer>
+
+</main>
+
+<script>
+function checkAnswer(qId, correctVal, correctMsg, incorrectMsg) {
+  var radios = document.getElementsByName(qId);
+  var selected = null;
+  for (var i = 0; i < radios.length; i++) {
+    if (radios[i].checked) {
+      selected = radios[i].value;
+      break;
+    }
+  }
+  var fb = document.getElementById(qId + '-fb');
+  if (!selected) {
+    fb.className = 'kc-feedback incorrect';
+    fb.innerHTML = 'Please select an answer before checking.';
+    fb.style.display = 'block';
+    return;
+  }
+  if (selected === correctVal) {
+    fb.className = 'kc-feedback correct';
+    fb.innerHTML = correctMsg;
+  } else {
+    fb.className = 'kc-feedback incorrect';
+    fb.innerHTML = incorrectMsg;
+  }
+  fb.style.display = 'block';
+  fb.setAttribute('role', 'alert');
+}
+</script>
+
+</body>
+</html>

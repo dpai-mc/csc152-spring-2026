@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 12.3 – Populating &amp; Querying the LDAP Directory | CSC 152</title>
+<style>
+/* ═══ RESET & BASE ═══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#1e1e1e;background:#f5f6fa}
+img{max-width:100%;display:block}
+a{color:#0055a2;text-decoration:none}
+a:hover,a:focus{text-decoration:underline}
+code{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:.92em;background:#eef1f7;padding:1px 5px;border-radius:3px}
+pre{margin:0}
+pre code{background:none;padding:0;font-size:.88em}
+
+/* ═══ STICKY NAV ═══ */
+.topnav{position:sticky;top:0;z-index:1000;background:#0b1a2e;display:flex;flex-wrap:wrap;align-items:center;padding:6px 16px;gap:4px 10px;border-bottom:3px solid #1a6fbf}
+.topnav a{color:#c9daf0;font-size:.82rem;padding:4px 8px;border-radius:4px;white-space:nowrap}
+.topnav a:hover,.topnav a:focus{background:#1a6fbf;color:#fff;text-decoration:none}
+.topnav .brand{color:#fff;font-weight:700;font-size:.88rem;margin-right:8px}
+
+/* ═══ PAGE WRAPPER ═══ */
+.page-wrapper{max-width:960px;margin:0 auto;padding:24px 18px 60px}
+
+/* ═══ MODULE HEADER ═══ */
+.mod-header{text-align:center;margin-bottom:28px}
+.mod-header .label{font-size:.82rem;text-transform:uppercase;letter-spacing:1.5px;color:#1a6fbf;font-weight:600}
+.mod-header h1{font-size:1.75rem;margin:6px 0 8px;color:#0b1a2e;line-height:1.25}
+.mod-header .meta{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 18px;font-size:.82rem;color:#555}
+
+/* ═══ OBJECTIVES BOX ═══ */
+.obj-box{background:linear-gradient(135deg,#e8f0fe,#f5f8ff);border-left:5px solid #1a6fbf;border-radius:6px;padding:18px 20px;margin-bottom:28px}
+.obj-box h2{font-size:1.05rem;margin-bottom:8px;color:#0b1a2e}
+.obj-box ul{margin-left:18px;margin-bottom:8px}
+.obj-box li{margin-bottom:4px;font-size:.93rem}
+.cslo-tag{display:inline-block;background:#1a6fbf;color:#fff;font-size:.72rem;padding:2px 9px;border-radius:12px;margin-right:4px;font-weight:600}
+
+/* ═══ SECTIONS ═══ */
+.section{background:#fff;border-radius:8px;padding:22px 24px;margin-bottom:22px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:1px solid #e2e6ee}
+.section h2{font-size:1.25rem;color:#0b1a2e;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #1a6fbf}
+.section h3{font-size:1.05rem;color:#1a3d6f;margin:16px 0 8px}
+.section h4{font-size:.95rem;color:#1a3d6f;margin:12px 0 6px}
+.section p,.section li{font-size:.93rem}
+.section ul,.section ol{margin-left:20px;margin-bottom:10px}
+.section li{margin-bottom:4px}
+
+/* ═══ CODE BLOCKS ═══ */
+.code-block{background:#0b1a2e;color:#e0e8f0;border-radius:6px;padding:16px 18px;margin:10px 0 14px;overflow-x:auto;font-size:.86rem;line-height:1.55;position:relative}
+.code-block .code-label{position:absolute;top:6px;right:10px;font-size:.68rem;color:#6fa3d6;text-transform:uppercase;letter-spacing:1px;pointer-events:none}
+.code-block code{color:#e0e8f0;background:none;padding:0}
+
+/* ═══ CALLOUT BOXES ═══ */
+.callout{border-radius:6px;padding:14px 16px;margin:12px 0;font-size:.9rem}
+.callout-info{background:#e8f4fd;border-left:4px solid #1a6fbf}
+.callout-warn{background:#fff8e1;border-left:4px solid #e6a817}
+.callout-tip{background:#e6f9ee;border-left:4px solid #1a8c45}
+.callout-danger{background:#fdecea;border-left:4px solid #c0392b}
+.callout strong{display:block;margin-bottom:3px}
+
+/* ═══ TABLES ═══ */
+.ref-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.88rem}
+.ref-table th{background:#0b1a2e;color:#fff;text-align:left;padding:8px 12px;font-weight:600}
+.ref-table td{padding:8px 12px;border-bottom:1px solid #e2e6ee;vertical-align:top}
+.ref-table tr:nth-child(even){background:#f5f8ff}
+
+/* ═══ COLLAPSIBLE SECTIONS ═══ */
+details{margin:10px 0}
+details summary{cursor:pointer;font-weight:600;font-size:.95rem;color:#0b1a2e;padding:8px 12px;background:#eef1f7;border-radius:5px;list-style:none;display:flex;align-items:center;gap:8px;border:1px solid #d8dde6}
+details summary::before{content:'▶';font-size:.7rem;transition:transform .2s}
+details[open] summary::before{transform:rotate(90deg)}
+details summary:hover,details summary:focus{background:#dce3f0}
+details .detail-body{padding:14px 16px;border:1px solid #e2e6ee;border-top:none;border-radius:0 0 5px 5px;background:#fafbfe}
+
+/* ═══ TABS ═══ */
+.tab-container{margin:14px 0}
+.tab-buttons{display:flex;flex-wrap:wrap;gap:0;border-bottom:2px solid #d8dde6}
+.tab-btn{padding:8px 18px;font-size:.88rem;font-weight:600;background:#eef1f7;border:1px solid #d8dde6;border-bottom:none;border-radius:6px 6px 0 0;cursor:pointer;color:#555;margin-bottom:-2px}
+.tab-btn.active{background:#fff;color:#0b1a2e;border-bottom:2px solid #fff}
+.tab-btn:hover:not(.active){background:#dce3f0}
+.tab-panel{display:none;padding:16px;border:1px solid #d8dde6;border-top:none;border-radius:0 0 6px 6px;background:#fff}
+.tab-panel.active{display:block}
+
+/* ═══ INTERACTIVE EXERCISES ═══ */
+.exercise-box{background:#f5f8ff;border:2px dashed #1a6fbf;border-radius:8px;padding:18px 20px;margin:14px 0}
+.exercise-box h4{color:#1a6fbf;margin-bottom:8px}
+.exercise-box textarea,.exercise-box input[type="text"]{width:100%;font-family:'SFMono-Regular',Consolas,monospace;font-size:.86rem;padding:10px;border:1px solid #b8c4d8;border-radius:4px;margin:6px 0;resize:vertical;background:#fff;color:#1e1e1e}
+.exercise-box textarea{min-height:90px}
+.btn{display:inline-block;padding:8px 20px;font-size:.88rem;font-weight:600;border:none;border-radius:5px;cursor:pointer;margin:4px 4px 4px 0}
+.btn-primary{background:#1a6fbf;color:#fff}
+.btn-primary:hover{background:#155a9c}
+.btn-secondary{background:#6c757d;color:#fff}
+.btn-secondary:hover{background:#565e64}
+.feedback{margin-top:10px;padding:12px 14px;border-radius:5px;font-size:.9rem;display:none}
+.feedback.correct{display:block;background:#e6f9ee;border-left:4px solid #1a8c45;color:#155724}
+.feedback.incorrect{display:block;background:#fdecea;border-left:4px solid #c0392b;color:#721c24}
+.feedback.neutral{display:block;background:#e8f4fd;border-left:4px solid #1a6fbf;color:#0c3b6a}
+
+/* ═══ QUIZ ═══ */
+.quiz-wrapper{background:#fff;border-radius:8px;padding:22px 24px;margin-bottom:22px;box-shadow:0 1px 4px rgba(0,0,0,.07);border:2px solid #1a6fbf}
+.quiz-wrapper h2{font-size:1.2rem;color:#0b1a2e;margin-bottom:14px}
+.quiz-q{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #e8ecf2}
+.quiz-q:last-of-type{border-bottom:none}
+.quiz-q p{font-weight:600;margin-bottom:6px;font-size:.93rem}
+.quiz-q label{display:block;padding:4px 0;font-size:.9rem;cursor:pointer}
+.quiz-q label:hover{color:#1a6fbf}
+.quiz-q input[type="radio"]{margin-right:6px}
+.quiz-result{margin-top:8px;font-size:.88rem;display:none;padding:6px 10px;border-radius:4px}
+
+/* ═══ DIT DIAGRAM (ASCII) ═══ */
+.dit-diagram{background:#0b1a2e;color:#6fa3d6;border-radius:6px;padding:16px 18px;margin:10px 0 14px;overflow-x:auto;font-family:'SFMono-Regular',Consolas,monospace;font-size:.84rem;line-height:1.6;white-space:pre}
+
+/* ═══ FOOTER / WHAT'S NEXT ═══ */
+.next-box{background:linear-gradient(135deg,#e8f0fe,#f0f4ff);border-radius:8px;padding:18px 22px;margin-top:24px;border:1px solid #c5d4ec}
+.next-box h2{font-size:1.1rem;color:#0b1a2e;margin-bottom:8px}
+.next-box p{font-size:.93rem}
+
+/* ═══ SCREEN READER ONLY ═══ */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:600px){
+  .page-wrapper{padding:14px 8px 40px}
+  .section{padding:14px 12px}
+  .code-block{padding:12px 10px;font-size:.82rem}
+  .mod-header h1{font-size:1.35rem}
+  .topnav{padding:4px 8px}
+  .topnav a{font-size:.75rem;padding:3px 5px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ STICKY NAVIGATION ═══ -->
+<nav class="topnav" role="navigation" aria-label="Module section navigation">
+  <span class="brand">CSC 152 · M12.3</span>
+  <a href="#objectives">Objectives</a>
+  <a href="#s1">DIT Design</a>
+  <a href="#s2">OU Entries</a>
+  <a href="#s3">User Entries</a>
+  <a href="#s4">Group Entries</a>
+  <a href="#s5">Bulk Loading</a>
+  <a href="#s6">ldapsearch</a>
+  <a href="#s7">Filters</a>
+  <a href="#s8">ldapmodify</a>
+  <a href="#s9">ldapdelete</a>
+  <a href="#activities">Activities</a>
+  <a href="#quiz">Knowledge Check</a>
+  <a href="#next">What's Next</a>
+</nav>
+
+<main id="main-content" class="page-wrapper">
+
+<!-- ═══ MODULE HEADER ═══ -->
+<header class="mod-header">
+  <div class="label">Week 12 · Module 12.3</div>
+  <h1>Populating &amp; Querying the LDAP Directory</h1>
+  <div class="meta">
+    <span>CSC 152 – Network OS and Administration</span>
+    <span>Est.&nbsp;Time: 1.5 hours</span>
+    <span>April 6–12, 2026</span>
+  </div>
+</header>
+
+<!-- ═══ LEARNING OBJECTIVES ═══ -->
+<div class="obj-box" id="objectives">
+  <h2>Learning Objectives</h2>
+  <ul>
+    <li><strong>Objective 4:</strong> Design and populate an LDAP directory with organizational units, user entries, and group entries using LDIF files.</li>
+    <li><strong>Objective 5:</strong> Query and modify LDAP directory entries using command-line tools (<code>ldapsearch</code>, <code>ldapadd</code>, <code>ldapmodify</code>, <code>ldapdelete</code>).</li>
+  </ul>
+  <span class="cslo-tag">CSLO 1</span>
+  <span class="cslo-tag">CSLO 2</span>
+</div>
+
+<div class="callout callout-info">
+  <strong>Prerequisites</strong>
+  This module assumes you have a running <code>slapd</code> instance from Module 12.2 with a base DN of <code>dc=lab,dc=local</code> and a working admin bind DN of <code>cn=admin,dc=lab,dc=local</code>. You should also be comfortable with LDIF syntax and DN notation from Module 12.1.
+</div>
+
+<!-- ═══════════════════════════════════════════
+     §1 – DESIGNING THE DIRECTORY STRUCTURE
+     ═══════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <h2>§1 Designing the Directory Structure</h2>
+
+  <p>Before you create a single LDIF entry, you need a <strong>plan</strong>. A well-designed Directory Information Tree (DIT) mirrors the organization it serves and makes future queries, access-control rules, and client integration straightforward.</p>
+
+  <h3>1.1 Meet the Fictional Organization</h3>
+  <p>Throughout this module we will populate a directory for <strong>Mendocino Widgets, Inc.</strong>&mdash;a small company with three departments:</p>
+  <ul>
+    <li><strong>Engineering</strong> &ndash; builds the widgets</li>
+    <li><strong>Sales</strong> &ndash; sells the widgets</li>
+    <li><strong>IT</strong> &ndash; keeps the servers running</li>
+  </ul>
+  <p>We also need a container for POSIX groups that map to these departments (and possibly cross-functional teams).</p>
+
+  <h3>1.2 Planned DIT</h3>
+  <div class="dit-diagram" role="img" aria-label="ASCII diagram of the planned Directory Information Tree for lab.local">
+dc=lab,dc=local
+├── ou=People
+│   ├── uid=jdoe        (Engineering)
+│   ├── uid=asmith      (Sales)
+│   └── uid=bwong       (IT)
+├── ou=Groups
+│   ├── cn=engineering
+│   ├── cn=sales
+│   └── cn=itstaff
+└── cn=admin            (created during slapd setup)
+  </div>
+
+  <h3>1.3 Design Guidelines</h3>
+  <ul>
+    <li><strong>Keep it flat at first.</strong> Two top-level OUs (<code>People</code> and <code>Groups</code>) are sufficient for most small-to-medium deployments. You can add sub-OUs (e.g., <code>ou=Engineering,ou=People,…</code>) later if needed.</li>
+    <li><strong>Use meaningful RDNs.</strong> For people, <code>uid=</code> is the conventional RDN attribute. For groups, use <code>cn=</code>.</li>
+    <li><strong>Plan UID/GID number ranges.</strong> Start user <code>uidNumber</code> values at 10000 and group <code>gidNumber</code> values at 20000 to avoid collisions with local Linux accounts.</li>
+    <li><strong>Document your schema choices.</strong> We will use <code>inetOrgPerson</code> + <code>posixAccount</code> + <code>shadowAccount</code> for users, and <code>posixGroup</code> for groups.</li>
+  </ul>
+
+  <div class="callout callout-tip">
+    <strong>Week 6 Callback</strong>
+    The attributes you assign to LDAP user entries&mdash;<code>uidNumber</code>, <code>gidNumber</code>, <code>homeDirectory</code>, <code>loginShell</code>&mdash;are the same fields you managed in <code>/etc/passwd</code> during Week 6. LDAP simply stores them centrally instead of on every machine.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     §2 – CREATING OU ENTRIES
+     ═══════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <h2>§2 Creating Organizational Unit Entries</h2>
+
+  <p>OUs are the containers that give your DIT its structure. We create them first because user and group entries will live <em>inside</em> them.</p>
+
+  <h3>2.1 The LDIF File &ndash; <code>ous.ldif</code></h3>
+  <div class="code-block" role="region" aria-label="LDIF file for organizational units">
+    <span class="code-label">ous.ldif</span>
+<pre><code>dn: ou=People,dc=lab,dc=local
+objectClass: organizationalUnit
+ou: People
+description: Container for user accounts
+
+dn: ou=Groups,dc=lab,dc=local
+objectClass: organizationalUnit
+ou: Groups
+description: Container for POSIX groups</code></pre>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>LDIF Syntax Reminder</strong>
+    Each entry begins with a <code>dn:</code> line, followed by attribute-value pairs (one per line). A <strong>blank line</strong> separates entries. No trailing spaces after values&mdash;they become part of the data!
+  </div>
+
+  <h3>2.2 Loading with <code>ldapadd</code></h3>
+  <div class="code-block" role="region" aria-label="ldapadd command to load OU entries">
+<pre><code>ldapadd -x -D "cn=admin,dc=lab,dc=local" -W -f ous.ldif</code></pre>
+  </div>
+
+  <table class="ref-table" role="table" aria-label="ldapadd flag reference">
+    <thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>-x</code></td><td>Use simple authentication (not SASL)</td></tr>
+      <tr><td><code>-D "…"</code></td><td>Bind DN &ndash; the admin account you authenticate as</td></tr>
+      <tr><td><code>-W</code></td><td>Prompt for the bind password interactively</td></tr>
+      <tr><td><code>-f ous.ldif</code></td><td>Read entries from the specified LDIF file</td></tr>
+    </tbody>
+  </table>
+
+  <p>Expected output on success:</p>
+  <div class="code-block" role="region" aria-label="Successful ldapadd output">
+<pre><code>adding new entry "ou=People,dc=lab,dc=local"
+
+adding new entry "ou=Groups,dc=lab,dc=local"</code></pre>
+  </div>
+
+  <h3>2.3 Verifying</h3>
+  <div class="code-block" role="region" aria-label="ldapsearch command to verify OUs">
+<pre><code>ldapsearch -x -LLL -b "dc=lab,dc=local" "(objectClass=organizationalUnit)" dn</code></pre>
+  </div>
+  <p>You should see both OU DNs listed.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     §3 – CREATING USER ENTRIES
+     ═══════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <h2>§3 Creating User Entries</h2>
+
+  <h3>3.1 Required Object Classes &amp; Attributes</h3>
+  <p>Each user entry combines two (or three) object classes:</p>
+
+  <table class="ref-table" role="table" aria-label="User object class and attribute reference">
+    <thead><tr><th>Object Class</th><th>Type</th><th>Key Attributes Provided</th></tr></thead>
+    <tbody>
+      <tr><td><code>inetOrgPerson</code></td><td>Structural</td><td><code>cn</code>, <code>sn</code>, <code>mail</code>, <code>telephoneNumber</code>, <code>userPassword</code></td></tr>
+      <tr><td><code>posixAccount</code></td><td>Auxiliary</td><td><code>uid</code>, <code>uidNumber</code>, <code>gidNumber</code>, <code>homeDirectory</code>, <code>loginShell</code></td></tr>
+      <tr><td><code>shadowAccount</code></td><td>Auxiliary (optional)</td><td><code>shadowLastChange</code>, <code>shadowMax</code> &ndash; password aging</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Generating a Hashed Password</h3>
+  <p>Never store plaintext passwords. Use <code>slappasswd</code> to generate a salted hash:</p>
+  <div class="code-block" role="region" aria-label="slappasswd command example">
+<pre><code>slappasswd -s P@ssw0rd123</code></pre>
+  </div>
+  <p>Sample output:</p>
+  <div class="code-block" role="region" aria-label="slappasswd output">
+<pre><code>{SSHA}W3ipFGmzS3Khjuv2snm7c+bOBJSxAMDa</code></pre>
+  </div>
+  <div class="callout callout-warn">
+    <strong>Security Note</strong>
+    Running <code>slappasswd -s</code> with the password on the command line leaves it in your shell history. In production, run <code>slappasswd</code> without <code>-s</code> so it prompts you interactively. We use <code>-s</code> here only for clarity in examples.
+  </div>
+
+  <h3>3.3 The LDIF File &ndash; <code>users.ldif</code></h3>
+  <div class="code-block" role="region" aria-label="LDIF file for user entries">
+    <span class="code-label">users.ldif</span>
+<pre><code>dn: uid=jdoe,ou=People,dc=lab,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: jdoe
+cn: Jane Doe
+sn: Doe
+mail: jdoe@lab.local
+uidNumber: 10001
+gidNumber: 20001
+homeDirectory: /home/jdoe
+loginShell: /bin/bash
+userPassword: {SSHA}W3ipFGmzS3Khjuv2snm7c+bOBJSxAMDa
+
+dn: uid=asmith,ou=People,dc=lab,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: asmith
+cn: Alex Smith
+sn: Smith
+mail: asmith@lab.local
+uidNumber: 10002
+gidNumber: 20002
+homeDirectory: /home/asmith
+loginShell: /bin/bash
+userPassword: {SSHA}xKz9pLmNqR3vTu8Yw1cJd+fAGHiSjKlM
+
+dn: uid=bwong,ou=People,dc=lab,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: bwong
+cn: Brian Wong
+sn: Wong
+mail: bwong@lab.local
+telephoneNumber: 707-555-0199
+uidNumber: 10003
+gidNumber: 20003
+homeDirectory: /home/bwong
+loginShell: /bin/bash
+userPassword: {SSHA}nMo0pQr1sT2uVw3xYz4aBcDeFgHiJkLm</code></pre>
+  </div>
+
+  <h3>3.4 Attribute-by-Attribute Breakdown</h3>
+  <table class="ref-table" role="table" aria-label="User attribute reference table">
+    <thead><tr><th>Attribute</th><th>Required By</th><th>Purpose</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><code>uid</code></td><td><code>posixAccount</code></td><td>Login username (also used as the RDN)</td><td><code>jdoe</code></td></tr>
+      <tr><td><code>cn</code></td><td><code>inetOrgPerson</code></td><td>Common (full) name</td><td><code>Jane Doe</code></td></tr>
+      <tr><td><code>sn</code></td><td><code>inetOrgPerson</code></td><td>Surname (last name)</td><td><code>Doe</code></td></tr>
+      <tr><td><code>uidNumber</code></td><td><code>posixAccount</code></td><td>Numeric Linux UID</td><td><code>10001</code></td></tr>
+      <tr><td><code>gidNumber</code></td><td><code>posixAccount</code></td><td>Primary group GID</td><td><code>20001</code></td></tr>
+      <tr><td><code>homeDirectory</code></td><td><code>posixAccount</code></td><td>Home directory path</td><td><code>/home/jdoe</code></td></tr>
+      <tr><td><code>loginShell</code></td><td><code>posixAccount</code></td><td>Default shell</td><td><code>/bin/bash</code></td></tr>
+      <tr><td><code>userPassword</code></td><td><code>inetOrgPerson</code></td><td>Hashed password (SSHA)</td><td><code>{SSHA}…</code></td></tr>
+      <tr><td><code>mail</code></td><td>optional</td><td>Email address</td><td><code>jdoe@lab.local</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.5 Loading Users</h3>
+  <div class="code-block" role="region" aria-label="ldapadd command to load user entries">
+<pre><code>ldapadd -x -D "cn=admin,dc=lab,dc=local" -W -f users.ldif</code></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     §4 – CREATING GROUP ENTRIES
+     ═══════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <h2>§4 Creating Group Entries</h2>
+
+  <h3>4.1 The <code>posixGroup</code> Object Class</h3>
+  <p>POSIX groups in LDAP mirror <code>/etc/group</code> on Linux. Each group entry needs:</p>
+  <ul>
+    <li><code>cn</code> &ndash; group name (also the RDN)</li>
+    <li><code>gidNumber</code> &ndash; numeric GID</li>
+    <li><code>memberUid</code> &ndash; one line per member, listing the <code>uid</code> value (not the full DN)</li>
+  </ul>
+
+  <h3>4.2 The LDIF File &ndash; <code>groups.ldif</code></h3>
+  <div class="code-block" role="region" aria-label="LDIF file for group entries">
+    <span class="code-label">groups.ldif</span>
+<pre><code>dn: cn=engineering,ou=Groups,dc=lab,dc=local
+objectClass: posixGroup
+cn: engineering
+gidNumber: 20001
+memberUid: jdoe
+
+dn: cn=sales,ou=Groups,dc=lab,dc=local
+objectClass: posixGroup
+cn: sales
+gidNumber: 20002
+memberUid: asmith
+
+dn: cn=itstaff,ou=Groups,dc=lab,dc=local
+objectClass: posixGroup
+cn: itstaff
+gidNumber: 20003
+memberUid: bwong
+memberUid: jdoe</code></pre>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>Multiple Members</strong>
+    To add more than one member to a group, repeat the <code>memberUid:</code> line&mdash;once per user. Notice that <code>jdoe</code> is in both <code>engineering</code> and <code>itstaff</code>.
+  </div>
+
+  <h3>4.3 Loading Groups</h3>
+  <div class="code-block" role="region" aria-label="ldapadd command to load group entries">
+<pre><code>ldapadd -x -D "cn=admin,dc=lab,dc=local" -W -f groups.ldif</code></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     §5 – BULK POPULATION & ERROR HANDLING
+     ═══════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <h2>§5 Bulk Population &amp; Error Handling</h2>
+
+  <h3>5.1 Combining Everything into One File</h3>
+  <p>In practice you will often create a single LDIF file that contains OUs, users, and groups&mdash;in that order (parents before children). Here is a condensed example:</p>
+
+  <div class="code-block" role="region" aria-label="Combined LDIF file for bulk loading">
+    <span class="code-label">directory-seed.ldif</span>
+<pre><code># --- Organizational Units ---
+dn: ou=People,dc=lab,dc=local
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=lab,dc=local
+objectClass: organizationalUnit
+ou: Groups
+
+# --- Users ---
+dn: uid=jdoe,ou=People,dc=lab,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: jdoe
+cn: Jane Doe
+sn: Doe
+uidNumber: 10001
+gidNumber: 20001
+homeDirectory: /home/jdoe
+loginShell: /bin/bash
+userPassword: {SSHA}W3ipFGmzS3Khjuv2snm7c+bOBJSxAMDa
+
+dn: uid=asmith,ou=People,dc=lab,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: asmith
+cn: Alex Smith
+sn: Smith
+uidNumber: 10002
+gidNumber: 20002
+homeDirectory: /home/asmith
+loginShell: /bin/bash
+userPassword: {SSHA}xKz9pLmNqR3vTu8Yw1cJd+fAGHiSjKlM
+
+# --- Groups ---
+dn: cn=engineering,ou=Groups,dc=lab,dc=local
+objectClass: posixGroup
+cn: engineering
+gidNumber: 20001
+memberUid: jdoe
+
+dn: cn=sales,ou=Groups,dc=lab,dc=local
+objectClass: posixGroup
+cn: sales
+gidNumber: 20002
+memberUid: asmith</code></pre>
+  </div>
+
+  <div class="callout callout-warn">
+    <strong>Order Matters!</strong>
+    Parent entries must appear <em>before</em> their children in the LDIF file. If you try to add <code>uid=jdoe,ou=People,dc=lab,dc=local</code> before <code>ou=People,dc=lab,dc=local</code> exists, <code>ldapadd</code> will fail with error 32 (<strong>No such object</strong>).
+  </div>
+
+  <h3>5.2 The <code>-c</code> (Continue on Error) Flag</h3>
+  <p>When loading many entries, one bad entry can halt the entire import. The <code>-c</code> flag tells <code>ldapadd</code> to skip errors and keep processing:</p>
+  <div class="code-block" role="region" aria-label="ldapadd with continue-on-error flag">
+<pre><code>ldapadd -x -c -D "cn=admin,dc=lab,dc=local" -W -f directory-seed.ldif</code></pre>
+  </div>
+
+  <h3>5.3 Common Errors</h3>
+  <table class="ref-table" role="table" aria-label="Common ldapadd error reference">
+    <thead><tr><th>Error Code</th><th>Message</th><th>Likely Cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>32</td><td>No such object</td><td>Parent OU does not exist yet</td><td>Add parent entries first; check DN spelling</td></tr>
+      <tr><td>68</td><td>Already exists</td><td>Duplicate entry</td><td>Entry was already loaded; use <code>-c</code> to skip</td></tr>
+      <tr><td>65</td><td>Object class violation</td><td>Missing a required attribute</td><td>Check object class requirements (e.g., <code>sn</code> for <code>inetOrgPerson</code>)</td></tr>
+      <tr><td>21</td><td>Invalid syntax</td><td>Malformed attribute value or extra whitespace</td><td>Review LDIF for trailing spaces or blank-line issues</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     §6 – QUERYING WITH ldapsearch
+     ═══════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <h2>§6 Querying with <code>ldapsearch</code></h2>
+
+  <h3>6.1 Command Anatomy</h3>
+  <div class="code-block" role="region" aria-label="ldapsearch syntax diagram">
+<pre><code>ldapsearch [options] -b "base_dn" -s scope "filter" [attributes...]</code></pre>
+  </div>
+
+  <table class="ref-table" role="table" aria-label="ldapsearch key options reference">
+    <thead><tr><th>Option</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>-x</code></td><td>Simple authentication</td></tr>
+      <tr><td><code>-LLL</code></td><td>Clean LDIF output (no comments, no version line)</td></tr>
+      <tr><td><code>-b "…"</code></td><td>Base DN &ndash; the starting point of the search</td></tr>
+      <tr><td><code>-s base|one|sub</code></td><td>Scope: <strong>base</strong> = entry itself; <strong>one</strong> = immediate children; <strong>sub</strong> = entire subtree (default)</td></tr>
+      <tr><td><code>-D "…"</code></td><td>Bind DN (omit for anonymous search)</td></tr>
+      <tr><td><code>-W</code></td><td>Prompt for password</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 Scope Visualized</h3>
+  <div class="dit-diagram" role="img" aria-label="ASCII diagram showing LDAP search scopes">
+dc=lab,dc=local          ← -s base (only this entry)
+├── ou=People            ← -s one  (direct children only)
+│   ├── uid=jdoe         ← -s sub  (everything below base)
+│   ├── uid=asmith
+│   └── uid=bwong
+└── ou=Groups
+    ├── cn=engineering
+    ├── cn=sales
+    └── cn=itstaff
+  </div>
+
+  <h3>6.3 Practical Examples</h3>
+
+  <details>
+    <summary>List all users (subtree search)</summary>
+    <div class="detail-body">
+      <div class="code-block" role="region" aria-label="ldapsearch for all posixAccount entries">
+<pre><code>ldapsearch -x -LLL -b "ou=People,dc=lab,dc=local" \
+  "(objectClass=posixAccount)" uid cn mail</code></pre>
+      </div>
+      <p>Returns the <code>uid</code>, <code>cn</code>, and <code>mail</code> attributes for every user under <code>ou=People</code>.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Find a specific user by uid</summary>
+    <div class="detail-body">
+      <div class="code-block" role="region" aria-label="ldapsearch for a specific user">
+<pre><code>ldapsearch -x -LLL -b "dc=lab,dc=local" "(uid=jdoe)"</code></pre>
+      </div>
+      <p>Searches the entire tree for the entry whose <code>uid</code> equals <code>jdoe</code>. Returns all attributes of that entry.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>List all groups</summary>
+    <div class="detail-body">
+      <div class="code-block" role="region" aria-label="ldapsearch for all posixGroup entries">
+<pre><code>ldapsearch -x -LLL -b "ou=Groups,dc=lab,dc=local" \
+  "(objectClass=posixGroup)" cn memberUid</code></pre>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>One-level scope &ndash; list only direct children of the base DN</summary>
+    <div class="detail-body">
+      <div class="code-block" role="region" aria-label="ldapsearch with one-level scope">
+<pre><code>ldapsearch -x -LLL -b "dc=lab,dc=local" -s one "(objectClass=*)" dn</code></pre>
+      </div>
+      <p>Returns only <code>ou=People</code>, <code>ou=Groups</code>, and <code>cn=admin</code>&mdash;the direct children of the base.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     §7 – LDAP SEARCH FILTERS
+     ═══════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <h2>§7 LDAP Search Filters</h2>
+
+  <p>Filters are the &ldquo;WHERE clause&rdquo; of LDAP. They use a prefix-notation syntax defined in RFC 4515.</p>
+
+  <h3>7.1 Filter Types</h3>
+  <table class="ref-table" role="table" aria-label="LDAP filter types reference">
+    <thead><tr><th>Type</th><th>Syntax</th><th>Example</th><th>Matches</th></tr></thead>
+    <tbody>
+      <tr><td>Equality</td><td><code>(attr=value)</code></td><td><code>(uid=jdoe)</code></td><td>Exact match</td></tr>
+      <tr><td>Presence</td><td><code>(attr=*)</code></td><td><code>(mail=*)</code></td><td>Any entry that has a <code>mail</code> attribute</td></tr>
+      <tr><td>Substring</td><td><code>(attr=*val*)</code></td><td><code>(cn=*Doe*)</code></td><td>Contains &ldquo;Doe&rdquo;</td></tr>
+      <tr><td>Greater-or-equal</td><td><code>(attr&gt;=value)</code></td><td><code>(uidNumber&gt;=10002)</code></td><td>uidNumber 10002 or above</td></tr>
+      <tr><td>Less-or-equal</td><td><code>(attr&lt;=value)</code></td><td><code>(uidNumber&lt;=10002)</code></td><td>uidNumber 10002 or below</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 Compound (Boolean) Filters</h3>
+  <p>Combine simple filters using prefix Boolean operators. <strong>The operator comes first</strong>, inside the parentheses:</p>
+
+  <table class="ref-table" role="table" aria-label="Compound filter reference">
+    <thead><tr><th>Operator</th><th>Syntax</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>AND</td><td><code>(&amp;(filter1)(filter2))</code></td><td><code>(&amp;(objectClass=posixAccount)(gidNumber=20001))</code></td></tr>
+      <tr><td>OR</td><td><code>(|(filter1)(filter2))</code></td><td><code>(|(uid=jdoe)(uid=bwong))</code></td></tr>
+      <tr><td>NOT</td><td><code>(!(filter))</code></td><td><code>(!(loginShell=/sbin/nologin))</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.3 Filter Examples in Context</h3>
+
+  <details>
+    <summary>All Engineering users (gidNumber = 20001)</summary>
+    <div class="detail-body">
+      <div class="code-block" role="region" aria-label="ldapsearch with compound filter for engineering users">
+<pre><code>ldapsearch -x -LLL -b "ou=People,dc=lab,dc=local" \
+  "(&amp;(objectClass=posixAccount)(gidNumber=20001))" uid cn</code></pre>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Users with uidNumber &gt;= 10002</summary>
+    <div class="detail-body">
+      <div class="code-block" role="region" aria-label="ldapsearch with comparison filter">
+<pre><code>ldapsearch -x -LLL -b "ou=People,dc=lab,dc=local" \
+  "(uidNumber>=10002)" uid uidNumber</code></pre>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Users who have an email address</summary>
+    <div class="detail-body">
+      <div class="code-block" role="region" aria-label="ldapsearch with presence filter">
+<pre><code>ldapsearch -x -LLL -b "ou=People,dc=lab,dc=local" \
+  "(mail=*)" uid mail</code></pre>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Users named jdoe OR bwong</summary>
+    <div class="detail-body">
+      <div class="code-block" role="region" aria-label="ldapsearch with OR filter">
+<pre><code>ldapsearch -x -LLL -b "ou=People,dc=lab,dc=local" \
+  "(|(uid=jdoe)(uid=bwong))" uid cn</code></pre>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>All users whose shell is NOT /sbin/nologin</summary>
+    <div class="detail-body">
+      <div class="code-block" role="region" aria-label="ldapsearch with NOT filter">
+<pre><code>ldapsearch -x -LLL -b "ou=People,dc=lab,dc=local" \
+  "(&amp;(objectClass=posixAccount)(!(loginShell=/sbin/nologin)))" uid loginShell</code></pre>
+      </div>
+    </div>
+  </details>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     §8 – MODIFYING ENTRIES WITH ldapmodify
+     ═══════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <h2>§8 Modifying Entries with <code>ldapmodify</code></h2>
+
+  <p><code>ldapmodify</code> reads an LDIF file that uses <code>changetype: modify</code> directives. Each modification block specifies an <strong>operation</strong> (<code>add</code>, <code>replace</code>, or <code>delete</code>) on one or more attributes.</p>
+
+  <h3>8.1 Modification Operations</h3>
+
+  <div class="tab-container" id="mod-tabs" role="tablist" aria-label="ldapmodify operation examples">
+    <div class="tab-buttons">
+      <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="mod-replace" id="tab-replace" onclick="switchTab('mod-tabs','mod-replace',this)">Replace</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="mod-add" id="tab-add" onclick="switchTab('mod-tabs','mod-add',this)">Add</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="mod-delete" id="tab-delete" onclick="switchTab('mod-tabs','mod-delete',this)">Delete</button>
+    </div>
+
+    <div class="tab-panel active" id="mod-replace" role="tabpanel" aria-labelledby="tab-replace">
+      <h4>Replace an Attribute Value</h4>
+      <p>Change Brian Wong&rsquo;s phone number:</p>
+      <div class="code-block" role="region" aria-label="LDIF for replacing an attribute">
+        <span class="code-label">modify-phone.ldif</span>
+<pre><code>dn: uid=bwong,ou=People,dc=lab,dc=local
+changetype: modify
+replace: telephoneNumber
+telephoneNumber: 707-555-0200</code></pre>
+      </div>
+      <div class="code-block" role="region" aria-label="ldapmodify command">
+<pre><code>ldapmodify -x -D "cn=admin,dc=lab,dc=local" -W -f modify-phone.ldif</code></pre>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="mod-add" role="tabpanel" aria-labelledby="tab-add">
+      <h4>Add a New Attribute (or Additional Value)</h4>
+      <p>Add a phone number to Alex Smith (who currently has none), and add <code>jdoe</code> to the <code>sales</code> group:</p>
+      <div class="code-block" role="region" aria-label="LDIF for adding attributes">
+        <span class="code-label">modify-add.ldif</span>
+<pre><code>dn: uid=asmith,ou=People,dc=lab,dc=local
+changetype: modify
+add: telephoneNumber
+telephoneNumber: 707-555-0101
+
+dn: cn=sales,ou=Groups,dc=lab,dc=local
+changetype: modify
+add: memberUid
+memberUid: jdoe</code></pre>
+      </div>
+      <div class="code-block" role="region" aria-label="ldapmodify command for add operations">
+<pre><code>ldapmodify -x -D "cn=admin,dc=lab,dc=local" -W -f modify-add.ldif</code></pre>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="mod-delete" role="tabpanel" aria-labelledby="tab-delete">
+      <h4>Delete an Attribute Value</h4>
+      <p>Remove <code>jdoe</code> from the <code>sales</code> group (delete a specific <code>memberUid</code> value):</p>
+      <div class="code-block" role="region" aria-label="LDIF for deleting an attribute value">
+        <span class="code-label">modify-del.ldif</span>
+<pre><code>dn: cn=sales,ou=Groups,dc=lab,dc=local
+changetype: modify
+delete: memberUid
+memberUid: jdoe</code></pre>
+      </div>
+      <p>To delete the <em>entire</em> attribute (all values), omit the value line:</p>
+      <div class="code-block" role="region" aria-label="LDIF for deleting an entire attribute">
+<pre><code>dn: uid=bwong,ou=People,dc=lab,dc=local
+changetype: modify
+delete: telephoneNumber</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <h3>8.2 Multiple Operations in One Block</h3>
+  <p>Use a single dash (<code>-</code>) on its own line to separate multiple operations on the <em>same</em> entry:</p>
+  <div class="code-block" role="region" aria-label="LDIF with multiple operations on one entry">
+    <span class="code-label">modify-multi.ldif</span>
+<pre><code>dn: uid=jdoe,ou=People,dc=lab,dc=local
+changetype: modify
+replace: mail
+mail: jane.doe@lab.local
+-
+add: telephoneNumber
+telephoneNumber: 707-555-0150</code></pre>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>The Dash Separator</strong>
+    The single <code>-</code> on its own line is <strong>required</strong> between operations within the same entry block. Forgetting it is one of the most common LDIF errors.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     §9 – DELETING ENTRIES WITH ldapdelete
+     ═══════════════════════════════════════════ -->
+<section class="section" id="s9">
+  <h2>§9 Deleting Entries with <code>ldapdelete</code></h2>
+
+  <h3>9.1 Deleting a Single (Leaf) Entry</h3>
+  <div class="code-block" role="region" aria-label="ldapdelete command for a single entry">
+<pre><code>ldapdelete -x -D "cn=admin,dc=lab,dc=local" -W \
+  "uid=asmith,ou=People,dc=lab,dc=local"</code></pre>
+  </div>
+
+  <h3>9.2 Deleting from a File</h3>
+  <p>Create a file with one DN per line:</p>
+  <div class="code-block" role="region" aria-label="File listing DNs to delete">
+    <span class="code-label">delete-list.txt</span>
+<pre><code>uid=asmith,ou=People,dc=lab,dc=local
+cn=sales,ou=Groups,dc=lab,dc=local</code></pre>
+  </div>
+  <div class="code-block" role="region" aria-label="ldapdelete using a file">
+<pre><code>ldapdelete -x -D "cn=admin,dc=lab,dc=local" -W -f delete-list.txt</code></pre>
+  </div>
+
+  <h3>9.3 Important Constraints</h3>
+  <div class="callout callout-danger">
+    <strong>No Subtree Deletes by Default</strong>
+    LDAP will <strong>not</strong> delete a non-leaf entry (an entry that has children). If you try to delete <code>ou=People</code> while it still contains user entries, you will get error 66 (<strong>Not allowed on non-leaf</strong>). Delete children first, then the parent.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     INTERACTIVE ACTIVITIES
+     ═══════════════════════════════════════════ -->
+<section class="section" id="activities">
+  <h2>Interactive Activities</h2>
+
+  <!-- Activity 1: Write the LDIF -->
+  <div class="exercise-box" id="act1">
+    <h4>Activity 1 – Write the LDIF Entry</h4>
+    <p>A new employee has joined the IT department. Write a complete LDIF entry for this user using the information below:</p>
+    <ul>
+      <li>Username: <code>cgarcia</code></li>
+      <li>Full name: <strong>Carlos Garcia</strong></li>
+      <li>Email: <code>cgarcia@lab.local</code></li>
+      <li>UID number: <code>10004</code></li>
+      <li>Primary GID: <code>20003</code> (itstaff)</li>
+      <li>Home directory: <code>/home/cgarcia</code></li>
+      <li>Shell: <code>/bin/bash</code></li>
+      <li>Password hash: <code>{SSHA}aBcDeFgHiJkLmNoPqRsTuVwXyZ012345</code></li>
+    </ul>
+    <label for="act1-input" class="sr-only">Type your LDIF entry here</label>
+    <textarea id="act1-input" placeholder="dn: uid=cgarcia,...&#10;objectClass: ...&#10;..." rows="12" aria-label="LDIF entry for Carlos Garcia"></textarea>
+    <button class="btn btn-primary" onclick="checkAct1()">Check My Answer</button>
+    <button class="btn btn-secondary" onclick="showAct1Solution()">Show Solution</button>
+    <div id="act1-fb" class="feedback" role="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Activity 2: Spot the Error -->
+  <div class="exercise-box" id="act2">
+    <h4>Activity 2 – Spot the Errors</h4>
+    <p>The following LDIF file has <strong>three errors</strong>. Read it carefully and list the errors in the text box below.</p>
+    <div class="code-block" role="region" aria-label="Malformed LDIF file for error-spotting exercise">
+<pre><code>dn: uid=mlee,ou=People,dc=lab,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+uid: mlee
+cn: Maria Lee
+uidNumber: 10005
+gidNumber: 20002
+homeDirectory: /home/mlee
+loginShell: /bin/bash
+userPassword: secret123
+dn: cn=marketing,ou=Groups,dc=lab,dc=local
+objectClass: posixGroup
+cn: marketing
+gidNumber: 20004
+memberUid: mlee</code></pre>
+    </div>
+    <label for="act2-input" class="sr-only">List the three errors</label>
+    <textarea id="act2-input" placeholder="Error 1: ...&#10;Error 2: ...&#10;Error 3: ..." rows="5" aria-label="List the three errors you found"></textarea>
+    <button class="btn btn-primary" onclick="showAct2()">Show Answers</button>
+    <div id="act2-fb" class="feedback" role="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Activity 3: Filter Construction -->
+  <div class="exercise-box" id="act3">
+    <h4>Activity 3 – Build the Filter</h4>
+    <p>Write an LDAP search filter that matches all of the following conditions simultaneously:</p>
+    <ul>
+      <li>The entry is a <code>posixAccount</code></li>
+      <li>The <code>uidNumber</code> is greater than or equal to <code>10002</code></li>
+      <li>The entry has a <code>mail</code> attribute</li>
+    </ul>
+    <label for="act3-input" class="sr-only">Type your LDAP filter</label>
+    <input type="text" id="act3-input" placeholder="(&amp;(...)(...)(...))" aria-label="LDAP search filter answer">
+    <button class="btn btn-primary" onclick="checkAct3()">Check My Answer</button>
+    <button class="btn btn-secondary" onclick="showAct3()">Show Solution</button>
+    <div id="act3-fb" class="feedback" role="status" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     KNOWLEDGE CHECK
+     ═══════════════════════════════════════════ -->
+<div class="quiz-wrapper" id="quiz">
+  <h2>Knowledge Check <span style="font-weight:400;font-size:.85rem;color:#555">(Ungraded &ndash; 5 Questions)</span></h2>
+
+  <!-- Q1 -->
+  <div class="quiz-q" id="qq1">
+    <p>1. In an LDIF file, what separates one entry from the next?</p>
+    <label><input type="radio" name="q1" value="a"> A. A line containing only a dash (<code>-</code>)</label>
+    <label><input type="radio" name="q1" value="b"> B. A blank line</label>
+    <label><input type="radio" name="q1" value="c"> C. A line containing <code>---</code></label>
+    <label><input type="radio" name="q1" value="d"> D. A semicolon (<code>;</code>)</label>
+    <div id="q1-fb" class="quiz-result" role="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="quiz-q" id="qq2">
+    <p>2. Which <code>ldapsearch</code> scope option returns only the <em>immediate children</em> of the base DN (not the base entry itself and not deeper descendants)?</p>
+    <label><input type="radio" name="q2" value="a"> A. <code>-s base</code></label>
+    <label><input type="radio" name="q2" value="b"> B. <code>-s one</code></label>
+    <label><input type="radio" name="q2" value="c"> C. <code>-s sub</code></label>
+    <label><input type="radio" name="q2" value="d"> D. <code>-s children</code></label>
+    <div id="q2-fb" class="quiz-result" role="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="quiz-q" id="qq3">
+    <p>3. You need an LDAP filter that matches entries where <code>uid</code> is <code>jdoe</code> <strong>OR</strong> <code>bwong</code>. Which filter is correct?</p>
+    <label><input type="radio" name="q3" value="a"> A. <code>(&amp;(uid=jdoe)(uid=bwong))</code></label>
+    <label><input type="radio" name="q3" value="b"> B. <code>(|(uid=jdoe)(uid=bwong))</code></label>
+    <label><input type="radio" name="q3" value="c"> C. <code>(uid=jdoe|bwong)</code></label>
+    <label><input type="radio" name="q3" value="d"> D. <code>(or(uid=jdoe)(uid=bwong))</code></label>
+    <div id="q3-fb" class="quiz-result" role="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="quiz-q" id="qq4">
+    <p>4. In an <code>ldapmodify</code> LDIF block, you want to both <strong>replace</strong> a user&rsquo;s email and <strong>add</strong> a phone number in a single entry block. What must appear on its own line between the two operations?</p>
+    <label><input type="radio" name="q4" value="a"> A. A blank line</label>
+    <label><input type="radio" name="q4" value="b"> B. A single dash (<code>-</code>)</label>
+    <label><input type="radio" name="q4" value="c"> C. The keyword <code>next</code></label>
+    <label><input type="radio" name="q4" value="d"> D. A new <code>changetype: modify</code> line</label>
+    <div id="q4-fb" class="quiz-result" role="status" aria-live="polite"></div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="quiz-q" id="qq5">
+    <p>5. You run <code>ldapdelete</code> against <code>ou=People,dc=lab,dc=local</code>, but the OU still contains user entries. What happens?</p>
+    <label><input type="radio" name="q5" value="a"> A. All user entries and the OU are deleted</label>
+    <label><input type="radio" name="q5" value="b"> B. Only the OU is deleted; user entries become orphans</label>
+    <label><input type="radio" name="q5" value="c"> C. The operation fails with error 66 (Not allowed on non-leaf)</label>
+    <label><input type="radio" name="q5" value="d"> D. The operation succeeds silently but nothing is deleted</label>
+    <div id="q5-fb" class="quiz-result" role="status" aria-live="polite"></div>
+  </div>
+
+  <button class="btn btn-primary" onclick="gradeQuiz()" style="margin-top:8px">Check Answers</button>
+  <div id="quiz-score" class="feedback" role="status" aria-live="polite" style="margin-top:12px"></div>
+</div>
+
+<!-- ═══ READINGS & RESOURCES ═══ -->
+<section class="section" id="readings">
+  <h2>Readings &amp; Resources</h2>
+  <p>Complete these readings to reinforce the concepts covered above (estimated 30–40 minutes):</p>
+  <ul>
+    <li><strong>&ldquo;LDAP for Rocket Scientists&rdquo;</strong> (zytrax.com) &ndash; Chapter 2: LDIF &amp; Chapter 3: Searches (~30 min)</li>
+    <li><strong><code>ldapsearch</code> man page review</strong> &ndash; focus on <code>-b</code>, <code>-s</code>, <code>-LLL</code> options (~10 min)</li>
+  </ul>
+</section>
+
+<!-- ═══ GUIDED PRACTICE ═══ -->
+<section class="section" id="practice">
+  <h2>Guided Practice Activity</h2>
+  <p><strong>Estimated time:</strong> 45–60 minutes</p>
+  <p>Using the OpenLDAP server you installed in Module 12.2, complete the following tasks and document all commands, LDIF files, and output:</p>
+  <ol>
+    <li>Create an LDIF file with at least <strong>two OUs</strong> (<code>People</code> and <code>Groups</code>). Load them with <code>ldapadd</code>.</li>
+    <li>Create an LDIF file with at least <strong>three users</strong> (using <code>inetOrgPerson</code> + <code>posixAccount</code>). Generate hashed passwords with <code>slappasswd</code>. Load them with <code>ldapadd</code>.</li>
+    <li>Create an LDIF file with at least <strong>two groups</strong> (<code>posixGroup</code>) with appropriate <code>memberUid</code> entries. Load them.</li>
+    <li>Practice at least <strong>five different <code>ldapsearch</code> queries</strong>:
+      <ul>
+        <li>All users</li>
+        <li>Specific user by <code>uid</code></li>
+        <li>All groups</li>
+        <li>Users with <code>uidNumber &gt;= 10002</code></li>
+        <li>A compound filter of your choice</li>
+      </ul>
+    </li>
+    <li><strong>Modify</strong> one user&rsquo;s attribute (e.g., add a phone number or change an email) using <code>ldapmodify</code>.</li>
+    <li><strong>Delete</strong> one test entry using <code>ldapdelete</code>.</li>
+  </ol>
+  <div class="callout callout-tip">
+    <strong>Tip</strong>
+    Save all your LDIF files&mdash;you will reuse them (or variations of them) in Lab 12 and in Project 4.
+  </div>
+</section>
+
+<!-- ═══ WHAT'S NEXT ═══ -->
+<div class="next-box" id="next">
+  <h2>What&rsquo;s Next</h2>
+  <p>In <strong>Module 12.4 &ndash; LDAP Client Authentication &amp; AD vs. OpenLDAP Comparison</strong>, you will configure a separate Linux client VM to authenticate users against the OpenLDAP server you just populated. You will learn about SSSD, NSS, and PAM&mdash;the mechanisms that let Linux use your LDAP directory as a centralized identity source. The module concludes with a structured comparison of Active Directory and OpenLDAP, synthesizing everything you have learned across Weeks 11 and 12.</p>
+</div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════ -->
+<script>
+/* === TAB SWITCHING === */
+function switchTab(containerId, panelId, btn) {
+  var c = document.getElementById(containerId);
+  var panels = c.querySelectorAll('.tab-panel');
+  var btns = c.querySelectorAll('.tab-btn');
+  for (var i = 0; i < panels.length; i++) {
+    panels[i].classList.remove('active');
+    btns[i].classList.remove('active');
+    btns[i].setAttribute('aria-selected', 'false');
+  }
+  document.getElementById(panelId).classList.add('active');
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+}
+
+/* === ACTIVITY 1 – Write the LDIF === */
+function checkAct1() {
+  var v = document.getElementById('act1-input').value.toLowerCase();
+  var fb = document.getElementById('act1-fb');
+  var checks = [
+    v.indexOf('uid=cgarcia') !== -1,
+    v.indexOf('ou=people') !== -1,
+    v.indexOf('inetorgperson') !== -1,
+    v.indexOf('posixaccount') !== -1,
+    v.indexOf('sn:') !== -1 || v.indexOf('sn :') !== -1,
+    v.indexOf('uidnumber') !== -1 && v.indexOf('10004') !== -1,
+    v.indexOf('gidnumber') !== -1 && v.indexOf('20003') !== -1,
+    v.indexOf('homedirectory') !== -1 && v.indexOf('/home/cgarcia') !== -1,
+    v.indexOf('loginshell') !== -1,
+    v.indexOf('userpassword') !== -1 && v.indexOf('{ssha}') !== -1
+  ];
+  var score = checks.filter(Boolean).length;
+  if (score >= 9) {
+    fb.className = 'feedback correct';
+    fb.innerHTML = '<strong>Excellent!</strong> Your entry includes all the essential components. Compare with the solution below to check formatting details.';
+  } else if (score >= 6) {
+    fb.className = 'feedback neutral';
+    fb.innerHTML = '<strong>Good start!</strong> You have ' + score + ' of 10 key elements. Common things to check: Did you include <code>sn:</code> (required by inetOrgPerson)? Is the password hashed with <code>{SSHA}</code>? Click "Show Solution" to compare.';
+  } else {
+    fb.className = 'feedback incorrect';
+    fb.innerHTML = '<strong>Keep going.</strong> Only ' + score + ' of 10 key elements detected. Make sure you have the <code>dn:</code> line, both object classes, and all required attributes. Click "Show Solution" for a complete example.';
+  }
+}
+
+function showAct1Solution() {
+  var fb = document.getElementById('act1-fb');
+  fb.className = 'feedback neutral';
+  fb.innerHTML = '<strong>Solution:</strong><pre style="margin-top:8px;white-space:pre-wrap;font-size:.86rem;line-height:1.5;color:#0c3b6a">' +
+    'dn: uid=cgarcia,ou=People,dc=lab,dc=local\n' +
+    'objectClass: inetOrgPerson\n' +
+    'objectClass: posixAccount\n' +
+    'objectClass: shadowAccount\n' +
+    'uid: cgarcia\n' +
+    'cn: Carlos Garcia\n' +
+    'sn: Garcia\n' +
+    'mail: cgarcia@lab.local\n' +
+    'uidNumber: 10004\n' +
+    'gidNumber: 20003\n' +
+    'homeDirectory: /home/cgarcia\n' +
+    'loginShell: /bin/bash\n' +
+    'userPassword: {SSHA}aBcDeFgHiJkLmNoPqRsTuVwXyZ012345</pre>' +
+    '<p style="margin-top:6px"><strong>Key point:</strong> <code>sn</code> (surname) is <em>required</em> by <code>inetOrgPerson</code>. Forgetting it causes error 65 (Object class violation).</p>';
+}
+
+/* === ACTIVITY 2 – Spot the Errors === */
+function showAct2() {
+  var fb = document.getElementById('act2-fb');
+  fb.className = 'feedback neutral';
+  fb.innerHTML = '<strong>The three errors are:</strong>' +
+    '<ol style="margin:8px 0 0 20px;font-size:.9rem">' +
+    '<li><strong>Missing <code>sn:</code> attribute.</strong> The <code>inetOrgPerson</code> object class requires <code>sn</code> (surname). Without it, <code>ldapadd</code> returns error 65 (Object class violation).</li>' +
+    '<li><strong>Password is not hashed.</strong> <code>userPassword: secret123</code> stores the password in plaintext. It should be a hashed value like <code>{SSHA}…</code> generated by <code>slappasswd</code>.</li>' +
+    '<li><strong>Missing blank line between entries.</strong> The second entry (<code>cn=marketing</code>) starts immediately after the first entry with no blank line separator. LDAP tools will either treat it as part of the first entry (causing a syntax error) or fail to parse the file.</li>' +
+    '</ol>';
+}
+
+/* === ACTIVITY 3 – Build the Filter === */
+function checkAct3() {
+  var v = document.getElementById('act3-input').value.replace(/\s/g, '');
+  var fb = document.getElementById('act3-fb');
+  /* Normalize for comparison */
+  var n = v.toLowerCase();
+  /* Accept any order of the three sub-filters inside an AND */
+  var hasAnd = n.indexOf('(&') !== -1;
+  var hasPosix = n.indexOf('(objectclass=posixaccount)') !== -1;
+  var hasUid = n.indexOf('(uidnumber>=10002)') !== -1;
+  var hasMail = n.indexOf('(mail=*)') !== -1;
+  if (hasAnd && hasPosix && hasUid && hasMail) {
+    fb.className = 'feedback correct';
+    fb.innerHTML = '<strong>Correct!</strong> Your compound AND filter includes all three conditions. Well done!';
+  } else {
+    fb.className = 'feedback incorrect';
+    var missing = [];
+    if (!hasAnd) missing.push('AND operator <code>(&amp;...)</code>');
+    if (!hasPosix) missing.push('<code>(objectClass=posixAccount)</code>');
+    if (!hasUid) missing.push('<code>(uidNumber>=10002)</code>');
+    if (!hasMail) missing.push('<code>(mail=*)</code>');
+    fb.innerHTML = '<strong>Not quite.</strong> Missing or incorrect: ' + missing.join(', ') + '. Click "Show Solution" to see the correct filter.';
+  }
+}
+
+function showAct3() {
+  var fb = document.getElementById('act3-fb');
+  fb.className = 'feedback neutral';
+  fb.innerHTML = '<strong>Solution:</strong> <code>(&amp;(objectClass=posixAccount)(uidNumber>=10002)(mail=*))</code><br>' +
+    '<span style="font-size:.88rem">The <code>&amp;</code> operator requires <em>all</em> sub-filters to match. The presence filter <code>(mail=*)</code> matches any entry that has at least one <code>mail</code> attribute value.</span>';
+}
+
+/* === KNOWLEDGE CHECK QUIZ === */
+var answers = { q1: 'b', q2: 'b', q3: 'b', q4: 'b', q5: 'c' };
+var explanations = {
+  q1: 'A <strong>blank line</strong> separates entries in an LDIF file. A single dash separates <em>operations within the same entry</em> in an <code>ldapmodify</code> block.',
+  q2: '<code>-s one</code> (one-level scope) returns only the immediate children of the base DN. <code>-s base</code> returns only the base entry itself, and <code>-s sub</code> returns the entire subtree.',
+  q3: 'The OR operator in LDAP filter syntax is <code>|</code>, placed at the beginning inside parentheses: <code>(|(uid=jdoe)(uid=bwong))</code>. The <code>&amp;</code> operator is AND and would require <em>both</em> to match (impossible for a single-valued attribute).',
+  q4: 'A single dash (<code>-</code>) on its own line separates multiple modification operations within the same entry block. A blank line would signal the start of a new entry.',
+  q5: 'LDAP does not allow deleting a non-leaf entry by default. You must delete all child entries first, then delete the parent OU.'
+};
+
+function gradeQuiz() {
+  var score = 0;
+  var total = Object.keys(answers).length;
+  for (var q in answers) {
+    var sel = document.querySelector('input[name="' + q + '"]:checked');
+    var fb = document.getElementById(q + '-fb');
+    if (sel && sel.value === answers[q]) {
+      score++;
+      fb.style.display = 'block';
+      fb.style.background = '#e6f9ee';
+      fb.style.borderLeft = '4px solid #1a8c45';
+      fb.style.color = '#155724';
+      fb.innerHTML = '✓ Correct. ' + explanations[q];
+    } else {
+      fb.style.display = 'block';
+      fb.style.background = '#fdecea';
+      fb.style.borderLeft = '4px solid #c0392b';
+      fb.style.color = '#721c24';
+      fb.innerHTML = '✗ Incorrect. ' + explanations[q];
+    }
+  }
+  var sc = document.getElementById('quiz-score');
+  sc.className = 'feedback neutral';
+  sc.innerHTML = '<strong>Score: ' + score + ' / ' + total + '</strong>' +
+    (score === total ? ' — Perfect! You are ready for Quiz 12.' : ' — Review the sections above for any topics you missed.');
+}
+</script>
+</body>
+</html>

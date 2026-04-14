@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<!--
+  CSC 152 – Network OS and Administration
+  Week 12, Module 12.4 – LDAP Client Authentication & AD vs. OpenLDAP Comparison
+  Single-page HTML application for Canvas LMS embedding.
+  Style/layout follows the Week 12 template anchor (Module 12.1).
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Module 12.4 – LDAP Client Authentication &amp; AD vs. OpenLDAP Comparison | CSC 152</title>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#1e293b;background:#f8fafc}
+a{color:#2563eb;text-decoration:none}
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+
+/* ── Sticky Nav ── */
+.top-nav{position:sticky;top:0;z-index:900;background:#0f172a;color:#f1f5f9;display:flex;align-items:center;flex-wrap:wrap;padding:.45rem .9rem;font-size:.82rem;gap:.25rem .5rem;border-bottom:3px solid #2563eb}
+.top-nav .nav-label{font-weight:700;margin-right:.35rem;white-space:nowrap}
+.top-nav a{color:#93c5fd;padding:.2rem .45rem;border-radius:4px;white-space:nowrap}
+.top-nav a:hover,.top-nav a:focus-visible{background:#1e3a5f;color:#fff}
+.top-nav .top-link{margin-left:auto;color:#facc15;font-weight:600}
+
+/* ── Page Header ── */
+.mod-header{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);color:#f1f5f9;padding:2.2rem 1.5rem 1.6rem;text-align:center}
+.mod-header .label{font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin-bottom:.3rem}
+.mod-header h1{font-size:1.75rem;line-height:1.25;margin-bottom:.5rem}
+.mod-header .meta{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;font-size:.82rem;opacity:.8}
+.mod-header .meta span{background:rgba(255,255,255,.12);padding:.2rem .65rem;border-radius:20px}
+
+/* ── Main wrapper ── */
+.page-wrapper{max-width:56rem;margin:0 auto;padding:1.5rem 1.2rem 3rem}
+
+/* ── Objectives box ── */
+.obj-box{background:#eff6ff;border-left:5px solid #2563eb;border-radius:6px;padding:1.1rem 1.3rem;margin-bottom:2rem}
+.obj-box h2{font-size:1.1rem;margin-bottom:.5rem;color:#1e3a5f}
+.obj-box ul{list-style:disc;padding-left:1.4rem;margin-bottom:.5rem}
+.obj-box li{margin-bottom:.3rem;font-size:.95rem}
+.cslo-tag{display:inline-block;background:#2563eb;color:#fff;font-size:.72rem;font-weight:700;padding:.15rem .55rem;border-radius:12px;margin-right:.3rem;margin-top:.35rem}
+
+/* ── Sections ── */
+.section{margin-bottom:2.2rem;scroll-margin-top:3.5rem}
+.section h2{font-size:1.35rem;color:#0f172a;border-bottom:3px solid #2563eb;padding-bottom:.3rem;margin-bottom:.85rem}
+.section h3{font-size:1.1rem;color:#1e3a5f;margin:1rem 0 .5rem}
+
+/* ── Prose ── */
+p{margin-bottom:.75rem;font-size:.97rem}
+ul,ol{margin:0 0 .75rem 1.4rem;font-size:.97rem}
+li{margin-bottom:.3rem}
+strong{color:#0f172a}
+
+/* ── Code blocks ── */
+pre{background:#0f172a;color:#e2e8f0;padding:1rem 1.1rem;border-radius:6px;overflow-x:auto;margin:.75rem 0 1rem;font-size:.85rem;line-height:1.55;white-space:pre}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+code{background:#e2e8f0;color:#0f172a;padding:.15rem .35rem;border-radius:4px;font-size:.88rem;font-family:'Cascadia Code','Fira Code','Courier New',monospace}
+
+/* ── Tables ── */
+.info-table{width:100%;border-collapse:collapse;margin:.75rem 0 1rem;font-size:.92rem}
+.info-table th,.info-table td{border:1px solid #cbd5e1;padding:.55rem .7rem;text-align:left;vertical-align:top}
+.info-table th{background:#1e3a5f;color:#fff;font-weight:600}
+.info-table tr:nth-child(even){background:#f1f5f9}
+
+/* ── Callout boxes ── */
+.callout{border-radius:6px;padding:.85rem 1rem;margin:.75rem 0 1rem;font-size:.93rem}
+.callout-info{background:#dbeafe;border-left:4px solid #2563eb}
+.callout-warn{background:#fef9c3;border-left:4px solid #ca8a04}
+.callout-tip{background:#d1fae5;border-left:4px solid #059669}
+.callout-title{font-weight:700;margin-bottom:.25rem}
+
+/* ── Collapsible / Accordion ── */
+details{background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;margin:.6rem 0;padding:0}
+details summary{cursor:pointer;padding:.65rem .9rem;font-weight:600;font-size:.95rem;list-style:none;display:flex;align-items:center;gap:.4rem;user-select:none}
+details summary::before{content:'▶';font-size:.7rem;transition:transform .2s}
+details[open] summary::before{transform:rotate(90deg)}
+details .detail-body{padding:.4rem .9rem .85rem}
+
+/* ── Flow diagram (CSS-only) ── */
+.flow-row{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin:.8rem 0 1rem;font-size:.88rem}
+.flow-box{background:#1e3a5f;color:#fff;padding:.4rem .75rem;border-radius:6px;font-weight:600;text-align:center;min-width:6rem}
+.flow-arrow{font-size:1.2rem;color:#2563eb;font-weight:700}
+
+/* ── Interactive quiz ── */
+.quiz-section{background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:1.2rem;margin:1.5rem 0}
+.quiz-section h3{color:#92400e;margin-bottom:.6rem}
+.quiz-q{margin-bottom:1.1rem}
+.quiz-q p{font-weight:600;margin-bottom:.4rem}
+.quiz-q label{display:block;padding:.3rem .5rem;border-radius:4px;cursor:pointer;font-size:.93rem}
+.quiz-q label:hover{background:#fef3c7}
+.quiz-q input[type="radio"]{margin-right:.4rem}
+.quiz-fb{margin-top:.35rem;padding:.5rem .7rem;border-radius:5px;font-size:.9rem;display:none}
+.quiz-fb.correct{background:#d1fae5;border-left:4px solid #059669;display:block}
+.quiz-fb.incorrect{background:#fee2e2;border-left:4px solid #dc2626;display:block}
+.quiz-btn{background:#2563eb;color:#fff;border:none;padding:.45rem 1.1rem;border-radius:5px;font-size:.9rem;font-weight:600;cursor:pointer;margin-top:.25rem}
+.quiz-btn:hover{background:#1d4ed8}
+
+/* ── Interactive activity boxes ── */
+.activity-box{background:#f0fdf4;border:2px solid #059669;border-radius:8px;padding:1.1rem 1.2rem;margin:1.2rem 0}
+.activity-box h3{color:#065f46;margin-bottom:.5rem}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.6rem 0}
+.match-item{background:#fff;border:2px solid #cbd5e1;border-radius:6px;padding:.5rem .7rem;font-size:.9rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s}
+.match-item:hover{border-color:#2563eb}
+.match-item.selected{border-color:#2563eb;background:#dbeafe}
+.match-item.matched-correct{border-color:#059669;background:#d1fae5}
+.match-item.matched-incorrect{border-color:#dc2626;background:#fee2e2}
+
+/* ── Troubleshoot scenario ── */
+.scenario-box{background:#faf5ff;border:2px solid #7c3aed;border-radius:8px;padding:1.1rem 1.2rem;margin:1.2rem 0}
+.scenario-box h3{color:#5b21b6;margin-bottom:.5rem}
+.scenario-opt{display:block;padding:.45rem .65rem;margin:.3rem 0;border:2px solid #cbd5e1;border-radius:6px;cursor:pointer;font-size:.93rem;background:#fff;transition:border-color .2s}
+.scenario-opt:hover{border-color:#7c3aed;background:#f5f3ff}
+.scenario-opt.chosen-right{border-color:#059669;background:#d1fae5}
+.scenario-opt.chosen-wrong{border-color:#dc2626;background:#fee2e2}
+
+/* ── Connections banner ── */
+.connections{background:linear-gradient(135deg,#1e3a5f,#0f172a);color:#f1f5f9;border-radius:8px;padding:1.1rem 1.3rem;margin:2rem 0 1rem}
+.connections h2{color:#93c5fd;border-bottom-color:#93c5fd;font-size:1.15rem;margin-bottom:.6rem}
+.connections p,.connections li{color:#cbd5e1;font-size:.93rem}
+
+/* ── Footer ── */
+.page-footer{text-align:center;font-size:.8rem;color:#64748b;padding:1.5rem 1rem .75rem;border-top:1px solid #e2e8f0;margin-top:2rem}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  .mod-header h1{font-size:1.3rem}
+  .page-wrapper{padding:1rem .7rem 2rem}
+  .flow-row{flex-direction:column;align-items:stretch}
+  .flow-arrow{transform:rotate(90deg);text-align:center}
+  .match-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ STICKY NAV ═══ -->
+<nav class="top-nav" aria-label="Module section navigation">
+  <span class="nav-label">Module 12.4</span>
+  <a href="#section-objectives"
+     title="§0 – Learning Objectives"
+     aria-label="Section 0: Learning Objectives">§0</a>
+  <a href="#section-1"
+     title="§1 – Why Centralized Authentication Matters"
+     aria-label="Section 1: Why Centralized Authentication Matters">§1</a>
+  <a href="#section-2"
+     title="§2 – NSS and PAM Overview"
+     aria-label="Section 2: NSS and PAM Overview">§2</a>
+  <a href="#section-3"
+     title="§3 – Configuring SSSD for LDAP Authentication"
+     aria-label="Section 3: Configuring SSSD for LDAP Authentication">§3</a>
+  <a href="#section-4"
+     title="§4 – Alternative: NSS/PAM Direct Configuration"
+     aria-label="Section 4: Alternative NSS/PAM Direct Configuration">§4</a>
+  <a href="#section-5"
+     title="§5 – Testing Client Authentication"
+     aria-label="Section 5: Testing Client Authentication">§5</a>
+  <a href="#section-6"
+     title="§6 – Troubleshooting LDAP Client Integration"
+     aria-label="Section 6: Troubleshooting LDAP Client Integration">§6</a>
+  <a href="#section-7"
+     title="§7 – AD vs. OpenLDAP Structured Comparison"
+     aria-label="Section 7: AD vs. OpenLDAP Structured Comparison">§7</a>
+  <a href="#section-8"
+     title="§8 – Hybrid Environments: AD + LDAP Together"
+     aria-label="Section 8: Hybrid Environments">§8</a>
+  <a href="#section-9"
+     title="§9 – Interactive Activities"
+     aria-label="Section 9: Interactive Activities">§9</a>
+  <a href="#section-10"
+     title="§10 – Knowledge Check (Ungraded)"
+     aria-label="Section 10: Knowledge Check">§10</a>
+  <a href="#next" class="top-link"
+     title="Back to top of page"
+     aria-label="Back to top of page">↑ Top</a>
+</nav>
+
+<!-- ═══ PAGE HEADER ═══ -->
+<header class="mod-header" role="banner">
+  <div class="label">Week 12 · Module 12.4</div>
+  <h1>LDAP Client Authentication<br>&amp; AD vs. OpenLDAP Comparison</h1>
+  <div class="meta">
+    <span>CSC 152 – Network OS and Administration</span>
+    <span>Est. Time: 1.25 hours</span>
+    <span>CSLO 1 · CSLO 2</span>
+  </div>
+</header>
+
+<main id="main-content" class="page-wrapper">
+
+<!-- ═══ §0 OBJECTIVES ═══ -->
+<div class="obj-box" id="section-objectives">
+  <h2>Learning Objectives</h2>
+  <ul>
+    <li><strong>Objective 6:</strong> Configure a Linux client system to authenticate against an OpenLDAP server using SSSD or NSS/PAM integration.</li>
+    <li><strong>Objective 7:</strong> Compare and contrast Active Directory and OpenLDAP in terms of schema, tooling, scalability, and enterprise use cases.</li>
+  </ul>
+  <span class="cslo-tag">CSLO 1</span>
+  <span class="cslo-tag">CSLO 2</span>
+</div>
+
+<!-- ═══ §1 WHY CENTRALIZED AUTHENTICATION? ═══ -->
+<section class="section" id="section-1">
+  <h2>§1 – Why Centralized Authentication Matters</h2>
+
+  <p>In Modules 12.2 and 12.3 you built an OpenLDAP server and populated it with users and groups. Right now, those entries sit in the directory but no other machine actually <em>uses</em> them to log people in. This module closes that gap: you will configure a <strong>separate Linux client VM</strong> to authenticate users against the OpenLDAP server, achieving <strong>centralized authentication</strong>.</p>
+
+  <h3>The Account-Sprawl Problem</h3>
+  <p>Without centralized authentication every server maintains its own <code>/etc/passwd</code>, <code>/etc/shadow</code>, and <code>/etc/group</code> files. Consider a small network with five Linux servers and 30 users:</p>
+  <ul>
+    <li>150 local accounts to create and maintain (5 servers × 30 users).</li>
+    <li>Password changes must be repeated on every machine—or they drift out of sync.</li>
+    <li>When an employee leaves, the administrator must remember to disable the account on <em>all five servers</em>.</li>
+    <li>Auditing who has access where becomes a manual, error-prone process.</li>
+  </ul>
+
+  <h3>The Centralized Solution</h3>
+  <p>With LDAP-based centralized authentication, user credentials live in <strong>one directory</strong>. Every server queries that directory at login time:</p>
+  <ul>
+    <li><strong>Single source of truth</strong> – create a user once, and they can log in to every configured client.</li>
+    <li><strong>Consistent policies</strong> – password complexity and expiration rules are enforced in one place.</li>
+    <li><strong>Simplified deprovisioning</strong> – disable or delete the LDAP entry and access is revoked everywhere.</li>
+    <li><strong>Audit trail</strong> – the directory server logs every bind attempt, giving you a central record of authentication events.</li>
+  </ul>
+
+  <div class="callout callout-info">
+    <div class="callout-title">🔗 Week 11 Connection</div>
+    Active Directory provides the same centralized authentication benefit for Windows environments using Kerberos + LDAP. This module achieves the equivalent on the Linux side using OpenLDAP + SSSD.
+  </div>
+
+  <h3>Before &amp; After: Visual Comparison</h3>
+  <p><strong>Before (local-only authentication):</strong></p>
+  <div class="flow-row">
+    <span class="flow-box">User</span><span class="flow-arrow">→</span>
+    <span class="flow-box">Server A<br><small>/etc/shadow</small></span>
+    <span class="flow-box">Server B<br><small>/etc/shadow</small></span>
+    <span class="flow-box">Server C<br><small>/etc/shadow</small></span>
+  </div>
+  <p>Each server has its own copy of every user's password hash. Changes do not propagate.</p>
+
+  <p><strong>After (LDAP-centralized authentication):</strong></p>
+  <div class="flow-row">
+    <span class="flow-box">User</span><span class="flow-arrow">→</span>
+    <span class="flow-box">Any Client</span><span class="flow-arrow">→</span>
+    <span class="flow-box" style="background:#059669">OpenLDAP<br>Server</span><span class="flow-arrow">→</span>
+    <span class="flow-box">Grant / Deny</span>
+  </div>
+  <p>Credentials are verified against the single LDAP directory. Clients hold no local password hashes for LDAP users.</p>
+</section>
+
+<!-- ═══ §2 NSS & PAM OVERVIEW ═══ -->
+<section class="section" id="section-2">
+  <h2>§2 – NSS and PAM Overview</h2>
+
+  <p>Two Linux subsystems work together to make centralized authentication possible: the <strong>Name Service Switch (NSS)</strong> and <strong>Pluggable Authentication Modules (PAM)</strong>.</p>
+
+  <h3>Name Service Switch (NSS)</h3>
+  <p>NSS answers the question: <em>"Where does the system look up user and group information?"</em></p>
+  <ul>
+    <li>Configured in <code>/etc/nsswitch.conf</code>.</li>
+    <li>Maps database names (<code>passwd</code>, <code>group</code>, <code>shadow</code>) to <strong>sources</strong> such as <code>files</code> (local), <code>sss</code> (SSSD), or <code>ldap</code> (direct LDAP).</li>
+    <li>Sources are tried left to right. Example: <code>passwd: files sss</code> means "check local files first, then ask SSSD."</li>
+  </ul>
+
+  <h3>Pluggable Authentication Modules (PAM)</h3>
+  <p>PAM answers the question: <em>"How does the system verify a user's credentials?"</em></p>
+  <ul>
+    <li>A modular framework—each "module" handles one authentication task (password check, account lockout, home directory creation, etc.).</li>
+    <li>Configuration files live in <code>/etc/pam.d/</code>.</li>
+    <li>When SSSD is installed, it registers <code>pam_sss.so</code> so PAM can delegate credential checks to the LDAP server via SSSD.</li>
+  </ul>
+
+  <h3>Login Flow Diagram: login → PAM → SSSD → LDAP</h3>
+  <div class="flow-row">
+    <span class="flow-box">User types<br>username + password</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box">login / sshd<br>(PAM-aware app)</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box">PAM stack<br><small>pam_sss.so</small></span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box">SSSD<br><small>sssd-ldap</small></span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box" style="background:#059669">OpenLDAP<br>Server</span>
+  </div>
+  <ol>
+    <li><strong>Application</strong> (SSH, login, su) receives the username and password.</li>
+    <li><strong>PAM</strong> walks its module stack. <code>pam_sss.so</code> hands the credentials to SSSD.</li>
+    <li><strong>SSSD</strong> performs an LDAP bind to the OpenLDAP server using the supplied credentials.</li>
+    <li>OpenLDAP returns <strong>success</strong> (bind succeeds → user authenticated) or <strong>failure</strong> (invalid credentials).</li>
+    <li>PAM reports the result back to the application, which grants or denies the session.</li>
+  </ol>
+
+  <div class="flow-row">
+    <span class="flow-box">NSS query:<br><code>getent passwd jdoe</code></span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box">nsswitch.conf<br><small>passwd: files sss</small></span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box">SSSD<br><small>id_provider = ldap</small></span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-box" style="background:#059669">OpenLDAP<br>(posixAccount)</span>
+  </div>
+  <p>NSS uses a similar path to resolve user/group information (UID, GID, home directory, shell) from the LDAP directory.</p>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">💡 Key Insight</div>
+    NSS handles <em>identity</em> (who is this user?), while PAM handles <em>authentication</em> (is the password correct?). Both must be configured for LDAP login to work.
+  </div>
+</section>
+
+<!-- ═══ §3 SSSD CONFIGURATION FOR LDAP ═══ -->
+<section class="section" id="section-3">
+  <h2>§3 – Configuring SSSD for LDAP Authentication</h2>
+
+  <p>SSSD (System Security Services Daemon) is the <strong>modern, recommended</strong> method for integrating Linux clients with LDAP directories. It provides caching, offline authentication support, and a clean configuration model.</p>
+
+  <h3>Step 1 – Install SSSD Packages</h3>
+  <p>On the <strong>client</strong> VM (not the OpenLDAP server), install the SSSD LDAP provider:</p>
+<pre><code># Ubuntu / Debian
+sudo apt update
+sudo apt install sssd-ldap sssd-tools -y</code></pre>
+
+  <div class="callout callout-info">
+    <div class="callout-title">📦 Package Notes</div>
+    <code>sssd-ldap</code> provides the LDAP identity and authentication back-end. <code>sssd-tools</code> provides helper utilities such as <code>sss_cache</code> for clearing the SSSD cache during testing.
+  </div>
+
+  <h3>Step 2 – Create <code>/etc/sssd/sssd.conf</code></h3>
+  <p>SSSD's main configuration file must be created manually. It must be owned by root with permissions <code>0600</code>—SSSD refuses to start otherwise.</p>
+
+<pre><code>sudo nano /etc/sssd/sssd.conf</code></pre>
+
+  <p>Enter the following configuration (adjust the domain and URI to match your lab):</p>
+
+<pre><code>[sssd]
+domains = lab.local
+config_file_version = 2
+services = nss, pam
+
+[domain/lab.local]
+# Identity provider: where to look up user/group info
+id_provider = ldap
+
+# Authentication provider: where to verify passwords
+auth_provider = ldap
+
+# URI of the OpenLDAP server (use your server's IP or hostname)
+ldap_uri = ldap://10.0.1.10
+
+# Base DN for searches (must match your DIT)
+ldap_search_base = dc=lab,dc=local
+
+# The default LDAP schema type
+ldap_schema = rfc2307
+
+# Do not require TLS for lab environment
+# (In production, ALWAYS use ldap_id_use_start_tls = true)
+ldap_id_use_start_tls = false
+
+# Cache credentials for offline access (optional)
+cache_credentials = true
+
+# Enumerate users so getent passwd shows LDAP users
+enumerate = true</code></pre>
+
+  <h3>Directive-by-Directive Explanation</h3>
+  <table class="info-table">
+    <thead>
+      <tr><th>Directive</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>[sssd]</code> → <code>domains</code></td><td>Lists the LDAP domains SSSD should manage. Must match a <code>[domain/…]</code> section name below.</td></tr>
+      <tr><td><code>config_file_version = 2</code></td><td>Required header; SSSD only accepts version 2.</td></tr>
+      <tr><td><code>services = nss, pam</code></td><td>Tells SSSD to act as a back-end for both NSS (identity) and PAM (authentication).</td></tr>
+      <tr><td><code>id_provider = ldap</code></td><td>User/group identity information comes from LDAP.</td></tr>
+      <tr><td><code>auth_provider = ldap</code></td><td>Password verification is performed via LDAP bind.</td></tr>
+      <tr><td><code>ldap_uri</code></td><td>The LDAP server address. Use <code>ldap://</code> for unencrypted or <code>ldaps://</code> for TLS (port 636).</td></tr>
+      <tr><td><code>ldap_search_base</code></td><td>The base DN where SSSD begins searching for user/group entries. Must match your DIT root.</td></tr>
+      <tr><td><code>ldap_schema = rfc2307</code></td><td>Tells SSSD to expect POSIX attributes (<code>uidNumber</code>, <code>gidNumber</code>, etc.) per RFC 2307—the schema used by <code>posixAccount</code>/<code>posixGroup</code>.</td></tr>
+      <tr><td><code>ldap_id_use_start_tls</code></td><td>Whether to upgrade the connection to TLS. Set <code>false</code> for lab; set <code>true</code> in production (Week 14 hardening topic).</td></tr>
+      <tr><td><code>cache_credentials = true</code></td><td>Caches passwords locally so users can log in even if the LDAP server is temporarily unreachable.</td></tr>
+      <tr><td><code>enumerate = true</code></td><td>Allows <code>getent passwd</code> to list all LDAP users. Useful for testing; may be disabled on large directories for performance.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Step 3 – Set Permissions</h3>
+<pre><code>sudo chmod 0600 /etc/sssd/sssd.conf
+sudo chown root:root /etc/sssd/sssd.conf</code></pre>
+  <p>SSSD enforces strict permissions. If the file is world-readable, the service will refuse to start and log a "permissions too open" error.</p>
+
+  <h3>Step 4 – Configure <code>/etc/nsswitch.conf</code></h3>
+  <p>Tell NSS to consult SSSD for user, group, and shadow lookups:</p>
+<pre><code>sudo nano /etc/nsswitch.conf</code></pre>
+  <p>Find the <code>passwd</code>, <code>group</code>, and <code>shadow</code> lines and add <code>sss</code>:</p>
+<pre><code>passwd:         files systemd sss
+group:          files systemd sss
+shadow:         files sss</code></pre>
+  <p>The <code>files</code> source is listed first so local accounts (root, service accounts) are always resolved locally. SSSD is consulted only if the user is not found in local files.</p>
+
+  <h3>Step 5 – Enable Automatic Home Directory Creation</h3>
+  <p>LDAP users will not have a home directory on the client until one is created. PAM can do this automatically:</p>
+<pre><code>sudo pam-auth-update --enable mkhomedir</code></pre>
+  <p>This adds <code>pam_mkhomedir.so</code> to the PAM session stack. When an LDAP user logs in for the first time, their home directory (e.g., <code>/home/jdoe</code>) is created automatically.</p>
+
+  <h3>Step 6 – Restart and Enable SSSD</h3>
+<pre><code>sudo systemctl restart sssd
+sudo systemctl enable sssd
+sudo systemctl status sssd</code></pre>
+  <p>Verify the service is <strong>active (running)</strong> with no errors. If it fails, check <code>journalctl -u sssd -e</code> for details.</p>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">⚠️ Common Pitfall</div>
+    If SSSD fails to start with "No domains configured," double-check that the <code>domains = lab.local</code> value in <code>[sssd]</code> exactly matches the section header <code>[domain/lab.local]</code>. Even a trailing space can cause a mismatch.
+  </div>
+</section>
+
+<!-- ═══ §4 ALTERNATIVE: NSS/PAM DIRECT ═══ -->
+<section class="section" id="section-4">
+  <h2>§4 – Alternative: NSS/PAM Direct Configuration</h2>
+
+  <details>
+    <summary>Expand: libnss-ldapd / libpam-ldapd approach (legacy method)</summary>
+    <div class="detail-body">
+      <p>Before SSSD became the standard, Linux systems used <code>libnss-ldapd</code> and <code>libpam-ldapd</code> with the <code>nslcd</code> daemon to connect directly to LDAP. This approach still works and is occasionally seen in older deployments.</p>
+
+      <h3>Installation</h3>
+<pre><code>sudo apt install libnss-ldapd libpam-ldapd -y</code></pre>
+      <p>The installer will prompt for:</p>
+      <ul>
+        <li><strong>LDAP server URI:</strong> <code>ldap://10.0.1.10</code></li>
+        <li><strong>Search base:</strong> <code>dc=lab,dc=local</code></li>
+        <li><strong>NSS databases to configure:</strong> select <code>passwd</code>, <code>group</code>, <code>shadow</code></li>
+      </ul>
+
+      <h3>Configuration Files</h3>
+      <p><code>/etc/nslcd.conf</code> – the nslcd daemon configuration:</p>
+<pre><code>uri ldap://10.0.1.10
+base dc=lab,dc=local
+binddn cn=admin,dc=lab,dc=local
+bindpw (admin_password)</code></pre>
+
+      <p><code>/etc/nsswitch.conf</code> – updated automatically during installation:</p>
+<pre><code>passwd:         files ldap
+group:          files ldap
+shadow:         files ldap</code></pre>
+
+      <h3>Why SSSD Is Preferred</h3>
+      <table class="info-table">
+        <thead><tr><th>Feature</th><th>SSSD</th><th>nslcd / libnss-ldapd</th></tr></thead>
+        <tbody>
+          <tr><td>Offline caching</td><td>Built-in</td><td>Not available</td></tr>
+          <tr><td>Multi-provider support</td><td>LDAP, AD, Kerberos, IPA</td><td>LDAP only</td></tr>
+          <tr><td>Credential caching</td><td>Yes</td><td>No</td></tr>
+          <tr><td>Active development</td><td>Yes (Red Hat / Fedora)</td><td>Minimal maintenance</td></tr>
+        </tbody>
+      </table>
+      <p>Use the SSSD method (§3) for all new deployments. This section is provided for awareness of legacy systems.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ═══ §5 TESTING CLIENT AUTHENTICATION ═══ -->
+<section class="section" id="section-5">
+  <h2>§5 – Testing Client Authentication</h2>
+
+  <p>After configuring SSSD, run these verification tests <strong>on the client VM</strong> to confirm LDAP users can be resolved and authenticated.</p>
+
+  <h3>Test 1: <code>getent passwd</code></h3>
+<pre><code>getent passwd</code></pre>
+  <p>This lists all users from both local files and SSSD. Scroll to the bottom—you should see your LDAP users with their LDAP-assigned UID numbers:</p>
+<pre><code>jdoe:*:10001:10001:John Doe:/home/jdoe:/bin/bash
+asmith:*:10002:10002:Alice Smith:/home/asmith:/bin/bash</code></pre>
+  <p>If LDAP users do <strong>not</strong> appear, SSSD is not connecting to the LDAP server. Check §6 (Troubleshooting).</p>
+
+  <h3>Test 2: <code>id &lt;username&gt;</code></h3>
+<pre><code>id jdoe</code></pre>
+  <p>Expected output:</p>
+<pre><code>uid=10001(jdoe) gid=10001(jdoe) groups=10001(jdoe),10010(developers)</code></pre>
+  <p>This confirms NSS is resolving the user's UID, GID, and group memberships from LDAP.</p>
+
+  <h3>Test 3: SSH Login as an LDAP User</h3>
+<pre><code>ssh jdoe@localhost</code></pre>
+  <p>Or from another machine:</p>
+<pre><code>ssh jdoe@10.0.1.20    # client VM IP</code></pre>
+  <p>Enter the LDAP user's password. A successful login confirms both NSS (identity resolution) and PAM (authentication) are working.</p>
+
+  <h3>Test 4: <code>su - &lt;ldapuser&gt;</code></h3>
+<pre><code>su - jdoe</code></pre>
+  <p>This tests PAM authentication via the <code>su</code> command. You should be prompted for jdoe's LDAP password and then dropped into jdoe's shell.</p>
+
+  <h3>Test 5: Home Directory Auto-Creation</h3>
+  <p>If this is the first login for the LDAP user, <code>pam_mkhomedir</code> should create <code>/home/jdoe</code> automatically:</p>
+<pre><code>ls -la /home/jdoe</code></pre>
+  <p>You should see a freshly created home directory with default skeleton files (<code>.bashrc</code>, <code>.profile</code>, etc.).</p>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">💡 Testing Tip</div>
+    If you make changes to <code>sssd.conf</code>, always clear the cache before retesting:
+<pre><code>sudo sss_cache -E
+sudo systemctl restart sssd</code></pre>
+    SSSD aggressively caches results, and stale cache entries are a frequent source of confusion during troubleshooting.
+  </div>
+</section>
+
+<!-- ═══ §6 TROUBLESHOOTING ═══ -->
+<section class="section" id="section-6">
+  <h2>§6 – Troubleshooting LDAP Client Integration</h2>
+
+  <p>When LDAP client authentication does not work on the first attempt, use this table to systematically diagnose the issue.</p>
+
+  <table class="info-table">
+    <thead>
+      <tr><th>Symptom</th><th>Likely Cause</th><th>Diagnostic Tool / Command</th><th>Resolution</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>getent passwd</code> shows no LDAP users</td>
+        <td>SSSD not running, wrong <code>ldap_uri</code>, or wrong <code>ldap_search_base</code></td>
+        <td><code>systemctl status sssd</code><br><code>journalctl -u sssd -e</code></td>
+        <td>Verify SSSD is running; confirm URI and base DN match the OpenLDAP server configuration</td>
+      </tr>
+      <tr>
+        <td>SSSD fails to start: "permission denied"</td>
+        <td><code>sssd.conf</code> permissions are not <code>0600</code></td>
+        <td><code>ls -l /etc/sssd/sssd.conf</code></td>
+        <td><code>sudo chmod 0600 /etc/sssd/sssd.conf</code><br><code>sudo chown root:root /etc/sssd/sssd.conf</code></td>
+      </tr>
+      <tr>
+        <td>Connection refused on port 389</td>
+        <td>slapd not running on server, firewall blocking traffic, or wrong IP</td>
+        <td>From client: <code>ldapwhoami -x -H ldap://10.0.1.10</code><br><code>nc -zv 10.0.1.10 389</code></td>
+        <td>Verify <code>slapd</code> is running on the server; check pfSense / <code>ufw</code> rules; verify IP address</td>
+      </tr>
+      <tr>
+        <td>Invalid credentials (password rejected)</td>
+        <td>Password hash mismatch, wrong <code>userPassword</code> in LDAP entry</td>
+        <td><code>ldapwhoami -x -D "uid=jdoe,ou=People,dc=lab,dc=local" -W</code></td>
+        <td>Re-set the password with <code>slappasswd</code> and update the entry with <code>ldapmodify</code></td>
+      </tr>
+      <tr>
+        <td>TLS handshake failure</td>
+        <td>TLS enabled in SSSD but not configured on the OpenLDAP server</td>
+        <td><code>journalctl -u sssd -e</code> (look for TLS errors)</td>
+        <td>Set <code>ldap_id_use_start_tls = false</code> for lab, or configure TLS on the server (Week 14 topic)</td>
+      </tr>
+      <tr>
+        <td>User found by <code>getent</code> but cannot log in</td>
+        <td>PAM not configured for SSSD, or <code>pam_sss.so</code> missing from PAM stack</td>
+        <td><code>grep pam_sss /etc/pam.d/common-auth</code></td>
+        <td>Run <code>sudo pam-auth-update</code> and ensure SSS is enabled</td>
+      </tr>
+      <tr>
+        <td>Login succeeds but no home directory</td>
+        <td><code>pam_mkhomedir</code> not enabled</td>
+        <td><code>grep mkhomedir /etc/pam.d/common-session</code></td>
+        <td><code>sudo pam-auth-update --enable mkhomedir</code></td>
+      </tr>
+      <tr>
+        <td>Stale data after LDAP changes</td>
+        <td>SSSD cache serving old entries</td>
+        <td><code>sudo sss_cache -E</code></td>
+        <td>Clear cache and restart: <code>sudo sss_cache -E &amp;&amp; sudo systemctl restart sssd</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <div class="callout-title">🔍 General Troubleshooting Strategy</div>
+    <ol>
+      <li><strong>Verify network connectivity</strong> – Can the client reach the server? (<code>ping</code>, <code>nc -zv</code>)</li>
+      <li><strong>Verify LDAP connectivity</strong> – Can you query LDAP from the client? (<code>ldapsearch -x -H ldap://server -b "dc=lab,dc=local"</code>)</li>
+      <li><strong>Verify SSSD status</strong> – Is the service running without errors? (<code>systemctl status sssd</code>, <code>journalctl -u sssd</code>)</li>
+      <li><strong>Verify NSS</strong> – Does <code>getent passwd</code> show LDAP users?</li>
+      <li><strong>Verify PAM</strong> – Can you authenticate? (<code>su - ldapuser</code>)</li>
+    </ol>
+    Work from the bottom of the stack (network) upward (application). Fix the lowest-level failure first.
+  </div>
+</section>
+
+<!-- ═══ §7 AD vs. OPENLDAP COMPARISON ═══ -->
+<section class="section" id="section-7">
+  <h2>§7 – Active Directory vs. OpenLDAP: Structured Comparison</h2>
+
+  <p>Over the past two weeks you have worked hands-on with both Active Directory (Week 11) and OpenLDAP (Week 12). This section synthesizes that experience into a structured comparison across six key dimensions.</p>
+
+  <table class="info-table">
+    <thead>
+      <tr><th>Dimension</th><th>Active Directory (AD DS)</th><th>OpenLDAP</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Protocol &amp; Standards</strong></td>
+        <td>Implements LDAP v3 but extends it with proprietary features. Tightly integrates Kerberos v5 for authentication and DNS for service discovery. Proprietary Microsoft protocol extensions (e.g., LDAP controls for paging, password modification).</td>
+        <td>Standards-compliant LDAP v3 implementation (RFC 4511). No proprietary extensions. Kerberos can be added separately (MIT KDC or Heimdal) but is not built in.</td>
+      </tr>
+      <tr>
+        <td><strong>Schema &amp; Object Classes</strong></td>
+        <td>Rich built-in schema with hundreds of predefined classes: <code>user</code>, <code>computer</code>, <code>group</code>, <code>organizationalUnit</code>, <code>groupPolicyContainer</code>, etc. Schema extensions possible but complex and permanent (cannot be deleted once added).</td>
+        <td>Minimal default schema. Administrator explicitly loads schema files (<code>cosine</code>, <code>inetorgperson</code>, <code>nis</code>) as needed. Uses standard classes: <code>inetOrgPerson</code>, <code>posixAccount</code>, <code>posixGroup</code>. Schema is modular and extensible.</td>
+      </tr>
+      <tr>
+        <td><strong>Administration Tooling</strong></td>
+        <td>GUI-centric: Active Directory Users and Computers (ADUC), Group Policy Management Console (GPMC), Active Directory Administrative Center (ADAC). PowerShell AD module for scripting and automation.</td>
+        <td>CLI-centric: <code>ldapadd</code>, <code>ldapmodify</code>, <code>ldapsearch</code>, <code>ldapdelete</code>, <code>slapcat</code>. Configuration via LDIF files. Third-party GUIs available (phpLDAPadmin, Apache Directory Studio) but not built in.</td>
+      </tr>
+      <tr>
+        <td><strong>Authentication Integration</strong></td>
+        <td>Kerberos + LDAP provide seamless single sign-on (SSO) for Windows domain-joined machines. NTLM as legacy fallback. Domain join is a one-step process.</td>
+        <td>LDAP simple bind for authentication. Kerberos SSO requires a separate KDC setup. Linux client integration via SSSD, NSS/PAM. No built-in "domain join" concept—client configuration is manual.</td>
+      </tr>
+      <tr>
+        <td><strong>Enterprise Use Cases</strong></td>
+        <td>Windows-dominant environments. Organizations with Microsoft 365 / Azure AD integration. Enterprises needing Group Policy for centralized desktop management. Requires Windows Server licensing.</td>
+        <td>Linux/Unix environments. Cost-sensitive organizations (open source, no licensing fees). Embedded systems and appliances. Cloud-native environments using LDAP for service authentication. Academic and research institutions.</td>
+      </tr>
+      <tr>
+        <td><strong>Replication &amp; Scalability</strong></td>
+        <td>Multi-master replication built in. All domain controllers are writable. Global Catalog servers provide forest-wide search. Sites and site links control replication topology. Scales to millions of objects.</td>
+        <td>Supports <code>syncrepl</code> for replication (provider–consumer and multi-master modes). Configuration is manual and requires more planning. Scales well for read-heavy workloads; write scaling requires careful replication design.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>When to Choose Which?</h3>
+  <details>
+    <summary>Expand: Decision guidance</summary>
+    <div class="detail-body">
+      <ul>
+        <li><strong>Choose AD</strong> when your environment is primarily Windows, you need Group Policy, you already have Microsoft licensing, or you need tight integration with Azure AD / Microsoft 365.</li>
+        <li><strong>Choose OpenLDAP</strong> when your environment is primarily Linux/Unix, licensing cost is a concern, you need a lightweight directory for application authentication, or you need maximum flexibility in schema design.</li>
+        <li><strong>Choose both</strong> (hybrid) when your organization has a mixed Windows/Linux environment and needs a single identity source—see §8.</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<!-- ═══ §8 HYBRID ENVIRONMENTS ═══ -->
+<section class="section" id="section-8">
+  <h2>§8 – Hybrid Environments: AD + LDAP Together</h2>
+
+  <p>Many real-world organizations run both Active Directory and LDAP-based directories. Several integration patterns exist:</p>
+
+  <h3>Pattern 1: SSSD with AD Back-End</h3>
+  <p>Linux clients can use SSSD with <code>id_provider = ad</code> to authenticate directly against Active Directory—no OpenLDAP needed. AD acts as the single directory, and Linux machines join the AD domain using <code>realm join</code>.</p>
+
+  <h3>Pattern 2: LDAP Proxy / Pass-Through</h3>
+  <p>An OpenLDAP server can be configured as a proxy that forwards authentication requests to AD. Applications that only speak standard LDAP connect to OpenLDAP, which translates and relays to AD behind the scenes.</p>
+
+  <h3>Pattern 3: Directory Synchronization</h3>
+  <p>Tools like <strong>Fedora Directory Server</strong> (389 DS), <strong>Microsoft Identity Manager (MIM)</strong>, or open-source solutions like <strong>LSC (LDAP Synchronization Connector)</strong> synchronize user entries between AD and OpenLDAP. Changes in one directory are propagated to the other on a schedule.</p>
+
+  <h3>Pattern 4: FreeIPA as a Bridge</h3>
+  <p><strong>FreeIPA</strong> (Identity, Policy, Audit) is a Linux identity management system that integrates LDAP (389 DS), Kerberos, DNS, and certificate management. FreeIPA can establish a <strong>cross-realm trust</strong> with Active Directory, allowing AD users to access Linux resources and vice versa without duplicating accounts.</p>
+
+  <div class="callout callout-info">
+    <div class="callout-title">🔗 Project 4 Connection</div>
+    Project 4 (Comprehensive Integration Project) Part E asks you to reflect on directory services decisions. Understanding hybrid patterns will strengthen your analysis of when and why organizations use both AD and OpenLDAP.
+  </div>
+</section>
+
+<!-- ═══ §9 INTERACTIVE ACTIVITIES ═══ -->
+<section class="section" id="section-9">
+  <h2>§9 – Interactive Activities</h2>
+
+  <!-- Activity 1: Troubleshooting Scenario -->
+  <div class="scenario-box" id="troubleshoot-activity">
+    <h3>🔧 Activity 1: Troubleshooting Scenario</h3>
+    <p>You have configured SSSD on a Linux client to authenticate against your OpenLDAP server. When you run <code>getent passwd</code>, local users appear but no LDAP users are listed. You check <code>systemctl status sssd</code> and the service is running. What is the <strong>best next diagnostic step</strong>?</p>
+
+    <button class="scenario-opt" data-correct="false" onclick="checkScenario(this, 'ts1')">
+      A. Run <code>sudo pam-auth-update --enable mkhomedir</code>
+    </button>
+    <button class="scenario-opt" data-correct="false" onclick="checkScenario(this, 'ts1')">
+      B. Restart the OpenLDAP server with <code>sudo systemctl restart slapd</code>
+    </button>
+    <button class="scenario-opt" data-correct="true" onclick="checkScenario(this, 'ts1')">
+      C. Test LDAP connectivity from the client with <code>ldapsearch -x -H ldap://10.0.1.10 -b "dc=lab,dc=local"</code>
+    </button>
+    <button class="scenario-opt" data-correct="false" onclick="checkScenario(this, 'ts1')">
+      D. Delete and recreate the LDAP user entries on the server
+    </button>
+    <div id="ts1-fb" class="quiz-fb" style="display:none;margin-top:.5rem"></div>
+  </div>
+
+  <!-- Activity 2: AD vs. OpenLDAP Matching -->
+  <div class="activity-box" id="matching-activity">
+    <h3>🔀 Activity 2: AD vs. OpenLDAP – Match the Feature</h3>
+    <p>For each feature below, click it, then click whether it belongs to <strong>Active Directory</strong>, <strong>OpenLDAP</strong>, or <strong>Both</strong>. Click "Check Answers" when done.</p>
+
+    <div id="match-container">
+      <div class="match-question" style="margin-bottom:.7rem;padding:.6rem;background:#fff;border-radius:6px;border:1px solid #cbd5e1">
+        <p style="font-weight:600;margin-bottom:.4rem">1. Built-in Kerberos authentication</p>
+        <label><input type="radio" name="m1" value="ad"> Active Directory</label>
+        <label><input type="radio" name="m1" value="openldap"> OpenLDAP</label>
+        <label><input type="radio" name="m1" value="both"> Both</label>
+        <div class="quiz-fb" id="m1-fb"></div>
+      </div>
+      <div class="match-question" style="margin-bottom:.7rem;padding:.6rem;background:#fff;border-radius:6px;border:1px solid #cbd5e1">
+        <p style="font-weight:600;margin-bottom:.4rem">2. Implements LDAP v3 protocol</p>
+        <label><input type="radio" name="m2" value="ad"> Active Directory</label>
+        <label><input type="radio" name="m2" value="openldap"> OpenLDAP</label>
+        <label><input type="radio" name="m2" value="both"> Both</label>
+        <div class="quiz-fb" id="m2-fb"></div>
+      </div>
+      <div class="match-question" style="margin-bottom:.7rem;padding:.6rem;background:#fff;border-radius:6px;border:1px solid #cbd5e1">
+        <p style="font-weight:600;margin-bottom:.4rem">3. Group Policy Objects (GPOs) for centralized configuration</p>
+        <label><input type="radio" name="m3" value="ad"> Active Directory</label>
+        <label><input type="radio" name="m3" value="openldap"> OpenLDAP</label>
+        <label><input type="radio" name="m3" value="both"> Both</label>
+        <div class="quiz-fb" id="m3-fb"></div>
+      </div>
+      <div class="match-question" style="margin-bottom:.7rem;padding:.6rem;background:#fff;border-radius:6px;border:1px solid #cbd5e1">
+        <p style="font-weight:600;margin-bottom:.4rem">4. Configuration via LDIF files and <code>cn=config</code></p>
+        <label><input type="radio" name="m4" value="ad"> Active Directory</label>
+        <label><input type="radio" name="m4" value="openldap"> OpenLDAP</label>
+        <label><input type="radio" name="m4" value="both"> Both</label>
+        <div class="quiz-fb" id="m4-fb"></div>
+      </div>
+      <div class="match-question" style="margin-bottom:.7rem;padding:.6rem;background:#fff;border-radius:6px;border:1px solid #cbd5e1">
+        <p style="font-weight:600;margin-bottom:.4rem">5. Open source with no licensing fees</p>
+        <label><input type="radio" name="m5" value="ad"> Active Directory</label>
+        <label><input type="radio" name="m5" value="openldap"> OpenLDAP</label>
+        <label><input type="radio" name="m5" value="both"> Both</label>
+        <div class="quiz-fb" id="m5-fb"></div>
+      </div>
+      <div class="match-question" style="margin-bottom:.7rem;padding:.6rem;background:#fff;border-radius:6px;border:1px solid #cbd5e1">
+        <p style="font-weight:600;margin-bottom:.4rem">6. Multi-master replication support</p>
+        <label><input type="radio" name="m6" value="ad"> Active Directory</label>
+        <label><input type="radio" name="m6" value="openldap"> OpenLDAP</label>
+        <label><input type="radio" name="m6" value="both"> Both</label>
+        <div class="quiz-fb" id="m6-fb"></div>
+      </div>
+    </div>
+    <button class="quiz-btn" onclick="checkMatching()" style="margin-top:.5rem">Check Answers</button>
+    <div id="match-score" style="margin-top:.5rem;font-weight:600;font-size:.95rem"></div>
+  </div>
+
+  <!-- Activity 3: Configuration Walkthrough with Hints -->
+  <div class="activity-box" id="config-activity">
+    <h3>🧩 Activity 3: Fill in the SSSD Configuration</h3>
+    <p>The <code>sssd.conf</code> below has key values replaced with blanks. Think about what each directive should be, then expand the hints to check your answers.</p>
+
+<pre><code>[sssd]
+domains = ________
+config_file_version = ________
+services = ________, ________
+
+[domain/lab.local]
+id_provider = ________
+auth_provider = ________
+ldap_uri = ________
+ldap_search_base = ________</code></pre>
+
+    <details>
+      <summary>Reveal Answers</summary>
+      <div class="detail-body">
+<pre><code>[sssd]
+domains = lab.local
+config_file_version = 2
+services = nss, pam
+
+[domain/lab.local]
+id_provider = ldap
+auth_provider = ldap
+ldap_uri = ldap://10.0.1.10
+ldap_search_base = dc=lab,dc=local</code></pre>
+        <ul>
+          <li><code>domains</code> must match the <code>[domain/…]</code> section name.</li>
+          <li><code>config_file_version</code> is always <code>2</code>.</li>
+          <li><code>services</code> lists <code>nss</code> (identity) and <code>pam</code> (authentication).</li>
+          <li><code>id_provider</code> and <code>auth_provider</code> are both <code>ldap</code> when using OpenLDAP.</li>
+          <li><code>ldap_uri</code> is the server address with the <code>ldap://</code> scheme.</li>
+          <li><code>ldap_search_base</code> is the base DN of your DIT.</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ═══ §10 KNOWLEDGE CHECK ═══ -->
+<section class="section" id="section-10">
+  <h2>§10 – Knowledge Check (Ungraded)</h2>
+  <p>Test your understanding of Module 12.4 concepts. Select the best answer for each question, then click "Check Answer" to see immediate feedback.</p>
+
+  <div class="quiz-section">
+    <h3>Self-Assessment – 5 Questions</h3>
+
+    <!-- Q1 -->
+    <div class="quiz-q" id="q1">
+      <p>Q1. What is the required file permission for <code>/etc/sssd/sssd.conf</code>?</p>
+      <label><input type="radio" name="q1" value="a"> <code>0644</code> (owner read/write, group and others read)</label>
+      <label><input type="radio" name="q1" value="b"> <code>0600</code> (owner read/write only)</label>
+      <label><input type="radio" name="q1" value="c"> <code>0755</code> (owner all, group and others read/execute)</label>
+      <label><input type="radio" name="q1" value="d"> <code>0400</code> (owner read only)</label>
+      <button class="quiz-btn" onclick="checkQuiz('q1','b','Correct! SSSD requires sssd.conf to be 0600 (readable/writable only by root). It will refuse to start if the file is accessible to other users, protecting sensitive LDAP credentials.','Incorrect. SSSD enforces strict permissions: sssd.conf must be 0600 (owner read/write only). Any other permission causes SSSD to refuse to start.')">Check Answer</button>
+      <div class="quiz-fb" id="q1-fb"></div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="quiz-q" id="q2">
+      <p>Q2. In the SSSD/LDAP authentication flow, which component is responsible for resolving a username to a UID number?</p>
+      <label><input type="radio" name="q2" value="a"> PAM (Pluggable Authentication Modules)</label>
+      <label><input type="radio" name="q2" value="b"> NSS (Name Service Switch)</label>
+      <label><input type="radio" name="q2" value="c"> slapd (OpenLDAP server daemon)</label>
+      <label><input type="radio" name="q2" value="d"> SSH daemon</label>
+      <button class="quiz-btn" onclick="checkQuiz('q2','b','Correct! NSS (Name Service Switch) handles identity resolution — mapping usernames to UIDs, GIDs, home directories, and shells. PAM handles credential verification (authentication).','Incorrect. NSS handles identity resolution (username → UID/GID). PAM handles authentication (password verification). slapd is the server, not a client-side component. The SSH daemon is an application that uses PAM/NSS.')">Check Answer</button>
+      <div class="quiz-fb" id="q2-fb"></div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="quiz-q" id="q3">
+      <p>Q3. Which command verifies that LDAP users are visible to the system's name resolution?</p>
+      <label><input type="radio" name="q3" value="a"> <code>ldapsearch -x -b "dc=lab,dc=local"</code></label>
+      <label><input type="radio" name="q3" value="b"> <code>cat /etc/passwd</code></label>
+      <label><input type="radio" name="q3" value="c"> <code>getent passwd</code></label>
+      <label><input type="radio" name="q3" value="d"> <code>slapcat</code></label>
+      <button class="quiz-btn" onclick="checkQuiz('q3','c','Correct! getent passwd queries all configured NSS sources (local files + SSSD/LDAP) and shows combined results. If LDAP users appear, NSS integration is working. ldapsearch queries the server directly but does not test NSS integration on the client.','Incorrect. getent passwd is the correct tool — it queries all NSS sources and confirms LDAP users are visible to the system. ldapsearch tests the LDAP server directly but not client-side NSS integration. cat /etc/passwd only shows local users. slapcat runs on the server, not the client.')">Check Answer</button>
+      <div class="quiz-fb" id="q3-fb"></div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="quiz-q" id="q4">
+      <p>Q4. Which PAM module automatically creates a home directory for an LDAP user on first login?</p>
+      <label><input type="radio" name="q4" value="a"> <code>pam_sss.so</code></label>
+      <label><input type="radio" name="q4" value="b"> <code>pam_unix.so</code></label>
+      <label><input type="radio" name="q4" value="c"> <code>pam_mkhomedir.so</code></label>
+      <label><input type="radio" name="q4" value="d"> <code>pam_ldap.so</code></label>
+      <button class="quiz-btn" onclick="checkQuiz('q4','c','Correct! pam_mkhomedir.so creates the home directory automatically when a user logs in and no home directory exists. It is enabled with pam-auth-update --enable mkhomedir.','Incorrect. pam_mkhomedir.so is the module that creates home directories on first login. pam_sss.so handles SSSD authentication. pam_unix.so handles local authentication. pam_ldap.so is the legacy direct-LDAP PAM module.')">Check Answer</button>
+      <div class="quiz-fb" id="q4-fb"></div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="quiz-q" id="q5">
+      <p>Q5. Which of the following is a key difference between Active Directory and OpenLDAP?</p>
+      <label><input type="radio" name="q5" value="a"> Only Active Directory supports the LDAP v3 protocol.</label>
+      <label><input type="radio" name="q5" value="b"> OpenLDAP includes built-in Group Policy Objects (GPOs) for centralized configuration management.</label>
+      <label><input type="radio" name="q5" value="c"> Active Directory integrates Kerberos authentication natively, while OpenLDAP requires a separate KDC for Kerberos.</label>
+      <label><input type="radio" name="q5" value="d"> OpenLDAP requires Windows Server licensing.</label>
+      <button class="quiz-btn" onclick="checkQuiz('q5','c','Correct! Active Directory has built-in Kerberos v5 authentication tightly integrated with LDAP. OpenLDAP can work with Kerberos, but it requires setting up a separate Key Distribution Center (MIT KDC or Heimdal). Both implement LDAP v3; GPOs are AD-only; OpenLDAP is open source with no licensing fees.','Incorrect. The correct answer is C. Both AD and OpenLDAP implement LDAP v3 (A is wrong). GPOs are an AD-only feature (B is wrong). OpenLDAP is free and open source (D is wrong). AD natively integrates Kerberos; OpenLDAP requires a separate KDC setup.')">Check Answer</button>
+      <div class="quiz-fb" id="q5-fb"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ READINGS & RESOURCES ═══ -->
+<section class="section" id="readings">
+  <h2>Readings &amp; Resources</h2>
+  <p>The following resources support this module's topics. Access them through the links provided on the Canvas course page.</p>
+  <table class="info-table">
+    <thead><tr><th>Resource</th><th>Focus</th><th>Est. Time</th></tr></thead>
+    <tbody>
+      <tr><td>"SSSD and LDAP Authentication" – Red Hat Documentation</td><td>SSSD configuration for LDAP client integration</td><td>~15 min</td></tr>
+      <tr><td>"Active Directory vs. OpenLDAP" – comparison article</td><td>Side-by-side feature and use-case comparison</td><td>~10 min</td></tr>
+      <tr><td>Professor Messer – "Authentication Protocols" video segment (YouTube)</td><td>Authentication concepts including LDAP and Kerberos</td><td>~10 min</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ CONNECTIONS ═══ -->
+<div class="connections">
+  <h2>Connections to Graded Work</h2>
+  <ul>
+    <li><strong>Quiz 12</strong> (14 pts, due Sunday) – SSSD/NSS/PAM concepts, client authentication testing commands, and AD vs. OpenLDAP comparison questions draw directly from this module.</li>
+    <li><strong>Lab 12</strong> (30 pts, Extra Credit) – Part D requires working client authentication against your OpenLDAP server. This module provides the complete procedure.</li>
+    <li><strong>Project 4</strong> (Week 17) – Part B requires directory services verification; Part E reflection may address AD vs. OpenLDAP tradeoffs. The concepts in §7 and §8 directly support that analysis.</li>
+  </ul>
+</div>
+
+<!-- ═══ WHAT'S NEXT ═══ -->
+<section class="section" id="next">
+  <h2>What&rsquo;s Next</h2>
+  <p>In <strong>Module 12.5 – Splunk Enterprise Server Installation</strong>, you will install Splunk Enterprise on a Linux VM, access the web UI, and enable the receiving port (9997) for Universal Forwarders. This prepares the centralized log monitoring infrastructure needed for Project 3 (assigned Week 13) and connects the security monitoring thread that runs through the rest of the course.</p>
+  <p>With Modules 12.1–12.4 complete, you now have end-to-end LDAP skills: from protocol theory, through server installation and directory population, to client authentication and a comparative understanding of the two major directory platforms. These skills carry directly into Projects 3 and 4.</p>
+</section>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="page-footer" role="contentinfo">
+  CSC 152 – Network Operating Systems and Administration · Mendocino College · Spring 2026<br>
+  Module 12.4 – LDAP Client Authentication &amp; AD vs. OpenLDAP Comparison
+</footer>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+/* ── Knowledge Check (§10) ── */
+function checkQuiz(qId, correctVal, correctMsg, incorrectMsg) {
+  var radios = document.getElementsByName(qId);
+  var selected = null;
+  for (var i = 0; i < radios.length; i++) {
+    if (radios[i].checked) { selected = radios[i].value; break; }
+  }
+  var fb = document.getElementById(qId + '-fb');
+  if (!selected) {
+    fb.className = 'quiz-fb incorrect';
+    fb.textContent = 'Please select an answer before checking.';
+    fb.style.display = 'block';
+    return;
+  }
+  if (selected === correctVal) {
+    fb.className = 'quiz-fb correct';
+    fb.textContent = correctMsg;
+  } else {
+    fb.className = 'quiz-fb incorrect';
+    fb.textContent = incorrectMsg;
+  }
+  fb.style.display = 'block';
+}
+
+/* ── Troubleshooting Scenario (§9 Activity 1) ── */
+function checkScenario(btn, id) {
+  var parent = btn.parentElement;
+  var buttons = parent.querySelectorAll('.scenario-opt');
+  var fb = document.getElementById(id + '-fb');
+  // Reset all
+  buttons.forEach(function(b) { b.classList.remove('chosen-right','chosen-wrong'); b.disabled = true; });
+  var isCorrect = btn.getAttribute('data-correct') === 'true';
+  if (isCorrect) {
+    btn.classList.add('chosen-right');
+    fb.className = 'quiz-fb correct';
+    fb.innerHTML = '<strong>Correct!</strong> Testing LDAP connectivity from the client is the right next step. Since SSSD is running but not returning users, the issue is likely between the client and the LDAP server — either a network/firewall problem or an incorrect <code>ldap_uri</code>/<code>ldap_search_base</code> in sssd.conf. An <code>ldapsearch</code> from the client will quickly reveal whether the client can reach and query the server.';
+  } else {
+    btn.classList.add('chosen-wrong');
+    // Highlight correct
+    buttons.forEach(function(b) { if (b.getAttribute('data-correct') === 'true') b.classList.add('chosen-right'); });
+    fb.className = 'quiz-fb incorrect';
+    fb.innerHTML = '<strong>Not quite.</strong> The correct answer is C. Since SSSD is running but no LDAP users appear, the problem is likely connectivity between the client and the LDAP server. Running <code>ldapsearch</code> from the client tests this directly. Option A (mkhomedir) only affects home directory creation, not user resolution. Option B (restart slapd) might help if the server is down, but you should verify connectivity from the client side first. Option D (recreate entries) is destructive and premature.';
+  }
+  fb.style.display = 'block';
+}
+
+/* ── AD vs. OpenLDAP Matching (§9 Activity 2) ── */
+function checkMatching() {
+  var answers = {m1:'ad', m2:'both', m3:'ad', m4:'openldap', m5:'openldap', m6:'both'};
+  var explanations = {
+    m1: 'Active Directory has Kerberos built in. OpenLDAP can use Kerberos but requires a separate KDC.',
+    m2: 'Both Active Directory and OpenLDAP implement the LDAP v3 protocol (RFC 4511).',
+    m3: 'Group Policy Objects are an Active Directory–only feature. OpenLDAP has no equivalent built-in mechanism.',
+    m4: 'OpenLDAP uses cn=config (OLC) and LDIF files for configuration. AD uses GUI tools and PowerShell.',
+    m5: 'OpenLDAP is open source with no licensing fees. Active Directory requires Windows Server licensing.',
+    m6: 'Both support multi-master replication. AD has it built in; OpenLDAP uses syncrepl in multi-master mode.'
+  };
+  var score = 0;
+  var total = Object.keys(answers).length;
+  for (var key in answers) {
+    var radios = document.getElementsByName(key);
+    var selected = null;
+    for (var i = 0; i < radios.length; i++) {
+      if (radios[i].checked) { selected = radios[i].value; break; }
+    }
+    var fb = document.getElementById(key + '-fb');
+    if (selected === answers[key]) {
+      fb.className = 'quiz-fb correct';
+      fb.innerHTML = '<strong>Correct!</strong> ' + explanations[key];
+      score++;
+    } else if (selected === null) {
+      fb.className = 'quiz-fb incorrect';
+      fb.textContent = 'No answer selected. The correct answer is: ' + answers[key].replace('ad','Active Directory').replace('openldap','OpenLDAP').replace('both','Both') + '. ' + explanations[key];
+    } else {
+      fb.className = 'quiz-fb incorrect';
+      fb.innerHTML = '<strong>Incorrect.</strong> The correct answer is: ' + answers[key].replace('ad','Active Directory').replace('openldap','OpenLDAP').replace('both','Both') + '. ' + explanations[key];
+    }
+    fb.style.display = 'block';
+  }
+  document.getElementById('match-score').textContent = 'Score: ' + score + ' / ' + total;
+}
+</script>
+</body>
+</html>
