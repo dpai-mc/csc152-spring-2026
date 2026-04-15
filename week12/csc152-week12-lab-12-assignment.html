@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 12 – OpenLDAP Configuration &amp; Splunk Installation (Extra Credit)</title>
+<style>
+:root{
+--primary:#1a5276;--primary-light:#2980b9;--accent:#e67e22;
+--bg:#ffffff;--bg-alt:#f4f6f8;--text:#212529;--text-light:#555;
+--border:#d5d8dc;--success:#27ae60;--info:#2980b9;--warning:#e67e22;
+--code-bg:#1e1e1e;--code-text:#d4d4d4;--radius:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:var(--text);background:var(--bg);line-height:1.65;padding-top:56px;}
+/* NAV */
+nav.top-nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--primary);display:flex;flex-wrap:wrap;align-items:center;padding:6px 16px;gap:4px 12px;box-shadow:0 2px 6px rgba(0,0,0,.25);}
+nav.top-nav a{color:#fff;text-decoration:none;font-size:.82rem;padding:4px 8px;border-radius:var(--radius);white-space:nowrap;}
+nav.top-nav a:hover,nav.top-nav a:focus{background:rgba(255,255,255,.2);outline:2px solid #fff;outline-offset:1px;}
+nav.top-nav .nav-title{font-weight:700;font-size:.92rem;margin-right:8px;}
+/* LAYOUT */
+.container{max-width:960px;margin:0 auto;padding:20px 18px 60px;}
+h1{font-size:1.65rem;color:var(--primary);border-bottom:3px solid var(--accent);padding-bottom:8px;margin-bottom:4px;}
+.subtitle{font-size:.95rem;color:var(--text-light);margin-bottom:20px;}
+h2{font-size:1.35rem;color:var(--primary);margin:32px 0 8px;padding:8px 12px;background:var(--bg-alt);border-left:4px solid var(--accent);border-radius:var(--radius);}
+h3{font-size:1.1rem;color:var(--primary-light);margin:20px 0 6px;}
+h4{font-size:1rem;color:var(--text);margin:14px 0 4px;}
+p,li{font-size:.95rem;}
+ul,ol{padding-left:24px;margin:6px 0 12px;}
+li{margin-bottom:4px;}
+/* BOXES */
+.info-box,.warning-box,.success-box,.scenario-box{border-radius:var(--radius);padding:14px 16px;margin:12px 0;font-size:.93rem;}
+.info-box{background:#eaf2f8;border-left:4px solid var(--info);}
+.warning-box{background:#fef5e7;border-left:4px solid var(--warning);}
+.success-box{background:#eafaf1;border-left:4px solid var(--success);}
+.scenario-box{background:#f5eef8;border-left:4px solid #8e44ad;}
+.box-label{font-weight:700;margin-bottom:4px;}
+/* CODE */
+pre{background:var(--code-bg);color:var(--code-text);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;margin:10px 0;font-size:.88rem;line-height:1.55;}
+pre code{font-family:'Cascadia Code','Fira Code','Courier New',monospace;background:none;padding:0;}
+code{font-family:'Cascadia Code','Fira Code','Courier New',monospace;background:#ebedef;padding:1px 5px;border-radius:3px;font-size:.88rem;}
+/* TEXTAREA */
+.response-group{margin:12px 0 18px;}
+.response-group label{display:block;font-weight:600;font-size:.92rem;margin-bottom:4px;color:var(--primary);}
+textarea{width:100%;min-height:100px;border:2px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-family:'Cascadia Code','Fira Code','Courier New',monospace;font-size:.86rem;resize:vertical;background:#fafbfc;transition:border-color .2s;}
+textarea:focus{border-color:var(--primary-light);outline:none;box-shadow:0 0 0 3px rgba(41,128,185,.2);}
+/* DETAILS */
+details{margin:10px 0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+details summary{background:var(--bg-alt);padding:10px 14px;cursor:pointer;font-weight:600;font-size:.93rem;color:var(--primary);list-style:none;display:flex;align-items:center;gap:8px;}
+details summary::before{content:'▶';font-size:.7rem;transition:transform .2s;}
+details[open] summary::before{transform:rotate(90deg);}
+details summary:focus{outline:2px solid var(--primary-light);outline-offset:-2px;}
+details .detail-body{padding:12px 16px;}
+/* TABLE */
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9rem;}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;}
+th{background:var(--primary);color:#fff;font-weight:600;}
+tr:nth-child(even){background:var(--bg-alt);}
+/* CHECKLIST */
+.checklist{list-style:none;padding-left:0;}
+.checklist li{padding:6px 0 6px 28px;position:relative;font-size:.93rem;}
+.checklist li::before{content:'☐';position:absolute;left:0;font-size:1.1rem;color:var(--primary-light);}
+/* OBJECTIVES */
+.objectives{background:var(--bg-alt);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin:10px 0 16px;}
+.objectives h4{margin-top:0;color:var(--primary);}
+.objectives ul{margin-bottom:0;}
+/* STEP */
+.step{margin:14px 0;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);}
+.step-num{display:inline-block;background:var(--primary);color:#fff;font-weight:700;font-size:.82rem;padding:2px 9px;border-radius:50%;margin-right:6px;}
+/* BUTTON */
+.btn-pdf{display:inline-block;padding:12px 28px;background:var(--primary);color:#fff;font-size:.95rem;font-weight:700;border:none;border-radius:var(--radius);cursor:pointer;margin:10px 6px 10px 0;text-decoration:none;transition:background .2s;}
+.btn-pdf:hover,.btn-pdf:focus{background:var(--primary-light);outline:2px solid var(--accent);outline-offset:2px;}
+/* EC BADGE */
+.ec-badge{display:inline-block;background:var(--accent);color:#fff;font-weight:700;font-size:.82rem;padding:3px 10px;border-radius:12px;vertical-align:middle;margin-left:8px;}
+/* PRINT */
+@media print{
+nav.top-nav,.btn-pdf{display:none!important;}
+body{padding-top:0;}
+.container{max-width:100%;}
+details{border:none;}
+details[open] .detail-body,details .detail-body{display:block!important;}
+textarea{border:1px solid #999;min-height:60px;}
+pre{white-space:pre-wrap;word-wrap:break-word;}
+}
+@media(max-width:600px){
+.container{padding:12px 10px 40px;}
+h1{font-size:1.3rem;}
+h2{font-size:1.15rem;}
+pre{font-size:.8rem;padding:10px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NAVIGATION ===== -->
+<nav class="top-nav" role="navigation" aria-label="Lab sections navigation">
+<span class="nav-title">Lab 12</span>
+<a href="#part-a">Part A: Install</a>
+<a href="#part-b">Part B: Populate</a>
+<a href="#part-c">Part C: Query</a>
+<a href="#part-d">Part D: Client Auth</a>
+<a href="#part-e">Part E: Splunk</a>
+<a href="#deliverables">Deliverables</a>
+</nav>
+
+<div class="container" id="lab-content">
+
+<!-- HEADER -->
+<h1>Lab 12 – OpenLDAP Configuration &amp; Splunk Installation <span class="ec-badge">Extra Credit – 30 pts</span></h1>
+<p class="subtitle">CSC 152 – Network Operating Systems and Administration &nbsp;|&nbsp; Week 12 &nbsp;|&nbsp; Due: Sunday, April 12, 2026</p>
+
+<div class="info-box">
+<div class="box-label">About This Lab</div>
+<p>This is an <strong>optional extra-credit lab</strong> worth <strong>30 points</strong>. You will install and configure OpenLDAP on an Ubuntu Server VM, populate a directory with LDIF files, practice querying and modifying entries, configure LDAP client authentication on a second VM, and install Splunk Enterprise. Complete all parts and submit a single PDF to Canvas.</p>
+</div>
+
+<div class="warning-box">
+<div class="box-label">Prerequisites</div>
+<ul style="margin-bottom:0;">
+<li>A working Ubuntu Server VM (from previous labs) to serve as your <strong>LDAP server</strong>.</li>
+<li>A second Ubuntu VM (Desktop or Server) to serve as the <strong>LDAP client</strong>.</li>
+<li>Both VMs should be on the same virtual network and able to reach each other.</li>
+<li>A Splunk Free account (sign up at splunk.com if you have not already).</li>
+<li>Your pfSense firewall VM running and properly configured.</li>
+</ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- PART A -->
+<!-- ============================================================ -->
+<h2 id="part-a">Part A – OpenLDAP Installation &amp; Configuration (6 pts)</h2>
+
+<div class="objectives">
+<h4>Objectives</h4>
+<ul>
+<li>Install the OpenLDAP server (<code>slapd</code>) and LDAP utilities on Ubuntu Server.</li>
+<li>Reconfigure <code>slapd</code> to set a custom base DN, organization name, and admin password.</li>
+<li>Verify the LDAP service is running and the base DIT is accessible.</li>
+</ul>
+</div>
+
+<div class="scenario-box">
+<div class="box-label">Scenario</div>
+<p>Your organization, <strong>Example Corp</strong> (domain: <code>example.com</code>), needs a centralized directory service for user and group management. You have been tasked with deploying OpenLDAP on an Ubuntu Server and verifying the initial Directory Information Tree (DIT).</p>
+</div>
+
+<!-- Step 1 -->
+<div class="step">
+<h3><span class="step-num">1</span> Update Packages &amp; Install OpenLDAP</h3>
+<p>Begin by updating your package lists and installing the OpenLDAP server daemon and client utilities:</p>
+<pre><code>sudo apt update &amp;&amp; sudo apt upgrade -y
+sudo apt install -y slapd ldap-utils</code></pre>
+<p>During installation you will be prompted to set an administrator password. Choose a strong password and record it securely — you will need it throughout this lab.</p>
+</div>
+
+<div class="response-group">
+<label for="a1-cmd">A1 — Commands run and any output or messages observed during installation:</label>
+<textarea id="a1-cmd" placeholder="Paste your terminal output here…"></textarea>
+</div>
+
+<!-- Step 2 -->
+<div class="step">
+<h3><span class="step-num">2</span> Reconfigure slapd</h3>
+<p>The default installation uses a minimal configuration. Reconfigure <code>slapd</code> to set proper values:</p>
+<pre><code>sudo dpkg-reconfigure slapd</code></pre>
+<p>When prompted, supply the following values:</p>
+<table>
+<thead><tr><th>Prompt</th><th>Value to Enter</th></tr></thead>
+<tbody>
+<tr><td>Omit OpenLDAP server configuration?</td><td><strong>No</strong></td></tr>
+<tr><td>DNS domain name</td><td><code>example.com</code></td></tr>
+<tr><td>Organization name</td><td><code>Example Corp</code></td></tr>
+<tr><td>Administrator password</td><td><em>(your chosen password)</em></td></tr>
+<tr><td>Database backend</td><td><strong>MDB</strong></td></tr>
+<tr><td>Remove database when slapd is purged?</td><td><strong>No</strong></td></tr>
+<tr><td>Move old database?</td><td><strong>Yes</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="response-group">
+<label for="a2-cmd">A2 — Record the prompts and your responses during reconfiguration:</label>
+<textarea id="a2-cmd" placeholder="Describe each prompt and the value you selected…"></textarea>
+</div>
+
+<!-- Step 3 -->
+<div class="step">
+<h3><span class="step-num">3</span> Verify the Service</h3>
+<p>Confirm that <code>slapd</code> is running and listening on port 389:</p>
+<pre><code>sudo systemctl status slapd
+sudo ss -tlnp | grep 389</code></pre>
+<p>Then verify the base DIT was created correctly:</p>
+<pre><code>ldapsearch -x -LLL -H ldap:/// -b "dc=example,dc=com" dn</code></pre>
+<p>You should see at least the base entry <code>dc=example,dc=com</code> and the admin entry.</p>
+</div>
+
+<div class="response-group">
+<label for="a3-cmd">A3 — Paste the output of systemctl status, ss, and ldapsearch commands:</label>
+<textarea id="a3-cmd" placeholder="Paste your terminal output here…"></textarea>
+</div>
+
+<div class="response-group">
+<label for="a-issues">A — Issues encountered and how you resolved them (if any):</label>
+<textarea id="a-issues" placeholder="Describe any issues or type 'None'…" style="min-height:70px;"></textarea>
+</div>
+
+<details>
+<summary>Hints &amp; Tips – Part A</summary>
+<div class="detail-body">
+<ul>
+<li>If you need to re-run the reconfiguration at any time, simply use <code>sudo dpkg-reconfigure slapd</code> again.</li>
+<li>If <code>ldapsearch</code> returns <em>No such object (32)</em>, double-check your base DN spelling.</li>
+<li>Use <code>slapcat</code> as root to dump the raw database and verify entries if <code>ldapsearch</code> gives unexpected results.</li>
+</ul>
+</div>
+</details>
+
+<!-- ============================================================ -->
+<!-- PART B -->
+<!-- ============================================================ -->
+<h2 id="part-b">Part B – Populating the LDAP Directory (8 pts)</h2>
+
+<div class="objectives">
+<h4>Objectives</h4>
+<ul>
+<li>Design a directory structure with Organizational Units (OUs) for users and groups.</li>
+<li>Write LDIF files that define OUs, user entries (<code>posixAccount</code> + <code>inetOrgPerson</code>), and group entries (<code>posixGroup</code>).</li>
+<li>Load the LDIF files into the directory using <code>ldapadd</code>.</li>
+</ul>
+</div>
+
+<!-- Step 1 -->
+<div class="step">
+<h3><span class="step-num">1</span> Plan Your Directory Structure</h3>
+<p>Create the following DIT hierarchy under <code>dc=example,dc=com</code>:</p>
+<pre><code>dc=example,dc=com
+├── ou=People
+│   ├── uid=jdoe    (John Doe)
+│   ├── uid=asmith  (Alice Smith)
+│   └── uid=bwhite  (Bob White)
+└── ou=Groups
+    ├── cn=developers
+    └── cn=sysadmins</code></pre>
+</div>
+
+<!-- Step 2 -->
+<div class="step">
+<h3><span class="step-num">2</span> Create the OUs LDIF File</h3>
+<p>Create a file named <code>base-ous.ldif</code> with the following content:</p>
+<pre><code>dn: ou=People,dc=example,dc=com
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=example,dc=com
+objectClass: organizationalUnit
+ou: Groups</code></pre>
+<p>Load it into the directory:</p>
+<pre><code>ldapadd -x -D "cn=admin,dc=example,dc=com" -W -f base-ous.ldif</code></pre>
+</div>
+
+<div class="response-group">
+<label for="b2-ldif">B2 — Paste your base-ous.ldif content:</label>
+<textarea id="b2-ldif" placeholder="Paste LDIF content here…"></textarea>
+</div>
+
+<div class="response-group">
+<label for="b2-output">B2 — Paste the ldapadd output:</label>
+<textarea id="b2-output" placeholder="Paste terminal output here…"></textarea>
+</div>
+
+<!-- Step 3 -->
+<div class="step">
+<h3><span class="step-num">3</span> Create the Users LDIF File</h3>
+<p>Create a file named <code>users.ldif</code>. Each user entry must include the <code>inetOrgPerson</code> and <code>posixAccount</code> object classes. Use UIDs starting at 10001. Example for the first user:</p>
+<pre><code>dn: uid=jdoe,ou=People,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: jdoe
+sn: Doe
+givenName: John
+cn: John Doe
+displayName: John Doe
+uidNumber: 10001
+gidNumber: 10001
+userPassword: {SSHA}placeholder
+gecos: John Doe
+loginShell: /bin/bash
+homeDirectory: /home/jdoe</code></pre>
+<p>Create similar entries for <code>asmith</code> (UID 10002) and <code>bwhite</code> (UID 10003). You can generate SSHA passwords with:</p>
+<pre><code>slappasswd -s yourpassword</code></pre>
+<p>Then replace <code>{SSHA}placeholder</code> with the generated hash. Load the file:</p>
+<pre><code>ldapadd -x -D "cn=admin,dc=example,dc=com" -W -f users.ldif</code></pre>
+</div>
+
+<div class="response-group">
+<label for="b3-ldif">B3 — Paste your complete users.ldif content (all three users):</label>
+<textarea id="b3-ldif" placeholder="Paste LDIF content here…" style="min-height:200px;"></textarea>
+</div>
+
+<div class="response-group">
+<label for="b3-output">B3 — Paste the ldapadd output:</label>
+<textarea id="b3-output" placeholder="Paste terminal output here…"></textarea>
+</div>
+
+<!-- Step 4 -->
+<div class="step">
+<h3><span class="step-num">4</span> Create the Groups LDIF File</h3>
+<p>Create a file named <code>groups.ldif</code>:</p>
+<pre><code>dn: cn=developers,ou=Groups,dc=example,dc=com
+objectClass: posixGroup
+cn: developers
+gidNumber: 20001
+memberUid: jdoe
+memberUid: asmith
+
+dn: cn=sysadmins,ou=Groups,dc=example,dc=com
+objectClass: posixGroup
+cn: sysadmins
+gidNumber: 20002
+memberUid: bwhite</code></pre>
+<p>Load the file:</p>
+<pre><code>ldapadd -x -D "cn=admin,dc=example,dc=com" -W -f groups.ldif</code></pre>
+</div>
+
+<div class="response-group">
+<label for="b4-ldif">B4 — Paste your groups.ldif content:</label>
+<textarea id="b4-ldif" placeholder="Paste LDIF content here…"></textarea>
+</div>
+
+<div class="response-group">
+<label for="b4-output">B4 — Paste the ldapadd output:</label>
+<textarea id="b4-output" placeholder="Paste terminal output here…"></textarea>
+</div>
+
+<details>
+<summary>Hints &amp; Tips – Part B</summary>
+<div class="detail-body">
+<ul>
+<li>LDIF files are sensitive to blank lines — use exactly <strong>one</strong> blank line between entries and <strong>no</strong> trailing blank lines.</li>
+<li>If you receive <em>Already exists (68)</em>, the entry was loaded previously. Use <code>ldapdelete</code> to remove it first, or skip re-adding.</li>
+<li>The <code>shadowAccount</code> object class is needed for password aging attributes used by PAM/SSSD.</li>
+<li>Make sure <code>uidNumber</code> and <code>gidNumber</code> values do not conflict with local system accounts (stay above 10000).</li>
+</ul>
+</div>
+</details>
+
+<!-- ============================================================ -->
+<!-- PART C -->
+<!-- ============================================================ -->
+<h2 id="part-c">Part C – Querying &amp; Modifying the Directory (6 pts)</h2>
+
+<div class="objectives">
+<h4>Objectives</h4>
+<ul>
+<li>Construct and execute at least five distinct <code>ldapsearch</code> queries against the directory.</li>
+<li>Modify an existing user attribute using <code>ldapmodify</code>.</li>
+<li>Delete a test entry using <code>ldapdelete</code>.</li>
+</ul>
+</div>
+
+<!-- Query 1 -->
+<div class="step">
+<h3><span class="step-num">1</span> Query – List All Users</h3>
+<p>Return all entries under <code>ou=People</code>:</p>
+<pre><code>ldapsearch -x -LLL -H ldap:/// -b "ou=People,dc=example,dc=com" "(objectClass=posixAccount)" uid cn uidNumber</code></pre>
+</div>
+
+<div class="response-group">
+<label for="c1-output">C1 — Command and output:</label>
+<textarea id="c1-output" placeholder="Paste command and output here…"></textarea>
+</div>
+
+<!-- Query 2 -->
+<div class="step">
+<h3><span class="step-num">2</span> Query – Specific User by uid</h3>
+<p>Find the entry for <code>jdoe</code>:</p>
+<pre><code>ldapsearch -x -LLL -H ldap:/// -b "dc=example,dc=com" "(uid=jdoe)"</code></pre>
+</div>
+
+<div class="response-group">
+<label for="c2-output">C2 — Command and output:</label>
+<textarea id="c2-output" placeholder="Paste command and output here…"></textarea>
+</div>
+
+<!-- Query 3 -->
+<div class="step">
+<h3><span class="step-num">3</span> Query – List All Groups</h3>
+<p>Return all <code>posixGroup</code> entries:</p>
+<pre><code>ldapsearch -x -LLL -H ldap:/// -b "ou=Groups,dc=example,dc=com" "(objectClass=posixGroup)" cn gidNumber memberUid</code></pre>
+</div>
+
+<div class="response-group">
+<label for="c3-output">C3 — Command and output:</label>
+<textarea id="c3-output" placeholder="Paste command and output here…"></textarea>
+</div>
+
+<!-- Query 4 -->
+<div class="step">
+<h3><span class="step-num">4</span> Query – Compound Filter</h3>
+<p>Find all users whose <code>uidNumber</code> is greater than or equal to 10002:</p>
+<pre><code>ldapsearch -x -LLL -H ldap:/// -b "ou=People,dc=example,dc=com" "(&amp;(objectClass=posixAccount)(uidNumber>=10002))" uid cn</code></pre>
+</div>
+
+<div class="response-group">
+<label for="c4-output">C4 — Command and output:</label>
+<textarea id="c4-output" placeholder="Paste command and output here…"></textarea>
+</div>
+
+<!-- Query 5 -->
+<div class="step">
+<h3><span class="step-num">5</span> Query – Your Custom Query</h3>
+<p>Design your own <code>ldapsearch</code> query. Examples: search by <code>sn</code>, search for users whose login shell is <code>/bin/bash</code>, or search for groups that contain a specific <code>memberUid</code>. Document what you are searching for and why.</p>
+</div>
+
+<div class="response-group">
+<label for="c5-desc">C5 — Describe what your custom query searches for:</label>
+<textarea id="c5-desc" placeholder="Explain the purpose of your query…" style="min-height:60px;"></textarea>
+</div>
+
+<div class="response-group">
+<label for="c5-output">C5 — Command and output:</label>
+<textarea id="c5-output" placeholder="Paste command and output here…"></textarea>
+</div>
+
+<!-- Modify -->
+<div class="step">
+<h3><span class="step-num">6</span> Modify a User Attribute</h3>
+<p>Change the <code>loginShell</code> for user <code>asmith</code> from <code>/bin/bash</code> to <code>/bin/zsh</code>. Create a file named <code>modify-shell.ldif</code>:</p>
+<pre><code>dn: uid=asmith,ou=People,dc=example,dc=com
+changetype: modify
+replace: loginShell
+loginShell: /bin/zsh</code></pre>
+<p>Apply the modification:</p>
+<pre><code>ldapmodify -x -D "cn=admin,dc=example,dc=com" -W -f modify-shell.ldif</code></pre>
+<p>Verify the change with an <code>ldapsearch</code> for <code>asmith</code>.</p>
+</div>
+
+<div class="response-group">
+<label for="c6-output">C6 — ldapmodify command, output, and verification ldapsearch output:</label>
+<textarea id="c6-output" placeholder="Paste commands and output here…"></textarea>
+</div>
+
+<!-- Delete -->
+<div class="step">
+<h3><span class="step-num">7</span> Delete a Test Entry</h3>
+<p>Delete the user <code>bwhite</code> (you will re-add this user later if needed for Part D testing):</p>
+<pre><code>ldapdelete -x -D "cn=admin,dc=example,dc=com" -W "uid=bwhite,ou=People,dc=example,dc=com"</code></pre>
+<p>Verify the deletion by searching for <code>bwhite</code>:</p>
+<pre><code>ldapsearch -x -LLL -H ldap:/// -b "dc=example,dc=com" "(uid=bwhite)"</code></pre>
+</div>
+
+<div class="response-group">
+<label for="c7-output">C7 — ldapdelete command, output, and verification search output:</label>
+<textarea id="c7-output" placeholder="Paste commands and output here…"></textarea>
+</div>
+
+<div class="info-box">
+<div class="box-label">Re-add bwhite</div>
+<p>If you need <code>bwhite</code> for Part D testing, re-add the entry using <code>ldapadd</code> with the original LDIF or a new file containing just that user's entry.</p>
+</div>
+
+<details>
+<summary>Hints &amp; Tips – Part C</summary>
+<div class="detail-body">
+<ul>
+<li>The <code>-LLL</code> flag suppresses LDIF version info and comments for cleaner output.</li>
+<li>LDAP filters use prefix notation: <code>(&amp;(filter1)(filter2))</code> for AND, <code>(|(filter1)(filter2))</code> for OR.</li>
+<li>If a search returns nothing, check your base DN and filter syntax carefully.</li>
+<li>Use <code>-D</code> and <code>-W</code> flags when you need authenticated (write) access; anonymous reads work for search if your ACLs allow it.</li>
+</ul>
+</div>
+</details>
+
+<!-- ============================================================ -->
+<!-- PART D -->
+<!-- ============================================================ -->
+<h2 id="part-d">Part D – LDAP Client Authentication (6 pts)</h2>
+
+<div class="objectives">
+<h4>Objectives</h4>
+<ul>
+<li>Install and configure SSSD on a second Ubuntu VM to authenticate against the OpenLDAP server.</li>
+<li>Verify that LDAP users are visible via <code>getent</code> and <code>id</code>.</li>
+<li>Test SSH login as an LDAP user and confirm automatic home directory creation with <code>pam_mkhomedir</code>.</li>
+</ul>
+</div>
+
+<div class="warning-box">
+<div class="box-label">Before You Begin</div>
+<p>Ensure your LDAP server VM is reachable from the client VM. Test with <code>ping</code> and <code>ldapsearch</code> from the client, pointing at the server's IP address. Make sure user <code>bwhite</code> exists in the directory (re-add if you deleted it in Part C).</p>
+</div>
+
+<!-- Step 1 -->
+<div class="step">
+<h3><span class="step-num">1</span> Install SSSD and Required Packages on the Client VM</h3>
+<pre><code>sudo apt update
+sudo apt install -y sssd sssd-ldap ldap-utils</code></pre>
+</div>
+
+<!-- Step 2 -->
+<div class="step">
+<h3><span class="step-num">2</span> Configure SSSD</h3>
+<p>Create or edit <code>/etc/sssd/sssd.conf</code> with the following content (replace <code>SERVER_IP</code> with your LDAP server's actual IP address):</p>
+<pre><code>[sssd]
+services = nss, pam
+domains = example.com
+
+[domain/example.com]
+id_provider = ldap
+auth_provider = ldap
+ldap_uri = ldap://SERVER_IP
+ldap_search_base = dc=example,dc=com
+ldap_default_bind_dn = cn=admin,dc=example,dc=com
+ldap_default_authtok = your_admin_password
+ldap_id_use_start_tls = false
+cache_credentials = true
+enumerate = true</code></pre>
+<p>Set proper permissions and restart SSSD:</p>
+<pre><code>sudo chmod 600 /etc/sssd/sssd.conf
+sudo chown root:root /etc/sssd/sssd.conf
+sudo systemctl restart sssd
+sudo systemctl enable sssd</code></pre>
+</div>
+
+<div class="response-group">
+<label for="d2-conf">D2 — Paste your complete sssd.conf content (redact the password if desired):</label>
+<textarea id="d2-conf" placeholder="Paste sssd.conf content here…" style="min-height:160px;"></textarea>
+</div>
+
+<!-- Step 3 -->
+<div class="step">
+<h3><span class="step-num">3</span> Enable pam_mkhomedir</h3>
+<p>This ensures a home directory is automatically created on first login for LDAP users:</p>
+<pre><code>sudo pam-auth-update --enable mkhomedir</code></pre>
+</div>
+
+<!-- Step 4 -->
+<div class="step">
+<h3><span class="step-num">4</span> Test – getent and id</h3>
+<p>Verify LDAP users are visible to the system's name service:</p>
+<pre><code>getent passwd jdoe
+getent passwd asmith
+id jdoe
+id asmith</code></pre>
+<p>You should see LDAP-sourced entries with the <code>uidNumber</code> and <code>gidNumber</code> you configured.</p>
+</div>
+
+<div class="response-group">
+<label for="d4-output">D4 — Paste the output of getent and id commands:</label>
+<textarea id="d4-output" placeholder="Paste terminal output here…"></textarea>
+</div>
+
+<!-- Step 5 -->
+<div class="step">
+<h3><span class="step-num">5</span> Test – SSH Login</h3>
+<p>From the client VM (or from another machine that can reach the client), attempt to SSH in as an LDAP user:</p>
+<pre><code>ssh jdoe@CLIENT_IP</code></pre>
+<p>After logging in, verify the home directory was created and check the user context:</p>
+<pre><code>pwd
+whoami
+id</code></pre>
+</div>
+
+<div class="response-group">
+<label for="d5-output">D5 — Paste the SSH login session output (connection, home directory, whoami, id):</label>
+<textarea id="d5-output" placeholder="Paste terminal output here…"></textarea>
+</div>
+
+<div class="response-group">
+<label for="d-issues">D — Issues encountered and how you resolved them (if any):</label>
+<textarea id="d-issues" placeholder="Describe any issues or type 'None'…" style="min-height:70px;"></textarea>
+</div>
+
+<details>
+<summary>Hints &amp; Tips – Part D</summary>
+<div class="detail-body">
+<ul>
+<li>If <code>getent passwd jdoe</code> returns nothing, check: Is SSSD running? (<code>sudo systemctl status sssd</code>) Are there errors in <code>/var/log/sssd/sssd_example.com.log</code>?</li>
+<li>Common issues: wrong <code>ldap_uri</code>, typo in <code>ldap_search_base</code>, or <code>sssd.conf</code> permissions not set to <code>600</code>.</li>
+<li>If SSH prompts for a password but rejects it, verify the user's <code>userPassword</code> hash in LDAP is correct. You can reset it with <code>ldappasswd</code>.</li>
+<li>You can clear the SSSD cache with <code>sudo sss_cache -E</code> and restart the service to force a fresh lookup.</li>
+<li>Ensure SSH is installed and running on the client: <code>sudo apt install openssh-server &amp;&amp; sudo systemctl enable --now ssh</code>.</li>
+</ul>
+</div>
+</details>
+
+<!-- ============================================================ -->
+<!-- PART E -->
+<!-- ============================================================ -->
+<h2 id="part-e">Part E – Splunk Enterprise Installation (4 pts)</h2>
+
+<div class="objectives">
+<h4>Objectives</h4>
+<ul>
+<li>Download and install Splunk Enterprise on your Ubuntu Server VM.</li>
+<li>Access the Splunk web interface and complete initial setup.</li>
+<li>Enable the receiving port (9997) for future forwarder connections.</li>
+<li>Configure pfSense firewall rules to allow Splunk traffic.</li>
+</ul>
+</div>
+
+<div class="info-box">
+<div class="box-label">Why Splunk Now?</div>
+<p>Installing Splunk Enterprise in this lab prepares your environment for log aggregation and monitoring tasks in upcoming projects. Getting it installed and verified now means you can focus on configuration and data ingestion later.</p>
+</div>
+
+<!-- Step 1 -->
+<div class="step">
+<h3><span class="step-num">1</span> Download and Install Splunk Enterprise</h3>
+<p>Download the Splunk Enterprise <code>.deb</code> package from the Splunk website (you will need your Splunk account). Transfer it to your Ubuntu Server VM, then install:</p>
+<pre><code># Example — adjust the filename to match the version you downloaded
+sudo dpkg -i splunk-9.x.x-xxxxxxxx-linux-2.6-amd64.deb</code></pre>
+<p>Splunk installs to <code>/opt/splunk</code> by default.</p>
+</div>
+
+<!-- Step 2 -->
+<div class="step">
+<h3><span class="step-num">2</span> Start Splunk and Accept the License</h3>
+<pre><code>sudo /opt/splunk/bin/splunk start --accept-license --answer-yes</code></pre>
+<p>You will be prompted to create an admin username and password for the Splunk web UI. Record these credentials securely.</p>
+<p>Enable Splunk to start at boot:</p>
+<pre><code>sudo /opt/splunk/bin/splunk enable boot-start</code></pre>
+</div>
+
+<div class="response-group">
+<label for="e2-output">E2 — Paste the output from the Splunk start command (you may redact passwords):</label>
+<textarea id="e2-output" placeholder="Paste terminal output here…"></textarea>
+</div>
+
+<!-- Step 3 -->
+<div class="step">
+<h3><span class="step-num">3</span> Access the Splunk Web UI</h3>
+<p>Open a browser and navigate to:</p>
+<pre><code>http://SERVER_IP:8000</code></pre>
+<p>Log in with the admin credentials you created. Confirm the dashboard loads successfully.</p>
+</div>
+
+<div class="response-group">
+<label for="e3-output">E3 — Describe what you see on the Splunk dashboard (or describe a screenshot):</label>
+<textarea id="e3-output" placeholder="Describe the Splunk web UI after login…" style="min-height:70px;"></textarea>
+</div>
+
+<!-- Step 4 -->
+<div class="step">
+<h3><span class="step-num">4</span> Enable Receiving Port 9997</h3>
+<p>Configure Splunk to listen on port 9997 for data from Universal Forwarders:</p>
+<pre><code>sudo /opt/splunk/bin/splunk enable listen 9997</code></pre>
+<p>Verify the port is listening:</p>
+<pre><code>sudo ss -tlnp | grep 9997</code></pre>
+</div>
+
+<div class="response-group">
+<label for="e4-output">E4 — Paste the commands and output for enabling and verifying port 9997:</label>
+<textarea id="e4-output" placeholder="Paste terminal output here…"></textarea>
+</div>
+
+<!-- Step 5 -->
+<div class="step">
+<h3><span class="step-num">5</span> Configure pfSense Firewall Rules</h3>
+<p>On your pfSense firewall, create rules to allow the following traffic to/from the Splunk server:</p>
+<table>
+<thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>8000</td><td>TCP</td><td>Splunk Web UI</td></tr>
+<tr><td>9997</td><td>TCP</td><td>Splunk Receiving (Forwarder data)</td></tr>
+<tr><td>8089</td><td>TCP</td><td>Splunk Management Port</td></tr>
+</tbody>
+</table>
+<p>Test connectivity by accessing the Splunk web UI from a machine on a different network segment (through pfSense).</p>
+</div>
+
+<div class="response-group">
+<label for="e5-output">E5 — Describe the pfSense rules you created and the results of your connectivity test:</label>
+<textarea id="e5-output" placeholder="Describe firewall rules and test results…"></textarea>
+</div>
+
+<!-- Step 6 -->
+<div class="step">
+<h3><span class="step-num">6</span> Verification Checklist</h3>
+<p>Confirm each item below. For your submission, indicate <strong>Yes</strong> or <strong>No</strong> for each and add any relevant notes.</p>
+<ul class="checklist">
+<li>Splunk Enterprise is installed at <code>/opt/splunk</code></li>
+<li>Splunk service starts successfully and is enabled at boot</li>
+<li>Splunk Web UI is accessible at <code>http://SERVER_IP:8000</code></li>
+<li>Receiving port 9997 is enabled and listening</li>
+<li>pfSense rules allow traffic on ports 8000, 9997, and 8089</li>
+<li>Web UI is reachable through the pfSense firewall from another network segment</li>
+</ul>
+</div>
+
+<div class="response-group">
+<label for="e6-checklist">E6 — Complete the verification checklist (Yes/No for each item with notes):</label>
+<textarea id="e6-checklist" placeholder="1. Installed at /opt/splunk — Yes/No&#10;2. Service starts and enabled — Yes/No&#10;3. Web UI accessible — Yes/No&#10;4. Port 9997 listening — Yes/No&#10;5. pfSense rules created — Yes/No&#10;6. Reachable through firewall — Yes/No" style="min-height:130px;"></textarea>
+</div>
+
+<details>
+<summary>Hints &amp; Tips – Part E</summary>
+<div class="detail-body">
+<ul>
+<li>Splunk Enterprise requires a minimum of 2 GB RAM. If your VM has less, consider increasing it before installation.</li>
+<li>If the web UI does not load, check that port 8000 is not blocked by <code>ufw</code> on the server itself: <code>sudo ufw allow 8000/tcp</code>.</li>
+<li>The free Splunk Enterprise license allows up to 500 MB of data ingestion per day, which is sufficient for this course.</li>
+<li>If <code>enable listen</code> prompts for credentials, use the Splunk admin credentials you set during first start.</li>
+</ul>
+</div>
+</details>
+
+<!-- ============================================================ -->
+<!-- DELIVERABLES -->
+<!-- ============================================================ -->
+<h2 id="deliverables">Deliverables &amp; Submission Notes</h2>
+
+<div class="success-box">
+<div class="box-label">Point Breakdown</div>
+<table>
+<thead><tr><th>Part</th><th>Description</th><th>Points</th></tr></thead>
+<tbody>
+<tr><td>A</td><td>OpenLDAP Installation &amp; Configuration</td><td>6</td></tr>
+<tr><td>B</td><td>Populating the LDAP Directory</td><td>8</td></tr>
+<tr><td>C</td><td>Querying &amp; Modifying the Directory</td><td>6</td></tr>
+<tr><td>D</td><td>LDAP Client Authentication</td><td>6</td></tr>
+<tr><td>E</td><td>Splunk Enterprise Installation</td><td>4</td></tr>
+<tr><td colspan="2"><strong>Total Extra Credit</strong></td><td><strong>30</strong></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Submission Instructions</h3>
+<ol>
+<li><strong>Complete all response fields</strong> in this lab document with your commands, outputs, LDIF content, and observations.</li>
+<li>Click the <strong>"Save as PDF"</strong> button below to generate a PDF that includes all of your responses.</li>
+<li>Review the PDF to ensure all content is legible and complete.</li>
+<li><strong>Upload the PDF</strong> to the <strong>Lab 12</strong> assignment in Canvas.</li>
+<li><strong>Due date:</strong> Sunday, April 12, 2026.</li>
+</ol>
+
+<div class="warning-box">
+<div class="box-label">Important Reminders</div>
+<ul style="margin-bottom:0;">
+<li>All response fields should contain <strong>your own work</strong> — actual commands you ran and real output from your VMs.</li>
+<li>If you encounter errors, document them and explain how you resolved them. Troubleshooting documentation demonstrates learning and may earn partial credit.</li>
+<li>Do not include sensitive passwords in your submission. Use <code>[REDACTED]</code> where appropriate.</li>
+</ul>
+</div>
+
+<!-- PDF BUTTON -->
+<div style="text-align:center;margin:28px 0;">
+<button class="btn-pdf" id="btn-save-pdf" type="button" aria-label="Save this lab as a PDF document">Save as PDF</button>
+</div>
+
+</div><!-- /.container -->
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+(function(){
+"use strict";
+
+/* ---- Save as PDF via window.print() ---- */
+var btn=document.getElementById("btn-save-pdf");
+if(btn){
+btn.addEventListener("click",function(){
+
+/* Expand all <details> before printing */
+var detailsEls=document.querySelectorAll("details");
+var previousStates=[];
+detailsEls.forEach(function(d){
+previousStates.push(d.open);
+d.open=true;
+});
+
+/* Briefly stamp textarea values into visible attribute for print */
+var textareas=document.querySelectorAll("textarea");
+textareas.forEach(function(ta){
+ta.setAttribute("data-print-value",ta.value);
+ta.style.overflow="visible";
+ta.style.height="auto";
+/* Ensure content is visible in print by setting min-height based on scroll */
+var sh=ta.scrollHeight;
+if(sh>ta.offsetHeight){ta.style.height=sh+"px";}
+});
+
+window.print();
+
+/* Restore details and textarea styles */
+detailsEls.forEach(function(d,i){
+d.open=previousStates[i];
+});
+textareas.forEach(function(ta){
+ta.removeAttribute("data-print-value");
+ta.style.overflow="";
+ta.style.height="";
+});
+});
+}
+
+/* ---- Auto-resize textareas on input ---- */
+document.querySelectorAll("textarea").forEach(function(ta){
+ta.addEventListener("input",function(){
+this.style.height="auto";
+this.style.height=this.scrollHeight+"px";
+});
+});
+
+})();
+</script>
+</body>
+</html>

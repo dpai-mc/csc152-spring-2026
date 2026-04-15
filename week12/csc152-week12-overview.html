@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 12 Overview – LDAP &amp; OpenLDAP / Splunk Enterprise | CSC 152</title>
+<style>
+/* ===== CSS Reset & Base ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#1a1a2e;background:#f8f9fb}
+
+/* ===== Skip Link ===== */
+.skip-link{position:absolute;top:-100%;left:8px;background:#0d3b66;color:#fff;padding:8px 16px;z-index:1100;border-radius:0 0 4px 4px;font-weight:600;text-decoration:none}
+.skip-link:focus{top:0}
+
+/* ===== Sticky Nav ===== */
+.top-nav{position:sticky;top:0;z-index:1000;background:#0d3b66;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.top-nav ul{list-style:none;display:flex;flex-wrap:wrap;max-width:1060px;margin:0 auto;padding:0}
+.top-nav li{margin:0}
+.top-nav a{display:block;color:#e0ecf5;text-decoration:none;font-size:.85rem;font-weight:600;padding:12px 14px;transition:background .2s}
+.top-nav a:hover,.top-nav a:focus{background:#15507a;color:#fff;outline:none}
+
+/* ===== Page Header ===== */
+.page-header{background:linear-gradient(135deg,#0d3b66 0%,#1a6fb5 100%);color:#fff;padding:48px 24px 40px;text-align:center}
+.page-header .course-tag{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 16px;font-size:.82rem;letter-spacing:.4px;margin-bottom:12px}
+.page-header h1{font-size:1.85rem;font-weight:700;margin-bottom:8px;line-height:1.25}
+.page-header .subtitle{font-size:1rem;opacity:.9;margin-bottom:16px}
+.meta-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:8px}
+.meta-pill{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:3px 13px;font-size:.78rem}
+
+/* ===== Layout ===== */
+.page-wrapper{max-width:920px;margin:0 auto;padding:32px 20px 60px}
+
+/* ===== Section Headings ===== */
+.section-heading{font-size:1.3rem;font-weight:700;color:#0d3b66;margin:40px 0 16px;padding-bottom:8px;border-bottom:3px solid #1a6fb5}
+.section-heading:first-of-type{margin-top:0}
+
+/* ===== Cards / Boxes ===== */
+.welcome-box{background:#eaf4fb;border-left:5px solid #1a6fb5;border-radius:6px;padding:20px 24px;margin-bottom:32px;font-size:.97rem}
+.goals-box{background:#fff;border:1px solid #d4dbe3;border-radius:8px;padding:24px;margin-bottom:32px}
+.goals-box ul{padding-left:20px}
+.goals-box li{margin-bottom:8px;font-size:.95rem}
+.goals-box li::marker{color:#1a6fb5}
+
+.activities-box{background:#fff;border:1px solid #d4dbe3;border-radius:8px;padding:24px;margin-bottom:32px}
+.act-list{list-style:none;padding:0}
+.act-list li{padding:10px 0 10px 28px;position:relative;font-size:.95rem;border-bottom:1px solid #eef1f5}
+.act-list li:last-child{border-bottom:none}
+.act-list li::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:10px;height:10px;border-radius:50%}
+.act-module::before{background:#1a6fb5}
+.act-quiz::before{background:#e67e22}
+.act-lab::before{background:#27ae60}
+.act-note{font-size:.85rem;color:#555;font-style:italic;margin-top:12px}
+.badge{display:inline-block;font-size:.7rem;font-weight:700;border-radius:10px;padding:2px 9px;margin-left:6px;vertical-align:middle;color:#fff}
+.badge-req{background:#e67e22}
+.badge-ec{background:#27ae60}
+.badge-pts{background:#7f8c8d;font-weight:600}
+
+/* ===== Key Concepts ===== */
+.concepts-list{padding-left:20px}
+.concepts-list li{margin-bottom:8px;font-size:.95rem}
+.concepts-list li::marker{color:#1a6fb5}
+
+/* ===== Schedule Table ===== */
+.sched-table{width:100%;border-collapse:collapse;margin-bottom:32px;font-size:.92rem}
+.sched-table th{background:#0d3b66;color:#fff;text-align:left;padding:10px 14px;font-weight:600}
+.sched-table td{padding:10px 14px;border-bottom:1px solid #e0e4ea;vertical-align:top}
+.sched-table tr:nth-child(even) td{background:#f5f7fa}
+.sched-day{font-weight:700;white-space:nowrap;color:#0d3b66;min-width:110px}
+
+/* ===== Preview Box ===== */
+.preview-box{background:linear-gradient(135deg,#f0f7ee 0%,#e6f4e1 100%);border-left:5px solid #27ae60;border-radius:6px;padding:20px 24px;margin-bottom:32px;font-size:.95rem}
+.preview-box strong{color:#1b7a3d}
+
+/* ===== Collapsible ===== */
+.collapsible-toggle{display:none}
+.collapsible-label{display:block;background:#f0f4f8;border:1px solid #d4dbe3;border-radius:6px;padding:14px 20px;font-weight:700;font-size:.95rem;color:#0d3b66;cursor:pointer;position:relative;transition:background .2s;margin-bottom:4px}
+.collapsible-label::after{content:'▸';position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:1.1rem;transition:transform .25s}
+.collapsible-toggle:checked+.collapsible-label::after{transform:translateY(-50%) rotate(90deg)}
+.collapsible-toggle:checked+.collapsible-label{background:#e2ecf5;border-color:#a8c4de}
+.collapsible-body{max-height:0;overflow:hidden;transition:max-height .35s ease;border:1px solid transparent;border-radius:0 0 6px 6px;padding:0 20px}
+.collapsible-toggle:checked~.collapsible-body{max-height:800px;border-color:#d4dbe3;padding:16px 20px;margin-bottom:16px}
+.collapsible-body ul{padding-left:18px;margin:0}
+.collapsible-body li{margin-bottom:6px;font-size:.92rem}
+
+/* ===== Focus / Accessibility ===== */
+a:focus-visible,.collapsible-label:focus-visible{outline:3px solid #e67e22;outline-offset:2px}
+
+/* ===== Responsive ===== */
+@media(max-width:600px){
+  .page-header h1{font-size:1.35rem}
+  .top-nav ul{flex-direction:column}
+  .top-nav a{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .sched-table{font-size:.82rem}
+  .sched-day{min-width:80px}
+}
+</style>
+</head>
+<body>
+
+<!-- Skip Link -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Sticky Navigation -->
+<nav class="top-nav" aria-label="Page section navigation">
+<ul>
+  <li><a href="#welcome">Welcome</a></li>
+  <li><a href="#goals">Goals</a></li>
+  <li><a href="#activities">Activities</a></li>
+  <li><a href="#concepts">Key Concepts</a></li>
+  <li><a href="#schedule">Schedule</a></li>
+  <li><a href="#ahead">Looking Ahead</a></li>
+</ul>
+</nav>
+
+<!-- Page Header -->
+<header class="page-header" role="banner">
+<div class="course-tag">CSC 152 · Week 12 of 17</div>
+<h1>Directory Services – LDAP &amp; OpenLDAP<br>+ Splunk Enterprise Installation</h1>
+<p class="subtitle">Network Operating Systems and Administration · Mendocino College</p>
+<div class="meta-pills">
+  <span class="meta-pill">📅 April 6 – 12, 2026</span>
+  <span class="meta-pill">⏱ ~8.25 hrs required &middot; ~10.5 hrs with EC</span>
+  <span class="meta-pill">🎯 CSLO 1 · CSLO 2</span>
+</div>
+</header>
+
+<main id="main-content" class="page-wrapper">
+
+<!-- ============ WELCOME ============ -->
+<h2 id="welcome" class="section-heading">Welcome &amp; Weekly Focus</h2>
+<div class="welcome-box">
+<p>Welcome to Week 12! This week you shift from the proprietary world of Active Directory to its open-standards counterpart: the <strong>Lightweight Directory Access Protocol (LDAP)</strong> and its reference implementation, <strong>OpenLDAP</strong>. You will move from LDAP theory all the way to a running OpenLDAP server with a populated directory and working client authentication&mdash;giving you fluency in <em>both</em> major directory-services ecosystems. Along the way, you will also install <strong>Splunk Enterprise</strong> on a Linux VM, standing up the monitoring infrastructure that Project&nbsp;3 will build upon starting next week.</p>
+</div>
+
+<!-- ============ LEARNING GOALS ============ -->
+<h2 id="goals" class="section-heading">Week 12 Learning Goals</h2>
+<div class="goals-box">
+<ul>
+  <li>Explain the LDAP protocol, including its purpose, operation model (bind, search, modify), and relationship to the X.500 standard.</li>
+  <li>Describe the LDAP Directory Information Tree (DIT) structure, including distinguished names (DNs), relative distinguished names (RDNs), and common object classes.</li>
+  <li>Install and perform initial configuration of OpenLDAP (<code>slapd</code>) on a Linux server.</li>
+  <li>Design and populate an LDAP directory with organizational units, user entries, and group entries using LDIF files.</li>
+  <li>Query and modify LDAP directory entries using command-line tools (<code>ldapsearch</code>, <code>ldapadd</code>, <code>ldapmodify</code>, <code>ldapdelete</code>).</li>
+  <li>Configure a Linux client system to authenticate against an OpenLDAP server using SSSD or NSS/PAM integration.</li>
+  <li>Compare and contrast Active Directory and OpenLDAP in terms of schema, tooling, scalability, and enterprise use cases.</li>
+  <li>Install Splunk Enterprise on a Linux VM and confirm web UI access and receiver port configuration.</li>
+</ul>
+</div>
+
+<!-- ============ REQUIRED ACTIVITIES ============ -->
+<h2 id="activities" class="section-heading">Required Activities This Week</h2>
+<div class="activities-box">
+<ul class="act-list">
+  <li class="act-module"><strong>Module 12.1</strong> – LDAP Protocol Fundamentals &amp; DIT Structure</li>
+  <li class="act-module"><strong>Module 12.2</strong> – OpenLDAP Installation &amp; Configuration</li>
+  <li class="act-module"><strong>Module 12.3</strong> – Populating &amp; Querying the LDAP Directory</li>
+  <li class="act-module"><strong>Module 12.4</strong> – LDAP Client Authentication &amp; AD vs. OpenLDAP Comparison</li>
+  <li class="act-module"><strong>Module 12.5</strong> – Splunk Enterprise Server Installation</li>
+  <li class="act-quiz"><strong>Quiz 12:</strong> LDAP &amp; Directory Services
+    <span class="badge badge-req">Required</span>
+    <span class="badge badge-pts">14 pts</span>
+  </li>
+  <li class="act-lab"><strong>Lab 12:</strong> OpenLDAP Configuration
+    <span class="badge badge-ec">Extra Credit</span>
+    <span class="badge badge-pts">30 pts</span>
+  </li>
+</ul>
+<p class="act-note">There is no discussion this week. Discussions are bi-weekly; the next discussion falls in Week&nbsp;13.</p>
+</div>
+
+<!-- ============ KEY CONCEPTS ============ -->
+<h2 id="concepts" class="section-heading">Key Concepts &amp; Themes</h2>
+<ul class="concepts-list">
+  <li><strong>Open Standard vs. Proprietary:</strong> LDAP is an open, standards-based protocol (RFC&nbsp;4511); Active Directory extends LDAP with proprietary features. Understanding both gives you cross-platform fluency.</li>
+  <li><strong>Directory Information Tree (DIT):</strong> LDAP organizes data in a hierarchical tree&mdash;root DSE → base DN → OUs → entries&mdash;analogous to a file system or AD&rsquo;s domain/OU structure.</li>
+  <li><strong>LDIF as the Lingua Franca:</strong> The LDAP Data Interchange Format is the text-based format used to add, modify, and export directory entries. If you can read and write LDIF, you can manage any LDAP directory.</li>
+  <li><strong>Centralized Authentication:</strong> Moving from local <code>/etc/passwd</code> accounts to LDAP-backed authentication solves password-sync and account-sprawl problems across an organization.</li>
+  <li><strong>NSS, PAM, and SSSD:</strong> These Linux subsystems bridge the gap between local identity lookups and remote LDAP directories.</li>
+  <li><strong>Splunk as Security Monitoring Infrastructure:</strong> Installing Splunk Enterprise this week creates the receiving server that Universal Forwarders will feed in Week&nbsp;13&mdash;the backbone of your Project&nbsp;3 monitoring stack.</li>
+</ul>
+
+<!-- ============ COLLAPSIBLE STUDY TIPS ============ -->
+<div style="margin-top:28px;margin-bottom:32px;">
+<input type="checkbox" class="collapsible-toggle" id="tips-toggle">
+<label class="collapsible-label" for="tips-toggle" tabindex="0" role="button" aria-expanded="false" aria-controls="tips-body">💡 Study Tips for Week 12</label>
+<div class="collapsible-body" id="tips-body" role="region" aria-labelledby="tips-toggle">
+<ul>
+  <li><strong>Draw the DIT:</strong> Sketch the directory tree on paper before writing LDIF files. A visual map prevents DN syntax errors.</li>
+  <li><strong>Compare side-by-side:</strong> Keep your Week&nbsp;11 AD notes open while studying LDAP. Mapping concepts across both systems deepens understanding.</li>
+  <li><strong>Test incrementally:</strong> After each <code>ldapadd</code> command, run <code>ldapsearch</code> to confirm the entries loaded correctly before adding more.</li>
+  <li><strong>Document as you go:</strong> Screenshot your terminal output during OpenLDAP and Splunk installation&mdash;you will need these for Lab&nbsp;12 and for Project&nbsp;3.</li>
+  <li><strong>Start Lab 12 early:</strong> Even though it is extra credit, the OpenLDAP and Splunk skills practiced in Lab&nbsp;12 directly prepare you for Projects&nbsp;3 and&nbsp;4.</li>
+</ul>
+</div>
+</div>
+
+<!-- ============ RECOMMENDED SCHEDULE ============ -->
+<h2 id="schedule" class="section-heading">Recommended Weekly Schedule</h2>
+<table class="sched-table">
+<thead>
+  <tr><th scope="col">Day</th><th scope="col">Suggested Activities</th></tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="sched-day">Mon – Tue</td>
+    <td>Complete <strong>Module 12.1</strong> readings, videos, and DIT design mini-case.</td>
+  </tr>
+  <tr>
+    <td class="sched-day">Wednesday</td>
+    <td>Complete <strong>Module 12.2</strong> readings; begin or complete OpenLDAP installation guided practice (also covered during the Zoom lab session).</td>
+  </tr>
+  <tr>
+    <td class="sched-day">Thursday</td>
+    <td>Complete <strong>Module 12.3</strong> readings and guided practice (directory population and querying).</td>
+  </tr>
+  <tr>
+    <td class="sched-day">Friday</td>
+    <td>Complete <strong>Module 12.4</strong> readings and guided practice (client authentication + AD comparison). Complete <strong>Module 12.5</strong> (Splunk Enterprise installation&mdash;or complete during Zoom lab). <strong>Quiz 12 opens.</strong></td>
+  </tr>
+  <tr>
+    <td class="sched-day">Sat – Sun</td>
+    <td>Complete <strong>Quiz 12</strong>. Complete <strong>Lab 12</strong> (if doing extra credit). Preview the Project&nbsp;3 specification.</td>
+  </tr>
+</tbody>
+</table>
+
+<!-- ============ LOOKING AHEAD ============ -->
+<h2 id="ahead" class="section-heading">Looking Ahead: Week 13 Preview</h2>
+<div class="preview-box">
+<p>Next week the course shifts to <strong>Virtualization &amp; Cloud Technologies</strong>, covering hypervisor types, virtual machine management, and cloud computing models (IaaS, PaaS, SaaS). <strong>Project&nbsp;3</strong> (Security Hardening &amp; Monitoring with Splunk) will be assigned, and you will install <strong>Splunk Universal Forwarders</strong> on your Linux and Windows VMs&mdash;sending data to the Splunk Enterprise server you build this week. Make sure your OpenLDAP server and Splunk instance are running smoothly before Week&nbsp;13 begins!</p>
+</div>
+
+</main>
+
+<!-- Accessibility: toggle aria-expanded on collapsible -->
+<script>
+(function(){
+  var t=document.getElementById('tips-toggle');
+  var l=document.querySelector('label[for="tips-toggle"]');
+  if(!t||!l) return;
+  function u(){l.setAttribute('aria-expanded',t.checked?'true':'false')}
+  t.addEventListener('change',u);
+  l.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();t.checked=!t.checked;u()}});
+  u();
+})();
+</script>
+</body>
+</html>
