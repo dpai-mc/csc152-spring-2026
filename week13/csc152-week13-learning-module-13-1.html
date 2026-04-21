@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 13.1 – Virtualization Concepts &amp; Hypervisor Architecture</title>
+<style>
+/* ═══ RESET & BASE ═══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#1a1a2e;background:#f5f6fa;font-size:16px}
+
+/* ═══ COLOR PALETTE ═══ */
+:root{
+  --primary:#1a5276;
+  --primary-light:#2980b9;
+  --primary-dark:#0e2f44;
+  --accent:#e67e22;
+  --accent-light:#f39c12;
+  --success:#27ae60;
+  --success-bg:#eafaf1;
+  --danger:#c0392b;
+  --danger-bg:#fdedec;
+  --info-bg:#eaf2f8;
+  --info-border:#2980b9;
+  --neutral-50:#f8f9fa;
+  --neutral-100:#ecf0f1;
+  --neutral-200:#d5dbdb;
+  --neutral-600:#5d6d7e;
+  --neutral-800:#2c3e50;
+  --white:#ffffff;
+  --shadow:0 2px 8px rgba(0,0,0,.09);
+  --radius:8px;
+}
+
+/* ═══ SKIP LINK ═══ */
+.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999}
+.skip-link:focus{position:fixed;left:16px;top:16px;width:auto;height:auto;overflow:visible;background:var(--primary-dark);color:var(--white);padding:10px 18px;border-radius:var(--radius);font-weight:700;text-decoration:none;outline:3px solid var(--accent-light);outline-offset:2px}
+
+/* ═══ STICKY NAV ═══ */
+.top-nav{position:sticky;top:0;z-index:1000;background:var(--primary-dark);padding:0;border-bottom:3px solid var(--accent)}
+.top-nav__inner{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:0}
+.top-nav a{color:var(--white);text-decoration:none;font-size:.82rem;padding:10px 13px;display:inline-block;transition:background .2s,outline-offset .15s}
+.top-nav a:hover,.top-nav a:focus{background:var(--primary-light);outline:2px solid var(--accent);outline-offset:-2px}
+.top-nav a[aria-current="true"]{background:var(--primary-light);border-bottom:2px solid var(--accent-light)}
+.top-nav__label{color:var(--accent-light);font-weight:700;font-size:.82rem;padding:10px 14px 10px 16px;white-space:nowrap}
+
+/* ═══ SCROLL OFFSET ═══ */
+[id]{scroll-margin-top:56px}
+
+/* ═══ HEADER ═══ */
+.page-header{background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 100%);color:var(--white);padding:2.5rem 1.5rem 2rem;text-align:center}
+.page-header .course-tag{font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;opacity:.85;margin-bottom:.5rem}
+.page-header h1{font-size:1.85rem;line-height:1.25;margin-bottom:.5rem;font-weight:700}
+.page-header .subtitle{font-size:.95rem;opacity:.8;margin-bottom:1rem}
+.meta-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.meta-pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 14px;font-size:.78rem;white-space:nowrap}
+
+/* ═══ MAIN CONTENT ═══ */
+main{max-width:960px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+
+/* ═══ SECTION CARDS ═══ */
+.section-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:1.75rem;overflow:hidden}
+.section-card__header{background:var(--primary);color:var(--white);padding:14px 20px;display:flex;align-items:center;gap:10px}
+.section-card__header .sec-num{background:var(--primary-dark);color:var(--white);font-weight:700;font-size:.85rem;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.section-card__header h2{font-size:1.15rem;font-weight:600;margin:0}
+.section-card__body{padding:20px 24px}
+
+/* ═══ SUB-HEADINGS ═══ */
+h3{color:var(--primary);font-size:1.05rem;margin:1.25rem 0 .5rem;border-bottom:2px solid var(--neutral-100);padding-bottom:4px}
+h4{color:var(--neutral-800);font-size:.97rem;margin:1rem 0 .4rem}
+
+/* ═══ PARAGRAPHS & LISTS ═══ */
+p{margin-bottom:.85rem}
+ul,ol{margin:0 0 .85rem 1.4rem}
+li{margin-bottom:.35rem}
+strong{color:var(--primary-dark)}
+
+/* ═══ CALLOUT BOXES ═══ */
+.callout{border-left:4px solid var(--info-border);background:var(--info-bg);padding:14px 18px;border-radius:0 var(--radius) var(--radius) 0;margin:1rem 0;font-size:.93rem}
+.callout.analogy{border-left-color:var(--accent);background:#fef9e7}
+.callout.key-term{border-left-color:var(--success);background:var(--success-bg)}
+.callout.warning{border-left-color:var(--danger);background:var(--danger-bg)}
+.callout-title{font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+
+/* ═══ TABLES ═══ */
+.resp-table{width:100%;overflow-x:auto;margin:1rem 0}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{background:var(--primary);color:var(--white);padding:10px 14px;text-align:left;font-weight:600}
+td{padding:10px 14px;border-bottom:1px solid var(--neutral-200)}
+tr:nth-child(even) td{background:var(--neutral-50)}
+
+/* ═══ ACCORDION ═══ */
+.accordion{margin:1rem 0}
+.accordion-btn{width:100%;text-align:left;background:var(--neutral-50);border:1px solid var(--neutral-200);border-radius:var(--radius);padding:12px 18px;font-size:.95rem;font-weight:600;color:var(--primary-dark);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .2s}
+.accordion-btn:hover,.accordion-btn:focus{background:var(--info-bg);outline:2px solid var(--primary-light);outline-offset:-2px}
+.accordion-btn::after{content:'+';font-size:1.3rem;font-weight:700;color:var(--accent);transition:transform .25s}
+.accordion-btn[aria-expanded="true"]::after{content:'−'}
+.accordion-panel{max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 18px}
+.accordion-panel[aria-hidden="false"]{padding:14px 18px;border:1px solid var(--neutral-200);border-top:0;border-radius:0 0 var(--radius) var(--radius)}
+
+/* ═══ TABS ═══ */
+.tabs{margin:1.25rem 0}
+.tab-list{display:flex;gap:0;border-bottom:3px solid var(--primary);margin-bottom:0}
+.tab-btn{padding:10px 22px;background:var(--neutral-100);border:1px solid var(--neutral-200);border-bottom:none;border-radius:var(--radius) var(--radius) 0 0;font-size:.9rem;font-weight:600;color:var(--neutral-600);cursor:pointer;transition:background .2s,color .2s}
+.tab-btn:hover,.tab-btn:focus{background:var(--info-bg);color:var(--primary);outline:2px solid var(--primary-light);outline-offset:-2px}
+.tab-btn[aria-selected="true"]{background:var(--white);color:var(--primary);border-color:var(--primary);border-bottom:3px solid var(--white);margin-bottom:-3px;position:relative}
+.tab-panel{background:var(--white);border:1px solid var(--neutral-200);border-top:none;padding:18px 22px;border-radius:0 0 var(--radius) var(--radius)}
+.tab-panel[hidden]{display:none}
+
+/* ═══ SCENARIO BOX ═══ */
+.scenario-box{background:linear-gradient(135deg,#fef9e7,#fdebd0);border:2px solid var(--accent);border-radius:var(--radius);padding:20px 24px;margin:1.25rem 0}
+.scenario-box h3{color:var(--accent);border-bottom-color:var(--accent)}
+.reveal-btn{display:inline-block;background:var(--accent);color:var(--white);border:none;padding:10px 22px;border-radius:var(--radius);font-size:.9rem;font-weight:600;cursor:pointer;margin-top:10px;transition:background .2s}
+.reveal-btn:hover,.reveal-btn:focus{background:#d35400;outline:2px solid var(--primary);outline-offset:2px}
+.reveal-content{display:none;margin-top:14px;padding:14px 18px;background:var(--white);border-radius:var(--radius);border:1px solid var(--accent)}
+.reveal-content.visible{display:block}
+
+/* ═══ KNOWLEDGE CHECK ═══ */
+.kc-question{background:var(--neutral-50);border:1px solid var(--neutral-200);border-radius:var(--radius);padding:16px 20px;margin-bottom:1rem}
+.kc-question p.q-stem{font-weight:600;margin-bottom:10px;color:var(--primary-dark)}
+.kc-option{display:block;margin:0 0 6px}
+.kc-option label{cursor:pointer;display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border-radius:4px;transition:background .15s}
+.kc-option label:hover{background:var(--info-bg)}
+.kc-option input[type="radio"]{margin-top:3px;accent-color:var(--primary)}
+.kc-feedback{margin-top:10px;padding:10px 14px;border-radius:4px;font-size:.9rem;display:none}
+.kc-feedback.correct{background:var(--success-bg);border:1px solid var(--success);color:#1e7e34;display:block}
+.kc-feedback.incorrect{background:var(--danger-bg);border:1px solid var(--danger);color:#922b21;display:block}
+.kc-submit{background:var(--primary);color:var(--white);border:none;padding:8px 20px;border-radius:var(--radius);font-size:.88rem;font-weight:600;cursor:pointer;margin-top:6px;transition:background .2s}
+.kc-submit:hover,.kc-submit:focus{background:var(--primary-light);outline:2px solid var(--accent);outline-offset:2px}
+.kc-match-area{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.kc-match-area select{padding:6px 10px;border-radius:4px;border:1px solid var(--neutral-200);font-size:.88rem}
+
+/* ═══ PROGRESS BAR ═══ */
+.progress-bar{background:var(--neutral-200);border-radius:20px;height:10px;margin:1rem 0;overflow:hidden}
+.progress-bar__fill{height:100%;background:linear-gradient(90deg,var(--primary-light),var(--success));border-radius:20px;transition:width .5s ease}
+
+/* ═══ FOOTER ═══ */
+footer{background:var(--primary-dark);color:rgba(255,255,255,.7);text-align:center;padding:18px;font-size:.8rem}
+footer strong{color:var(--white)}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:640px){
+  .page-header h1{font-size:1.35rem}
+  .top-nav a{padding:8px 9px;font-size:.75rem}
+  .top-nav__label{padding:8px 10px;font-size:.75rem}
+  .section-card__body{padding:16px}
+  .tab-btn{padding:8px 12px;font-size:.82rem}
+  .kc-match-area{grid-template-columns:1fr}
+  table{font-size:.82rem}
+  th,td{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ═══ STICKY NAV ═══ -->
+<nav class="top-nav" role="navigation" aria-label="Module section navigation">
+  <div class="top-nav__inner">
+    <span class="top-nav__label">Module 13.1</span>
+    <a href="#what-is-virt">What Is Virtualization?</a>
+    <a href="#history">History</a>
+    <a href="#benefits">Benefits</a>
+    <a href="#hypervisors">Hypervisors</a>
+    <a href="#comparison">Type 1 vs. 2</a>
+    <a href="#containers">Containers</a>
+    <a href="#scenario">Scenario</a>
+    <a href="#knowledge-check">Knowledge Check</a>
+  </div>
+</nav>
+
+<!-- ═══ PAGE HEADER ═══ -->
+<header class="page-header" role="banner">
+  <div class="course-tag">CSC 152 · Week 13 of 17</div>
+  <h1>Module 13.1 – Virtualization Concepts<br>&amp; Hypervisor Architecture</h1>
+  <p class="subtitle">Network Operating Systems and Administration · Mendocino College</p>
+  <div class="meta-pills">
+    <span class="meta-pill">📅 April 13–19, 2026</span>
+    <span class="meta-pill">⏱ ~45 min self-study</span>
+    <span class="meta-pill">🎯 W13.1 · W13.2</span>
+    <span class="meta-pill">📋 CSLO 1</span>
+    <span class="meta-pill">🖼 Template Anchor Module</span>
+  </div>
+</header>
+
+<main id="main-content">
+
+<!-- ═══ PROGRESS ═══ -->
+<div style="padding:8px 0 0">
+  <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--neutral-600)">
+    <span>Module Progress</span><span>Questions answered: 0 of 6</span>
+  </div>
+  <div class="progress-bar"><div class="progress-bar__fill" id="progressFill" style="width:0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 1: WHAT IS VIRTUALIZATION?         -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section-card" id="what-is-virt">
+  <div class="section-card__header">
+    <span class="sec-num">1</span>
+    <h2>What Is Virtualization?</h2>
+  </div>
+  <div class="section-card__body">
+
+    <p><strong>Virtualization</strong> is the process of creating a software-based (virtual) version of a computing resource — such as a server, storage device, network, or operating system — rather than using a dedicated physical instance. At its core, virtualization inserts an <strong>abstraction layer</strong> between the physical hardware and the software that runs on it, allowing multiple virtual systems to share the same underlying hardware simultaneously.</p>
+
+    <div class="callout key-term">
+      <div class="callout-title">🔑 Key Definition</div>
+      <strong>Virtual Machine (VM):</strong> A software-based emulation of a physical computer. Each VM has its own virtual CPU (vCPU), virtual RAM (vRAM), virtual disk, and virtual network adapter, and it runs a full operating system as if it were on dedicated hardware.
+    </div>
+
+    <h3>Hardware Abstraction — The Core Idea</h3>
+    <p>Think about what you learned in Weeks 1–2 about server hardware: CPUs, RAM modules, hard drives, and NICs are all physical components. Virtualization takes those physical resources and presents them to software as <em>virtual</em> resources. A single physical server with 64 GB of RAM and 16 CPU cores might host four VMs, each "seeing" 16 GB of RAM and 4 cores — even though there is only one physical machine.</p>
+
+    <p>The software that performs this abstraction is called a <strong>hypervisor</strong> (covered in detail in Section 4). The hypervisor sits between the hardware and the VMs, allocating resources, isolating workloads, and making each VM believe it has its own dedicated hardware.</p>
+
+    <div class="callout analogy">
+      <div class="callout-title">🏢 Analogy: The Apartment Building</div>
+      <p>Imagine a large apartment building. The <strong>building itself</strong> is the physical server — it has a fixed amount of space, plumbing, and electricity. The <strong>building manager</strong> is the hypervisor — they divide the building into individual apartments and manage shared resources. Each <strong>apartment</strong> is a virtual machine — tenants (operating systems and applications) live independently, with their own locked doors (isolation), and they don't need to know about the other tenants. If one apartment has a plumbing problem, the other apartments continue to function normally.</p>
+      <p>Just as a building is more efficient than giving every family their own house, virtualization is more efficient than giving every workload its own physical server.</p>
+    </div>
+
+    <h3>Connection to Your Lab Environment</h3>
+    <p>Here is something important: <strong>you have been using virtualization all semester.</strong> Every time you launched a Windows Server or Linux VM in VirtualBox for Labs 1–12, you were running a virtual machine on your host computer. This module explains the technology that has been working behind the scenes the entire time.</p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 2: HISTORY & ENTERPRISE CONTEXT    -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section-card" id="history">
+  <div class="section-card__header">
+    <span class="sec-num">2</span>
+    <h2>History &amp; Enterprise Context</h2>
+  </div>
+  <div class="section-card__body">
+
+    <h3>A Brief Timeline of Virtualization</h3>
+    <p>Virtualization is not a new idea. Its roots go back over half a century:</p>
+
+    <div class="resp-table">
+    <table>
+      <thead>
+        <tr><th scope="col">Era</th><th scope="col">Milestone</th><th scope="col">Significance</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>1960s</strong></td><td>IBM CP-40 &amp; CP/CMS mainframe partitioning</td><td>First practical implementation of virtual machines; multiple users shared a single mainframe</td></tr>
+        <tr><td><strong>1970s–80s</strong></td><td>Mainframe virtualization matures</td><td>IBM VM/370 became standard; concept well-established in mainframe world but not on commodity hardware</td></tr>
+        <tr><td><strong>1998–1999</strong></td><td>VMware founded; VMware Workstation released</td><td>Brought virtualization to x86 (Intel/AMD) commodity hardware for the first time</td></tr>
+        <tr><td><strong>2001</strong></td><td>VMware ESX Server (Type 1 hypervisor)</td><td>Enterprise-grade bare-metal hypervisor for x86 servers; data center transformation begins</td></tr>
+        <tr><td><strong>2003</strong></td><td>Xen hypervisor released (open source)</td><td>Open-source alternative; later adopted by Amazon for early AWS infrastructure</td></tr>
+        <tr><td><strong>2007</strong></td><td>VirtualBox released; KVM merged into Linux kernel</td><td>Free, accessible Type 2 hypervisor (VirtualBox); Linux gains built-in Type 1 hypervisor (KVM)</td></tr>
+        <tr><td><strong>2008</strong></td><td>Microsoft Hyper-V released</td><td>Microsoft enters the enterprise hypervisor market as a Windows Server role</td></tr>
+        <tr><td><strong>2013</strong></td><td>Docker released</td><td>Container-based virtualization gains mainstream attention (covered briefly in Section 6)</td></tr>
+        <tr><td><strong>2020s</strong></td><td>Cloud-native &amp; hybrid cloud era</td><td>Virtualization underpins all major cloud platforms (AWS, Azure, GCP)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>Data Center Transformation</h3>
+    <p>Before virtualization, a common enterprise pattern was <strong>"one application, one server."</strong> A company running an email server, a database server, a web server, and a file server would purchase four separate physical machines — even if each one used only 10–15% of its CPU capacity. This led to massive hardware sprawl, wasted energy, and complex management.</p>
+    <p>Virtualization changed this by enabling <strong>server consolidation</strong>: those four workloads could run as four VMs on a single physical server, often utilizing 60–80% of the hardware's capacity. This transformation reshaped data centers worldwide and is a major reason cloud computing became possible.</p>
+
+    <div class="accordion">
+      <button class="accordion-btn" aria-expanded="false" aria-controls="vdi-panel">Virtual Desktop Infrastructure (VDI) — Deeper Dive</button>
+      <div class="accordion-panel" id="vdi-panel" role="region" aria-hidden="true">
+        <p><strong>VDI</strong> extends virtualization from servers to end-user desktops. Instead of each employee having a powerful desktop PC, the organization runs virtual desktops on centralized servers. Users connect via thin clients or web browsers.</p>
+        <ul>
+          <li><strong>Benefits:</strong> Centralized management, consistent environments, enhanced security (data stays in the data center), easy provisioning of new desktops</li>
+          <li><strong>Examples:</strong> VMware Horizon, Citrix Virtual Apps and Desktops, Microsoft Azure Virtual Desktop</li>
+          <li><strong>Trade-offs:</strong> Requires robust network connectivity; graphics-intensive workloads can be challenging</li>
+        </ul>
+        <p>VDI became especially important during the COVID-19 pandemic when organizations needed to rapidly provision remote work environments.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 3: BENEFITS OF SERVER VIRTUALIZATION -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section-card" id="benefits">
+  <div class="section-card__header">
+    <span class="sec-num">3</span>
+    <h2>Benefits of Server Virtualization</h2>
+  </div>
+  <div class="section-card__body">
+
+    <p>Understanding <em>why</em> organizations virtualize is just as important as understanding <em>how</em>. Each benefit below includes a concrete enterprise example.</p>
+
+    <div class="accordion">
+      <button class="accordion-btn" aria-expanded="false" aria-controls="ben-consolidation">🖥️ Server Consolidation &amp; Hardware Efficiency</button>
+      <div class="accordion-panel" id="ben-consolidation" role="region" aria-hidden="true">
+        <p><strong>What it means:</strong> Running multiple VMs on fewer physical servers, increasing hardware utilization from the typical 10–15% (bare metal) to 60–80%.</p>
+        <p><strong>Enterprise example:</strong> A mid-size company replaces 20 physical servers (each running one application at 12% CPU utilization) with 3 powerful physical hosts running 20 VMs. They reclaim an entire server rack, reduce hardware maintenance contracts, and cut their server refresh budget by 70%.</p>
+      </div>
+    </div>
+
+    <div class="accordion">
+      <button class="accordion-btn" aria-expanded="false" aria-controls="ben-isolation">🔒 Isolation &amp; Fault Containment</button>
+      <div class="accordion-panel" id="ben-isolation" role="region" aria-hidden="true">
+        <p><strong>What it means:</strong> Each VM is isolated from other VMs on the same host. A crash, security breach, or misconfiguration in one VM does not directly affect others.</p>
+        <p><strong>Enterprise example:</strong> A hospital runs its patient records system and its public-facing website on VMs on the same physical host. When the website VM is compromised by a web application attack, the patient records VM continues operating normally because the hypervisor enforces strict isolation between them.</p>
+      </div>
+    </div>
+
+    <div class="accordion">
+      <button class="accordion-btn" aria-expanded="false" aria-controls="ben-provision">⚡ Rapid Provisioning &amp; Cloning</button>
+      <div class="accordion-panel" id="ben-provision" role="region" aria-hidden="true">
+        <p><strong>What it means:</strong> New VMs can be created in minutes (rather than the days or weeks needed to procure and configure physical hardware). VM templates and cloning make it even faster.</p>
+        <p><strong>Enterprise example:</strong> A software development team needs 10 identical test environments for a new release. Instead of ordering 10 servers, the admin clones a template VM 10 times in under 30 minutes. After testing, the VMs are deleted, freeing the resources immediately.</p>
+      </div>
+    </div>
+
+    <div class="accordion">
+      <button class="accordion-btn" aria-expanded="false" aria-controls="ben-dr">📸 Snapshots &amp; Simplified Disaster Recovery</button>
+      <div class="accordion-panel" id="ben-dr" role="region" aria-hidden="true">
+        <p><strong>What it means:</strong> A <strong>snapshot</strong> captures the exact state of a VM (disk, memory, configuration) at a point in time. If something goes wrong — a bad update, a configuration error — the VM can be rolled back to the snapshot in seconds.</p>
+        <p><strong>Enterprise example:</strong> Before applying a critical Windows security patch, an administrator takes a snapshot of the production VM. The patch causes a blue screen loop. The admin reverts to the pre-patch snapshot, and the server is back online within two minutes — compared to hours of troubleshooting on a physical server.</p>
+        <p>At a larger scale, entire VMs can be replicated to a secondary site for disaster recovery, with failover times measured in minutes rather than days.</p>
+      </div>
+    </div>
+
+    <div class="accordion">
+      <button class="accordion-btn" aria-expanded="false" aria-controls="ben-cost">💰 Cost Reduction (CapEx &amp; OpEx)</button>
+      <div class="accordion-panel" id="ben-cost" role="region" aria-hidden="true">
+        <p><strong>What it means:</strong> Fewer physical servers means lower capital expenditure (CapEx) on hardware and lower operational expenditure (OpEx) on power, cooling, rack space, and maintenance contracts.</p>
+        <p><strong>Enterprise example:</strong> A university data center consolidates from 60 physical servers to 8 hosts. Annual electricity costs drop by 40%, they free up physical space for a new student lab, and the hardware refresh cycle is simplified to replacing 8 hosts every 5 years instead of staggering 60 server replacements.</p>
+      </div>
+    </div>
+
+    <div class="accordion">
+      <button class="accordion-btn" aria-expanded="false" aria-controls="ben-energy">🌱 Energy Efficiency &amp; Reduced Footprint</button>
+      <div class="accordion-panel" id="ben-energy" role="region" aria-hidden="true">
+        <p><strong>What it means:</strong> Fewer physical servers consume less electricity and generate less heat, reducing cooling requirements and the organization's carbon footprint.</p>
+        <p><strong>Enterprise example:</strong> A financial services firm's virtualization initiative reduces their server room from 12 racks to 3 racks. Their power consumption drops by 55%, and they are able to downsize their cooling infrastructure, saving an additional $80,000 per year. The initiative also contributes to the company's sustainability reporting goals.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">📌 Summary</div>
+      All six benefits are interconnected. Consolidation drives cost and energy savings; isolation enables safe multi-tenancy; snapshots and rapid provisioning accelerate operations and disaster recovery. Together, they explain why virtualization became the default architecture for enterprise IT.
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 4: HYPERVISOR TYPES                -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section-card" id="hypervisors">
+  <div class="section-card__header">
+    <span class="sec-num">4</span>
+    <h2>Hypervisor Types &amp; Architecture</h2>
+  </div>
+  <div class="section-card__body">
+
+    <p>The <strong>hypervisor</strong> (also called a <strong>Virtual Machine Monitor</strong> or VMM) is the software that makes virtualization possible. It manages the creation and execution of VMs and allocates physical resources among them. There are two fundamental types.</p>
+
+    <!-- TABS: Type 1 / Type 2 -->
+    <div class="tabs">
+      <div class="tab-list" role="tablist" aria-label="Hypervisor types">
+        <button class="tab-btn" role="tab" aria-selected="true" aria-controls="tab-type1" id="btn-type1">Type 1 — Bare-Metal</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-type2" id="btn-type2">Type 2 — Hosted</button>
+      </div>
+      <!-- TYPE 1 PANEL -->
+      <div class="tab-panel" role="tabpanel" id="tab-type1" aria-labelledby="btn-type1">
+        <h3>Type 1 Hypervisor (Bare-Metal)</h3>
+        <p>A Type 1 hypervisor installs <strong>directly on the physical hardware</strong> — there is no host operating system beneath it. The hypervisor <em>is</em> the operating system (or a very thin, specialized one). It has direct access to CPU, memory, storage, and network hardware.</p>
+
+        <h4>Architecture Diagram (Conceptual)</h4>
+<pre><code>┌──────────┐ ┌──────────┐ ┌──────────┐
+│   VM 1   │ │   VM 2   │ │   VM 3   │
+│ (Linux)  │ │(Windows) │ │ (Linux)  │
+└────┬─────┘ └────┬─────┘ └────┬─────┘
+     │             │             │
+┌────┴─────────────┴─────────────┴────┐
+│     TYPE 1 HYPERVISOR (bare-metal)  │
+│   (e.g., ESXi, Hyper-V, KVM)       │
+└────┬────────────────────────────────┘
+     │
+┌────┴────────────────────────────────┐
+│     PHYSICAL HARDWARE               │
+│  (CPU, RAM, Storage, NICs)          │
+└─────────────────────────────────────┘</code></pre>
+
+        <h4>Key Examples</h4>
+        <ul>
+          <li><strong>VMware ESXi</strong> — Industry-leading commercial hypervisor; dominant in enterprise data centers</li>
+          <li><strong>Microsoft Hyper-V</strong> — Available as a Windows Server role or as a free standalone (Hyper-V Server); tightly integrated with the Microsoft ecosystem</li>
+          <li><strong>KVM (Kernel-based Virtual Machine)</strong> — Built into the Linux kernel; powers many cloud providers (including parts of AWS and Google Cloud); often paired with QEMU for hardware emulation</li>
+          <li><strong>Proxmox VE</strong> — Open-source platform built on KVM and LXC containers; popular in home labs and small/medium enterprises</li>
+          <li><strong>Xen</strong> — Open-source hypervisor; historically used by Amazon Web Services for early EC2 instances</li>
+        </ul>
+
+        <h4>Characteristics</h4>
+        <ul>
+          <li><strong>Performance:</strong> Near-native, because the hypervisor talks directly to hardware with no host OS overhead</li>
+          <li><strong>Use cases:</strong> Production data centers, enterprise workloads, cloud infrastructure</li>
+          <li><strong>Management:</strong> Typically managed remotely via a web console or dedicated management tool (e.g., vCenter for ESXi)</li>
+          <li><strong>Security:</strong> Smaller attack surface — no general-purpose host OS to exploit</li>
+        </ul>
+      </div>
+
+      <!-- TYPE 2 PANEL -->
+      <div class="tab-panel" role="tabpanel" id="tab-type2" aria-labelledby="btn-type2" hidden>
+        <h3>Type 2 Hypervisor (Hosted)</h3>
+        <p>A Type 2 hypervisor installs <strong>on top of an existing host operating system</strong> (Windows, macOS, or Linux), just like any other application. It relies on the host OS to manage hardware access.</p>
+
+        <h4>Architecture Diagram (Conceptual)</h4>
+<pre><code>┌──────────┐ ┌──────────┐
+│   VM 1   │ │   VM 2   │
+│ (Linux)  │ │(Windows) │
+└────┬─────┘ └────┬─────┘
+     │             │
+┌────┴─────────────┴─────────────────┐
+│   TYPE 2 HYPERVISOR (application)  │
+│  (e.g., VirtualBox, VMware Wkst)   │
+└────┬───────────────────────────────┘
+     │
+┌────┴───────────────────────────────┐
+│     HOST OPERATING SYSTEM          │
+│   (Windows, macOS, Linux)          │
+└────┬───────────────────────────────┘
+     │
+┌────┴───────────────────────────────┐
+│     PHYSICAL HARDWARE              │
+│  (CPU, RAM, Storage, NICs)         │
+└────────────────────────────────────┘</code></pre>
+
+        <h4>Key Examples</h4>
+        <ul>
+          <li><strong>Oracle VirtualBox</strong> — Free, open-source, cross-platform; the hypervisor you have been using in this course</li>
+          <li><strong>VMware Workstation Pro / Player</strong> — Commercial (Workstation Pro) and free (Player) options for Windows/Linux</li>
+          <li><strong>VMware Fusion</strong> — VMware's Type 2 hypervisor for macOS</li>
+          <li><strong>Parallels Desktop</strong> — Popular Type 2 hypervisor for macOS, especially on Apple Silicon</li>
+        </ul>
+
+        <h4>Characteristics</h4>
+        <ul>
+          <li><strong>Performance:</strong> Additional overhead because VM requests pass through the host OS before reaching hardware</li>
+          <li><strong>Use cases:</strong> Development and testing, education and lab environments, running a secondary OS on a personal computer</li>
+          <li><strong>Management:</strong> Managed locally through a desktop GUI application</li>
+          <li><strong>Security:</strong> Larger attack surface — the host OS and all its applications are also running</li>
+        </ul>
+
+        <div class="callout">
+          <div class="callout-title">💡 Your Lab Connection</div>
+          VirtualBox, which you have been using all semester, is a Type 2 hypervisor. Your laptop or desktop (the host OS) runs VirtualBox as an application, and VirtualBox creates the VMs where you installed Windows Server and Linux.
+        </div>
+      </div>
+    </div><!-- /tabs -->
+
+    <div class="callout key-term">
+      <div class="callout-title">🔑 Key Note — KVM: A Special Case</div>
+      KVM is sometimes debated. It is a kernel module built into Linux, so Linux is technically the "host OS." However, once KVM is loaded, the Linux kernel itself becomes a hypervisor with direct hardware access, behaving much like a Type 1 hypervisor. Most industry references classify KVM as Type 1.
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 5: TYPE 1 vs TYPE 2 COMPARISON     -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section-card" id="comparison">
+  <div class="section-card__header">
+    <span class="sec-num">5</span>
+    <h2>Type 1 vs. Type 2 — Side-by-Side Comparison</h2>
+  </div>
+  <div class="section-card__body">
+
+    <div class="resp-table">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Criterion</th>
+          <th scope="col">Type 1 (Bare-Metal)</th>
+          <th scope="col">Type 2 (Hosted)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Installation surface</strong></td><td>Directly on hardware</td><td>On top of a host OS</td></tr>
+        <tr><td><strong>Performance</strong></td><td>Near-native; minimal overhead</td><td>Moderate overhead; host OS consumes resources</td></tr>
+        <tr><td><strong>Scalability</strong></td><td>Designed for dozens to hundreds of VMs per host</td><td>Practical for a handful of VMs</td></tr>
+        <tr><td><strong>Management</strong></td><td>Remote web console or management platform</td><td>Local desktop GUI</td></tr>
+        <tr><td><strong>Security</strong></td><td>Smaller attack surface; no general-purpose OS</td><td>Larger attack surface; host OS vulnerabilities apply</td></tr>
+        <tr><td><strong>Cost</strong></td><td>Often requires licensing (ESXi, Hyper-V); KVM/Proxmox are free</td><td>Often free (VirtualBox) or low-cost</td></tr>
+        <tr><td><strong>Typical use case</strong></td><td>Production data centers, cloud infrastructure</td><td>Development, testing, education, personal use</td></tr>
+        <tr><td><strong>Examples</strong></td><td>ESXi, Hyper-V, KVM, Proxmox, Xen</td><td>VirtualBox, VMware Workstation, Parallels</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>Decision Framework: Which Type Should You Choose?</h3>
+    <p>When deciding between Type 1 and Type 2, consider these questions:</p>
+    <ol>
+      <li><strong>What is the workload?</strong> Production workloads serving real users → Type 1. Development, testing, or learning → Type 2 is often sufficient.</li>
+      <li><strong>How many VMs are needed?</strong> A few VMs on a personal machine → Type 2. Dozens or hundreds of VMs → Type 1.</li>
+      <li><strong>Is the hardware dedicated to virtualization?</strong> If the machine's sole purpose is hosting VMs → Type 1. If the machine also serves as a daily-use desktop → Type 2.</li>
+      <li><strong>What are the performance requirements?</strong> Low-latency, high-throughput workloads → Type 1. Moderate workloads where some overhead is acceptable → Type 2.</li>
+      <li><strong>What is the budget?</strong> Enterprise budget with dedicated hardware → Type 1. Personal or educational use on existing hardware → Type 2.</li>
+    </ol>
+
+    <div class="callout">
+      <div class="callout-title">💡 Real-World Insight</div>
+      Many organizations use <em>both</em> types. Their data centers run ESXi or Hyper-V (Type 1) for production, while their developers use VMware Workstation or VirtualBox (Type 2) on their laptops to build and test before deploying to production.
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 6: CONTAINERS vs VMs               -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section-card" id="containers">
+  <div class="section-card__header">
+    <span class="sec-num">6</span>
+    <h2>Containers vs. Virtual Machines — A Brief Introduction</h2>
+  </div>
+  <div class="section-card__body">
+
+    <p>Before we move on, it is important to be aware of <strong>containers</strong> — an alternative virtualization approach that has become extremely popular since 2013. This is an awareness-level introduction; we will not configure containers in this course, but as a server administrator, you will encounter them.</p>
+
+    <h3>The Key Difference</h3>
+    <p>VMs virtualize <strong>hardware</strong> — each VM runs a complete operating system on virtual hardware managed by a hypervisor. Containers virtualize the <strong>operating system</strong> — they share the host OS kernel and isolate only the application and its dependencies.</p>
+
+    <div class="resp-table">
+    <table>
+      <thead>
+        <tr><th scope="col">Aspect</th><th scope="col">Virtual Machine</th><th scope="col">Container</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Virtualization level</strong></td><td>Hardware (hypervisor)</td><td>OS kernel (container engine)</td></tr>
+        <tr><td><strong>Includes</strong></td><td>Full OS + apps + libraries</td><td>App + libraries only (shares host kernel)</td></tr>
+        <tr><td><strong>Size</strong></td><td>Gigabytes (full OS image)</td><td>Megabytes (application layer only)</td></tr>
+        <tr><td><strong>Startup time</strong></td><td>Minutes</td><td>Seconds</td></tr>
+        <tr><td><strong>Isolation</strong></td><td>Strong (separate kernels)</td><td>Moderate (shared kernel)</td></tr>
+        <tr><td><strong>Best for</strong></td><td>Running different OSes, legacy apps, strong isolation requirements</td><td>Microservices, rapid scaling, CI/CD pipelines</td></tr>
+        <tr><td><strong>Example tools</strong></td><td>VirtualBox, ESXi, Hyper-V</td><td>Docker, Podman, containerd</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="callout analogy">
+      <div class="callout-title">🏢 Extending the Apartment Analogy</div>
+      <p>If a <strong>VM</strong> is an apartment (complete with its own kitchen, bathroom, and plumbing), a <strong>container</strong> is more like a room in a co-living space — each resident has their own private room (application isolation), but they share the kitchen and bathroom (the host OS kernel). Co-living is faster to set up and uses less space, but you have less privacy and cannot renovate the shared kitchen.</p>
+    </div>
+
+    <h3>When Each Approach Fits</h3>
+    <ul>
+      <li><strong>Use VMs when</strong> you need to run different operating systems (e.g., Windows and Linux on the same host), require strong security isolation, or are running legacy applications that need a specific OS environment.</li>
+      <li><strong>Use containers when</strong> you are deploying modern, stateless applications at scale, need rapid startup and teardown, or are building microservices architectures.</li>
+      <li><strong>Use both together:</strong> Many production environments run containers <em>inside</em> VMs — the VM provides the strong isolation boundary, and containers provide the efficient application packaging within it.</li>
+    </ul>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 7: INTERACTIVE SCENARIO            -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section-card" id="scenario">
+  <div class="section-card__header">
+    <span class="sec-num">7</span>
+    <h2>Mini-Case: Northwind Traders Server Consolidation</h2>
+  </div>
+  <div class="section-card__body">
+
+    <div class="scenario-box">
+      <h3>📋 Scenario</h3>
+      <p><strong>Northwind Traders</strong> is a mid-size wholesale food distributor with a small IT team. Their server room currently contains <strong>eight physical servers</strong>, each running a single workload:</p>
+      <ol>
+        <li>Active Directory Domain Controller (Windows Server)</li>
+        <li>File &amp; Print Server (Windows Server)</li>
+        <li>Internal web application (Linux / Apache)</li>
+        <li>Microsoft SQL Database Server (Windows Server)</li>
+        <li>Development/test server (Linux)</li>
+        <li>Email relay (Linux)</li>
+        <li>Monitoring server — Splunk Enterprise (Linux)</li>
+        <li>Backup server (Windows Server)</li>
+      </ol>
+      <p>Average CPU utilization across all eight servers is <strong>12%</strong>. The company's lease on the server room is expiring, and they are moving to a smaller space that can only hold <strong>two server racks</strong> instead of four. Management has asked IT to propose a virtualization strategy.</p>
+
+      <h4>Your Task — Think Through These Questions:</h4>
+      <ol>
+        <li>Which hypervisor type (Type 1 or Type 2) should Northwind use for this production consolidation, and why?</li>
+        <li>Name at least two specific hypervisor products that would be appropriate.</li>
+        <li>Identify at least three benefits from Section 3 that directly apply to Northwind's situation.</li>
+        <li>Are there any workloads from the list that should <em>not</em> be consolidated onto the same physical host? Why?</li>
+        <li>Would containers be appropriate for any of these workloads? Which ones?</li>
+      </ol>
+
+      <button class="reveal-btn" onclick="toggleReveal('scenario-answer',this)" aria-expanded="false">Show Model Answer</button>
+      <div class="reveal-content" id="scenario-answer">
+        <h4>Model Answer</h4>
+        <p><strong>1. Hypervisor type:</strong> Type 1 (bare-metal). This is a production environment with eight workloads serving real users. Type 1 provides near-native performance, better scalability, and a smaller attack surface — all critical for production.</p>
+        <p><strong>2. Appropriate products:</strong> VMware ESXi (industry standard, excellent management tools via vCenter), Microsoft Hyper-V (good fit since many workloads are Windows Server; included with Windows Server licensing), or Proxmox VE (free, open-source option if budget is tight). KVM is also valid.</p>
+        <p><strong>3. Benefits that apply:</strong></p>
+        <ul>
+          <li><strong>Server consolidation:</strong> 8 servers at 12% utilization → 2–3 physical hosts at 60–70% utilization, fitting in the smaller space.</li>
+          <li><strong>Cost reduction:</strong> Fewer servers = lower hardware costs, less power, less cooling, fewer maintenance contracts.</li>
+          <li><strong>Snapshots / DR:</strong> Before patching the SQL or AD servers, admins can snapshot; rollback is instant if something breaks.</li>
+          <li><strong>Rapid provisioning:</strong> The dev/test server can be cloned quickly for new projects.</li>
+          <li><strong>Energy efficiency:</strong> Directly helps with the smaller server room's power and cooling constraints.</li>
+        </ul>
+        <p><strong>4. Separation considerations:</strong> The Active Directory Domain Controller and the Backup Server should ideally run on <em>different physical hosts</em>. If the single host fails, you lose both your directory service and your ability to restore. Similarly, placing the Splunk monitoring server on a different host than the servers it monitors ensures you can still see logs if one host goes down. This is a <strong>fault domain</strong> design decision.</p>
+        <p><strong>5. Container candidates:</strong> The internal web application (Linux/Apache) and the email relay (Linux) are good container candidates — they are stateless or near-stateless Linux services that benefit from fast startup and easy scaling. The SQL database and Active Directory are poor container candidates because they are stateful and OS-dependent. For this scenario, VMs are the safer choice for all workloads initially, with containers considered as a future modernization step for the web app.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 8: KNOWLEDGE CHECK                 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section-card" id="knowledge-check">
+  <div class="section-card__header">
+    <span class="sec-num">✓</span>
+    <h2>Knowledge Check — Ungraded Self-Assessment</h2>
+  </div>
+  <div class="section-card__body">
+
+    <p>Test your understanding of Module 13.1 concepts. This is <strong>not graded</strong> — it is for your own learning. Select an answer and click <em>Check Answer</em> to see explanatory feedback.</p>
+
+    <!-- Q1 -->
+    <div class="kc-question" id="kc-q1">
+      <p class="q-stem">1. What is the primary role of a hypervisor?</p>
+      <div class="kc-option"><label><input type="radio" name="q1" value="a"> To replace the operating system on a server</label></div>
+      <div class="kc-option"><label><input type="radio" name="q1" value="b"> To create and manage virtual machines by abstracting physical hardware resources</label></div>
+      <div class="kc-option"><label><input type="radio" name="q1" value="c"> To provide antivirus protection for virtual machines</label></div>
+      <div class="kc-option"><label><input type="radio" name="q1" value="d"> To connect virtual machines to the internet</label></div>
+      <button class="kc-submit" onclick="checkAnswer('q1','b')">Check Answer</button>
+      <div class="kc-feedback" id="fb-q1"></div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="kc-question" id="kc-q2">
+      <p class="q-stem">2. VirtualBox, which you have used all semester, is classified as which type of hypervisor?</p>
+      <div class="kc-option"><label><input type="radio" name="q2" value="a"> Type 1 (bare-metal)</label></div>
+      <div class="kc-option"><label><input type="radio" name="q2" value="b"> Type 2 (hosted)</label></div>
+      <div class="kc-option"><label><input type="radio" name="q2" value="c"> Type 3 (container-based)</label></div>
+      <div class="kc-option"><label><input type="radio" name="q2" value="d"> It depends on the host operating system</label></div>
+      <button class="kc-submit" onclick="checkAnswer('q2','b')">Check Answer</button>
+      <div class="kc-feedback" id="fb-q2"></div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="kc-question" id="kc-q3">
+      <p class="q-stem">3. A company has 15 physical servers, each running at 10% CPU utilization. Which virtualization benefit most directly addresses this inefficiency?</p>
+      <div class="kc-option"><label><input type="radio" name="q3" value="a"> Isolation and fault containment</label></div>
+      <div class="kc-option"><label><input type="radio" name="q3" value="b"> Snapshot and disaster recovery</label></div>
+      <div class="kc-option"><label><input type="radio" name="q3" value="c"> Server consolidation and hardware efficiency</label></div>
+      <div class="kc-option"><label><input type="radio" name="q3" value="d"> Virtual Desktop Infrastructure (VDI)</label></div>
+      <button class="kc-submit" onclick="checkAnswer('q3','c')">Check Answer</button>
+      <div class="kc-feedback" id="fb-q3"></div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="kc-question" id="kc-q4">
+      <p class="q-stem">4. Which statement best describes the difference between containers and virtual machines?</p>
+      <div class="kc-option"><label><input type="radio" name="q4" value="a"> Containers include a full operating system; VMs share the host kernel</label></div>
+      <div class="kc-option"><label><input type="radio" name="q4" value="b"> VMs virtualize hardware and run a full OS; containers share the host OS kernel and isolate only the application</label></div>
+      <div class="kc-option"><label><input type="radio" name="q4" value="c"> Containers are always more secure than VMs</label></div>
+      <div class="kc-option"><label><input type="radio" name="q4" value="d"> VMs and containers are the same technology with different names</label></div>
+      <button class="kc-submit" onclick="checkAnswer('q4','b')">Check Answer</button>
+      <div class="kc-feedback" id="fb-q4"></div>
+    </div>
+
+    <!-- Q5 — MATCHING -->
+    <div class="kc-question" id="kc-q5">
+      <p class="q-stem">5. Match each hypervisor product to its correct type:</p>
+      <div class="kc-match-area">
+        <label for="match-esxi"><strong>VMware ESXi</strong></label>
+        <select id="match-esxi"><option value="">— Select —</option><option value="t1">Type 1</option><option value="t2">Type 2</option></select>
+
+        <label for="match-vbox"><strong>Oracle VirtualBox</strong></label>
+        <select id="match-vbox"><option value="">— Select —</option><option value="t1">Type 1</option><option value="t2">Type 2</option></select>
+
+        <label for="match-kvm"><strong>KVM</strong></label>
+        <select id="match-kvm"><option value="">— Select —</option><option value="t1">Type 1</option><option value="t2">Type 2</option></select>
+
+        <label for="match-wks"><strong>VMware Workstation</strong></label>
+        <select id="match-wks"><option value="">— Select —</option><option value="t1">Type 1</option><option value="t2">Type 2</option></select>
+      </div>
+      <button class="kc-submit" onclick="checkMatching()">Check Answer</button>
+      <div class="kc-feedback" id="fb-q5"></div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="kc-question" id="kc-q6">
+      <p class="q-stem">6. An administrator needs to test a new software patch before deploying it to a production server. They want to capture the server's current state so they can instantly revert if the patch causes problems. Which virtualization feature should they use?</p>
+      <div class="kc-option"><label><input type="radio" name="q6" value="a"> Cloning</label></div>
+      <div class="kc-option"><label><input type="radio" name="q6" value="b"> Snapshot</label></div>
+      <div class="kc-option"><label><input type="radio" name="q6" value="c"> Bridged networking</label></div>
+      <div class="kc-option"><label><input type="radio" name="q6" value="d"> Container deployment</label></div>
+      <button class="kc-submit" onclick="checkAnswer('q6','b')">Check Answer</button>
+      <div class="kc-feedback" id="fb-q6"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ WHAT'S NEXT ═══ -->
+<div class="callout" style="margin-top:.5rem">
+  <div class="callout-title">➡️ Up Next</div>
+  <p>In <strong>Module 13.2 – Virtual Machine Creation &amp; Management</strong>, you will move from theory to hands-on practice: creating VMs, configuring vCPU/vRAM/disk settings, working with snapshots and clones, and installing guest additions. The concepts from this module — especially hypervisor architecture and the benefits of virtualization — will provide the "why" behind every configuration choice you make.</p>
+</div>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer role="contentinfo">
+  <strong>CSC 152 – Network Operating Systems and Administration</strong> · Mendocino College · Week 13, Module 13.1<br>
+  CSLO 1 · Objectives W13.1, W13.2 · © 2026 David Pai
+</footer>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                  -->
+<!-- ═══════════════════════════════════════════ -->
+<script>
+/* ── Sticky nav active-section tracking ── */
+function setupStickyNav(){
+  var navLinks=document.querySelectorAll('.top-nav a[href^="#"]');
+  var sections=Array.from(navLinks).map(function(a){
+    return document.querySelector(a.getAttribute('href'));
+  }).filter(Boolean);
+  if(!sections.length||!('IntersectionObserver' in window))return;
+  var observer=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){
+        navLinks.forEach(function(a){a.removeAttribute('aria-current');});
+        var link=document.querySelector('.top-nav a[href="#'+entry.target.id+'"]');
+        if(link)link.setAttribute('aria-current','true');
+      }
+    });
+  },{rootMargin:'-48px 0px -55% 0px',threshold:0});
+  sections.forEach(function(s){observer.observe(s);});
+}
+document.addEventListener('DOMContentLoaded',setupStickyNav);
+
+/* ── Accordion toggle ── */
+document.querySelectorAll('.accordion-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var expanded=this.getAttribute('aria-expanded')==='true';
+    this.setAttribute('aria-expanded',String(!expanded));
+    var panel=document.getElementById(this.getAttribute('aria-controls'));
+    if(panel){
+      panel.setAttribute('aria-hidden',String(expanded));
+      panel.style.maxHeight=expanded?'0':panel.scrollHeight+'px';
+    }
+  });
+});
+
+/* ── Tab switching ── */
+document.querySelectorAll('.tab-list').forEach(function(tablist){
+  var btns=tablist.querySelectorAll('[role="tab"]');
+  btns.forEach(function(btn){
+    btn.addEventListener('click',function(){
+      btns.forEach(function(b){
+        b.setAttribute('aria-selected','false');
+        var p=document.getElementById(b.getAttribute('aria-controls'));
+        if(p) p.hidden=true;
+      });
+      this.setAttribute('aria-selected','true');
+      var panel=document.getElementById(this.getAttribute('aria-controls'));
+      if(panel) panel.hidden=false;
+    });
+    btn.addEventListener('keydown',function(e){
+      var idx=Array.from(btns).indexOf(this);
+      if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+        e.preventDefault();
+        var next=e.key==='ArrowRight'?(idx+1)%btns.length:(idx-1+btns.length)%btns.length;
+        btns[next].focus();
+        btns[next].click();
+      }
+    });
+  });
+});
+
+/* ── Scenario reveal ── */
+function toggleReveal(id,btn){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var showing=el.classList.contains('visible');
+  el.classList.toggle('visible');
+  btn.setAttribute('aria-expanded',String(!showing));
+  btn.textContent=showing?'Show Model Answer':'Hide Model Answer';
+}
+
+/* ── Knowledge-check feedback data ── */
+var feedback={
+  q1:{
+    b:{correct:true,text:'Correct! The hypervisor\'s primary role is to abstract physical hardware and create/manage virtual machines. It allocates CPU, memory, storage, and network resources among VMs.'},
+    a:{correct:false,text:'Not quite. A hypervisor doesn\'t replace the OS — it enables multiple OSes to run simultaneously by abstracting the hardware beneath them.'},
+    c:{correct:false,text:'Incorrect. Antivirus is a separate security tool. The hypervisor\'s job is hardware abstraction and VM management.'},
+    d:{correct:false,text:'Incorrect. While VMs can connect to networks, that is just one function. The hypervisor\'s primary role is abstracting hardware to create and manage VMs.'}
+  },
+  q2:{
+    b:{correct:true,text:'Correct! VirtualBox runs as an application on top of your host operating system (Windows, macOS, or Linux), making it a Type 2 (hosted) hypervisor.'},
+    a:{correct:false,text:'Incorrect. Type 1 hypervisors install directly on hardware with no host OS. VirtualBox requires a host OS (your Windows, macOS, or Linux desktop) to run.'},
+    c:{correct:false,text:'There is no "Type 3" classification. Containers are a different technology altogether, not a hypervisor type.'},
+    d:{correct:false,text:'VirtualBox is always Type 2, regardless of the host OS. It always runs as an application on top of an existing operating system.'}
+  },
+  q3:{
+    c:{correct:true,text:'Correct! Server consolidation directly addresses low utilization by combining multiple workloads onto fewer physical servers, raising utilization from ~10% to 60–80%.'},
+    a:{correct:false,text:'Isolation is important but doesn\'t address the utilization problem. The company needs to reduce the number of underused physical servers.'},
+    b:{correct:false,text:'Snapshots are valuable for DR, but the core problem here is 15 servers running at only 10% capacity — that\'s a consolidation issue.'},
+    d:{correct:false,text:'VDI virtualizes desktops, not servers. The scenario describes server underutilization, which is addressed by server consolidation.'}
+  },
+  q4:{
+    b:{correct:true,text:'Correct! VMs include a full OS and virtualize hardware via a hypervisor. Containers share the host OS kernel and package only the application and its dependencies, making them lighter and faster to start.'},
+    a:{correct:false,text:'This is backwards. VMs include a full OS; containers share the host kernel and are much lighter.'},
+    c:{correct:false,text:'This is an oversimplification. VMs actually provide stronger isolation (separate kernels) than containers (shared kernel). Security depends on the use case.'},
+    d:{correct:false,text:'They are fundamentally different technologies. VMs virtualize hardware; containers virtualize at the OS level.'}
+  },
+  q6:{
+    b:{correct:true,text:'Correct! A snapshot captures the VM\'s exact state (disk, memory, configuration) at a point in time. If the patch causes problems, the admin can revert to the snapshot in seconds.'},
+    a:{correct:false,text:'Cloning creates a full copy of a VM, which is useful for duplication but not for quick rollback of a specific change.'},
+    c:{correct:false,text:'Bridged networking is a network configuration mode, not a state-capture feature.'},
+    d:{correct:false,text:'Containers are a deployment model, not a rollback mechanism for existing VMs.'}
+  }
+};
+
+function checkAnswer(qName,correctVal){
+  var selected=document.querySelector('input[name="'+qName+'"]:checked');
+  var fbEl=document.getElementById('fb-'+qName);
+  if(!selected){fbEl.className='kc-feedback incorrect';fbEl.style.display='block';fbEl.textContent='Please select an answer first.';return;}
+  var val=selected.value;
+  var data=feedback[qName][val];
+  if(data){
+    fbEl.className='kc-feedback '+(data.correct?'correct':'incorrect');
+    fbEl.textContent=(data.correct?'✓ ':'✗ ')+data.text;
+    fbEl.style.display='block';
+  }
+  updateProgress();
+}
+
+/* ── Matching question ── */
+function checkMatching(){
+  var esxi=document.getElementById('match-esxi').value;
+  var vbox=document.getElementById('match-vbox').value;
+  var kvm=document.getElementById('match-kvm').value;
+  var wks=document.getElementById('match-wks').value;
+  var fbEl=document.getElementById('fb-q5');
+
+  if(!esxi||!vbox||!kvm||!wks){
+    fbEl.className='kc-feedback incorrect';fbEl.style.display='block';
+    fbEl.textContent='Please make a selection for all four products.';return;
+  }
+  var score=0;
+  var details=[];
+  if(esxi==='t1'){score++;details.push('✓ ESXi → Type 1. Correct! ESXi is VMware\'s bare-metal hypervisor.');}
+  else details.push('✗ ESXi → Type 1 (not Type 2). ESXi installs directly on hardware with no host OS.');
+  if(vbox==='t2'){score++;details.push('✓ VirtualBox → Type 2. Correct! It runs as an application on a host OS.');}
+  else details.push('✗ VirtualBox → Type 2 (not Type 1). VirtualBox requires a host OS to run.');
+  if(kvm==='t1'){score++;details.push('✓ KVM → Type 1. Correct! KVM is a Linux kernel module that turns Linux into a bare-metal hypervisor.');}
+  else details.push('✗ KVM → Type 1 (not Type 2). Once loaded, KVM gives the Linux kernel direct hypervisor capabilities.');
+  if(wks==='t2'){score++;details.push('✓ VMware Workstation → Type 2. Correct! It runs on top of Windows or Linux.');}
+  else details.push('✗ VMware Workstation → Type 2 (not Type 1). Workstation is a desktop application requiring a host OS.');
+
+  fbEl.className='kc-feedback '+(score===4?'correct':'incorrect');
+  fbEl.innerHTML='<strong>'+score+'/4 correct.</strong><br>'+details.join('<br>');
+  fbEl.style.display='block';
+  updateProgress();
+}
+
+/* ── Progress tracking (session only) ── */
+function updateProgress(){
+  var total=6;
+  var answered=0;
+  for(var i=1;i<=6;i++){
+    var fb=document.getElementById('fb-q'+i);
+    if(fb&&fb.style.display==='block')answered++;
+  }
+  var pct=Math.round((answered/total)*100);
+  var fill=document.getElementById('progressFill');
+  if(fill){fill.style.width=pct+'%';fill.setAttribute('aria-valuenow',pct);}
+  var label=fill?fill.parentElement.previousElementSibling:null;
+  if(label){var spans=label.querySelectorAll('span');if(spans.length>1)spans[1].textContent='Questions answered: '+answered+' of '+total;}
+}
+</script>
+
+</body>
+</html>

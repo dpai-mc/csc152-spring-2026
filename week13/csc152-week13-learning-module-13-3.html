@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 13.3 – Virtual Networking &amp; Virtual Storage | CSC 152</title>
+<style>
+/* ═══ CSS RESET & BASE ═══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.65;color:#1e293b;background:#f8fafc}
+
+/* ═══ SKIP LINK ═══ */
+.skip-link{position:absolute;top:-100%;left:1rem;background:#1e40af;color:#fff;padding:.5rem 1rem;border-radius:0 0 .5rem .5rem;z-index:10000;font-weight:600;text-decoration:none}
+.skip-link:focus{top:0}
+
+/* ═══ STICKY NAV ═══ */
+.sticky-nav{position:sticky;top:0;background:#1e293b;z-index:9999;border-bottom:3px solid #2563eb;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.sticky-nav .nav-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:.15rem;padding:.35rem .75rem;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sticky-nav .nav-brand{color:#93c5fd;font-weight:700;font-size:.82rem;white-space:nowrap;margin-right:.5rem;flex-shrink:0}
+.sticky-nav a{color:#cbd5e1;text-decoration:none;font-size:.72rem;padding:.3rem .55rem;border-radius:.35rem;white-space:nowrap;transition:background .2s,color .2s}
+.sticky-nav a:hover,.sticky-nav a:focus{background:#334155;color:#fff;outline:none}
+.sticky-nav a:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+
+/* ═══ PAGE HEADER ═══ */
+.page-header{background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);color:#fff;padding:2.5rem 1.5rem 2rem;text-align:center}
+.page-header .course-tag{display:inline-block;background:rgba(255,255,255,.15);padding:.25rem .85rem;border-radius:1rem;font-size:.8rem;letter-spacing:.03em;margin-bottom:.75rem}
+.page-header h1{font-size:clamp(1.45rem,3.5vw,2rem);font-weight:800;line-height:1.25;margin-bottom:.5rem}
+.page-header .subtitle{font-size:.95rem;opacity:.88;margin-bottom:1rem}
+.meta-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:.45rem}
+.meta-pill{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);padding:.2rem .7rem;border-radius:1rem;font-size:.75rem}
+
+/* ═══ LAYOUT ═══ */
+.container{max-width:960px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+section{margin-bottom:2.5rem}
+
+/* ═══ SECTION HEADINGS ═══ */
+.section-heading{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:3px solid #2563eb}
+.section-number{background:#2563eb;color:#fff;font-weight:800;font-size:.85rem;width:2.1rem;height:2.1rem;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0}
+.section-heading h2{font-size:1.35rem;color:#1e293b;font-weight:700}
+
+/* ═══ CALLOUT BOXES ═══ */
+.callout{border-left:4px solid;border-radius:.5rem;padding:1rem 1.15rem;margin:1.25rem 0;font-size:.92rem}
+.callout-title{font-weight:700;margin-bottom:.25rem;display:flex;align-items:center;gap:.4rem}
+.callout-info{border-color:#2563eb;background:#eff6ff}
+.callout-info .callout-title{color:#1e40af}
+.callout-tip{border-color:#16a34a;background:#f0fdf4}
+.callout-tip .callout-title{color:#15803d}
+.callout-warning{border-color:#d97706;background:#fffbeb}
+.callout-warning .callout-title{color:#b45309}
+.callout-connection{border-color:#7c3aed;background:#f5f3ff}
+.callout-connection .callout-title{color:#6d28d9}
+.callout-lab{border-color:#0891b2;background:#ecfeff}
+.callout-lab .callout-title{color:#0e7490}
+
+/* ═══ TABLES ═══ */
+.table-wrap{overflow-x:auto;margin:1rem 0;border-radius:.5rem;border:1px solid #e2e8f0}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+thead{background:#1e293b;color:#fff}
+th{padding:.65rem .75rem;text-align:left;font-weight:600;font-size:.82rem}
+td{padding:.6rem .75rem;border-top:1px solid #e2e8f0}
+tbody tr:nth-child(even){background:#f8fafc}
+tbody tr:hover{background:#eff6ff}
+
+/* ═══ TABS ═══ */
+.tabs{margin:1.25rem 0}
+.tab-buttons{display:flex;flex-wrap:wrap;gap:.25rem;border-bottom:2px solid #e2e8f0;margin-bottom:0}
+.tab-btn{padding:.5rem 1rem;font-size:.84rem;font-weight:600;background:transparent;border:none;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s}
+.tab-btn:hover{color:#1e40af}
+.tab-btn.active{color:#1e40af;border-bottom-color:#2563eb}
+.tab-btn:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+.tab-panel{display:none;padding:1.15rem;background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 .5rem .5rem}
+.tab-panel.active{display:block}
+
+/* ═══ TOGGLE / COLLAPSIBLE ═══ */
+.toggle-group{margin:1rem 0}
+.toggle-item{border:1px solid #e2e8f0;border-radius:.5rem;margin-bottom:.5rem;overflow:hidden}
+.toggle-btn{width:100%;text-align:left;padding:.75rem 1rem;font-size:.9rem;font-weight:600;background:#f8fafc;border:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:#1e293b;transition:background .2s}
+.toggle-btn:hover{background:#eff6ff}
+.toggle-btn:focus-visible{outline:2px solid #60a5fa;outline-offset:-2px}
+.toggle-btn::after{content:'+';font-size:1.15rem;font-weight:700;color:#2563eb;transition:transform .25s}
+.toggle-btn[aria-expanded="true"]::after{content:'−'}
+.toggle-content{display:none;padding:1rem 1.15rem;background:#fff;font-size:.9rem}
+.toggle-content.open{display:block}
+
+/* ═══ ASCII DIAGRAM BOX ═══ */
+.diagram-box{background:#1e293b;color:#e2e8f0;padding:1.15rem 1.25rem;border-radius:.5rem;overflow-x:auto;font-family:'Courier New',Courier,monospace;font-size:.78rem;line-height:1.55;margin:1rem 0;white-space:pre}
+.diagram-caption{text-align:center;font-size:.82rem;color:#64748b;margin-top:.35rem;font-style:italic}
+
+/* ═══ SCENARIO BOX ═══ */
+.scenario-box{background:#fff;border:2px solid #2563eb;border-radius:.75rem;padding:1.25rem;margin:1.25rem 0}
+.scenario-box h3{color:#1e40af;margin-bottom:.75rem}
+
+/* ═══ REVEAL BUTTON ═══ */
+.reveal-btn{display:inline-flex;align-items:center;gap:.4rem;background:#2563eb;color:#fff;border:none;padding:.55rem 1.15rem;border-radius:.45rem;font-size:.85rem;font-weight:600;cursor:pointer;transition:background .2s}
+.reveal-btn:hover{background:#1d4ed8}
+.reveal-btn:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+.reveal-content{display:none;margin-top:1rem;padding:1rem;background:#eff6ff;border-radius:.5rem;border:1px solid #bfdbfe}
+.reveal-content.visible{display:block}
+
+/* ═══ KNOWLEDGE CHECK ═══ */
+.kc-question{background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem 1.15rem;margin-bottom:1rem}
+.kc-question p.q-stem{font-weight:600;margin-bottom:.65rem;font-size:.92rem}
+.kc-options{list-style:none;padding:0}
+.kc-options li{margin-bottom:.35rem}
+.kc-options label{display:flex;align-items:flex-start;gap:.5rem;cursor:pointer;padding:.35rem .5rem;border-radius:.35rem;font-size:.88rem;transition:background .15s}
+.kc-options label:hover{background:#f1f5f9}
+.kc-options input[type="radio"]{margin-top:.25rem;flex-shrink:0}
+.kc-feedback{display:none;margin-top:.65rem;padding:.65rem .85rem;border-radius:.45rem;font-size:.86rem}
+.kc-feedback.correct{background:#dcfce7;border:1px solid #86efac;color:#166534;display:block}
+.kc-feedback.incorrect{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;display:block}
+.kc-check-btn{background:#2563eb;color:#fff;border:none;padding:.45rem 1rem;border-radius:.4rem;font-size:.82rem;font-weight:600;cursor:pointer;margin-top:.5rem;transition:background .2s}
+.kc-check-btn:hover{background:#1d4ed8}
+.kc-check-btn:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+
+/* ═══ FLOWCHART (styled list) ═══ */
+.flowchart{background:#fff;border:2px solid #e2e8f0;border-radius:.75rem;padding:1.25rem 1.5rem;margin:1rem 0}
+.flow-step{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.85rem;position:relative;padding-left:.5rem}
+.flow-step:not(:last-child)::after{content:'';position:absolute;left:1.35rem;top:2.1rem;bottom:-.55rem;width:2px;background:#2563eb}
+.flow-diamond{background:#2563eb;color:#fff;font-weight:700;font-size:.75rem;min-width:2.2rem;height:2.2rem;display:flex;align-items:center;justify-content:center;border-radius:.35rem;flex-shrink:0;transform:rotate(0deg)}
+.flow-text{font-size:.88rem;padding-top:.25rem}
+.flow-text strong{color:#1e40af}
+.flow-arrow{color:#2563eb;font-weight:700;font-size:.82rem;margin-left:2.95rem;margin-bottom:.5rem}
+
+/* ═══ FOOTER ═══ */
+.page-footer{background:#1e293b;color:#94a3b8;text-align:center;padding:1.5rem 1rem;font-size:.8rem;margin-top:2rem}
+.page-footer strong{color:#e2e8f0}
+
+/* ═══ UTILITIES ═══ */
+ul,ol{margin:.5rem 0 .5rem 1.5rem}
+li{margin-bottom:.3rem;font-size:.92rem}
+p{margin-bottom:.75rem;font-size:.93rem}
+strong{color:#1e293b}
+code{background:#f1f5f9;padding:.1rem .35rem;border-radius:.25rem;font-size:.84rem;font-family:'Courier New',Courier,monospace}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:600px){
+  .sticky-nav .nav-inner{padding:.3rem .5rem}
+  .sticky-nav a{font-size:.67rem;padding:.25rem .4rem}
+  .container{padding:1rem .75rem 2rem}
+  .section-heading h2{font-size:1.15rem}
+  .tab-btn{font-size:.76rem;padding:.4rem .65rem}
+  .diagram-box{font-size:.68rem;padding:.85rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SKIP LINK ═══ -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ═══ STICKY NAV ═══ -->
+<nav class="sticky-nav" role="navigation" aria-label="Module sections">
+  <div class="nav-inner">
+    <span class="nav-brand">13.3</span>
+    <a href="#sec1">NICs</a>
+    <a href="#sec2">NAT</a>
+    <a href="#sec3">Bridged</a>
+    <a href="#sec4">Internal &amp; Host-Only</a>
+    <a href="#sec5">Comparison</a>
+    <a href="#sec6">Switches</a>
+    <a href="#sec7">Topology Design</a>
+    <a href="#sec8">Disk Mgmt</a>
+    <a href="#sec9">Controllers &amp; Shared</a>
+    <a href="#sec10">Knowledge Check</a>
+  </div>
+</nav>
+
+<!-- ═══ PAGE HEADER ═══ -->
+<header class="page-header" role="banner">
+  <div class="course-tag">CSC 152 · Week 13 of 17</div>
+  <h1>Module 13.3 – Virtual Networking<br>&amp; Virtual Storage</h1>
+  <p class="subtitle">Network Operating Systems and Administration · Mendocino College</p>
+  <div class="meta-pills">
+    <span class="meta-pill">📅 April 13–19, 2026</span>
+    <span class="meta-pill">⏱ ~50 min self-study</span>
+    <span class="meta-pill">🎯 W13.4</span>
+    <span class="meta-pill">📋 CSLO 1 · CSLO 3</span>
+  </div>
+</header>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main id="main-content" class="container">
+
+<!-- ── INTRO ── -->
+<section aria-label="Module introduction">
+  <p>In Module 13.2 you created and configured virtual machines—but a VM without a network connection is an island, and a VM without adequate storage can't do real work. This module bridges the gap between the <strong>physical networking</strong> skills you built in Weeks 8–9 and the <strong>storage technologies</strong> you studied in Week 10 by showing how those same concepts are <em>virtualized</em> inside a hypervisor.</p>
+  <p>By the end of this module you will be able to <strong>manage virtual networks and virtual storage within a hypervisor environment</strong> (W13.4). The skills you develop here are directly applied in <strong>Lab 13 Parts B and C</strong> and are essential for the Splunk forwarder-to-indexer connectivity required by <strong>Project 3</strong>.</p>
+
+  <div class="callout callout-info">
+    <div class="callout-title">📘 Prerequisites</div>
+    <ul>
+      <li><strong>Module 13.2</strong> – You should have already created at least one VM and be familiar with VM settings.</li>
+      <li><strong>Week 8</strong> – IP addressing, subnet masks, DNS, and network interface configuration.</li>
+      <li><strong>Week 9</strong> – DHCP, DNS services, and firewall rules.</li>
+      <li><strong>Week 10</strong> – DAS, NAS, SAN, RAID, and LVM concepts.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1 – Virtual Network Adapters                    -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec1">
+  <div class="section-heading">
+    <span class="section-number">1</span>
+    <h2>Virtual Network Adapters</h2>
+  </div>
+
+  <p>Every physical server has one or more <strong>Network Interface Cards (NICs)</strong>. In a virtual environment, the hypervisor emulates NICs in software—these are called <strong>virtual NICs (vNICs)</strong>. From the guest OS's perspective, a vNIC looks and behaves exactly like a physical NIC.</p>
+
+  <h3>Virtual NIC Types</h3>
+  <p>Hypervisors typically offer several emulated NIC models. The choice affects compatibility and performance:</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption class="sr-only">Virtual NIC types comparison</caption>
+      <thead>
+        <tr><th>NIC Type</th><th>Emulates</th><th>Performance</th><th>Best For</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Intel PRO/1000 (e1000)</strong></td><td>Intel Gigabit NIC</td><td>Good – widely supported</td><td>General-purpose; broad guest OS compatibility</td></tr>
+        <tr><td><strong>PCnet-FAST III (Am79C973)</strong></td><td>AMD PCnet 10/100</td><td>Moderate</td><td>Legacy OSes (older Linux, DOS)</td></tr>
+        <tr><td><strong>Paravirtualized (virtio-net)</strong></td><td>None – guest-aware driver</td><td>Best – near-native</td><td>Linux guests with virtio drivers; KVM/VirtualBox</td></tr>
+        <tr><td><strong>Hyper-V Network Adapter</strong></td><td>Synthetic (VMBus)</td><td>Best – near-native</td><td>Windows/Linux guests on Hyper-V with Integration Services</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">💡 Performance Tip</div>
+    <p><strong>Paravirtualized</strong> adapters skip hardware emulation entirely. The guest OS "knows" it's running inside a hypervisor and uses optimized drivers to communicate directly with the hypervisor's networking stack. Always prefer paravirtualized NICs when your guest OS supports them.</p>
+  </div>
+
+  <h3>MAC Address Assignment</h3>
+  <p>Just like physical NICs, every vNIC has a <strong>MAC address</strong>. Hypervisors auto-generate MAC addresses using a vendor-specific OUI prefix:</p>
+  <ul>
+    <li><strong>VirtualBox:</strong> <code>08:00:27:xx:xx:xx</code></li>
+    <li><strong>Hyper-V:</strong> <code>00:15:5D:xx:xx:xx</code></li>
+    <li><strong>VMware:</strong> <code>00:0C:29:xx:xx:xx</code> or <code>00:50:56:xx:xx:xx</code></li>
+  </ul>
+  <p>You can <strong>manually set</strong> a MAC address in the VM's network adapter settings. This is useful when:</p>
+  <ul>
+    <li>A DHCP server reserves IPs by MAC address.</li>
+    <li>Software licensing is tied to a specific MAC.</li>
+    <li>You clone a VM and need to avoid MAC conflicts on the same network segment.</li>
+  </ul>
+
+  <div class="callout callout-connection">
+    <div class="callout-title">🔗 Connection to Week 8</div>
+    <p>In Week 8 you configured network interfaces using <code>ip addr</code> on Linux and <code>Get-NetAdapter</code> in PowerShell. Those same commands work inside a VM—the guest OS sees the vNIC as a normal interface. The MAC addresses you see with <code>ip link show</code> will match the hypervisor's assignment.</p>
+  </div>
+
+  <h3>Adding Multiple NICs</h3>
+  <p>VMs can have <strong>multiple vNICs</strong>, each attached to a different virtual network. This is how you build multi-homed VMs—for example, a firewall VM with one NIC on an external network and another on an internal network. VirtualBox supports up to <strong>8 network adapters</strong> per VM; Hyper-V supports up to <strong>12 synthetic adapters</strong>.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2 – NAT Mode                                    -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec2">
+  <div class="section-heading">
+    <span class="section-number">2</span>
+    <h2>NAT Mode</h2>
+  </div>
+
+  <p><strong>NAT (Network Address Translation)</strong> is the default network mode in VirtualBox and the simplest way to give a VM internet access. The hypervisor acts as a NAT router between the VM and the host's physical network.</p>
+
+  <h3>How NAT Mode Works</h3>
+  <div class="diagram-box" role="img" aria-label="NAT mode architecture diagram">
+┌──────────────────────────────────────────────────────────┐
+│  HOST MACHINE                                            │
+│                                                          │
+│  ┌──────────────┐     ┌──────────────────────────────┐   │
+│  │   VM (Guest)  │     │  VirtualBox NAT Engine       │   │
+│  │               │     │                              │   │
+│  │  vNIC         │────▶│  DHCP: 10.0.2.2              │   │
+│  │  10.0.2.15    │     │  Gateway: 10.0.2.2           │   │
+│  │               │     │  DNS:  10.0.2.3              │   │
+│  └──────────────┘     │                              │   │
+│                        │  NAT Translation             │   │
+│                        │  10.0.2.15 ──▶ Host IP       │   │
+│                        └──────────┬───────────────────┘   │
+│                                   │                       │
+│  ┌────────────────────────────────▼─────────────────┐     │
+│  │  Host Physical NIC (e.g., 192.168.1.50)          │     │
+│  └────────────────────────────────┬─────────────────┘     │
+└───────────────────────────────────┼───────────────────────┘
+                                    │
+                              ┌─────▼─────┐
+                              │  Internet  │
+                              └───────────┘</div>
+  <p class="diagram-caption">Figure 2-1: NAT mode – the VM's traffic is translated through the host's IP address</p>
+
+  <p><strong>Key behaviors:</strong></p>
+  <ul>
+    <li>The VM receives an IP (typically <code>10.0.2.15</code>) from VirtualBox's built-in DHCP server.</li>
+    <li>Outbound traffic from the VM is <strong>translated</strong> to the host's IP—external devices see only the host.</li>
+    <li>Inbound connections from the external network <strong>cannot reach the VM</strong> unless you configure <strong>port forwarding</strong>.</li>
+    <li>Each VM gets its own <strong>isolated NAT network</strong>—two VMs in NAT mode <strong>cannot see each other</strong> by default.</li>
+  </ul>
+
+  <div class="callout callout-connection">
+    <div class="callout-title">🔗 Connection to Week 9</div>
+    <p>NAT in a hypervisor works on the same principle as the NAT you studied on physical routers in Week 9. The hypervisor's NAT engine maintains a translation table mapping VM source ports to host ports, just like a home router does for your LAN devices.</p>
+  </div>
+
+  <h3>Advantages &amp; Limitations</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Advantages</th><th>Limitations</th></tr></thead>
+      <tbody>
+        <tr><td>Zero configuration—works immediately</td><td>VM is invisible to external network</td></tr>
+        <tr><td>VM gets internet access automatically</td><td>No direct VM-to-VM communication</td></tr>
+        <tr><td>Host network settings are not affected</td><td>Port forwarding required for inbound services</td></tr>
+        <tr><td>Good isolation from the physical LAN</td><td>Slight performance overhead from translation</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>When to Use NAT Mode</h3>
+  <ul>
+    <li>Quick testing where the VM only needs <strong>outbound</strong> internet access (e.g., downloading packages).</li>
+    <li>Situations where you do <strong>not</strong> want the VM exposed on the physical network.</li>
+    <li>Single-VM setups where inter-VM communication is not needed.</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3 – Bridged Mode                                -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec3">
+  <div class="section-heading">
+    <span class="section-number">3</span>
+    <h2>Bridged Mode</h2>
+  </div>
+
+  <p>In <strong>Bridged mode</strong>, the hypervisor uses a <em>net filter driver</em> to connect the VM's vNIC directly to the host's physical NIC. The VM appears as a <strong>separate device on the physical network</strong>—it gets its own IP from the network's DHCP server (or you assign one statically).</p>
+
+  <h3>How Bridged Mode Works</h3>
+  <div class="diagram-box" role="img" aria-label="Bridged mode architecture diagram">
+┌──────────────────────────────────────────────────────────┐
+│  HOST MACHINE                                            │
+│                                                          │
+│  ┌──────────────┐                                        │
+│  │   VM (Guest)  │                                        │
+│  │               │                                        │
+│  │  vNIC ────────┼────────┐                               │
+│  │  192.168.1.60 │        │  Bridge Driver                │
+│  └──────────────┘        │  (net filter)                 │
+│                           │                               │
+│  ┌────────────────────────▼─────────────────────────┐     │
+│  │  Host Physical NIC — 192.168.1.50                │     │
+│  │  (shared between host and VM at Layer 2)         │     │
+│  └────────────────────────┬─────────────────────────┘     │
+└───────────────────────────┼───────────────────────────────┘
+                            │
+                  ┌─────────▼─────────┐
+                  │  Physical Switch / │
+                  │  Router / Internet │
+                  │  (LAN: 192.168.1.0/24)
+                  └───────────────────┘</div>
+  <p class="diagram-caption">Figure 3-1: Bridged mode – the VM is a peer on the physical network</p>
+
+  <p><strong>Key behaviors:</strong></p>
+  <ul>
+    <li>The VM is <strong>fully visible</strong> on the physical LAN—other devices can ping it, connect to its services, etc.</li>
+    <li>The VM gets an IP from the <strong>same DHCP server</strong> as physical machines (or uses a static IP in the same subnet).</li>
+    <li>Traffic between the VM and external hosts does <strong>not</strong> pass through NAT—it's direct Layer 2 bridging.</li>
+  </ul>
+
+  <h3>Advantages &amp; Security Considerations</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Advantages</th><th>Security Considerations</th></tr></thead>
+      <tbody>
+        <tr><td>VM is a full network citizen—accessible to all LAN devices</td><td>VM is exposed to all LAN traffic (attacks, scans)</td></tr>
+        <tr><td>No port forwarding needed for inbound services</td><td>Must apply same firewall rules as a physical server</td></tr>
+        <tr><td>Ideal for servers that need to be reached by other hosts</td><td>Consumes an IP address from the physical subnet</td></tr>
+        <tr><td>Best performance—minimal translation overhead</td><td>Requires network admin awareness (rogue DHCP, MAC conflicts)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-warning">
+    <div class="callout-title">⚠️ Security Reminder</div>
+    <p>Because a bridged VM is fully exposed on the physical network, you <strong>must</strong> apply the same firewall and hardening practices you would to a physical server. This connects directly to the firewall rules you configured in Week 9 and the hardening you'll perform in Week 14.</p>
+  </div>
+
+  <h3>When to Use Bridged Mode</h3>
+  <ul>
+    <li>The VM runs a <strong>server</strong> that other physical or virtual machines must reach (web server, Splunk indexer, DNS).</li>
+    <li>You need the VM to participate in <strong>Active Directory</strong> or <strong>DHCP/DNS</strong> on the physical network.</li>
+    <li>Testing network services in a <strong>realistic</strong> environment that mirrors production.</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4 – Internal & Host-Only Modes                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec4">
+  <div class="section-heading">
+    <span class="section-number">4</span>
+    <h2>Internal &amp; Host-Only Modes</h2>
+  </div>
+
+  <p>Both of these modes create <strong>isolated networks</strong>, but they differ in whether the host can participate.</p>
+
+  <!-- TABS for the two modes -->
+  <div class="tabs">
+    <div class="tab-buttons" role="tablist" aria-label="Network mode details">
+      <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-hostonly" id="btn-hostonly">Host-Only Mode</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-internal" id="btn-internal">Internal Network Mode</button>
+    </div>
+
+    <div class="tab-panel active" role="tabpanel" id="tab-hostonly" aria-labelledby="btn-hostonly">
+      <h3>Host-Only Mode</h3>
+      <div class="diagram-box" role="img" aria-label="Host-Only mode architecture diagram">
+┌──────────────────────────────────────────────────────────┐
+│  HOST MACHINE                                            │
+│                                                          │
+│  ┌──────────┐  ┌──────────┐   ┌─────────────────────┐   │
+│  │  VM-A    │  │  VM-B    │   │  Host-Only Adapter  │   │
+│  │ 192.168. │  │ 192.168. │   │  192.168.56.1       │   │
+│  │ 56.101   │  │ 56.102   │   │  (on host)          │   │
+│  └────┬─────┘  └────┬─────┘   └─────────┬───────────┘   │
+│       │              │                   │               │
+│  ┌────▼──────────────▼───────────────────▼───────────┐   │
+│  │  VirtualBox Host-Only Network (vboxnet0)          │   │
+│  │  Subnet: 192.168.56.0/24  DHCP: optional          │   │
+│  └───────────────────────────────────────────────────┘   │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐    │
+│  │  Host Physical NIC ── Internet                   │    │
+│  │  (NOT connected to host-only network)            │    │
+│  └──────────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────┘</div>
+      <p class="diagram-caption">Figure 4-1: Host-Only mode – VMs and host share an isolated subnet</p>
+      <p><strong>Key characteristics:</strong></p>
+      <ul>
+        <li>VMs can communicate with <strong>each other</strong> and with the <strong>host</strong>.</li>
+        <li><strong>No access</strong> to the external/physical network or internet.</li>
+        <li>VirtualBox creates a virtual adapter on the host (e.g., <code>vboxnet0</code> at <code>192.168.56.1</code>).</li>
+        <li>An optional DHCP server can assign IPs to VMs in the <code>192.168.56.x</code> range.</li>
+      </ul>
+      <p><strong>When to use:</strong> Isolated lab environments where you need to manage VMs from the host (e.g., SSH from host into VMs) but do not want any external exposure. Perfect for building a private lab network.</p>
+    </div>
+
+    <div class="tab-panel" role="tabpanel" id="tab-internal" aria-labelledby="btn-internal">
+      <h3>Internal Network Mode</h3>
+      <div class="diagram-box" role="img" aria-label="Internal network mode architecture diagram">
+┌──────────────────────────────────────────────────────────┐
+│  HOST MACHINE                                            │
+│                                                          │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐               │
+│  │  VM-A    │  │  VM-B    │  │  VM-C    │               │
+│  │ 10.10.   │  │ 10.10.   │  │ 10.10.   │               │
+│  │ 10.1     │  │ 10.2     │  │ 10.3     │               │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘               │
+│       │              │              │                     │
+│  ┌────▼──────────────▼──────────────▼────────────────┐   │
+│  │  Internal Network: "intnet-lab"                   │   │
+│  │  (VMs only — host CANNOT access this network)     │   │
+│  └───────────────────────────────────────────────────┘   │
+│                                                          │
+│  Host has NO adapter on this network.                    │
+│  No internet access. No host access.                     │
+└──────────────────────────────────────────────────────────┘</div>
+      <p class="diagram-caption">Figure 4-2: Internal network – VMs only; host is excluded</p>
+      <p><strong>Key characteristics:</strong></p>
+      <ul>
+        <li>VMs on the same named internal network can communicate with <strong>each other only</strong>.</li>
+        <li>The <strong>host cannot</strong> reach VMs on an internal network (no host adapter is created).</li>
+        <li><strong>No internet access</strong> and no external network access.</li>
+        <li>You assign a <strong>network name</strong> (e.g., <code>intnet-lab</code>)—only VMs attached to the same name can communicate.</li>
+        <li>No built-in DHCP; you must configure IPs <strong>statically</strong> or run your own DHCP server VM.</li>
+      </ul>
+      <p><strong>When to use:</strong> Maximum isolation for security testing, simulating air-gapped networks, or building multi-tier architectures where a back-end network should be completely invisible to the host and outside world.</p>
+    </div>
+  </div>
+
+  <h3>Host-Only vs. Internal: Quick Comparison</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>Host-Only</th><th>Internal</th></tr></thead>
+      <tbody>
+        <tr><td>VM-to-VM communication</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+        <tr><td>Host-to-VM communication</td><td>✅ Yes</td><td>❌ No</td></tr>
+        <tr><td>Internet access</td><td>❌ No</td><td>❌ No</td></tr>
+        <tr><td>Built-in DHCP</td><td>✅ Optional</td><td>❌ No</td></tr>
+        <tr><td>Isolation level</td><td>High</td><td>Maximum</td></tr>
+        <tr><td>Use case</td><td>Lab management from host</td><td>Air-gapped / back-end tiers</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5 – Network Mode Comparison & Selection Guide   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec5">
+  <div class="section-heading">
+    <span class="section-number">5</span>
+    <h2>Network Mode Comparison &amp; Selection Guide</h2>
+  </div>
+
+  <h3>Comprehensive Comparison Table</h3>
+  <div class="table-wrap">
+    <table>
+      <caption class="sr-only">Comparison of all four virtual network modes</caption>
+      <thead>
+        <tr>
+          <th>Criteria</th>
+          <th>NAT</th>
+          <th>Bridged</th>
+          <th>Host-Only</th>
+          <th>Internal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>VM → Internet</strong></td><td>✅ Yes</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td></tr>
+        <tr><td><strong>VM → Host</strong></td><td>✅ Via NAT GW</td><td>✅ Yes</td><td>✅ Yes</td><td>❌ No</td></tr>
+        <tr><td><strong>Host → VM</strong></td><td>⚠️ Port fwd only</td><td>✅ Yes</td><td>✅ Yes</td><td>❌ No</td></tr>
+        <tr><td><strong>VM ↔ VM</strong></td><td>❌ No*</td><td>✅ Yes</td><td>✅ Yes</td><td>✅ Same name</td></tr>
+        <tr><td><strong>External → VM</strong></td><td>⚠️ Port fwd only</td><td>✅ Yes</td><td>❌ No</td><td>❌ No</td></tr>
+        <tr><td><strong>IP Assignment</strong></td><td>VBox DHCP (10.0.2.x)</td><td>Physical DHCP / Static</td><td>VBox DHCP / Static</td><td>Static / Own DHCP</td></tr>
+        <tr><td><strong>Isolation Level</strong></td><td>Medium</td><td>None (full exposure)</td><td>High</td><td>Maximum</td></tr>
+        <tr><td><strong>Config Complexity</strong></td><td>⭐ Easiest</td><td>⭐⭐ Easy</td><td>⭐⭐ Easy</td><td>⭐⭐⭐ Moderate</td></tr>
+        <tr><td><strong>Best Use Case</strong></td><td>Quick internet access; single VM</td><td>Production-like servers</td><td>Lab management from host</td><td>Isolated back-end tiers</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.82rem;color:#64748b;">* NAT mode isolates each VM on its own NAT network. VirtualBox offers a "NAT Network" variant that allows VM-to-VM communication within a shared NAT subnet.</p>
+
+  <h3>Decision Flowchart: Choosing a Network Mode</h3>
+  <div class="flowchart" role="img" aria-label="Decision flowchart for selecting a virtual network mode">
+    <div class="flow-step">
+      <span class="flow-diamond">Q1</span>
+      <div class="flow-text"><strong>Does the VM need internet access?</strong></div>
+    </div>
+    <div class="flow-arrow">↓ YES → Q2 &nbsp;&nbsp;&nbsp;&nbsp; ↓ NO → Q4</div>
+
+    <div class="flow-step">
+      <span class="flow-diamond">Q2</span>
+      <div class="flow-text"><strong>Must external/LAN devices reach the VM directly?</strong></div>
+    </div>
+    <div class="flow-arrow">↓ YES → <strong style="color:#16a34a">Bridged</strong> &nbsp;&nbsp;&nbsp;&nbsp; ↓ NO → Q3</div>
+
+    <div class="flow-step">
+      <span class="flow-diamond">Q3</span>
+      <div class="flow-text"><strong>Do multiple VMs need to talk to each other?</strong></div>
+    </div>
+    <div class="flow-arrow">↓ YES → <strong style="color:#16a34a">NAT Network</strong> &nbsp;&nbsp;&nbsp;&nbsp; ↓ NO → <strong style="color:#16a34a">NAT</strong></div>
+
+    <div class="flow-step">
+      <span class="flow-diamond">Q4</span>
+      <div class="flow-text"><strong>Does the host need to access the VM (e.g., SSH, web console)?</strong></div>
+    </div>
+    <div class="flow-arrow">↓ YES → <strong style="color:#16a34a">Host-Only</strong> &nbsp;&nbsp;&nbsp;&nbsp; ↓ NO → <strong style="color:#16a34a">Internal</strong></div>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">💡 Pro Tip: Multi-NIC Designs</div>
+    <p>Real-world VMs often use <strong>multiple NICs with different modes</strong>. For example, a VM might have NIC 1 in <strong>Bridged</strong> mode (for client access) and NIC 2 on an <strong>Internal</strong> network (for database communication). This mirrors how physical servers use separate NICs for public and management traffic—a concept you'll apply in Section 7's topology design exercise.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 6 – Virtual Switches                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec6">
+  <div class="section-heading">
+    <span class="section-number">6</span>
+    <h2>Virtual Switches</h2>
+  </div>
+
+  <p>A <strong>virtual switch (vSwitch)</strong> is a software-based Layer 2 switch that connects vNICs within a hypervisor—exactly as a physical switch connects physical NICs. Every network mode you've learned about is implemented <em>through</em> virtual switches, even if the hypervisor abstracts that detail away.</p>
+
+  <h3>VirtualBox Internal Networking as a vSwitch</h3>
+  <p>When you assign multiple VMs to the same <strong>Internal Network name</strong> (e.g., <code>intnet-lab</code>), VirtualBox creates an implicit virtual switch connecting those VMs. Key points:</p>
+  <ul>
+    <li>The switch is created automatically when the first VM with that network name starts.</li>
+    <li>It operates at <strong>Layer 2</strong>—frames are switched by MAC address, just like a physical switch.</li>
+    <li>There is <strong>no configuration interface</strong> for the switch itself (no VLANs, no STP). It's a simple flat switch.</li>
+    <li>The <strong>Host-Only</strong> adapter (<code>vboxnet0</code>) is also a vSwitch—but one where the host has a port.</li>
+  </ul>
+
+  <h3>Hyper-V Virtual Switch Types</h3>
+  <p>Hyper-V provides more explicit control over virtual switches. You create and manage them through <strong>Hyper-V Manager → Virtual Switch Manager</strong> or PowerShell.</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption class="sr-only">Hyper-V virtual switch types</caption>
+      <thead>
+        <tr><th>Switch Type</th><th>Connects To</th><th>VM ↔ VM</th><th>VM ↔ Host</th><th>VM ↔ External</th><th>Equivalent VBox Mode</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>External</strong></td>
+          <td>Physical NIC</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>Bridged</td>
+        </tr>
+        <tr>
+          <td><strong>Internal</strong></td>
+          <td>Host only (no physical NIC)</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>❌</td>
+          <td>Host-Only</td>
+        </tr>
+        <tr>
+          <td><strong>Private</strong></td>
+          <td>VMs only</td>
+          <td>✅</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>Internal Network</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">📘 PowerShell Examples (Hyper-V)</div>
+    <p>Creating virtual switches in Hyper-V via PowerShell:</p>
+    <p><code>New-VMSwitch -Name "ExtSwitch" -NetAdapterName "Ethernet" -AllowManagementOS $true</code><br>
+    Creates an <strong>External</strong> switch bound to the "Ethernet" physical adapter.</p>
+    <p><code>New-VMSwitch -Name "LabSwitch" -SwitchType Internal</code><br>
+    Creates an <strong>Internal</strong> switch (host + VMs, no external).</p>
+    <p><code>New-VMSwitch -Name "BackendSwitch" -SwitchType Private</code><br>
+    Creates a <strong>Private</strong> switch (VMs only).</p>
+  </div>
+
+  <div class="callout callout-connection">
+    <div class="callout-title">🔗 Connection to Week 8–9</div>
+    <p>Virtual switches perform the same function as the physical switches and VLANs you studied in Weeks 8–9. The difference is that everything happens in software—no cables, no physical ports. However, the same networking principles apply: MAC learning, broadcast domains, and the need for proper IP configuration on each connected interface.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 7 – Designing Multi-VM Network Topologies       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec7">
+  <div class="section-heading">
+    <span class="section-number">7</span>
+    <h2>Designing Multi-VM Network Topologies</h2>
+  </div>
+
+  <p>In production environments—and in your lab—VMs rarely exist in isolation. A typical server infrastructure has <strong>multiple VMs on different network tiers</strong>, each with specific connectivity requirements. This section walks you through a guided design scenario.</p>
+
+  <div class="scenario-box">
+    <h3>🏗️ Scenario: Small Business Web Application</h3>
+    <p>You are designing a virtualized infrastructure for a small business. The environment requires <strong>four VMs</strong>:</p>
+    <ol>
+      <li><strong>Web Server VM</strong> – Hosts an Apache web application. Must be accessible from the internet and from the company LAN.</li>
+      <li><strong>Database Server VM</strong> – Runs MySQL. Must communicate with the Web Server but must <strong>not</strong> be accessible from the internet or the LAN.</li>
+      <li><strong>Splunk Server VM</strong> – Receives logs from all other VMs. Must be accessible from the host for the Splunk Web dashboard, and must receive forwarder data from all VMs.</li>
+      <li><strong>Management/Jump Box VM</strong> – Used by the admin to SSH into all other VMs. Must be accessible from the host but <strong>not</strong> from the internet.</li>
+    </ol>
+    <p><strong>Your task:</strong> For each VM, determine which network mode(s) to use and how many NICs are needed. Think about which VMs need to talk to each other, which need internet access, and which need to be isolated.</p>
+    <p style="margin-top:1rem;font-style:italic;color:#64748b;">Take a few minutes to sketch your design before revealing the solution below.</p>
+
+    <button class="reveal-btn" onclick="toggleReveal('scenario-solution')" aria-expanded="false" aria-controls="scenario-solution">🔍 Reveal Solution &amp; Rationale</button>
+
+    <div class="reveal-content" id="scenario-solution">
+      <h4>Recommended Design</h4>
+      <div class="diagram-box" role="img" aria-label="Multi-VM topology solution diagram">
+                        ┌──────────────┐
+                        │   Internet   │
+                        └──────┬───────┘
+                               │
+    ═══════════════════════════╪═══════════════════════════
+    BRIDGED NETWORK (Physical LAN)
+    ═══════════════════════════╪═══════════════════════════
+              │                │
+    ┌─────────┴──┐    ┌───────┴──────┐
+    │ Splunk VM  │    │  Web Server  │
+    │ NIC1:Bridge│    │ NIC1:Bridge  │
+    │ NIC2:IntNet│    │ NIC2:IntNet  │
+    │  "mgmt"    │    │  "backend"   │
+    └─────┬──────┘    └───────┬──────┘
+          │                   │
+    ══════╪═══════════════════╪═══════════════════
+    INTERNAL NETWORK: "backend"
+    ══════╪═══════════════════╪═══════════════════
+          │                   │
+          │           ┌───────┴──────┐
+          │           │ Database VM  │
+          │           │ NIC1:IntNet  │
+          │           │  "backend"   │
+          │           │ NIC2:IntNet  │
+          │           │  "mgmt"      │
+          │           └───────┬──────┘
+          │                   │
+    ══════╪═══════════════════╪═══════════════════
+    INTERNAL NETWORK: "mgmt"  (or Host-Only)
+    ══════╪═══════════════════╪═══════════════════
+          │                   │
+    ┌─────┴──────────────┐    │
+    │  Management VM     ├────┘
+    │  NIC1: Host-Only   │
+    │  NIC2: IntNet "mgmt"
+    └────────────────────┘</div>
+
+      <h4>Per-VM Rationale</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>VM</th><th>NIC 1</th><th>NIC 2</th><th>Rationale</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Web Server</strong></td>
+              <td>Bridged</td>
+              <td>Internal ("backend")</td>
+              <td>NIC 1 provides LAN/internet access for clients. NIC 2 connects to the database on an isolated backend network.</td>
+            </tr>
+            <tr>
+              <td><strong>Database Server</strong></td>
+              <td>Internal ("backend")</td>
+              <td>Internal ("mgmt")</td>
+              <td>No external exposure at all. Communicates with the web server via "backend" and receives management/monitoring via "mgmt."</td>
+            </tr>
+            <tr>
+              <td><strong>Splunk Server</strong></td>
+              <td>Bridged</td>
+              <td>Internal ("mgmt")</td>
+              <td>NIC 1 (Bridged) allows the admin to access Splunk Web from the LAN and lets the web server forward logs. NIC 2 ("mgmt") receives logs from the DB and management VMs.</td>
+            </tr>
+            <tr>
+              <td><strong>Management VM</strong></td>
+              <td>Host-Only</td>
+              <td>Internal ("mgmt")</td>
+              <td>NIC 1 (Host-Only) lets the admin SSH in from the host. NIC 2 ("mgmt") provides access to all internal VMs for administration.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Key Design Principles Applied</h4>
+      <ul>
+        <li><strong>Least privilege:</strong> The database has zero external exposure—only the web server can reach it.</li>
+        <li><strong>Network segmentation:</strong> Separate "backend" and "mgmt" internal networks limit blast radius.</li>
+        <li><strong>Multi-NIC design:</strong> VMs that span tiers use two NICs with different modes.</li>
+        <li><strong>Monitoring access:</strong> Splunk is reachable from all tiers to collect logs—essential for Project 3.</li>
+      </ul>
+
+      <div class="callout callout-lab">
+        <div class="callout-title">🔬 Lab 13 Connection</div>
+        <p>In Lab 13 Part B, you will configure at least two different network modes and verify connectivity between VMs. The principles from this scenario—choosing modes based on access requirements and verifying with <code>ping</code> and <code>ip addr</code>—are exactly what you'll apply.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 8 – Virtual Disk Management                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec8">
+  <div class="section-heading">
+    <span class="section-number">8</span>
+    <h2>Virtual Disk Management</h2>
+  </div>
+
+  <p>Just as virtual NICs replace physical NICs, <strong>virtual disks</strong> replace physical hard drives. A virtual disk is a <strong>file on the host filesystem</strong> that the hypervisor presents to the guest OS as a block device. From the guest's perspective, it looks like a real hard drive.</p>
+
+  <div class="callout callout-connection">
+    <div class="callout-title">🔗 Connection to Week 10</div>
+    <p>In Week 10 you studied <strong>DAS, NAS, SAN, RAID, and LVM</strong> as physical storage technologies. Virtual disk management is the <strong>virtualized equivalent of DAS</strong>—the virtual disk file is "directly attached" to the VM. Later in Section 9, you'll see how NAS/SAN concepts extend into the virtual world with shared storage.</p>
+  </div>
+
+  <h3>Virtual Disk Formats (Review)</h3>
+  <p>You encountered these in Module 13.2. Here's a quick recap:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Format</th><th>Hypervisor</th><th>Key Feature</th></tr></thead>
+      <tbody>
+        <tr><td><strong>VDI</strong></td><td>VirtualBox (native)</td><td>Supports dynamic allocation and snapshots</td></tr>
+        <tr><td><strong>VMDK</strong></td><td>VMware / VirtualBox</td><td>Cross-platform; split-file option for large disks</td></tr>
+        <tr><td><strong>VHD / VHDX</strong></td><td>Hyper-V / VirtualBox</td><td>VHDX supports up to 64 TB; resilient to power failure</td></tr>
+        <tr><td><strong>QCOW2</strong></td><td>KVM/QEMU</td><td>Copy-on-write; built-in compression and encryption</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Adding a Virtual Disk</h3>
+  <p>Adding a new disk to an existing VM is a common task—for example, when a server needs more storage for logs or databases. The process:</p>
+  <ol>
+    <li><strong>Power off the VM</strong> (or hot-add if the hypervisor and guest OS support it).</li>
+    <li>Open VM <strong>Settings → Storage</strong>.</li>
+    <li>Select a storage controller (SATA, SCSI, etc.) and click <strong>Add Hard Disk</strong>.</li>
+    <li>Choose <strong>Create New Disk</strong> → select format (VDI) → choose dynamic or fixed → set size.</li>
+    <li><strong>Start the VM</strong>.</li>
+    <li>Inside the guest OS, the new disk appears as an unformatted block device (e.g., <code>/dev/sdb</code> on Linux or <code>Disk 1</code> in Windows Disk Management).</li>
+    <li><strong>Partition, format, and mount</strong> the disk using the same commands from Weeks 4–5 and Week 10.</li>
+  </ol>
+
+  <div class="callout callout-lab">
+    <div class="callout-title">🔬 Lab 13 Part C</div>
+    <p>In Lab 13 Part C you will add a virtual disk to an existing VM, format it with a filesystem, and mount it. The steps above are exactly what you'll follow.</p>
+  </div>
+
+  <h3>Resizing a Virtual Disk</h3>
+  <p>If a VM's disk runs low on space, you can <strong>resize</strong> it without recreating the VM:</p>
+  <ol>
+    <li><strong>VirtualBox CLI:</strong> <code>VBoxManage modifyhd "disk.vdi" --resize 51200</code> (size in MB)</li>
+    <li><strong>Hyper-V PowerShell:</strong> <code>Resize-VHD -Path "disk.vhdx" -SizeBytes 50GB</code></li>
+    <li>After resizing the virtual disk file, you must <strong>extend the partition and filesystem inside the guest OS</strong>:
+      <ul>
+        <li><strong>Linux:</strong> Use <code>growpart</code> + <code>resize2fs</code> (ext4) or <code>xfs_growfs</code> (XFS). If using LVM, use <code>pvresize</code> → <code>lvextend</code> → <code>resize2fs</code>.</li>
+        <li><strong>Windows:</strong> Use Disk Management → Extend Volume, or <code>Resize-Partition</code> in PowerShell.</li>
+      </ul>
+    </li>
+  </ol>
+
+  <div class="callout callout-warning">
+    <div class="callout-title">⚠️ Important</div>
+    <p>Resizing the virtual disk file only changes the <strong>container</strong>. The guest OS doesn't automatically use the new space—you must extend the partition and filesystem inside the VM. This is the same two-step process (physical expansion + logical expansion) you learned with LVM in Week 10.</p>
+  </div>
+
+  <h3>Performance Considerations</h3>
+
+  <div class="toggle-group">
+    <div class="toggle-item">
+      <button class="toggle-btn" aria-expanded="false" onclick="toggleCollapse(this)">Dynamic vs. Fixed Allocation</button>
+      <div class="toggle-content">
+        <p><strong>Dynamically allocated</strong> disks start small and grow as data is written. They save host disk space but have a slight write penalty because the hypervisor must allocate new blocks on the fly.</p>
+        <p><strong>Fixed-size</strong> disks allocate the full space upfront. They offer <strong>better I/O performance</strong> (no allocation overhead) but consume the full disk space on the host immediately.</p>
+        <p><strong>Recommendation:</strong> Use dynamic for development/testing; use fixed for production workloads or I/O-intensive VMs (databases).</p>
+      </div>
+    </div>
+    <div class="toggle-item">
+      <button class="toggle-btn" aria-expanded="false" onclick="toggleCollapse(this)">Host Disk Type Matters</button>
+      <div class="toggle-content">
+        <p>The performance of virtual disks is ultimately limited by the <strong>host's physical storage</strong>. A virtual disk stored on a host SSD will dramatically outperform one stored on a spinning HDD. If you run multiple VMs, consider:</p>
+        <ul>
+          <li>Placing virtual disk files on an <strong>SSD</strong> for frequently accessed VMs.</li>
+          <li>Separating VM disk files across <strong>different physical drives</strong> to reduce I/O contention.</li>
+          <li>Avoiding placing all VM disks on the same drive as the host OS.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="toggle-item">
+      <button class="toggle-btn" aria-expanded="false" onclick="toggleCollapse(this)">Snapshots and Disk Performance</button>
+      <div class="toggle-content">
+        <p>Snapshots create <strong>differencing disks</strong>—new writes go to the snapshot file while the base disk becomes read-only. Each snapshot adds a layer that the hypervisor must traverse for reads. <strong>Too many snapshots degrade performance significantly.</strong></p>
+        <p><strong>Best practice:</strong> Use snapshots for short-term rollback (before risky changes). Delete snapshots you no longer need. Never use snapshots as a long-term backup strategy.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 9 – Storage Controllers & Shared Storage        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec9">
+  <div class="section-heading">
+    <span class="section-number">9</span>
+    <h2>Storage Controllers &amp; Shared Storage</h2>
+  </div>
+
+  <h3>Virtual Storage Controllers</h3>
+  <p>A <strong>storage controller</strong> is the interface between the VM and its virtual disks—just as a physical SATA or SCSI controller connects a motherboard to hard drives. The controller type affects performance, device limits, and guest OS compatibility.</p>
+
+  <div class="table-wrap">
+    <table>
+      <caption class="sr-only">Virtual storage controller comparison</caption>
+      <thead>
+        <tr><th>Controller</th><th>Protocol</th><th>Max Devices</th><th>Performance</th><th>Best For</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>IDE</strong></td>
+          <td>ATA/ATAPI</td>
+          <td>4 (2 channels × 2)</td>
+          <td>Lowest</td>
+          <td>Legacy OSes; CD/DVD drives</td>
+        </tr>
+        <tr>
+          <td><strong>SATA (AHCI)</strong></td>
+          <td>SATA</td>
+          <td>30 (VirtualBox)</td>
+          <td>Good</td>
+          <td>General-purpose; most modern guest OSes</td>
+        </tr>
+        <tr>
+          <td><strong>SCSI (LSI Logic / Virtio-SCSI)</strong></td>
+          <td>SCSI</td>
+          <td>15+ per controller</td>
+          <td>Better</td>
+          <td>Server workloads; multiple disks; Linux guests</td>
+        </tr>
+        <tr>
+          <td><strong>NVMe</strong></td>
+          <td>NVMe over PCIe</td>
+          <td>Varies</td>
+          <td>Best</td>
+          <td>High-performance workloads; modern OSes with NVMe drivers</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-tip">
+    <div class="callout-title">💡 Controller Selection Guide</div>
+    <ul>
+      <li><strong>Default choice:</strong> SATA (AHCI) — works with virtually all modern guest OSes out of the box.</li>
+      <li><strong>Need many disks or best throughput:</strong> SCSI (especially virtio-scsi on Linux for near-native performance).</li>
+      <li><strong>Cutting-edge performance:</strong> NVMe — but requires guest OS driver support (Windows Server 2016+, modern Linux kernels).</li>
+      <li><strong>Legacy compatibility:</strong> IDE — only when the guest OS lacks SATA/SCSI drivers.</li>
+    </ul>
+  </div>
+
+  <h3>Shared Storage for VMs</h3>
+
+  <div class="toggle-group">
+    <div class="toggle-item">
+      <button class="toggle-btn" aria-expanded="false" onclick="toggleCollapse(this)">iSCSI in Virtual Environments</button>
+      <div class="toggle-content">
+        <p><strong>iSCSI (Internet Small Computer Systems Interface)</strong> transmits SCSI commands over TCP/IP networks. In a virtual environment:</p>
+        <ul>
+          <li>An <strong>iSCSI target</strong> (storage server) exports block-level storage over the network.</li>
+          <li>A VM acts as an <strong>iSCSI initiator</strong>, connecting to the target and mounting the storage as a local block device.</li>
+          <li>This is the <strong>virtualized equivalent of a SAN</strong>—the VM gets block-level access to remote storage.</li>
+        </ul>
+        <p><strong>Use case:</strong> When multiple VMs need access to a shared storage pool, or when storage must be centralized for management and backup.</p>
+        <div class="callout callout-connection" style="margin-top:.75rem">
+          <div class="callout-title">🔗 Connection to Week 10</div>
+          <p>iSCSI is the SAN technology you studied in Week 10. The difference here is that both the initiator (VM) and potentially the target (another VM or physical NAS) operate within the virtualized infrastructure.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="toggle-item">
+      <button class="toggle-btn" aria-expanded="false" onclick="toggleCollapse(this)">NFS in Virtual Environments</button>
+      <div class="toggle-content">
+        <p><strong>NFS (Network File System)</strong> provides file-level shared storage over the network. In virtualization:</p>
+        <ul>
+          <li>An NFS server exports directories that VMs can mount as network drives.</li>
+          <li>Unlike iSCSI (block-level), NFS operates at the <strong>file level</strong>—multiple VMs can mount the same NFS share simultaneously for read/write.</li>
+          <li>Hypervisors like VMware ESXi can use NFS datastores to store VM disk files centrally.</li>
+        </ul>
+        <p><strong>Use case:</strong> Shared file repositories, centralized VM storage for hypervisor clusters, home directories.</p>
+        <div class="callout callout-connection" style="margin-top:.75rem">
+          <div class="callout-title">🔗 Connection to Week 10</div>
+          <p>NFS is the NAS protocol you learned about in Week 10. Here it serves double duty: VMs can use NFS for shared file access, and the hypervisor itself can use NFS to store virtual disk files on centralized storage.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="toggle-item">
+      <button class="toggle-btn" aria-expanded="false" onclick="toggleCollapse(this)">Live Migration &amp; Shared Storage</button>
+      <div class="toggle-content">
+        <p><strong>Live migration</strong> is the ability to move a running VM from one physical host to another with <strong>zero downtime</strong>. This is a cornerstone of enterprise virtualization and requires <strong>shared storage</strong>.</p>
+        <div class="diagram-box" role="img" aria-label="Live migration with shared storage diagram">
+  ┌──────────┐                     ┌──────────┐
+  │  Host A  │ ── VM migrates ──▶  │  Host B  │
+  │(Hyper-V) │    (memory state)   │(Hyper-V) │
+  └────┬─────┘                     └────┬─────┘
+       │                                │
+       └──────────┐    ┌────────────────┘
+                  │    │
+           ┌──────▼────▼──────┐
+           │  Shared Storage  │
+           │  (iSCSI / NFS)   │
+           │                  │
+           │  VM disk files   │
+           │  accessible from │
+           │  both hosts      │
+           └──────────────────┘</div>
+        <p><strong>How it works:</strong></p>
+        <ol>
+          <li>Both hosts connect to the <strong>same shared storage</strong> (iSCSI SAN or NFS datastore).</li>
+          <li>The VM's disk files live on shared storage—accessible from either host.</li>
+          <li>During migration, the VM's <strong>memory state</strong> is transferred from Host A to Host B over the network.</li>
+          <li>Once the memory is synchronized, the VM switches to Host B seamlessly.</li>
+        </ol>
+        <p><strong>Technologies:</strong> Hyper-V Live Migration, VMware vMotion, KVM/libvirt live migration.</p>
+        <p><strong>Why it matters:</strong> Live migration enables hardware maintenance without downtime, load balancing across hosts, and disaster avoidance. It's a key reason enterprises invest in shared storage infrastructure.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>iSCSI vs. NFS for VM Storage: Quick Comparison</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>iSCSI</th><th>NFS</th></tr></thead>
+      <tbody>
+        <tr><td>Access level</td><td>Block</td><td>File</td></tr>
+        <tr><td>Protocol</td><td>SCSI over TCP/IP</td><td>NFS over TCP/IP</td></tr>
+        <tr><td>Multi-VM concurrent access</td><td>Requires cluster-aware filesystem</td><td>Native multi-client support</td></tr>
+        <tr><td>Performance</td><td>Generally higher (less overhead)</td><td>Good; depends on network</td></tr>
+        <tr><td>Complexity</td><td>Higher (initiator/target config)</td><td>Lower (mount and go)</td></tr>
+        <tr><td>Week 10 equivalent</td><td>SAN</td><td>NAS</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 10 – Knowledge Check                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="sec10">
+  <div class="section-heading">
+    <span class="section-number">10</span>
+    <h2>Knowledge Check</h2>
+  </div>
+  <p>Test your understanding of virtual networking and virtual storage. This is <strong>ungraded</strong>—use it to identify areas to review before Quiz 13 and Lab 13.</p>
+
+  <!-- Q1 -->
+  <div class="kc-question" id="kc-q1">
+    <p class="q-stem">1. A VM needs internet access to download software updates, but it should NOT be visible to other devices on the physical LAN. Which network mode is most appropriate?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q1" value="a"> a) Bridged</label></li>
+      <li><label><input type="radio" name="q1" value="b"> b) NAT</label></li>
+      <li><label><input type="radio" name="q1" value="c"> c) Internal</label></li>
+      <li><label><input type="radio" name="q1" value="d"> d) Host-Only</label></li>
+    </ul>
+    <button class="kc-check-btn" onclick="checkAnswer('q1','b','kc-q1-fb')">Check Answer</button>
+    <div id="kc-q1-fb"></div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="kc-question" id="kc-q2">
+    <p class="q-stem">2. You have two VMs that need to communicate with each other, but neither should have access to the host or the internet. Which network mode should you use?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q2" value="a"> a) NAT</label></li>
+      <li><label><input type="radio" name="q2" value="b"> b) Bridged</label></li>
+      <li><label><input type="radio" name="q2" value="c"> c) Host-Only</label></li>
+      <li><label><input type="radio" name="q2" value="d"> d) Internal</label></li>
+    </ul>
+    <button class="kc-check-btn" onclick="checkAnswer('q2','d','kc-q2-fb')">Check Answer</button>
+    <div id="kc-q2-fb"></div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="kc-question" id="kc-q3">
+    <p class="q-stem">3. In Hyper-V, which virtual switch type is equivalent to VirtualBox's Bridged mode, allowing VMs to communicate with external physical network devices?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q3" value="a"> a) Private</label></li>
+      <li><label><input type="radio" name="q3" value="b"> b) Internal</label></li>
+      <li><label><input type="radio" name="q3" value="c"> c) External</label></li>
+      <li><label><input type="radio" name="q3" value="d"> d) NAT</label></li>
+    </ul>
+    <button class="kc-check-btn" onclick="checkAnswer('q3','c','kc-q3-fb')">Check Answer</button>
+    <div id="kc-q3-fb"></div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="kc-question" id="kc-q4">
+    <p class="q-stem">4. You resized a virtual disk file from 20 GB to 50 GB using <code>VBoxManage modifyhd</code>. When you boot the VM, the guest OS still shows only 20 GB of usable space. What is the most likely reason?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q4" value="a"> a) The VM needs to be rebooted a second time</label></li>
+      <li><label><input type="radio" name="q4" value="b"> b) The partition and filesystem inside the guest have not been extended</label></li>
+      <li><label><input type="radio" name="q4" value="c"> c) VirtualBox does not support disk resizing</label></li>
+      <li><label><input type="radio" name="q4" value="d"> d) The disk must be converted to fixed-size first</label></li>
+    </ul>
+    <button class="kc-check-btn" onclick="checkAnswer('q4','b','kc-q4-fb')">Check Answer</button>
+    <div id="kc-q4-fb"></div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="kc-question" id="kc-q5">
+    <p class="q-stem">5. Which virtual storage controller would you choose for a high-performance database server VM running a modern Linux kernel?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q5" value="a"> a) IDE</label></li>
+      <li><label><input type="radio" name="q5" value="b"> b) SATA (AHCI)</label></li>
+      <li><label><input type="radio" name="q5" value="c"> c) Virtio-SCSI or NVMe</label></li>
+      <li><label><input type="radio" name="q5" value="d"> d) Floppy controller</label></li>
+    </ul>
+    <button class="kc-check-btn" onclick="checkAnswer('q5','c','kc-q5-fb')">Check Answer</button>
+    <div id="kc-q5-fb"></div>
+  </div>
+
+  <!-- Q6 -->
+  <div class="kc-question" id="kc-q6">
+    <p class="q-stem">6. Live migration allows a running VM to move between physical hosts with zero downtime. What infrastructure requirement makes this possible?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q6" value="a"> a) Both hosts must use the same brand of CPU</label></li>
+      <li><label><input type="radio" name="q6" value="b"> b) The VM's virtual disk files must be on shared storage (iSCSI/NFS) accessible from both hosts</label></li>
+      <li><label><input type="radio" name="q6" value="c"> c) The VM must be powered off before migration begins</label></li>
+      <li><label><input type="radio" name="q6" value="d"> d) Both hosts must run a Type 2 hypervisor</label></li>
+    </ul>
+    <button class="kc-check-btn" onclick="checkAnswer('q6','b','kc-q6-fb')">Check Answer</button>
+    <div id="kc-q6-fb"></div>
+  </div>
+</section>
+
+<!-- ── MODULE SUMMARY ── -->
+<section aria-label="Module summary">
+  <div class="section-heading">
+    <span class="section-number" style="background:#16a34a;">✓</span>
+    <h2>Module Summary</h2>
+  </div>
+  <p>In this module you learned how virtualization extends into networking and storage:</p>
+  <ul>
+    <li><strong>Virtual NICs</strong> emulate physical network adapters; paravirtualized drivers offer the best performance.</li>
+    <li><strong>Four network modes</strong>—NAT, Bridged, Host-Only, and Internal—provide different levels of connectivity and isolation.</li>
+    <li><strong>Virtual switches</strong> connect VMs at Layer 2, with Hyper-V offering explicit External, Internal, and Private switch types.</li>
+    <li><strong>Multi-NIC designs</strong> allow VMs to span network tiers, mirroring real-world server architecture.</li>
+    <li><strong>Virtual disks</strong> can be added, resized, and tuned for performance; the guest OS must extend partitions after a resize.</li>
+    <li><strong>Storage controllers</strong> (IDE, SATA, SCSI, NVMe) affect performance and device limits.</li>
+    <li><strong>Shared storage</strong> (iSCSI, NFS) enables advanced features like live migration and maps directly to the SAN/NAS concepts from Week 10.</li>
+  </ul>
+
+  <div class="callout callout-info">
+    <div class="callout-title">📘 What's Next</div>
+    <ul>
+      <li><strong>Module 13.4</strong> – Introduction to Cloud Computing: See how virtualization scales to the cloud with IaaS, PaaS, and SaaS.</li>
+      <li><strong>Lab 13 Parts B &amp; C</strong> – Apply these concepts hands-on: configure network modes, verify connectivity, add and mount a virtual disk.</li>
+      <li><strong>Module 13.5</strong> – Splunk Universal Forwarder Deployment: Your VMs will need proper network connectivity (from this module) to forward logs to the Splunk server.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="page-footer" role="contentinfo">
+  <p><strong>CSC 152 – Network Operating Systems and Administration</strong></p>
+  <p>Mendocino College · Instructor: David Pai · Week 13 Module 13.3</p>
+  <p>© 2026 Mendocino College. For educational use within this course only.</p>
+</footer>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+/* ── Tabs ── */
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var tablist=this.closest('.tabs');
+    tablist.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');b.setAttribute('aria-selected','false');});
+    tablist.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+    this.classList.add('active');
+    this.setAttribute('aria-selected','true');
+    var panel=tablist.querySelector('#'+this.getAttribute('aria-controls'));
+    if(panel) panel.classList.add('active');
+  });
+});
+
+/* ── Toggles / Collapsible ── */
+function toggleCollapse(btn){
+  var content=btn.nextElementSibling;
+  var expanded=btn.getAttribute('aria-expanded')==='true';
+  btn.setAttribute('aria-expanded',String(!expanded));
+  content.classList.toggle('open');
+}
+
+/* ── Reveal Button ── */
+function toggleReveal(id){
+  var el=document.getElementById(id);
+  var btn=el.previousElementSibling;
+  var isVisible=el.classList.contains('visible');
+  el.classList.toggle('visible');
+  if(btn&&btn.classList.contains('reveal-btn')){
+    btn.setAttribute('aria-expanded',String(!isVisible));
+    btn.innerHTML=isVisible?'🔍 Reveal Solution &amp; Rationale':'🙈 Hide Solution';
+  }
+}
+
+/* ── Knowledge Check ── */
+var kcFeedback={
+  q1:{
+    correct:'<strong>Correct!</strong> NAT mode gives the VM internet access while hiding it behind the host\'s IP address. External devices cannot see the VM unless port forwarding is configured.',
+    incorrect:'<strong>Not quite.</strong> The correct answer is <strong>b) NAT</strong>. NAT mode provides internet access through the host\'s IP, keeping the VM invisible on the physical LAN. Bridged would expose the VM; Internal and Host-Only provide no internet access.'
+  },
+  q2:{
+    correct:'<strong>Correct!</strong> Internal network mode creates a completely isolated network where only VMs sharing the same network name can communicate. The host has no access.',
+    incorrect:'<strong>Not quite.</strong> The correct answer is <strong>d) Internal</strong>. Internal mode isolates VMs from both the host and the internet. Host-Only would allow host access, which the scenario prohibits.'
+  },
+  q3:{
+    correct:'<strong>Correct!</strong> A Hyper-V External virtual switch binds to a physical NIC, allowing VMs to communicate with the physical network—functionally equivalent to VirtualBox\'s Bridged mode.',
+    incorrect:'<strong>Not quite.</strong> The correct answer is <strong>c) External</strong>. An External switch in Hyper-V binds to a physical NIC, making VMs visible on the physical network. Private = VMs only (like VBox Internal); Internal = VMs + host (like VBox Host-Only).'
+  },
+  q4:{
+    correct:'<strong>Correct!</strong> Resizing the virtual disk file only changes the container. You must extend the partition and filesystem inside the guest OS (e.g., using growpart + resize2fs on Linux, or Extend Volume in Windows).',
+    incorrect:'<strong>Not quite.</strong> The correct answer is <strong>b)</strong>. The virtual disk file is just a container. After resizing it, you must extend the partition and filesystem inside the guest OS—the same two-step process used with LVM in Week 10.'
+  },
+  q5:{
+    correct:'<strong>Correct!</strong> Virtio-SCSI and NVMe controllers offer the best performance for modern Linux guests. Virtio-SCSI uses paravirtualized drivers (minimal overhead), and NVMe leverages the PCIe bus for maximum throughput.',
+    incorrect:'<strong>Not quite.</strong> The correct answer is <strong>c) Virtio-SCSI or NVMe</strong>. These offer the best performance for modern Linux kernels. IDE is legacy; SATA is good but not optimal for high-performance database workloads.'
+  },
+  q6:{
+    correct:'<strong>Correct!</strong> Live migration requires shared storage (iSCSI or NFS) so that both the source and destination hosts can access the VM\'s disk files. Only the memory state is transferred over the network during migration.',
+    incorrect:'<strong>Not quite.</strong> The correct answer is <strong>b)</strong>. Shared storage is the key requirement—both hosts must access the same VM disk files. The VM stays running during migration (not powered off), and live migration is a Type 1 hypervisor feature.'
+  }
+};
+
+function checkAnswer(qName,correctVal,fbId){
+  var selected=document.querySelector('input[name="'+qName+'"]:checked');
+  var fbEl=document.getElementById(fbId);
+  if(!selected){fbEl.className='kc-feedback incorrect';fbEl.innerHTML='<p>Please select an answer before checking.</p>';fbEl.style.display='block';return;}
+  var isCorrect=selected.value===correctVal;
+  var data=kcFeedback[qName];
+  fbEl.className='kc-feedback '+(isCorrect?'correct':'incorrect');
+  fbEl.innerHTML='<p>'+(isCorrect?data.correct:data.incorrect)+'</p>';
+  fbEl.style.display='block';
+}
+
+/* ── Smooth scroll for nav links (fallback) ── */
+document.querySelectorAll('.sticky-nav a[href^="#"]').forEach(function(a){
+  a.addEventListener('click',function(e){
+    var target=document.querySelector(this.getAttribute('href'));
+    if(target){e.preventDefault();target.scrollIntoView({behavior:'smooth',block:'start'});}
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 13.5 – Splunk Universal Forwarder Deployment</title>
+<style>
+:root {
+  --primary: #2D3B45;
+  --primary-light: #34444E;
+  --accent: #0076B6;
+  --accent-dark: #005A8C;
+  --accent-light: #E8F4FA;
+  --success: #0B874B;
+  --success-light: #E6F5ED;
+  --warning: #C23934;
+  --warning-light: #FCEAEA;
+  --orange: #D97706;
+  --orange-light: #FEF3C7;
+  --neutral-50: #F9FAFB;
+  --neutral-100: #F3F4F6;
+  --neutral-200: #E5E7EB;
+  --neutral-300: #D1D5DB;
+  --neutral-400: #9CA3AF;
+  --neutral-500: #6B7280;
+  --neutral-600: #4B5563;
+  --neutral-700: #374151;
+  --neutral-800: #1F2937;
+  --white: #FFFFFF;
+  --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  --radius: 8px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --max-width: 960px;
+  --transition: 0.2s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-main);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--neutral-800);
+  background: var(--neutral-50);
+}
+
+/* ── Sticky Nav ── */
+.nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--primary);
+  border-bottom: 3px solid var(--accent);
+  padding: 0;
+}
+.nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0 1rem;
+}
+.nav-title {
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.6rem 0.5rem 0.6rem 0;
+  white-space: nowrap;
+  border-right: 1px solid rgba(255,255,255,0.2);
+  margin-right: 0.25rem;
+}
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  gap: 0;
+}
+.nav-links li a {
+  display: block;
+  color: rgba(255,255,255,0.85);
+  text-decoration: none;
+  font-size: 0.78rem;
+  padding: 0.6rem 0.55rem;
+  border-radius: 4px 4px 0 0;
+  transition: background var(--transition), color var(--transition);
+}
+.nav-links li a:hover,
+.nav-links li a:focus {
+  background: rgba(255,255,255,0.12);
+  color: var(--white);
+}
+.nav-links li a:focus-visible {
+  outline: 2px solid #FFC107;
+  outline-offset: -2px;
+}
+
+/* ── Mobile nav toggle ── */
+.nav-toggle { display: none; background: none; border: none; color: var(--white); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; }
+@media(max-width:768px){
+  .nav-toggle { display: block; margin-left: auto; }
+  .nav-links { display: none; width: 100%; flex-direction: column; padding-bottom: 0.5rem; }
+  .nav-links.open { display: flex; }
+  .nav-links li a { padding: 0.5rem 0.75rem; border-radius: 4px; }
+  .nav-title { border-right: none; }
+}
+
+/* ── Page Container ── */
+.page { max-width: var(--max-width); margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+/* ── Module Header ── */
+.mod-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: var(--white);
+  padding: 2rem 2rem 1.75rem;
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+}
+.mod-header .label {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--white);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.65rem;
+  border-radius: 3px;
+  margin-bottom: 0.75rem;
+}
+.mod-header h1 { font-size: 1.65rem; line-height: 1.25; margin-bottom: 0.5rem; }
+.mod-header p { font-size: 0.95rem; opacity: 0.92; margin-bottom: 0.25rem; }
+.mod-meta {
+  display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1rem;
+  font-size: 0.82rem; opacity: 0.88;
+}
+.mod-meta span { display: flex; align-items: center; gap: 0.3rem; }
+
+/* ── Section Headings ── */
+.section { margin-bottom: 2.5rem; scroll-margin-top: 60px; }
+.section-heading {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary);
+  border-bottom: 3px solid var(--accent);
+  padding-bottom: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+h3 { font-size: 1.08rem; font-weight: 700; color: var(--neutral-700); margin: 1.25rem 0 0.5rem; }
+h4 { font-size: 0.95rem; font-weight: 700; color: var(--neutral-600); margin: 1rem 0 0.4rem; }
+
+p { margin-bottom: 0.85rem; }
+
+/* ── Info / Tip / Warning boxes ── */
+.callout {
+  border-left: 4px solid;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  font-size: 0.92rem;
+}
+.callout-info { border-color: var(--accent); background: var(--accent-light); }
+.callout-success { border-color: var(--success); background: var(--success-light); }
+.callout-warning { border-color: var(--warning); background: var(--warning-light); }
+.callout-tip { border-color: var(--orange); background: var(--orange-light); }
+.callout .callout-title { font-weight: 700; margin-bottom: 0.3rem; }
+
+/* ── Code blocks ── */
+pre {
+  background: var(--neutral-800);
+  color: #E5E7EB;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 1rem 0;
+}
+pre code { font-family: var(--font-mono); color: inherit; background: none; padding: 0; }
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--neutral-100);
+  color: var(--warning);
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+}
+pre code { font-size: 1em; }
+
+/* ── Comment lines inside code ── */
+.code-comment { color: #9CA3AF; }
+
+/* ── Tables ── */
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+th, td {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--neutral-200);
+}
+th { background: var(--primary); color: var(--white); font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.03em; }
+tr:nth-child(even) { background: var(--neutral-100); }
+
+/* ── Ordered / Unordered lists ── */
+ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+li { margin-bottom: 0.35rem; }
+
+/* ── Tabs ── */
+.tabs-wrapper { margin: 1.25rem 0; }
+.tab-buttons {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--neutral-200);
+}
+.tab-btn {
+  background: var(--neutral-100);
+  border: 2px solid var(--neutral-200);
+  border-bottom: none;
+  padding: 0.55rem 1.25rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--neutral-500);
+  cursor: pointer;
+  border-radius: var(--radius) var(--radius) 0 0;
+  margin-right: 2px;
+  transition: background var(--transition), color var(--transition);
+}
+.tab-btn:hover { background: var(--neutral-200); color: var(--neutral-700); }
+.tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tab-btn[aria-selected="true"] {
+  background: var(--white);
+  color: var(--accent);
+  border-color: var(--accent);
+  border-bottom: 2px solid var(--white);
+  margin-bottom: -2px;
+  position: relative;
+  z-index: 1;
+}
+.tab-panel {
+  display: none;
+  border: 2px solid var(--accent);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 1.25rem;
+  background: var(--white);
+}
+.tab-panel.active { display: block; }
+
+/* ── Accordion / Toggle ── */
+.accordion { border: 1px solid var(--neutral-200); border-radius: var(--radius); margin: 1rem 0; overflow: hidden; }
+.accordion + .accordion { margin-top: 0.5rem; }
+.accordion-btn {
+  width: 100%;
+  background: var(--neutral-100);
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--neutral-700);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background var(--transition);
+}
+.accordion-btn:hover { background: var(--neutral-200); }
+.accordion-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.accordion-btn::after { content: '+'; font-size: 1.2rem; font-weight: 700; color: var(--accent); transition: transform var(--transition); }
+.accordion-btn[aria-expanded="true"]::after { content: '−'; }
+.accordion-panel { display: none; padding: 1rem 1.25rem; background: var(--white); }
+.accordion-panel.open { display: block; }
+
+/* ── Knowledge Check ── */
+.kc-question {
+  background: var(--white);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+.kc-question p.q-text { font-weight: 600; margin-bottom: 0.75rem; }
+.kc-options { list-style: none; margin: 0 0 0.75rem 0; padding: 0; }
+.kc-options li { margin-bottom: 0.4rem; }
+.kc-options label { cursor: pointer; display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.92rem; }
+.kc-options input[type="radio"] { margin-top: 0.25rem; accent-color: var(--accent); }
+.kc-submit {
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.45rem 1.25rem;
+  border-radius: 4px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.kc-submit:hover { background: var(--accent-dark); }
+.kc-submit:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.kc-feedback {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  display: none;
+}
+.kc-feedback.correct { display: block; background: var(--success-light); border-left: 4px solid var(--success); }
+.kc-feedback.incorrect { display: block; background: var(--warning-light); border-left: 4px solid var(--warning); }
+
+/* ── Interactive Activity ── */
+.ia-option {
+  background: var(--neutral-100);
+  border: 2px solid var(--neutral-200);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: border-color var(--transition), background var(--transition);
+}
+.ia-option:hover { border-color: var(--accent); }
+.ia-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ia-option.selected-correct { border-color: var(--success); background: var(--success-light); }
+.ia-option.selected-incorrect { border-color: var(--warning); background: var(--warning-light); }
+.ia-feedback { display: none; margin-top: 0.5rem; padding: 0.6rem 0.85rem; border-radius: var(--radius); font-size: 0.88rem; }
+
+/* ── Diagram box ── */
+.diagram-box {
+  background: var(--white);
+  border: 2px solid var(--neutral-200);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin: 1.25rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--neutral-700);
+}
+.diagram-box .diagram-label {
+  font-family: var(--font-main);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  display: block;
+  white-space: normal;
+}
+
+/* ── Step number badges ── */
+.step { display: flex; gap: 0.85rem; margin-bottom: 1rem; align-items: flex-start; }
+.step-num {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  background: var(--accent);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700;
+  margin-top: 0.15rem;
+}
+.step-content { flex: 1; }
+
+/* ── Objectives list ── */
+.obj-list { list-style: none; margin: 0; padding: 0; }
+.obj-list li {
+  padding: 0.5rem 0.75rem 0.5rem 2.2rem;
+  position: relative;
+  margin-bottom: 0.35rem;
+  background: var(--accent-light);
+  border-radius: 4px;
+  font-size: 0.92rem;
+}
+.obj-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0.75rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── Print ── */
+@media print {
+  .nav-bar { display: none; }
+  .page { max-width: 100%; padding: 0.5in; }
+  pre { white-space: pre-wrap; }
+  .tab-panel { display: block !important; border: 1px solid #ccc; margin-bottom: 1rem; }
+  .tab-buttons { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════ NAVIGATION BAR ════════════════ -->
+<nav class="nav-bar" role="navigation" aria-label="Module navigation">
+  <div class="nav-inner">
+    <span class="nav-title">Module 13.5</span>
+    <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" onclick="document.querySelector('.nav-links').classList.toggle('open'); this.setAttribute('aria-expanded', this.getAttribute('aria-expanded')==='true'?'false':'true');">☰</button>
+    <ul class="nav-links" role="list">
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#linux-install">Linux Install</a></li>
+      <li><a href="#linux-outputs">outputs.conf</a></li>
+      <li><a href="#linux-inputs">inputs.conf</a></li>
+      <li><a href="#windows-install">Windows Install</a></li>
+      <li><a href="#windows-config">Windows Config</a></li>
+      <li><a href="#verify">Verify Data</a></li>
+      <li><a href="#dashboard">Dashboard</a></li>
+      <li><a href="#project3">Project 3</a></li>
+      <li><a href="#activity">Activity</a></li>
+      <li><a href="#knowledge-check">Knowledge Check</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ════════════════ PAGE CONTAINER ════════════════ -->
+<main class="page" role="main">
+
+<!-- ── Module Header ── -->
+<header class="mod-header">
+  <span class="label">Week 13 · Module 5 of 5</span>
+  <h1>Splunk Universal Forwarder Deployment</h1>
+  <p>Install, configure, and verify Splunk Universal Forwarders on Linux and Windows — then build your first dashboard.</p>
+  <div class="mod-meta">
+    <span>⏱ Estimated Time: 1.5–2.0 hours</span>
+    <span>📋 Objectives: W13.6, W13.7</span>
+    <span>🔗 Supports: Lab 13 Part D &amp; Project 3</span>
+  </div>
+</header>
+
+<!-- ── Learning Objectives ── -->
+<div class="section">
+  <h2 class="section-heading" style="font-size:1.1rem;">Learning Objectives</h2>
+  <ul class="obj-list">
+    <li><strong>W13.6:</strong> Install and configure Splunk Universal Forwarders on Linux and Windows servers to send logs to a centralized Splunk Enterprise instance.</li>
+    <li><strong>W13.7:</strong> Verify data ingestion in Splunk and create at least one simple dashboard panel.</li>
+  </ul>
+  <div class="callout callout-info" style="margin-top:1rem;">
+    <span class="callout-title">Prerequisite</span>
+    <p style="margin:0;">This module assumes you have a working Splunk Enterprise instance from Module 12.5 with receiving port <strong>9997</strong> enabled. If you have not completed that installation, do so before proceeding.</p>
+  </div>
+</div>
+
+<!-- ════════════════ SECTION 1: ARCHITECTURE ════════════════ -->
+<section class="section" id="architecture">
+  <h2 class="section-heading">1. Splunk Forwarder Architecture</h2>
+
+  <h3>Why Forwarders?</h3>
+  <p>In a production Splunk deployment you almost never install a full Splunk Enterprise instance on every server you want to monitor. Instead, you deploy lightweight <strong>forwarders</strong> that collect log data at the source and ship it to a central Splunk instance for indexing and search. This keeps resource consumption low on monitored hosts and centralizes data management.</p>
+
+  <h3>Forwarder Types Compared</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Feature</th><th>Universal Forwarder (UF)</th><th>Heavy Forwarder (HF)</th><th>Full Splunk Enterprise</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Footprint</td><td>~50 MB RAM; minimal CPU</td><td>~1 GB+ RAM; moderate CPU</td><td>Full installation; significant resources</td></tr>
+        <tr><td>Parsing / Indexing</td><td>No local parsing or indexing</td><td>Can parse, filter, route before forwarding</td><td>Full parsing, indexing, and search</td></tr>
+        <tr><td>Web UI</td><td>None — CLI and config files only</td><td>Optional — can enable Splunk Web</td><td>Full Splunk Web interface</td></tr>
+        <tr><td>Typical Use Case</td><td>Collect &amp; forward logs from endpoints and servers</td><td>Intermediate tier: filter sensitive data, route to multiple indexers</td><td>Indexing, searching, dashboards, alerts</td></tr>
+        <tr><td>Our Lab Role</td><td><strong>Installed on Linux &amp; Windows servers this week</strong></td><td>Not used in our lab</td><td>Installed in Module 12.5 — our central receiver</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>For CSC 152, we use <strong>Universal Forwarders</strong> on every monitored host and a single <strong>Splunk Enterprise</strong> instance as the receiver/indexer.</p>
+
+  <h3>The Data Pipeline</h3>
+  <p>The diagram below shows how data flows from a monitored host to your Splunk search interface:</p>
+
+  <div class="diagram-box" role="img" aria-label="Splunk Universal Forwarder data pipeline diagram showing log files flowing through the UF, over port 9997 to Splunk Enterprise, through indexing, and into Splunk Web search.">
+<span class="diagram-label">Figure 1 — Splunk Universal Forwarder Data Pipeline</span>
+┌─────────────────────────────────────────────────────────────────────┐
+│                       MONITORED HOST (Linux or Windows)            │
+│                                                                     │
+│  ┌──────────────────┐     ┌──────────────────────────────────────┐  │
+│  │  Log Files        │     │  Splunk Universal Forwarder          │  │
+│  │  ─────────────    │     │  ──────────────────────────          │  │
+│  │  /var/log/syslog  │────▶│  inputs.conf   → monitors log files │  │
+│  │  /var/log/auth.log│     │  outputs.conf  → defines receiver   │  │
+│  │  WinEventLog:*    │     │                                      │  │
+│  └──────────────────┘     └──────────────┬───────────────────────┘  │
+│                                           │                         │
+└───────────────────────────────────────────┼─────────────────────────┘
+                                            │
+                                   TCP port 9997
+                                            │
+                                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                  SPLUNK ENTERPRISE SERVER (from Module 12.5)        │
+│                                                                     │
+│  ┌────────────────┐   ┌──────────────┐   ┌───────────────────────┐ │
+│  │  Receiver       │   │  Indexer      │   │  Search Head          │ │
+│  │  (port 9997)    │──▶│  Parses &amp;    │──▶│  Splunk Web (:8000)   │ │
+│  │  Accepts data   │   │  stores data │   │  SPL queries          │ │
+│  │  from forwarders│   │  in indexes  │   │  Dashboards &amp; Alerts │ │
+│  └────────────────┘   └──────────────┘   └───────────────────────┘ │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+  </div>
+
+  <h3>Key Configuration Files</h3>
+  <p>Two files control what a Universal Forwarder collects and where it sends data:</p>
+  <ul>
+    <li><strong><code>outputs.conf</code></strong> — Tells the forwarder <em>where</em> to send data (your Splunk Enterprise server's IP address and port 9997).</li>
+    <li><strong><code>inputs.conf</code></strong> — Tells the forwarder <em>what</em> to collect (which log files or event log channels to monitor).</li>
+  </ul>
+  <p>Both files live in the forwarder's local configuration directory. We will create and annotate them in the sections that follow.</p>
+</section>
+
+<!-- ════════════════ SECTION 2: LINUX INSTALL ════════════════ -->
+<section class="section" id="linux-install">
+  <h2 class="section-heading">2. Installing the Universal Forwarder on Linux</h2>
+
+  <p>The steps below install the Splunk Universal Forwarder on an Ubuntu Server VM. The installer package is provided in your lab environment — refer to the Lab 13 instructions for the exact file location.</p>
+
+  <div class="callout callout-tip">
+    <span class="callout-title">💡 Tip</span>
+    <p style="margin:0;">Replace <code>splunkforwarder-&lt;version&gt;-linux-amd64.deb</code> with the actual filename provided in your lab files. The version number may differ.</p>
+  </div>
+
+  <div class="step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <strong>Download / copy the installer to your Linux VM.</strong>
+      <p>Your instructor has provided the <code>.deb</code> package. Transfer it to your server (for example, via <code>scp</code> or a shared folder).</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <strong>Install the package.</strong>
+<pre><code>sudo dpkg -i splunkforwarder-&lt;version&gt;-linux-amd64.deb</code></pre>
+      <p>This installs the forwarder to <code>/opt/splunkforwarder</code>.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">3</span>
+    <div class="step-content">
+      <strong>Accept the license and start the forwarder for the first time.</strong>
+<pre><code>sudo /opt/splunkforwarder/bin/splunk start --accept-license</code></pre>
+      <p>You will be prompted to create an admin username and password for the forwarder. Remember these credentials.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">4</span>
+    <div class="step-content">
+      <strong>Enable the forwarder to start at boot.</strong>
+<pre><code>sudo /opt/splunkforwarder/bin/splunk enable boot-start</code></pre>
+      <p>This creates a systemd unit so the forwarder starts automatically when the server reboots.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">5</span>
+    <div class="step-content">
+      <strong>Verify the forwarder is running.</strong>
+<pre><code>sudo /opt/splunkforwarder/bin/splunk status</code></pre>
+      <p>You should see output indicating <code>splunkd is running</code>.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="callout-title">📝 Note</span>
+    <p style="margin:0;">The Universal Forwarder has <strong>no web interface</strong>. All configuration is done through config files and the CLI. This is by design — the UF is meant to be lightweight.</p>
+  </div>
+</section>
+
+<!-- ════════════════ SECTION 3: LINUX OUTPUTS.CONF ════════════════ -->
+<section class="section" id="linux-outputs">
+  <h2 class="section-heading">3. Configuring outputs.conf (Linux)</h2>
+
+  <p>The <code>outputs.conf</code> file tells the Universal Forwarder where to send collected data. Create this file in the forwarder's <strong>local</strong> configuration directory:</p>
+
+<pre><code>sudo nano /opt/splunkforwarder/etc/system/local/outputs.conf</code></pre>
+
+  <p>Add the following content:</p>
+
+<pre><code><span class="code-comment"># outputs.conf — Splunk Universal Forwarder (Linux)</span>
+<span class="code-comment"># Tells the forwarder where to send data</span>
+
+[tcpout]
+<span class="code-comment"># Default output group — all data goes to this group</span>
+defaultGroup = splunk-server
+
+[tcpout:splunk-server]
+<span class="code-comment"># IP address (or hostname) and receiving port of your</span>
+<span class="code-comment"># Splunk Enterprise server from Module 12.5</span>
+server = &lt;SPLUNK_SERVER_IP&gt;:9997
+
+<span class="code-comment"># Optional: compressed transmission (reduces bandwidth)</span>
+<span class="code-comment"># compressed = true</span></code></pre>
+
+  <h3>Directive Explanations</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Stanza / Directive</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>[tcpout]</code></td><td>Global TCP output settings. The <code>defaultGroup</code> directive specifies which output group receives all data by default.</td></tr>
+        <tr><td><code>defaultGroup = splunk-server</code></td><td>Names the output group. Must match the <code>[tcpout:&lt;name&gt;]</code> stanza below.</td></tr>
+        <tr><td><code>[tcpout:splunk-server]</code></td><td>Defines the target server group named <code>splunk-server</code>.</td></tr>
+        <tr><td><code>server = &lt;IP&gt;:9997</code></td><td>The IP address and port of your Splunk Enterprise receiver. Port <strong>9997</strong> is the default receiving port you enabled in Module 12.5.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-warning">
+    <span class="callout-title">⚠ Common Mistake</span>
+    <p style="margin:0;">Make sure the <code>defaultGroup</code> name exactly matches the name after the colon in <code>[tcpout:&lt;name&gt;]</code>. A mismatch means no data is forwarded — and no error message is displayed.</p>
+  </div>
+
+  <p>After saving the file, restart the forwarder to apply the change:</p>
+<pre><code>sudo /opt/splunkforwarder/bin/splunk restart</code></pre>
+</section>
+
+<!-- ════════════════ SECTION 4: LINUX INPUTS.CONF ════════════════ -->
+<section class="section" id="linux-inputs">
+  <h2 class="section-heading">4. Configuring inputs.conf (Linux)</h2>
+
+  <p>The <code>inputs.conf</code> file tells the forwarder <em>what</em> to monitor. Create it in the same local directory:</p>
+
+<pre><code>sudo nano /opt/splunkforwarder/etc/system/local/inputs.conf</code></pre>
+
+  <p>Add the following content to monitor syslog and authentication logs:</p>
+
+<pre><code><span class="code-comment"># inputs.conf — Splunk Universal Forwarder (Linux)</span>
+<span class="code-comment"># Defines which log files to monitor and forward</span>
+
+[monitor:///var/log/syslog]
+<span class="code-comment"># Monitor the main system log</span>
+disabled = false
+<span class="code-comment"># sourcetype tells Splunk how to parse this data</span>
+sourcetype = syslog
+<span class="code-comment"># index specifies which Splunk index receives this data</span>
+<span class="code-comment"># Use "main" (default) or a custom index you created</span>
+index = main
+
+[monitor:///var/log/auth.log]
+<span class="code-comment"># Monitor the authentication log — login attempts,</span>
+<span class="code-comment"># sudo usage, SSH sessions, and PAM events</span>
+disabled = false
+sourcetype = linux_secure
+index = main</code></pre>
+
+  <h3>Directive Explanations</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Stanza / Directive</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>[monitor://&lt;path&gt;]</code></td><td>Tells the forwarder to continuously read new data appended to the specified file. The triple slash (<code>///</code>) represents <code>monitor://</code> + absolute path starting with <code>/</code>.</td></tr>
+        <tr><td><code>disabled = false</code></td><td>Explicitly enables this input. If set to <code>true</code>, the stanza is ignored.</td></tr>
+        <tr><td><code>sourcetype = syslog</code></td><td>Assigns a sourcetype label so Splunk knows how to parse the data. Use recognized sourcetype names for best results.</td></tr>
+        <tr><td><code>index = main</code></td><td>Routes data to the <code>main</code> index. In production, you might create dedicated indexes (e.g., <code>linux_logs</code>).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-tip">
+    <span class="callout-title">💡 Why auth.log?</span>
+    <p style="margin:0;"><code>/var/log/auth.log</code> records every login attempt (successful and failed), <code>sudo</code> command usage, and SSH session. This is the single most valuable log file for security monitoring on a Linux server — and it is the data source for the dashboard panel you will build in Section 8.</p>
+  </div>
+
+  <p>After saving, restart the forwarder:</p>
+<pre><code>sudo /opt/splunkforwarder/bin/splunk restart</code></pre>
+
+  <div class="callout callout-info">
+    <span class="callout-title">📝 Permissions Note</span>
+    <p style="margin:0;">The Splunk forwarder process must have read access to the log files specified in <code>inputs.conf</code>. On Ubuntu, <code>/var/log/syslog</code> and <code>/var/log/auth.log</code> are typically readable by the <code>adm</code> group. If the forwarder runs as the <code>splunkfwd</code> user, you may need to add that user to the <code>adm</code> group: <code>sudo usermod -aG adm splunkfwd</code>, then restart the forwarder.</p>
+  </div>
+</section>
+
+<!-- ════════════════ SECTION 5: WINDOWS INSTALL ════════════════ -->
+<section class="section" id="windows-install">
+  <h2 class="section-heading">5. Installing the Universal Forwarder on Windows</h2>
+
+  <p>The Windows Universal Forwarder uses an MSI installer with a graphical wizard. The installer is provided in your lab environment — refer to the Lab 13 instructions for the file location.</p>
+
+  <div class="step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <strong>Run the MSI installer.</strong>
+      <p>Double-click the <code>splunkforwarder-&lt;version&gt;-x64-release.msi</code> file. Accept the license agreement.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <strong>Choose installation options.</strong>
+      <ul>
+        <li><strong>Install as Local System</strong> — this gives the forwarder permission to read Windows Event Logs.</li>
+        <li>Set an admin username and password when prompted.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">3</span>
+    <div class="step-content">
+      <strong>Optionally configure the receiving indexer during installation.</strong>
+      <p>The wizard may prompt you for a deployment server or receiving indexer. You can enter your Splunk Enterprise server's IP and port 9997 here, or skip this and configure <code>outputs.conf</code> manually (covered in Section 6).</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">4</span>
+    <div class="step-content">
+      <strong>Complete the installation and verify the service.</strong>
+      <p>Open <strong>Services</strong> (<code>services.msc</code>) and confirm that <strong>SplunkForwarder Service</strong> is listed with a status of <strong>Running</strong> and startup type of <strong>Automatic</strong>.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">5</span>
+    <div class="step-content">
+      <strong>Verify from the command line (optional).</strong>
+      <p>Open an <strong>Administrator Command Prompt</strong> or <strong>PowerShell</strong>:</p>
+<pre><code>cd "C:\Program Files\SplunkUniversalForwarder\bin"
+.\splunk.exe status</code></pre>
+      <p>You should see <code>splunkd is running</code>.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="callout-title">📝 Installation Path</span>
+    <p style="margin:0;">The default Windows installation path is <code>C:\Program Files\SplunkUniversalForwarder</code>. Configuration files are located under <code>...\etc\system\local\</code>, just like the Linux forwarder.</p>
+  </div>
+</section>
+
+<!-- ════════════════ SECTION 6: WINDOWS CONFIG ════════════════ -->
+<section class="section" id="windows-config">
+  <h2 class="section-heading">6. Configuring outputs.conf &amp; inputs.conf (Windows)</h2>
+
+  <p>The configuration files on Windows follow the <strong>same syntax</strong> as Linux — only the file paths and input types differ. Navigate to the local config directory:</p>
+<pre><code>C:\Program Files\SplunkUniversalForwarder\etc\system\local\</code></pre>
+
+  <h3>outputs.conf (Windows)</h3>
+  <p>Create or edit <code>outputs.conf</code> in the directory above. The content is <strong>identical</strong> to the Linux version:</p>
+
+<pre><code><span class="code-comment"># outputs.conf — Splunk Universal Forwarder (Windows)</span>
+
+[tcpout]
+defaultGroup = splunk-server
+
+[tcpout:splunk-server]
+server = &lt;SPLUNK_SERVER_IP&gt;:9997</code></pre>
+
+  <h3>inputs.conf (Windows)</h3>
+  <p>Windows servers use <strong>Windows Event Log</strong> channels instead of flat log files. Create or edit <code>inputs.conf</code>:</p>
+
+<pre><code><span class="code-comment"># inputs.conf — Splunk Universal Forwarder (Windows)</span>
+<span class="code-comment"># Monitor Windows Event Log channels</span>
+
+[WinEventLog://Security]
+<span class="code-comment"># The Security log contains logon/logoff events,</span>
+<span class="code-comment"># privilege use, account management, and policy changes</span>
+disabled = false
+index = main
+<span class="code-comment"># evt_resolve_ad_obj = true  (optional: resolve AD SIDs to names)</span>
+
+[WinEventLog://System]
+<span class="code-comment"># The System log contains service start/stop, driver</span>
+<span class="code-comment"># failures, and hardware events</span>
+disabled = false
+index = main
+
+[WinEventLog://Application]
+<span class="code-comment"># The Application log contains software-level events</span>
+<span class="code-comment"># from installed applications and services</span>
+disabled = false
+index = main</code></pre>
+
+  <h3>Stanza Explanation</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Stanza / Directive</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>[WinEventLog://&lt;channel&gt;]</code></td><td>Monitors a Windows Event Log channel. The channel name must match exactly (e.g., <code>Security</code>, <code>System</code>, <code>Application</code>).</td></tr>
+        <tr><td><code>disabled = false</code></td><td>Enables collection from this channel.</td></tr>
+        <tr><td><code>index = main</code></td><td>Routes events to the <code>main</code> index on the Splunk Enterprise server.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>After saving both files, restart the forwarder service. Open an <strong>Administrator Command Prompt</strong>:</p>
+<pre><code>cd "C:\Program Files\SplunkUniversalForwarder\bin"
+.\splunk.exe restart</code></pre>
+  <p>Alternatively, restart the <strong>SplunkForwarder Service</strong> in <code>services.msc</code>.</p>
+
+  <div class="callout callout-warning">
+    <span class="callout-title">⚠ Case Sensitivity</span>
+    <p style="margin:0;">Windows Event Log channel names are <strong>case-sensitive</strong> in <code>inputs.conf</code>. Use <code>Security</code>, not <code>security</code>. An incorrect channel name will silently produce no data.</p>
+  </div>
+</section>
+
+<!-- ════════════════ SECTION 7: VERIFY ════════════════ -->
+<section class="section" id="verify">
+  <h2 class="section-heading">7. Verifying Data Ingestion</h2>
+
+  <p>After configuring forwarders on both platforms, switch to your <strong>Splunk Enterprise</strong> web interface (<code>http://&lt;SPLUNK_SERVER_IP&gt;:8000</code>) to confirm data is arriving.</p>
+
+  <h3>Step-by-Step Verification</h3>
+
+  <div class="step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <strong>Search for all data from your hosts.</strong>
+      <p>In the Splunk search bar, enter:</p>
+<pre><code>index=* host=&lt;linux-hostname&gt; OR host=&lt;windows-hostname&gt;</code></pre>
+      <p>Set the time range to <strong>Last 15 minutes</strong>. You should see events from both hosts. If you see results, your forwarders are working.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <strong>Check event counts by host and sourcetype.</strong>
+<pre><code>index=* | stats count by host, sourcetype</code></pre>
+      <p>This shows you which hosts are sending data and what types of data are arriving. You should see entries like:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>host</th><th>sourcetype</th><th>count</th></tr></thead>
+          <tbody>
+            <tr><td>linux-srv01</td><td>syslog</td><td>342</td></tr>
+            <tr><td>linux-srv01</td><td>linux_secure</td><td>87</td></tr>
+            <tr><td>win-srv01</td><td>WinEventLog:Security</td><td>1,204</td></tr>
+            <tr><td>win-srv01</td><td>WinEventLog:System</td><td>156</td></tr>
+            <tr><td>win-srv01</td><td>WinEventLog:Application</td><td>93</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">3</span>
+    <div class="step-content">
+      <strong>Check Splunk internal logs for forwarder connections.</strong>
+<pre><code>index=_internal sourcetype=splunkd "Connected to" OR "accepted from"</code></pre>
+      <p>This searches Splunk's own internal logs for connection events. You should see messages indicating forwarders have connected on port 9997.</p>
+    </div>
+  </div>
+
+  <h3>Troubleshooting Tips</h3>
+  <p>If you do <strong>not</strong> see data from a forwarder, work through this checklist:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>No data at all from a host</td>
+          <td>Firewall blocking port 9997</td>
+          <td>Check pfSense rules: allow TCP 9997 from the forwarder's subnet to the Splunk server. Verify with <code>telnet &lt;splunk-ip&gt; 9997</code> from the forwarder host.</td>
+        </tr>
+        <tr>
+          <td>No data at all from a host</td>
+          <td><code>outputs.conf</code> typo — wrong IP, wrong port, or <code>defaultGroup</code> name mismatch</td>
+          <td>Double-check <code>outputs.conf</code>. The <code>defaultGroup</code> value must exactly match the <code>[tcpout:&lt;name&gt;]</code> stanza name.</td>
+        </tr>
+        <tr>
+          <td>No data at all from a host</td>
+          <td>Forwarder service not running</td>
+          <td>Linux: <code>sudo /opt/splunkforwarder/bin/splunk status</code>. Windows: check <code>services.msc</code> for SplunkForwarder Service.</td>
+        </tr>
+        <tr>
+          <td>Host appears but specific sourcetype missing</td>
+          <td><code>inputs.conf</code> stanza error — wrong path, wrong channel name, or <code>disabled = true</code></td>
+          <td>Review <code>inputs.conf</code> carefully. On Linux, verify the log file exists and the forwarder user can read it. On Windows, verify the channel name is spelled correctly with correct capitalization.</td>
+        </tr>
+        <tr>
+          <td>Receiver port not listening on Splunk Enterprise</td>
+          <td>Port 9997 was not enabled in Module 12.5</td>
+          <td>In Splunk Web: Settings → Forwarding and Receiving → Configure Receiving → verify port 9997 is listed and enabled.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ════════════════ SECTION 8: DASHBOARD ════════════════ -->
+<section class="section" id="dashboard">
+  <h2 class="section-heading">8. Creating Your First Dashboard Panel</h2>
+
+  <p>Now that data is flowing, you will create a dashboard panel that visualizes <strong>failed login attempts over time</strong>. This is a fundamental security monitoring view and one of the dashboard deliverables for Project 3.</p>
+
+  <h3>Platform-Specific SPL Searches</h3>
+  <p>The SPL query differs depending on which host's data you are visualizing. Use the tabs below to see the appropriate search for your platform:</p>
+
+  <div class="tabs-wrapper">
+    <div class="tab-buttons" role="tablist" aria-label="Dashboard SPL by platform">
+      <button class="tab-btn" role="tab" aria-selected="true" aria-controls="tab-panel-dash-linux" id="tab-dash-linux" onclick="switchTab(this, 'dash')">Linux</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-panel-dash-win" id="tab-dash-win" onclick="switchTab(this, 'dash')">Windows</button>
+    </div>
+    <div class="tab-panel active" role="tabpanel" id="tab-panel-dash-linux" aria-labelledby="tab-dash-linux" data-group="dash">
+      <p><strong>Linux — Failed SSH/login attempts from auth.log:</strong></p>
+<pre><code>index=main sourcetype=linux_secure "Failed password"
+| timechart span=1h count AS "Failed Logins"</code></pre>
+      <p>This searches <code>auth.log</code> data for the string <code>"Failed password"</code> (generated by SSH and PAM on failed login attempts) and charts the count per hour.</p>
+    </div>
+    <div class="tab-panel" role="tabpanel" id="tab-panel-dash-win" aria-labelledby="tab-dash-win" data-group="dash">
+      <p><strong>Windows — Failed logon events (Event ID 4625):</strong></p>
+<pre><code>index=main sourcetype="WinEventLog:Security" EventCode=4625
+| timechart span=1h count AS "Failed Logins"</code></pre>
+      <p>This searches the Windows Security Event Log for Event ID 4625 (failed logon) and charts the count per hour. Recall from Module 11.5 that Event ID 4625 is the key indicator for failed authentication attempts.</p>
+    </div>
+  </div>
+
+  <h3>Building the Dashboard</h3>
+
+  <div class="step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <strong>Run your search.</strong>
+      <p>Paste the appropriate SPL query into the Splunk search bar. Set the time range to <strong>Last 24 hours</strong> (or <strong>Last 4 hours</strong> if your forwarder was just installed). Click <strong>Search</strong>.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <strong>Switch to the Visualization tab.</strong>
+      <p>After results appear, click the <strong>Visualization</strong> tab above the results. Select a <strong>Line Chart</strong> or <strong>Column Chart</strong> visualization type. You should see failed logins plotted over time.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">3</span>
+    <div class="step-content">
+      <strong>Save as a Dashboard Panel.</strong>
+      <p>Click <strong>Save As</strong> → <strong>Dashboard Panel</strong>.</p>
+      <ul>
+        <li><strong>Dashboard Title:</strong> <code>CSC 152 Security Monitoring</code> (or a descriptive name of your choice)</li>
+        <li><strong>Panel Title:</strong> <code>Failed Login Attempts Over Time</code></li>
+        <li><strong>Panel Type:</strong> keep the default (inline search)</li>
+      </ul>
+      <p>Click <strong>Save</strong>. Splunk creates a new dashboard with your panel.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-num">4</span>
+    <div class="step-content">
+      <strong>View your dashboard.</strong>
+      <p>Click <strong>View Dashboard</strong> to see the finished result. You now have a working security monitoring dashboard that updates in real time.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-success">
+    <span class="callout-title">✅ Milestone</span>
+    <p style="margin:0;">You have just completed the core Splunk monitoring workflow: <strong>collect → forward → index → search → visualize</strong>. This is the same pattern used in production Security Operations Centers (SOCs). For Project 3, you will expand this dashboard to include at least three panels and one alert.</p>
+  </div>
+</section>
+
+<!-- ════════════════ SECTION 9: PROJECT 3 CONNECTION ════════════════ -->
+<section class="section" id="project3">
+  <h2 class="section-heading">9. Connection to Project 3</h2>
+
+  <p>Project 3 (Security Hardening &amp; Monitoring with Splunk) is <strong>assigned this week</strong> and due in Week 15. The exercises in this module map directly to Project 3 deliverables:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>This Module Exercise</th><th>Project 3 Deliverable</th><th>Project 3 Part</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Installing Universal Forwarders on Linux and Windows</td>
+          <td>Splunk deployment: forwarders installed on all monitored hosts</td>
+          <td>Part B — Splunk Deployment</td>
+        </tr>
+        <tr>
+          <td>Configuring <code>outputs.conf</code> and <code>inputs.conf</code></td>
+          <td>Documented configuration files showing log collection setup</td>
+          <td>Part B — Splunk Deployment</td>
+        </tr>
+        <tr>
+          <td>Verifying data ingestion with SPL searches</td>
+          <td>Evidence of data flowing from all monitored hosts</td>
+          <td>Part B — Splunk Deployment</td>
+        </tr>
+        <tr>
+          <td>Creating the Failed Login Attempts dashboard panel</td>
+          <td>At least three meaningful dashboards or searches (this is one of three)</td>
+          <td>Part C — Dashboards &amp; Alerts</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-tip">
+    <span class="callout-title">💡 Project 3 Strategy</span>
+    <p style="margin:0;">If you complete this module's exercises carefully and document your work with screenshots, you will have <strong>Part B largely complete</strong> and a strong start on <strong>Part C</strong>. In Week 14, you will use Splunk to validate security hardening changes — those searches and dashboards will become your remaining Project 3 deliverables. Start documenting now.</p>
+  </div>
+
+  <h3>What Comes Next for Project 3</h3>
+  <ul>
+    <li><strong>Week 14:</strong> Use Splunk to validate security hardening (failed logins, service changes, firewall blocks) — these become additional dashboard panels.</li>
+    <li><strong>Week 15:</strong> Configure at least one Splunk <strong>alert</strong> (e.g., trigger when failed logins exceed a threshold). Finalize all three dashboards. Submit Project 3.</li>
+  </ul>
+</section>
+
+<!-- ════════════════ SECTION 10: INTERACTIVE ACTIVITY ════════════════ -->
+<section class="section" id="activity">
+  <h2 class="section-heading">10. Configuration Review Activity</h2>
+
+  <p>A fellow student asks you to review their forwarder configuration files because data is not appearing in Splunk. Examine each configuration below, <strong>identify the error</strong>, and click the option that describes the problem. Immediate feedback is provided.</p>
+
+  <!-- Scenario 1 -->
+  <h3>Scenario 1: Linux outputs.conf</h3>
+  <p>The student's <code>outputs.conf</code> on their Linux server contains:</p>
+<pre><code>[tcpout]
+defaultGroup = my-splunk
+
+[tcpout:splunk-server]
+server = 10.0.1.50:9997</code></pre>
+
+  <div id="ia1">
+    <div class="ia-option" tabindex="0" role="button" aria-label="Option A" onclick="checkIA('ia1','a')">
+      <strong>A.</strong> The port number should be 8000, not 9997.
+    </div>
+    <div class="ia-option" tabindex="0" role="button" aria-label="Option B" onclick="checkIA('ia1','b')">
+      <strong>B.</strong> The <code>defaultGroup</code> name (<code>my-splunk</code>) does not match the stanza name (<code>splunk-server</code>).
+    </div>
+    <div class="ia-option" tabindex="0" role="button" aria-label="Option C" onclick="checkIA('ia1','c')">
+      <strong>C.</strong> The <code>[tcpout]</code> stanza should be <code>[tcp]</code>.
+    </div>
+    <div class="ia-feedback" id="ia1-fb-correct" style="background:var(--success-light);border-left:4px solid var(--success);">
+      <strong>✓ Correct!</strong> The <code>defaultGroup</code> value is <code>my-splunk</code>, but the output group stanza is named <code>[tcpout:splunk-server]</code>. These must match. The fix is to change either the <code>defaultGroup</code> to <code>splunk-server</code> or rename the stanza to <code>[tcpout:my-splunk]</code>.
+    </div>
+    <div class="ia-feedback" id="ia1-fb-incorrect" style="background:var(--warning-light);border-left:4px solid var(--warning);">
+      <strong>✗ Not quite.</strong> Look at the <code>defaultGroup</code> value and the <code>[tcpout:...]</code> stanza name. Do they match? The <code>defaultGroup</code> tells Splunk which output group to use — if the name does not match any defined group, data goes nowhere.
+    </div>
+  </div>
+
+  <!-- Scenario 2 -->
+  <h3 style="margin-top:1.5rem;">Scenario 2: Windows inputs.conf</h3>
+  <p>The student's <code>inputs.conf</code> on their Windows server contains:</p>
+<pre><code>[WinEventLog://security]
+disabled = false
+index = main
+
+[WinEventLog://System]
+disabled = false
+index = main</code></pre>
+
+  <div id="ia2">
+    <div class="ia-option" tabindex="0" role="button" aria-label="Option A" onclick="checkIA('ia2','a')">
+      <strong>A.</strong> The <code>index = main</code> directive is wrong; it should be <code>index = wineventlog</code>.
+    </div>
+    <div class="ia-option" tabindex="0" role="button" aria-label="Option B" onclick="checkIA('ia2','b')">
+      <strong>B.</strong> The first stanza uses <code>security</code> (lowercase) instead of <code>Security</code> (capitalized).
+    </div>
+    <div class="ia-option" tabindex="0" role="button" aria-label="Option C" onclick="checkIA('ia2','c')">
+      <strong>C.</strong> The <code>WinEventLog://</code> prefix should be <code>monitor://</code> on Windows.
+    </div>
+    <div class="ia-feedback" id="ia2-fb-correct" style="background:var(--success-light);border-left:4px solid var(--success);">
+      <strong>✓ Correct!</strong> Windows Event Log channel names are case-sensitive in <code>inputs.conf</code>. The channel is named <code>Security</code> (capital S), not <code>security</code>. With the wrong case, the forwarder silently collects nothing from that channel — no error message is displayed.
+    </div>
+    <div class="ia-feedback" id="ia2-fb-incorrect" style="background:var(--warning-light);border-left:4px solid var(--warning);">
+      <strong>✗ Not quite.</strong> The <code>WinEventLog://</code> prefix is correct for Windows Event Logs, and <code>index = main</code> is valid. Look carefully at the capitalization of the channel name in the first stanza. Windows Event Log channel names are case-sensitive.
+    </div>
+  </div>
+
+  <!-- Scenario 3 -->
+  <h3 style="margin-top:1.5rem;">Scenario 3: Linux inputs.conf</h3>
+  <p>The student's <code>inputs.conf</code> on their Linux server contains:</p>
+<pre><code>[monitor:///var/log/syslog]
+disabled = true
+sourcetype = syslog
+index = main
+
+[monitor:///var/log/auth.log]
+disabled = false
+sourcetype = linux_secure
+index = main</code></pre>
+
+  <div id="ia3">
+    <div class="ia-option" tabindex="0" role="button" aria-label="Option A" onclick="checkIA('ia3','a')">
+      <strong>A.</strong> The syslog stanza has <code>disabled = true</code>, which prevents it from being monitored.
+    </div>
+    <div class="ia-option" tabindex="0" role="button" aria-label="Option B" onclick="checkIA('ia3','b')">
+      <strong>B.</strong> The <code>sourcetype</code> for auth.log should be <code>syslog</code>, not <code>linux_secure</code>.
+    </div>
+    <div class="ia-option" tabindex="0" role="button" aria-label="Option C" onclick="checkIA('ia3','c')">
+      <strong>C.</strong> Both stanzas should use <code>index = linux</code> instead of <code>index = main</code>.
+    </div>
+    <div class="ia-feedback" id="ia3-fb-correct" style="background:var(--success-light);border-left:4px solid var(--success);">
+      <strong>✓ Correct!</strong> The <code>disabled = true</code> directive in the syslog stanza tells the forwarder to <em>ignore</em> this input. The student likely copied a template and forgot to change it to <code>disabled = false</code>. Meanwhile, auth.log data <em>is</em> being collected because its stanza correctly has <code>disabled = false</code>.
+    </div>
+    <div class="ia-feedback" id="ia3-fb-incorrect" style="background:var(--warning-light);border-left:4px solid var(--warning);">
+      <strong>✗ Not quite.</strong> The sourcetype and index values are fine. Look at the <code>disabled</code> directive in the first stanza. What does <code>disabled = true</code> do?
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ SECTION 11: KNOWLEDGE CHECK ════════════════ -->
+<section class="section" id="knowledge-check">
+  <h2 class="section-heading">11. Knowledge Check</h2>
+  <p>This ungraded self-assessment covers the key concepts from this module. Select your answer and click <strong>Check Answer</strong> for immediate feedback.</p>
+
+  <!-- Q1 -->
+  <div class="kc-question" id="kc1">
+    <p class="q-text">1. What is the primary difference between a Splunk Universal Forwarder and a full Splunk Enterprise instance?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="kc1" value="a"> The Universal Forwarder can only run on Linux, while Splunk Enterprise runs on any OS.</label></li>
+      <li><label><input type="radio" name="kc1" value="b"> The Universal Forwarder collects and forwards data but does not index or provide a search interface.</label></li>
+      <li><label><input type="radio" name="kc1" value="c"> The Universal Forwarder stores data locally and indexes it before forwarding.</label></li>
+      <li><label><input type="radio" name="kc1" value="d"> There is no difference; they are the same software with different names.</label></li>
+    </ul>
+    <button class="kc-submit" onclick="checkKC('kc1','b')">Check Answer</button>
+    <div class="kc-feedback" id="kc1-correct">
+      <strong>✓ Correct!</strong> The Universal Forwarder is a lightweight agent that collects log data and forwards it to a Splunk Enterprise instance (or indexer) for parsing, indexing, and search. It has no web UI and does not index data locally, which keeps its resource footprint minimal.
+    </div>
+    <div class="kc-feedback" id="kc1-incorrect">
+      <strong>✗ Not quite.</strong> The Universal Forwarder runs on both Linux and Windows. Its key characteristic is that it <em>does not</em> index data or provide a search interface — it only collects and forwards. This is what makes it lightweight enough to deploy on every monitored host.
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="kc-question" id="kc2">
+    <p class="q-text">2. What is the purpose of the <code>outputs.conf</code> file on a Universal Forwarder?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="kc2" value="a"> It specifies which log files or event channels the forwarder should monitor.</label></li>
+      <li><label><input type="radio" name="kc2" value="b"> It defines the Splunk Enterprise server (IP address and port) where the forwarder sends collected data.</label></li>
+      <li><label><input type="radio" name="kc2" value="c"> It configures the Splunk Web interface on the forwarder.</label></li>
+      <li><label><input type="radio" name="kc2" value="d"> It sets the admin password for the forwarder.</label></li>
+    </ul>
+    <button class="kc-submit" onclick="checkKC('kc2','b')">Check Answer</button>
+    <div class="kc-feedback" id="kc2-correct">
+      <strong>✓ Correct!</strong> <code>outputs.conf</code> tells the forwarder <em>where</em> to send data. It contains the IP address and port (typically 9997) of the Splunk Enterprise receiver. The file that specifies <em>what</em> to collect is <code>inputs.conf</code>.
+    </div>
+    <div class="kc-feedback" id="kc2-incorrect">
+      <strong>✗ Not quite.</strong> Remember the two key config files: <code>outputs.conf</code> = <em>where</em> to send data (the receiver's address and port). <code>inputs.conf</code> = <em>what</em> to collect (log files and event channels). The correct answer describes the "where" function.
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="kc-question" id="kc3">
+    <p class="q-text">3. Which <code>inputs.conf</code> stanza correctly monitors the Windows Security Event Log?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="kc3" value="a"> <code>[monitor://C:\Windows\System32\winevt\Logs\Security.evtx]</code></label></li>
+      <li><label><input type="radio" name="kc3" value="b"> <code>[WinEventLog://Security]</code></label></li>
+      <li><label><input type="radio" name="kc3" value="c"> <code>[WinEventLog://security]</code></label></li>
+      <li><label><input type="radio" name="kc3" value="d"> <code>[eventlog://Security]</code></label></li>
+    </ul>
+    <button class="kc-submit" onclick="checkKC('kc3','b')">Check Answer</button>
+    <div class="kc-feedback" id="kc3-correct">
+      <strong>✓ Correct!</strong> The proper stanza for Windows Event Logs uses the <code>[WinEventLog://&lt;ChannelName&gt;]</code> format, and the channel name is case-sensitive. <code>Security</code> (capital S) is the correct name. Option C would fail silently because of the lowercase "s."
+    </div>
+    <div class="kc-feedback" id="kc3-incorrect">
+      <strong>✗ Not quite.</strong> Windows Event Logs are monitored using the <code>[WinEventLog://]</code> prefix (not <code>[monitor://]</code> or <code>[eventlog://]</code>). The channel name must be capitalized exactly as Windows defines it: <code>Security</code>, <code>System</code>, <code>Application</code>.
+    </div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="kc-question" id="kc4">
+    <p class="q-text">4. After installing forwarders on two hosts, you want to confirm that data is arriving in Splunk. Which SPL search would show event counts grouped by host and sourcetype?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="kc4" value="a"> <code>index=* | table host, sourcetype</code></label></li>
+      <li><label><input type="radio" name="kc4" value="b"> <code>index=* | stats count by host, sourcetype</code></label></li>
+      <li><label><input type="radio" name="kc4" value="c"> <code>index=* | timechart count by host</code></label></li>
+      <li><label><input type="radio" name="kc4" value="d"> <code>index=_internal | stats count by host</code></label></li>
+    </ul>
+    <button class="kc-submit" onclick="checkKC('kc4','b')">Check Answer</button>
+    <div class="kc-feedback" id="kc4-correct">
+      <strong>✓ Correct!</strong> <code>index=* | stats count by host, sourcetype</code> searches all indexes and produces a table showing how many events each host has sent, broken down by sourcetype. This is the go-to verification search after deploying forwarders.
+    </div>
+    <div class="kc-feedback" id="kc4-incorrect">
+      <strong>✗ Not quite.</strong> The <code>| table</code> command lists individual events (not counts). The <code>| timechart</code> command shows data over time but does not group by sourcetype. The <code>_internal</code> index contains Splunk's own logs, not your forwarded data. The command that counts events grouped by fields is <code>| stats count by &lt;field1&gt;, &lt;field2&gt;</code>.
+    </div>
+  </div>
+</section>
+
+<!-- ── Module Summary ── -->
+<div class="section">
+  <h2 class="section-heading" style="font-size:1.1rem;">Module Summary</h2>
+  <p>In this module you:</p>
+  <ul>
+    <li>Learned the Splunk forwarder architecture — Universal Forwarder vs. Heavy Forwarder vs. full Splunk Enterprise — and traced the complete data pipeline from monitored logs to Splunk Web dashboards.</li>
+    <li>Installed and configured the Universal Forwarder on both <strong>Linux</strong> and <strong>Windows</strong> platforms.</li>
+    <li>Created annotated <code>outputs.conf</code> and <code>inputs.conf</code> files to control where data is sent and what data is collected.</li>
+    <li>Verified data ingestion using SPL searches and Splunk internal logs.</li>
+    <li>Built your first dashboard panel — <strong>Failed Login Attempts Over Time</strong> — the same pattern you will use for Project 3 deliverables.</li>
+  </ul>
+  <div class="callout callout-info">
+    <span class="callout-title">Next Steps</span>
+    <p style="margin:0;">Complete <strong>Lab 13 Part D</strong> using the skills from this module. Then review the <strong>Project 3 specification</strong> and begin planning your additional dashboards and alert configuration for Weeks 14–15.</p>
+  </div>
+</div>
+
+</main>
+
+<!-- ════════════════ JAVASCRIPT ════════════════ -->
+<script>
+/* ── Tab switching ── */
+function switchTab(btn, group) {
+  var btns = btn.parentElement.querySelectorAll('.tab-btn');
+  btns.forEach(function(b) { b.setAttribute('aria-selected', 'false'); });
+  btn.setAttribute('aria-selected', 'true');
+  var panels = btn.closest('.tabs-wrapper').querySelectorAll('.tab-panel[data-group="' + group + '"]');
+  panels.forEach(function(p) { p.classList.remove('active'); });
+  var target = document.getElementById(btn.getAttribute('aria-controls'));
+  if (target) target.classList.add('active');
+}
+
+/* ── Accordion toggle ── */
+function toggleAccordion(btn) {
+  var expanded = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', !expanded);
+  var panel = btn.nextElementSibling;
+  if (expanded) { panel.classList.remove('open'); }
+  else { panel.classList.add('open'); }
+}
+
+/* ── Interactive Activity ── */
+function checkIA(scenarioId, selected) {
+  var correctAnswers = { 'ia1': 'b', 'ia2': 'b', 'ia3': 'a' };
+  var correct = correctAnswers[scenarioId];
+  var container = document.getElementById(scenarioId);
+  var options = container.querySelectorAll('.ia-option');
+  var fbCorrect = document.getElementById(scenarioId + '-fb-correct');
+  var fbIncorrect = document.getElementById(scenarioId + '-fb-incorrect');
+
+  // Reset
+  options.forEach(function(o) {
+    o.classList.remove('selected-correct', 'selected-incorrect');
+    o.style.pointerEvents = '';
+  });
+  fbCorrect.style.display = 'none';
+  fbIncorrect.style.display = 'none';
+
+  // Find clicked option index
+  var letters = ['a','b','c'];
+  var idx = letters.indexOf(selected);
+  if (idx < 0) return;
+
+  if (selected === correct) {
+    options[idx].classList.add('selected-correct');
+    fbCorrect.style.display = 'block';
+  } else {
+    options[idx].classList.add('selected-incorrect');
+    fbIncorrect.style.display = 'block';
+  }
+}
+
+/* ── Knowledge Check ── */
+function checkKC(qId, correctVal) {
+  var radios = document.querySelectorAll('input[name="' + qId + '"]');
+  var selected = null;
+  radios.forEach(function(r) { if (r.checked) selected = r.value; });
+  if (!selected) return;
+
+  var fbCorrect = document.getElementById(qId + '-correct');
+  var fbIncorrect = document.getElementById(qId + '-incorrect');
+
+  // Hide both first
+  fbCorrect.style.display = 'none';
+  fbCorrect.className = 'kc-feedback';
+  fbIncorrect.style.display = 'none';
+  fbIncorrect.className = 'kc-feedback';
+
+  if (selected === correctVal) {
+    fbCorrect.className = 'kc-feedback correct';
+  } else {
+    fbIncorrect.className = 'kc-feedback incorrect';
+  }
+}
+</script>
+
+</body>
+</html>

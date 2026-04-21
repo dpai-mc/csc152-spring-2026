@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 13.2 – Virtual Machine Creation &amp; Management</title>
+<style>
+/* ═══ RESET & BASE ═══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.65;color:#1e293b;background:#f8fafc}
+
+/* ═══ STICKY NAV ═══ */
+.sticky-nav{position:sticky;top:0;z-index:1000;background:#1e3a5f;border-bottom:3px solid #f59e0b;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.nav-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;flex-wrap:wrap;padding:.35rem .75rem;gap:.25rem .45rem}
+.nav-brand{color:#f59e0b;font-weight:700;font-size:.85rem;margin-right:.75rem;white-space:nowrap}
+.nav-inner a{color:#cbd5e1;text-decoration:none;font-size:.78rem;padding:.3rem .55rem;border-radius:4px;white-space:nowrap;transition:background .2s,color .2s}
+.nav-inner a:hover,.nav-inner a:focus{background:#f59e0b;color:#1e293b;outline:none}
+.nav-inner a:focus-visible{outline:2px solid #f59e0b;outline-offset:2px}
+
+/* ═══ PAGE HEADER ═══ */
+.page-header{background:linear-gradient(135deg,#1e3a5f 0%,#2d5a8e 100%);color:#fff;padding:2.5rem 1.5rem 2rem;text-align:center}
+.page-header .course-tag{font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;margin-bottom:.5rem}
+.page-header h1{font-size:clamp(1.45rem,3.5vw,2rem);font-weight:800;line-height:1.25;margin-bottom:.5rem}
+.page-header .subtitle{font-size:.95rem;color:#bfdbfe;margin-bottom:1rem}
+.meta-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:.45rem}
+.meta-pill{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:.25rem .75rem;font-size:.78rem;color:#e0e7ff}
+
+/* ═══ LAYOUT ═══ */
+.container{max-width:960px;margin:0 auto;padding:1.5rem 1rem 3rem}
+
+/* ═══ SECTION HEADERS ═══ */
+.section{margin-bottom:2.5rem;border-radius:10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+.section-header{background:#1e3a5f;color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;gap:.6rem}
+.section-number{background:#f59e0b;color:#1e293b;font-weight:800;font-size:.85rem;width:2rem;height:2rem;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.section-header h2{font-size:1.15rem;font-weight:700}
+.section-body{padding:1.5rem 1.25rem}
+
+/* ═══ TYPOGRAPHY ═══ */
+h3{font-size:1.05rem;color:#1e3a5f;margin:1.25rem 0 .5rem;font-weight:700}
+h4{font-size:.95rem;color:#2d5a8e;margin:1rem 0 .4rem;font-weight:700}
+p{margin-bottom:.85rem}
+ul,ol{margin:0 0 1rem 1.5rem}
+li{margin-bottom:.35rem}
+strong{color:#1e293b}
+code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:.1rem .35rem;font-size:.88em;color:#b45309}
+
+/* ═══ CALLOUT BOXES ═══ */
+.callout{border-left:4px solid;border-radius:6px;padding:1rem 1.15rem;margin:1rem 0;font-size:.93rem}
+.callout-info{border-color:#3b82f6;background:#eff6ff}
+.callout-tip{border-color:#10b981;background:#ecfdf5}
+.callout-warn{border-color:#f59e0b;background:#fffbeb}
+.callout-important{border-color:#ef4444;background:#fef2f2}
+.callout-title{font-weight:700;margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem}
+
+/* ═══ TABLES ═══ */
+.table-wrap{overflow-x:auto;margin:1rem 0}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+thead th{background:#1e3a5f;color:#fff;padding:.6rem .75rem;text-align:left;font-weight:600;white-space:nowrap}
+tbody td{padding:.55rem .75rem;border-bottom:1px solid #e2e8f0;vertical-align:top}
+tbody tr:nth-child(even){background:#f8fafc}
+tbody tr:hover{background:#eff6ff}
+caption{caption-side:top;text-align:left;font-weight:700;color:#1e3a5f;padding-bottom:.4rem;font-size:.92rem}
+
+/* ═══ FLOWCHART ═══ */
+.flow-chart{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.35rem;margin:1.25rem 0}
+.flow-step{background:linear-gradient(135deg,#1e3a5f,#2d5a8e);color:#fff;padding:.55rem 1rem;border-radius:8px;font-size:.82rem;font-weight:600;text-align:center;min-width:110px;box-shadow:0 2px 4px rgba(0,0,0,.12)}
+.flow-arrow{color:#f59e0b;font-size:1.3rem;font-weight:700;user-select:none}
+
+/* ═══ TABS ═══ */
+.tabs{margin:1rem 0}
+.tab-buttons{display:flex;flex-wrap:wrap;gap:0;border-bottom:2px solid #e2e8f0}
+.tab-btn{padding:.55rem 1.1rem;font-size:.85rem;font-weight:600;background:#f1f5f9;border:2px solid #e2e8f0;border-bottom:none;border-radius:8px 8px 0 0;cursor:pointer;color:#64748b;transition:all .2s;margin-bottom:-2px}
+.tab-btn:hover{background:#e0e7ff;color:#1e3a5f}
+.tab-btn[aria-selected="true"],.tab-btn.active{background:#fff;color:#1e3a5f;border-color:#1e3a5f;border-bottom:2px solid #fff}
+.tab-btn:focus-visible{outline:2px solid #f59e0b;outline-offset:2px}
+.tab-panel{display:none;padding:1.15rem;background:#fff;border:2px solid #1e3a5f;border-top:none;border-radius:0 0 8px 8px}
+.tab-panel.active{display:block}
+
+/* ═══ COLLAPSIBLE / ACCORDION ═══ */
+details{margin:.65rem 0;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden}
+details[open]{box-shadow:0 1px 4px rgba(0,0,0,.06)}
+summary{padding:.7rem 1rem;background:#f1f5f9;font-weight:600;cursor:pointer;font-size:.92rem;list-style:none;display:flex;align-items:center;gap:.5rem;color:#1e3a5f;transition:background .2s}
+summary::-webkit-details-marker{display:none}
+summary::before{content:'▸';font-size:1rem;transition:transform .2s;color:#f59e0b;flex-shrink:0}
+details[open]>summary::before{transform:rotate(90deg)}
+summary:hover{background:#e0e7ff}
+summary:focus-visible{outline:2px solid #f59e0b;outline-offset:-2px}
+.details-body{padding:1rem 1.15rem;font-size:.92rem}
+
+/* ═══ INTERACTIVE SCENARIO ═══ */
+.scenario-box{border:2px solid #2d5a8e;border-radius:8px;padding:1.25rem;margin:1.25rem 0;background:#f0f7ff}
+.scenario-box h4{color:#1e3a5f;margin-top:0}
+.choice-grid{display:grid;gap:.5rem;margin:.75rem 0}
+.choice-btn{text-align:left;padding:.65rem 1rem;border:2px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:.88rem;transition:all .2s;color:#1e293b}
+.choice-btn:hover{border-color:#2d5a8e;background:#eff6ff}
+.choice-btn:focus-visible{outline:2px solid #f59e0b;outline-offset:2px}
+.choice-btn.correct{border-color:#10b981;background:#ecfdf5}
+.choice-btn.incorrect{border-color:#ef4444;background:#fef2f2}
+.choice-btn.highlight{border-color:#10b981;background:#ecfdf5}
+.scenario-feedback{margin-top:.75rem;padding:.75rem 1rem;border-radius:6px;font-size:.9rem;display:none}
+.scenario-feedback.show{display:block}
+.feedback-correct{background:#ecfdf5;border:1px solid #10b981;color:#065f46}
+.feedback-incorrect{background:#fef2f2;border:1px solid #ef4444;color:#991b1b}
+.feedback-model{background:#eff6ff;border:1px solid #3b82f6;color:#1e3a5f}
+.reveal-btn{display:inline-block;margin-top:.5rem;padding:.45rem 1rem;background:#1e3a5f;color:#fff;border:none;border-radius:5px;font-size:.85rem;cursor:pointer;font-weight:600;transition:background .2s}
+.reveal-btn:hover{background:#2d5a8e}
+.reveal-btn:focus-visible{outline:2px solid #f59e0b;outline-offset:2px}
+
+/* ═══ KNOWLEDGE CHECK ═══ */
+.kc-question{margin-bottom:1.25rem;padding:1rem;border:1px solid #e2e8f0;border-radius:8px;background:#fafbfc}
+.kc-question p.q-stem{font-weight:600;color:#1e3a5f;margin-bottom:.6rem}
+.kc-option{display:block;padding:.45rem .75rem;margin:.3rem 0;border:2px solid #e2e8f0;border-radius:5px;cursor:pointer;font-size:.88rem;transition:all .2s;background:#fff}
+.kc-option:hover{border-color:#2d5a8e;background:#eff6ff}
+.kc-option:focus-visible{outline:2px solid #f59e0b;outline-offset:2px}
+.kc-option.selected-correct{border-color:#10b981;background:#ecfdf5}
+.kc-option.selected-wrong{border-color:#ef4444;background:#fef2f2}
+.kc-option.show-correct{border-color:#10b981;background:#d1fae5}
+.kc-feedback{display:none;margin-top:.5rem;padding:.6rem .85rem;border-radius:5px;font-size:.86rem}
+.kc-feedback.show{display:block}
+.kc-feedback.correct{background:#ecfdf5;border-left:3px solid #10b981;color:#065f46}
+.kc-feedback.wrong{background:#fef2f2;border-left:3px solid #ef4444;color:#991b1b}
+
+/* ═══ STEP WALKTHROUGH ═══ */
+.step-list{counter-reset:step-counter;list-style:none;margin-left:0;padding-left:0}
+.step-list li{counter-increment:step-counter;position:relative;padding:.65rem .75rem .65rem 3rem;margin-bottom:.5rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem}
+.step-list li::before{content:counter(step-counter);position:absolute;left:.65rem;top:.6rem;background:#1e3a5f;color:#fff;width:1.6rem;height:1.6rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700}
+
+/* ═══ COMPARISON CARDS ═══ */
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin:1rem 0}
+.compare-card{border:2px solid #e2e8f0;border-radius:8px;overflow:hidden}
+.compare-card-header{padding:.6rem .85rem;font-weight:700;font-size:.9rem;color:#fff}
+.compare-card-header.vbox{background:#183a61}
+.compare-card-header.hyperv{background:#0078d4}
+.compare-card-header.dynamic{background:#10b981}
+.compare-card-header.fixed{background:#f59e0b;color:#1e293b}
+.compare-card-header.full{background:#1e3a5f}
+.compare-card-header.linked{background:#7c3aed}
+.compare-card-body{padding:.85rem;font-size:.88rem}
+
+/* ═══ FOOTER ═══ */
+.page-footer{background:#1e293b;color:#94a3b8;text-align:center;padding:1.5rem 1rem;font-size:.8rem;margin-top:2rem}
+.page-footer strong{color:#f59e0b}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:600px){
+  .nav-inner{justify-content:center}
+  .flow-chart{flex-direction:column;align-items:stretch}
+  .flow-arrow{transform:rotate(90deg);text-align:center}
+  .flow-step{min-width:auto}
+  .compare-grid{grid-template-columns:1fr}
+  .section-body{padding:1rem .85rem}
+}
+
+/* ═══ PRINT ═══ */
+@media print{
+  .sticky-nav{position:relative}
+  details{open:true}
+  details[open]>summary::before{content:'▾'}
+  .tab-panel{display:block!important;border:1px solid #ccc;margin-bottom:.5rem}
+  .tab-buttons{display:none}
+}
+
+/* ═══ SKIP LINK ═══ */
+.skip-link{position:absolute;top:-100%;left:1rem;background:#f59e0b;color:#1e293b;padding:.5rem 1rem;border-radius:0 0 5px 5px;font-weight:700;z-index:2000;font-size:.85rem}
+.skip-link:focus{top:0}
+
+/* ═══ BACK TO TOP ═══ */
+.btt{position:fixed;bottom:1.5rem;right:1.5rem;background:#1e3a5f;color:#fff;border:none;width:2.6rem;height:2.6rem;border-radius:50%;font-size:1.2rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);display:none;align-items:center;justify-content:center;transition:background .2s;z-index:999}
+.btt:hover{background:#f59e0b;color:#1e293b}
+.btt:focus-visible{outline:2px solid #f59e0b;outline-offset:2px}
+.btt.show{display:flex}
+
+/* ═══ VISUALLY HIDDEN ═══ */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+
+<!-- Skip Link -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ═══ STICKY NAV ═══ -->
+<nav class="sticky-nav" role="navigation" aria-label="Module sections">
+  <div class="nav-inner">
+    <span class="nav-brand">13.2</span>
+    <a href="#s1">Workflow</a>
+    <a href="#s2">Specifications</a>
+    <a href="#s3">Creating a VM</a>
+    <a href="#s4">Configuration</a>
+    <a href="#s5">Disk Types</a>
+    <a href="#s6">Snapshots &amp; Cloning</a>
+    <a href="#s7">Guest Tools</a>
+    <a href="#s8">Knowledge Check</a>
+  </div>
+</nav>
+
+<!-- ═══ PAGE HEADER ═══ -->
+<header class="page-header" role="banner">
+  <div class="course-tag">CSC 152 · Week 13 of 17</div>
+  <h1>Module 13.2 – Virtual Machine Creation<br>&amp; Management</h1>
+  <p class="subtitle">Network Operating Systems and Administration · Mendocino College</p>
+  <div class="meta-pills">
+    <span class="meta-pill">📅 April 13–19, 2026</span>
+    <span class="meta-pill">⏱ ~50 min self-study</span>
+    <span class="meta-pill">🎯 W13.3</span>
+    <span class="meta-pill">📋 CSLO 1</span>
+    <span class="meta-pill">🔗 Prepares for Lab 13 Part A</span>
+  </div>
+</header>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main id="main-content" class="container">
+
+<!-- ═══ INTRO ═══ -->
+<div class="callout callout-info" style="margin-bottom:1.75rem;">
+  <div class="callout-title">📖 Module Overview</div>
+  <p>In Module 13.1 you explored <em>what</em> hypervisors are and <em>why</em> virtualization matters. Now it's time to <strong>build</strong>. This module walks you through the complete VM lifecycle — from choosing specifications, to creating and configuring a virtual machine, to managing it with snapshots, clones, and guest tools. By the end, you will have the practical skills needed for <strong>Lab 13 Part A</strong>.</p>
+  <p style="margin-bottom:0"><strong>Prerequisites:</strong> Module 13.1 (Virtualization Concepts &amp; Hypervisor Architecture), Weeks 3–4 (OS installation experience), Week 5 (CLI skills).</p>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 1 – VM Creation Workflow            -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="section-header">
+    <span class="section-number">1</span>
+    <h2>VM Creation Workflow</h2>
+  </div>
+  <div class="section-body">
+    <p>Creating a virtual machine follows a predictable, repeatable workflow regardless of the hypervisor platform. Understanding this workflow helps you approach VM creation methodically — even on platforms you've never used before.</p>
+
+    <h3>The Six-Step VM Creation Workflow</h3>
+    <div class="flow-chart" role="img" aria-label="VM creation workflow: Define Specs, Create VM Shell, Attach Media, Install OS, Install Guest Tools, Configure and Harden">
+      <div class="flow-step">1. Define<br>Specs</div>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <div class="flow-step">2. Create<br>VM Shell</div>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <div class="flow-step">3. Attach<br>Media</div>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <div class="flow-step">4. Install<br>OS</div>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <div class="flow-step">5. Install<br>Guest Tools</div>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <div class="flow-step">6. Configure<br>&amp; Harden</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <caption>VM Creation Workflow — Step Details</caption>
+        <thead><tr><th>Step</th><th>What Happens</th><th>Key Decisions</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1. Define Specs</strong></td><td>Determine the resources the VM needs based on the guest OS and intended workload.</td><td>vCPU count, vRAM size, disk size, disk type</td></tr>
+          <tr><td><strong>2. Create VM Shell</strong></td><td>Use the hypervisor's GUI or CLI to create an empty VM object with the chosen specs.</td><td>VM name, OS type hint, firmware (BIOS/UEFI)</td></tr>
+          <tr><td><strong>3. Attach Media</strong></td><td>Mount an ISO image (or configure PXE boot) so the VM can boot into the OS installer.</td><td>ISO file location, boot order</td></tr>
+          <tr><td><strong>4. Install OS</strong></td><td>Power on the VM and walk through the OS installation, just as you would on physical hardware.</td><td>Partitioning, hostname, user accounts, network</td></tr>
+          <tr><td><strong>5. Install Guest Tools</strong></td><td>Install platform-specific integration software (Guest Additions or Integration Services).</td><td>Feature selection (shared folders, display drivers)</td></tr>
+          <tr><td><strong>6. Configure &amp; Harden</strong></td><td>Apply post-install configuration: updates, firewall rules, services, monitoring agents.</td><td>Security baseline, network settings, snapshots</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Tip — Snapshot Before You Customize</div>
+      <p style="margin-bottom:0">Many administrators take a snapshot right after Step 5 (Guest Tools installed, OS clean). This gives you a clean "golden image" rollback point before you start customizing the system in Step 6.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 2 – Defining VM Specifications      -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="section-header">
+    <span class="section-number">2</span>
+    <h2>Defining VM Specifications</h2>
+  </div>
+  <div class="section-body">
+    <p>Before you click "New" in any hypervisor, you need to know what resources your VM requires. Over-provisioning wastes host resources; under-provisioning causes poor performance. The three primary resources to size are <strong>vCPU</strong>, <strong>vRAM</strong>, and <strong>virtual disk</strong>.</p>
+
+    <h3>vCPU (Virtual CPU)</h3>
+    <ul>
+      <li>A <strong>vCPU</strong> is a virtual processor core assigned to a VM. The hypervisor schedules vCPU time on the host's physical cores.</li>
+      <li><strong>General rule:</strong> Start with the OS minimum and add cores based on workload. A lightly loaded server (DNS, DHCP) may need only 1 vCPU; a database server may need 4+.</li>
+      <li><strong>Overcommitment:</strong> You can assign more total vCPUs across all VMs than the host has physical cores — the hypervisor time-shares. However, excessive overcommitment degrades performance.</li>
+    </ul>
+
+    <h3>vRAM (Virtual Memory)</h3>
+    <ul>
+      <li>Memory allocated to a VM is <strong>reserved</strong> from host RAM while the VM is running.</li>
+      <li><strong>General rule:</strong> Always meet the OS minimum, then add based on workload. Memory is typically the first bottleneck in virtualized environments.</li>
+      <li><strong>Host reserve:</strong> Always leave enough RAM for the host OS itself (at least 2 GB for a Type 2 hypervisor host, more if running multiple VMs).</li>
+    </ul>
+
+    <h3>Virtual Disk</h3>
+    <ul>
+      <li>The virtual disk stores the guest OS, applications, and data. You choose both the <strong>size</strong> and the <strong>allocation type</strong> (dynamically allocated vs. fixed — covered in Section 5).</li>
+      <li><strong>General rule:</strong> Size for the OS plus expected data growth. You can often expand a virtual disk later, but shrinking is difficult.</li>
+    </ul>
+
+    <h3>Sizing Reference Table</h3>
+    <div class="table-wrap">
+      <table>
+        <caption>Recommended Minimum VM Specifications by OS Type</caption>
+        <thead>
+          <tr><th>Guest OS</th><th>vCPU</th><th>vRAM</th><th>Disk</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Ubuntu Server 22.04 (CLI only)</td><td>1</td><td>1 GB</td><td>20 GB</td><td>Lightweight; ideal for lab services (DNS, DHCP, Splunk Forwarder)</td></tr>
+          <tr><td>Ubuntu Desktop 22.04</td><td>2</td><td>2 GB</td><td>25 GB</td><td>GUI requires more RAM and disk</td></tr>
+          <tr><td>CentOS / Rocky Linux 9 (Server)</td><td>1</td><td>1.5 GB</td><td>20 GB</td><td>Similar to Ubuntu Server; SELinux adds slight overhead</td></tr>
+          <tr><td>Windows Server 2022 (Core)</td><td>2</td><td>2 GB</td><td>32 GB</td><td>No GUI; lower resource footprint than Desktop Experience</td></tr>
+          <tr><td>Windows Server 2022 (Desktop Experience)</td><td>2</td><td>4 GB</td><td>40 GB</td><td>Full GUI; Active Directory role may need 4+ GB RAM</td></tr>
+          <tr><td>Lightweight / Utility VM (Alpine, Tiny Core)</td><td>1</td><td>256–512 MB</td><td>2–8 GB</td><td>Useful for routers, firewalls, test appliances</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">⚠️ Host Resource Budget</div>
+      <p style="margin-bottom:0">If your lab host has 16 GB RAM and you plan to run three VMs simultaneously (e.g., a Windows Server at 4 GB, a Linux server at 1.5 GB, and a Splunk server at 2 GB), that's 7.5 GB for VMs plus 2–4 GB for the host OS. Always calculate your <strong>total VM footprint</strong> before creating new machines.</p>
+    </div>
+
+    <!-- Interactive Scenario 1 -->
+    <div class="scenario-box" id="scenario1">
+      <h4>🎯 Scenario: Size a VM for a Lab Splunk Server</h4>
+      <p>Your instructor asks you to create a new VM to run <strong>Splunk Enterprise</strong> on Ubuntu Server. Splunk will index logs from three other lab servers. Your host machine has 16 GB RAM and a quad-core CPU, and you're already running two other VMs consuming 5 GB RAM and 3 vCPUs total. Which specification set is <em>most appropriate</em>?</p>
+      <div class="choice-grid" role="radiogroup" aria-label="VM sizing choices">
+        <button class="choice-btn" data-scenario="1" data-correct="false" aria-pressed="false" onclick="handleScenario(this)">A) 1 vCPU, 1 GB RAM, 15 GB disk</button>
+        <button class="choice-btn" data-scenario="1" data-correct="true" aria-pressed="false" onclick="handleScenario(this)">B) 2 vCPU, 2 GB RAM, 30 GB disk</button>
+        <button class="choice-btn" data-scenario="1" data-correct="false" aria-pressed="false" onclick="handleScenario(this)">C) 4 vCPU, 8 GB RAM, 100 GB disk</button>
+        <button class="choice-btn" data-scenario="1" data-correct="false" aria-pressed="false" onclick="handleScenario(this)">D) 2 vCPU, 4 GB RAM, 50 GB disk</button>
+      </div>
+      <div class="scenario-feedback" id="sf-1" role="status" aria-live="polite"></div>
+      <button class="reveal-btn" onclick="revealModel('sm-1')" aria-expanded="false">Show Model Answer</button>
+      <div class="scenario-feedback feedback-model" id="sm-1" role="region" aria-label="Model answer">
+        <strong>Model Answer — B.</strong> Splunk Enterprise recommends at least 2 vCPUs and 2 GB RAM for a small deployment. 30 GB disk accommodates the OS plus index data from three forwarders in a lab setting. Option A is too small (Splunk will struggle with only 1 GB RAM). Option C would consume all remaining host resources (8 GB RAM + 4 vCPU), leaving the host starved. Option D is viable but allocates more RAM than necessary given your host budget (5 GB existing + 4 GB = 9 GB for VMs, leaving only 7 GB for the host and no headroom). Option B strikes the best balance.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 3 – Creating a VM (VirtualBox)      -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="section-header">
+    <span class="section-number">3</span>
+    <h2>Creating a VM — Platform Walkthroughs</h2>
+  </div>
+  <div class="section-body">
+    <p>The following walkthroughs cover the VM creation process in <strong>VirtualBox</strong> (our primary lab platform) and <strong>Hyper-V</strong> (an alternative for students on Windows Pro/Education). Expand the platform you're using.</p>
+
+    <!-- VirtualBox Walkthrough -->
+    <details id="vbox-walkthrough">
+      <summary>🖥️ VirtualBox — Step-by-Step VM Creation</summary>
+      <div class="details-body">
+        <p>These steps use VirtualBox 7.x. The interface may vary slightly with other versions.</p>
+        <ol class="step-list">
+          <li><strong>Open VirtualBox Manager</strong> — Launch VirtualBox. You'll see the main window listing any existing VMs on the left.</li>
+          <li><strong>Click "New"</strong> — In the toolbar, click the <strong>New</strong> button (or press <kbd>Ctrl+N</kbd>) to start the Create Virtual Machine wizard.</li>
+          <li><strong>Name and Operating System</strong> — Enter a descriptive <strong>Name</strong> (e.g., <code>Ubuntu-Server-Lab</code>). Choose the <strong>Folder</strong> where VM files will be stored. Select the <strong>ISO Image</strong> if you want VirtualBox to auto-detect the OS type. Otherwise, manually set <strong>Type</strong> (e.g., Linux) and <strong>Version</strong> (e.g., Ubuntu 64-bit). If you check <em>Skip Unattended Installation</em>, you'll do a manual install.</li>
+          <li><strong>Hardware — Memory and CPU</strong> — Set <strong>Base Memory</strong> (vRAM) using the slider or type a value (e.g., 2048 MB). Set <strong>Processors</strong> (vCPU count). Stay within the green zone on the slider to avoid overcommitting host resources.</li>
+          <li><strong>Virtual Hard Disk</strong> — Choose <em>Create a Virtual Hard Disk Now</em>. Set the <strong>Disk Size</strong> (e.g., 25 GB). By default VirtualBox uses <strong>VDI</strong> format and <strong>dynamically allocated</strong> storage. You can change these under the <em>Hard Disk File Type and Variant</em> options (more on this in Section 5).</li>
+          <li><strong>Review and Finish</strong> — The wizard shows a summary. Verify your settings and click <strong>Finish</strong>. The new VM appears in the Manager's list.</li>
+          <li><strong>Attach Installation Media (if not done in Step 3)</strong> — Select the VM → <strong>Settings</strong> → <strong>Storage</strong> → click the empty disk icon under the IDE controller → click the disk icon on the right → <strong>Choose a disk file</strong> → browse to your ISO.</li>
+          <li><strong>Start the VM</strong> — Click <strong>Start</strong>. The VM boots from the ISO and the OS installer launches. Proceed with installation as you did in Weeks 3–4.</li>
+        </ol>
+        <div class="callout callout-tip">
+          <div class="callout-title">💡 VBoxManage CLI Alternative</div>
+          <p style="margin-bottom:0">You can create a VM entirely from the command line:<br>
+          <code>VBoxManage createvm --name "Ubuntu-Server-Lab" --ostype Ubuntu_64 --register</code><br>
+          <code>VBoxManage modifyvm "Ubuntu-Server-Lab" --memory 2048 --cpus 2</code><br>
+          <code>VBoxManage createmedium disk --filename "Ubuntu-Server-Lab.vdi" --size 25600</code><br>
+          This is useful for scripting and automation.</p>
+        </div>
+      </div>
+    </details>
+
+    <!-- Hyper-V Walkthrough -->
+    <details id="hyperv-walkthrough">
+      <summary>🪟 Hyper-V — Step-by-Step VM Creation</summary>
+      <div class="details-body">
+        <p>Hyper-V is available on Windows 10/11 Pro, Education, and Enterprise editions, and as a server role on Windows Server. These steps use Hyper-V Manager.</p>
+        <ol class="step-list">
+          <li><strong>Open Hyper-V Manager</strong> — Search for "Hyper-V Manager" in the Start menu, or run <code>virtmgmt.msc</code>.</li>
+          <li><strong>New → Virtual Machine</strong> — In the Actions pane (right side), click <strong>New → Virtual Machine</strong> to launch the wizard.</li>
+          <li><strong>Specify Name and Location</strong> — Enter a <strong>Name</strong> (e.g., <code>Ubuntu-Server-Lab</code>). Optionally change the storage location.</li>
+          <li><strong>Specify Generation</strong> — Choose <strong>Generation 1</strong> (BIOS, broad compatibility) or <strong>Generation 2</strong> (UEFI, Secure Boot — required for modern Windows, optional for Linux). For Ubuntu Server, Generation 2 is recommended.</li>
+          <li><strong>Assign Memory</strong> — Enter the startup memory (e.g., <strong>2048 MB</strong>). Optionally enable <strong>Dynamic Memory</strong>, which lets Hyper-V adjust RAM allocation based on demand.</li>
+          <li><strong>Configure Networking</strong> — Select a <strong>Virtual Switch</strong> from the dropdown. If none exist, you'll create one later (covered in Module 13.3).</li>
+          <li><strong>Connect Virtual Hard Disk</strong> — Choose <em>Create a virtual hard disk</em>. Set the <strong>Name</strong>, <strong>Location</strong>, and <strong>Size</strong> (e.g., 25 GB). Hyper-V creates a <strong>VHDX</strong> file (dynamically expanding by default).</li>
+          <li><strong>Installation Options</strong> — Select <em>Install an operating system from a bootable image file</em> and browse to your ISO.</li>
+          <li><strong>Summary and Finish</strong> — Review settings and click <strong>Finish</strong>.</li>
+          <li><strong>Set vCPU Count</strong> — Right-click the VM → <strong>Settings</strong> → <strong>Processor</strong> → set <strong>Number of virtual processors</strong> (e.g., 2). The wizard doesn't prompt for CPU count, so this is a post-creation step.</li>
+          <li><strong>Start and Connect</strong> — Right-click the VM → <strong>Connect</strong> (opens the console window) → <strong>Start</strong>. The VM boots from the ISO.</li>
+        </ol>
+        <div class="callout callout-tip">
+          <div class="callout-title">💡 PowerShell Alternative</div>
+          <p style="margin-bottom:0">
+          <code>New-VM -Name "Ubuntu-Server-Lab" -MemoryStartupBytes 2GB -NewVHDPath ".\Ubuntu-Server-Lab.vhdx" -NewVHDSizeBytes 25GB -Generation 2</code><br>
+          <code>Set-VMProcessor -VMName "Ubuntu-Server-Lab" -Count 2</code><br>
+          <code>Add-VMDvdDrive -VMName "Ubuntu-Server-Lab" -Path "C:\ISOs\ubuntu-22.04-server.iso"</code>
+          </p>
+        </div>
+      </div>
+    </details>
+
+    <div class="callout callout-info" style="margin-top:1rem">
+      <div class="callout-title">📝 Lab 13 Connection</div>
+      <p style="margin-bottom:0">In <strong>Lab 13 Part A</strong>, you will follow a similar process to create a VM with specific CPU, RAM, and disk settings provided by the instructor. Use this walkthrough as your reference.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 4 – VM Configuration Settings       -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="section-header">
+    <span class="section-number">4</span>
+    <h2>VM Configuration Settings — Deep Dive</h2>
+  </div>
+  <div class="section-body">
+    <p>After creating a VM shell, you can fine-tune dozens of settings. This section covers the most important categories you'll encounter in both VirtualBox and Hyper-V.</p>
+
+    <h3>Processor Settings</h3>
+    <ul>
+      <li><strong>vCPU Count:</strong> Adjustable post-creation. Increasing vCPUs helps multi-threaded workloads but adds scheduling overhead on the host.</li>
+      <li><strong>Execution Cap (VirtualBox):</strong> Limits the percentage of host CPU time a VM can use. Useful for preventing a runaway VM from starving the host. Default is 100%.</li>
+      <li><strong>Nested Virtualization:</strong> Allows a VM to run its own hypervisor (e.g., running Hyper-V inside a VirtualBox VM). Must be explicitly enabled; needed for certain advanced labs.</li>
+      <li><strong>PAE/NX:</strong> Physical Address Extension and No-Execute bit. Typically enabled by default; required by some 32-bit Linux kernels to access more than 4 GB RAM.</li>
+    </ul>
+
+    <h3>Memory Settings</h3>
+    <ul>
+      <li><strong>Base Memory:</strong> The amount of RAM allocated when the VM starts. Changes require the VM to be powered off.</li>
+      <li><strong>Dynamic Memory (Hyper-V):</strong> Allows the hypervisor to adjust RAM between a minimum and maximum value based on demand. VirtualBox does not have a direct equivalent (memory is statically assigned).</li>
+      <li><strong>Ballooning (Advanced):</strong> A technique where the hypervisor reclaims unused memory from a guest. Supported by Guest Additions in VirtualBox.</li>
+    </ul>
+
+    <h3>Display Settings</h3>
+    <ul>
+      <li><strong>Video Memory:</strong> Amount of VRAM allocated for the virtual display adapter. Increase for GUI-based guests (128 MB recommended for desktop environments).</li>
+      <li><strong>Graphics Controller (VirtualBox):</strong> Options include VBoxVGA (legacy), VMSVGA (recommended for Linux), and VBoxSVGA (recommended for Windows guests).</li>
+      <li><strong>Remote Display:</strong> VirtualBox supports VRDP (VirtualBox Remote Desktop Protocol) for remote console access; Hyper-V uses Enhanced Session Mode with RDP.</li>
+    </ul>
+
+    <h3>USB Pass-Through</h3>
+    <ul>
+      <li><strong>USB Controller Type:</strong> USB 1.1 (OHCI), USB 2.0 (EHCI), or USB 3.0 (xHCI). Higher versions require the VirtualBox Extension Pack.</li>
+      <li><strong>Device Filters:</strong> Define which host USB devices are automatically attached to the VM when plugged in. Useful for USB drives, serial adapters, or hardware keys.</li>
+      <li><strong>Hyper-V Enhanced Session Mode:</strong> Provides USB redirection through the RDP connection rather than direct pass-through.</li>
+    </ul>
+
+    <h3>Other Notable Settings</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Setting</th><th>VirtualBox</th><th>Hyper-V</th><th>When to Adjust</th></tr></thead>
+        <tbody>
+          <tr><td>Firmware / Boot Order</td><td>System → Motherboard → Boot Order</td><td>Firmware (Gen 2) or BIOS (Gen 1)</td><td>When changing boot priority (e.g., boot from network for PXE)</td></tr>
+          <tr><td>Shared Clipboard</td><td>General → Advanced</td><td>Enhanced Session Mode</td><td>Enable for copy-paste between host and guest</td></tr>
+          <tr><td>Drag and Drop</td><td>General → Advanced</td><td>Not natively supported</td><td>Enable for file transfer convenience (requires Guest Additions)</td></tr>
+          <tr><td>Audio</td><td>Audio settings panel</td><td>Enhanced Session Mode</td><td>Usually disabled for servers; enable for desktop VMs</td></tr>
+          <tr><td>Serial Ports</td><td>Serial Ports panel</td><td>COM ports in Settings</td><td>Rarely needed; used for console access to network appliances</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">⚠️ Settings That Require Power-Off</div>
+      <p style="margin-bottom:0">Most hardware-level settings (vCPU count, base memory, storage controllers, firmware type) can only be changed when the VM is <strong>powered off</strong>. Display settings and USB filters can sometimes be adjusted at runtime, but it's safest to shut down first.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 5 – Virtual Disk Types & Formats    -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="section-header">
+    <span class="section-number">5</span>
+    <h2>Virtual Disk Types &amp; Formats</h2>
+  </div>
+  <div class="section-body">
+    <p>A virtual disk is a file (or set of files) on the host that appears as a physical hard drive to the guest OS. Two key decisions affect performance, portability, and storage efficiency: the <strong>allocation type</strong> and the <strong>disk format</strong>.</p>
+
+    <h3>Allocation Type: Dynamically Allocated vs. Fixed-Size</h3>
+    <div class="compare-grid">
+      <div class="compare-card">
+        <div class="compare-card-header dynamic">Dynamically Allocated (Thin Provisioning)</div>
+        <div class="compare-card-body">
+          <ul>
+            <li><strong>How it works:</strong> The disk file starts small and grows as the guest writes data, up to the maximum size you defined.</li>
+            <li><strong>Pros:</strong> Conserves host disk space; quick to create; allows overcommitting storage.</li>
+            <li><strong>Cons:</strong> Slight write performance overhead (file must expand); fragmentation over time; does not shrink automatically when guest deletes files.</li>
+            <li><strong>Best for:</strong> Lab environments, development VMs, situations where host disk space is limited.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="compare-card">
+        <div class="compare-card-header fixed">Fixed-Size (Thick Provisioning)</div>
+        <div class="compare-card-body">
+          <ul>
+            <li><strong>How it works:</strong> The entire disk space is allocated on the host at creation time. A 40 GB virtual disk immediately consumes ~40 GB on the host.</li>
+            <li><strong>Pros:</strong> Better write performance (no expansion overhead); predictable host space usage; less fragmentation.</li>
+            <li><strong>Cons:</strong> Slower to create; consumes full space immediately even if guest uses little of it.</li>
+            <li><strong>Best for:</strong> Production servers, performance-sensitive workloads, hosts with ample disk space.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3>Disk Formats</h3>
+    <p>Different hypervisors use different virtual disk file formats. Understanding these is important for portability and migration.</p>
+
+    <!-- Tabs for Disk Formats -->
+    <div class="tabs" role="tablist" aria-label="Virtual disk format comparison">
+      <div class="tab-buttons">
+        <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-vdi" id="btn-vdi" onclick="switchTab(this,'tab-vdi')">VDI</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-vmdk" id="btn-vmdk" onclick="switchTab(this,'tab-vmdk')">VMDK</button>
+        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-vhd" id="btn-vhd" onclick="switchTab(this,'tab-vhd')">VHD / VHDX</button>
+      </div>
+      <div class="tab-panel active" role="tabpanel" id="tab-vdi" aria-labelledby="btn-vdi">
+        <h4>VDI — VirtualBox Disk Image</h4>
+        <ul>
+          <li><strong>Native to:</strong> Oracle VirtualBox</li>
+          <li><strong>Supports:</strong> Dynamic and fixed allocation; snapshots (differencing images)</li>
+          <li><strong>Portability:</strong> VirtualBox only (though VirtualBox can convert VDI ↔ VMDK ↔ VHD)</li>
+          <li><strong>File extension:</strong> <code>.vdi</code></li>
+          <li><strong>When to use:</strong> Default choice when working exclusively in VirtualBox</li>
+        </ul>
+      </div>
+      <div class="tab-panel" role="tabpanel" id="tab-vmdk" aria-labelledby="btn-vmdk">
+        <h4>VMDK — Virtual Machine Disk</h4>
+        <ul>
+          <li><strong>Native to:</strong> VMware products (ESXi, Workstation, Fusion)</li>
+          <li><strong>Supports:</strong> Dynamic (thin) and fixed (thick) provisioning; split into 2 GB files for FAT32 compatibility</li>
+          <li><strong>Portability:</strong> VMware ecosystem; also supported by VirtualBox (read/write)</li>
+          <li><strong>File extension:</strong> <code>.vmdk</code></li>
+          <li><strong>When to use:</strong> When you need compatibility with VMware platforms or plan to migrate VMs to ESXi</li>
+        </ul>
+      </div>
+      <div class="tab-panel" role="tabpanel" id="tab-vhd" aria-labelledby="btn-vhd">
+        <h4>VHD / VHDX — Virtual Hard Disk</h4>
+        <ul>
+          <li><strong>Native to:</strong> Microsoft Hyper-V</li>
+          <li><strong>VHD (legacy):</strong> Max size 2 TB; 512-byte sectors; compatible with older Hyper-V and VirtualBox</li>
+          <li><strong>VHDX (modern):</strong> Max size 64 TB; 4 KB sectors for better performance on large disks; resilient to power failure corruption; Hyper-V only</li>
+          <li><strong>File extensions:</strong> <code>.vhd</code>, <code>.vhdx</code></li>
+          <li><strong>When to use:</strong> VHD for cross-platform compatibility; VHDX for Hyper-V production workloads</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Format Comparison at a Glance</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Format</th><th>Native Platform</th><th>Max Size</th><th>Dynamic?</th><th>Fixed?</th><th>Cross-Platform?</th></tr></thead>
+        <tbody>
+          <tr><td>VDI</td><td>VirtualBox</td><td>2 TB+</td><td>✅</td><td>✅</td><td>VirtualBox only (convertible)</td></tr>
+          <tr><td>VMDK</td><td>VMware</td><td>62 TB (ESXi)</td><td>✅</td><td>✅</td><td>VMware + VirtualBox</td></tr>
+          <tr><td>VHD</td><td>Hyper-V</td><td>2 TB</td><td>✅</td><td>✅</td><td>Hyper-V + VirtualBox</td></tr>
+          <tr><td>VHDX</td><td>Hyper-V</td><td>64 TB</td><td>✅</td><td>✅</td><td>Hyper-V only</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">🔄 Converting Between Formats</div>
+      <p style="margin-bottom:0">VirtualBox includes a built-in conversion tool:<br>
+      <code>VBoxManage clonemedium disk source.vdi target.vmdk --format VMDK</code><br>
+      You can also use <code>qemu-img convert</code> on Linux for broader format support. Conversion creates a <em>new</em> file; the original is unchanged.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 6 – Snapshots & Cloning             -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="section-header">
+    <span class="section-number">6</span>
+    <h2>Snapshots &amp; Cloning</h2>
+  </div>
+  <div class="section-body">
+    <p>Snapshots and clones are two of the most powerful VM management tools. They serve different purposes: snapshots let you <strong>roll back in time</strong>; clones let you <strong>duplicate a VM</strong>.</p>
+
+    <h3>Snapshots</h3>
+    <p>A <strong>snapshot</strong> captures the exact state of a VM at a point in time — including disk contents, memory state (if the VM is running), and VM configuration. After taking a snapshot, all subsequent disk writes go to a <strong>differencing disk</strong> (delta file), leaving the original disk unchanged.</p>
+
+    <h4>Snapshot Lifecycle</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Operation</th><th>What Happens</th><th>Use Case</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Create (Take)</strong></td><td>A new differencing disk is created. The current disk becomes read-only. All new writes go to the delta.</td><td>Before installing software, applying updates, or making risky configuration changes.</td></tr>
+          <tr><td><strong>Restore (Revert)</strong></td><td>The VM's disk and (optionally) memory state are rolled back to the snapshot point. Changes since the snapshot are discarded.</td><td>When an update breaks the system, or you want to return to a known-good state.</td></tr>
+          <tr><td><strong>Delete (Discard)</strong></td><td>The differencing disk is merged back into the parent. This does <strong>not</strong> undo changes — it consolidates them.</td><td>When you're satisfied with changes and want to clean up snapshot overhead.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-important">
+      <div class="callout-title">🚨 Snapshot Best Practices</div>
+      <ul style="margin-bottom:0">
+        <li><strong>Don't keep snapshots long-term.</strong> Differencing disks grow over time and degrade performance. Use snapshots as temporary safety nets, not permanent backups.</li>
+        <li><strong>Limit snapshot depth.</strong> Avoid creating chains of more than 2–3 snapshots. Deep chains compound performance penalties.</li>
+        <li><strong>Name your snapshots descriptively</strong> (e.g., "Pre-AD-Install" or "Clean-OS-with-Guest-Additions") so you can identify them later.</li>
+        <li><strong>Snapshots are NOT backups.</strong> They depend on the original disk file. If the base disk is corrupted, all snapshots are lost.</li>
+      </ul>
+    </div>
+
+    <h3>Cloning</h3>
+    <p>A <strong>clone</strong> creates a copy of an existing VM. Unlike snapshots, clones are <strong>independent</strong> (or semi-independent) VMs that can run alongside the original.</p>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <div class="compare-card-header full">Full Clone</div>
+        <div class="compare-card-body">
+          <ul>
+            <li><strong>How it works:</strong> Creates a complete, independent copy of all VM files (disk, configuration, etc.).</li>
+            <li><strong>Pros:</strong> Fully independent — can be moved to another host; no dependency on the original VM.</li>
+            <li><strong>Cons:</strong> Takes longer to create; consumes as much disk space as the original.</li>
+            <li><strong>Best for:</strong> Creating a production copy, distributing VMs to other machines, long-term use.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="compare-card">
+        <div class="compare-card-header linked">Linked Clone</div>
+        <div class="compare-card-body">
+          <ul>
+            <li><strong>How it works:</strong> Creates a new VM that shares the original's base disk (via a snapshot). Only differences are stored in a new differencing disk.</li>
+            <li><strong>Pros:</strong> Very fast to create; minimal additional disk space.</li>
+            <li><strong>Cons:</strong> Depends on the original VM's snapshot — if deleted, the linked clone breaks. Cannot be moved independently.</li>
+            <li><strong>Best for:</strong> Rapid provisioning of temporary or test VMs from a template, classroom lab environments.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3>OVA / OVF — Export &amp; Import</h3>
+    <p>The <strong>Open Virtualization Format (OVF)</strong> is an industry standard for packaging VMs for distribution. An <strong>OVA</strong> file is simply a single-file archive (TAR) containing the OVF descriptor, virtual disks, and metadata.</p>
+    <ul>
+      <li><strong>Export:</strong> In VirtualBox, <em>File → Export Appliance</em>; in Hyper-V, use <em>Export</em> (creates a folder structure, not OVA — you'd need a conversion tool for true OVA).</li>
+      <li><strong>Import:</strong> In VirtualBox, <em>File → Import Appliance</em> → select the OVA file → review settings → import. The VM is recreated with the packaged configuration.</li>
+      <li><strong>Use cases:</strong> Distributing pre-configured lab VMs, migrating VMs between hosts, sharing appliances (e.g., a firewall VM template).</li>
+    </ul>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Snapshot vs. Clone — Quick Decision Guide</div>
+      <p style="margin-bottom:0"><strong>Need to undo a change?</strong> → Snapshot.<br>
+      <strong>Need a separate, parallel copy?</strong> → Clone.<br>
+      <strong>Need a quick, temporary test copy?</strong> → Linked Clone.<br>
+      <strong>Need to share a VM with someone?</strong> → Full Clone or OVA Export.</p>
+    </div>
+
+    <!-- Interactive Scenario 2 -->
+    <div class="scenario-box" id="scenario2">
+      <h4>🎯 Scenario: Snapshot or Clone?</h4>
+      <p>You have a working Windows Server VM with Active Directory configured. You need to:</p>
+      <ol>
+        <li>Test a Group Policy change that might break login functionality.</li>
+        <li>Give a classmate an identical copy of the AD server for their own lab.</li>
+      </ol>
+      <p>For each task, which approach is most appropriate?</p>
+      <div class="choice-grid" role="radiogroup" aria-label="Snapshot vs clone scenario">
+        <button class="choice-btn" data-scenario="2" data-correct="false" aria-pressed="false" onclick="handleScenario(this)">A) Snapshot for both tasks</button>
+        <button class="choice-btn" data-scenario="2" data-correct="true" aria-pressed="false" onclick="handleScenario(this)">B) Snapshot for Task 1, Full Clone (or OVA export) for Task 2</button>
+        <button class="choice-btn" data-scenario="2" data-correct="false" aria-pressed="false" onclick="handleScenario(this)">C) Full Clone for both tasks</button>
+        <button class="choice-btn" data-scenario="2" data-correct="false" aria-pressed="false" onclick="handleScenario(this)">D) Linked Clone for Task 1, Snapshot for Task 2</button>
+      </div>
+      <div class="scenario-feedback" id="sf-2" role="status" aria-live="polite"></div>
+      <button class="reveal-btn" onclick="revealModel('sm-2')" aria-expanded="false">Show Model Answer</button>
+      <div class="scenario-feedback feedback-model" id="sm-2" role="region" aria-label="Model answer">
+        <strong>Model Answer — B.</strong> Task 1 is a temporary, reversible test — a snapshot is perfect. Take a snapshot before applying the GPO, test it, and restore the snapshot if login breaks. Task 2 requires giving someone an independent copy they can run on their own machine. A full clone or OVA export creates a standalone VM with no dependency on your original. A linked clone (Option D for Task 1) would work but is overkill — snapshots are simpler for rollback. A snapshot alone (Option A) can't give your classmate a separate VM.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 7 – Guest Additions & Integration   -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="section-header">
+    <span class="section-number">7</span>
+    <h2>Guest Additions &amp; Integration Tools</h2>
+  </div>
+  <div class="section-body">
+    <p>Out of the box, a guest OS running inside a VM has limited interaction with the host. <strong>Guest Additions</strong> (VirtualBox) and <strong>Integration Services</strong> (Hyper-V) are software packages installed <em>inside</em> the guest that dramatically improve the VM experience.</p>
+
+    <h3>What They Provide</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Feature</th><th>VirtualBox Guest Additions</th><th>Hyper-V Integration Services</th></tr></thead>
+        <tbody>
+          <tr><td>Mouse pointer integration</td><td>✅ Seamless mouse capture/release</td><td>✅ Via Enhanced Session Mode</td></tr>
+          <tr><td>Display auto-resize</td><td>✅ Guest resolution matches window size</td><td>✅ Enhanced Session Mode</td></tr>
+          <tr><td>Shared folders</td><td>✅ Host folders mounted in guest</td><td>✅ Via SMB / Enhanced Session</td></tr>
+          <tr><td>Shared clipboard</td><td>✅ Bidirectional copy-paste</td><td>✅ Enhanced Session Mode</td></tr>
+          <tr><td>Drag and drop</td><td>✅ Bidirectional file transfer</td><td>❌ Not natively supported</td></tr>
+          <tr><td>Time synchronization</td><td>✅ Guest clock syncs to host</td><td>✅ Built-in integration service</td></tr>
+          <tr><td>Improved graphics drivers</td><td>✅ 3D acceleration, higher resolutions</td><td>✅ Synthetic display adapter</td></tr>
+          <tr><td>Heartbeat / health monitoring</td><td>Limited</td><td>✅ Hypervisor monitors guest health</td></tr>
+          <tr><td>Guest shutdown signal</td><td>✅ ACPI shutdown via VirtualBox</td><td>✅ Graceful shutdown from host</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Installing Guest Additions (VirtualBox)</h3>
+    <details>
+      <summary>🐧 Linux Guest</summary>
+      <div class="details-body">
+        <ol class="step-list">
+          <li><strong>Install prerequisites:</strong><br><code>sudo apt update &amp;&amp; sudo apt install -y build-essential dkms linux-headers-$(uname -r)</code></li>
+          <li><strong>Insert the Guest Additions CD:</strong> In the VirtualBox menu bar, click <em>Devices → Insert Guest Additions CD image…</em></li>
+          <li><strong>Mount and run the installer:</strong><br>
+            <code>sudo mount /dev/cdrom /mnt</code><br>
+            <code>sudo /mnt/VBoxLinuxAdditions.run</code>
+          </li>
+          <li><strong>Reboot the VM:</strong><br><code>sudo reboot</code></li>
+          <li><strong>Verify:</strong> After reboot, the VM window should auto-resize. Check with:<br><code>lsmod | grep vboxguest</code></li>
+        </ol>
+      </div>
+    </details>
+    <details>
+      <summary>🪟 Windows Guest</summary>
+      <div class="details-body">
+        <ol class="step-list">
+          <li><strong>Insert the Guest Additions CD:</strong> In the VirtualBox menu bar, click <em>Devices → Insert Guest Additions CD image…</em></li>
+          <li><strong>Run the installer:</strong> Open File Explorer → navigate to the CD drive → double-click <code>VBoxWindowsAdditions.exe</code>.</li>
+          <li><strong>Follow the wizard:</strong> Accept defaults. Allow driver installation prompts (click "Install" when Windows asks about unsigned drivers).</li>
+          <li><strong>Reboot when prompted.</strong></li>
+          <li><strong>Verify:</strong> The VM window should auto-resize. Check the system tray for the VirtualBox Guest Additions icon.</li>
+        </ol>
+      </div>
+    </details>
+
+    <h3>Hyper-V Integration Services</h3>
+    <p>Modern Windows guests include Integration Services automatically. For Linux guests on Hyper-V:</p>
+    <ul>
+      <li>Most modern Linux kernels (4.x+) include Hyper-V integration modules (hv_vmbus, hv_storvsc, hv_netvsc, etc.) built in.</li>
+      <li>Verify with: <code>lsmod | grep hv_</code></li>
+      <li><strong>Enhanced Session Mode</strong> (for GUI access) requires <code>xrdp</code> installed on the Linux guest.</li>
+    </ul>
+
+    <h3>Troubleshooting Guest Tools</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Problem</th><th>Likely Cause</th><th>Solution</th></tr></thead>
+        <tbody>
+          <tr><td>Guest Additions install fails on Linux</td><td>Missing kernel headers or build tools</td><td>Install <code>build-essential</code>, <code>dkms</code>, and <code>linux-headers-$(uname -r)</code> first</td></tr>
+          <tr><td>Screen doesn't auto-resize</td><td>Guest Additions not installed or not loaded</td><td>Reinstall Guest Additions; verify <code>vboxguest</code> module is loaded</td></tr>
+          <tr><td>Shared folders not visible</td><td>User not in <code>vboxsf</code> group (Linux)</td><td><code>sudo usermod -aG vboxsf $USER</code> then log out/in</td></tr>
+          <tr><td>Clipboard sharing not working</td><td>Feature disabled in VM settings</td><td>Settings → General → Advanced → set Shared Clipboard to Bidirectional</td></tr>
+          <tr><td>Hyper-V Enhanced Session won't connect</td><td><code>xrdp</code> not installed or not running</td><td>Install and start <code>xrdp</code>: <code>sudo apt install xrdp &amp;&amp; sudo systemctl enable --now xrdp</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">💡 Always Install Guest Tools</div>
+      <p style="margin-bottom:0">Guest tools should be one of the first things you install after the OS. Without them, you'll fight with mouse capture, low screen resolution, and no clipboard sharing — all of which slow down your lab work significantly.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SECTION 8 – Knowledge Check                 -->
+<!-- ════════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="section-header">
+    <span class="section-number">8</span>
+    <h2>Knowledge Check</h2>
+  </div>
+  <div class="section-body">
+    <p>Test your understanding of Module 13.2 with these ungraded questions. Click an answer to see immediate feedback.</p>
+
+    <!-- Q1 -->
+    <div class="kc-question" data-q="1">
+      <p class="q-stem">1. In the VM creation workflow, at which step should you install Guest Additions or Integration Services?</p>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">A) Step 2 — Create VM Shell</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">B) Step 3 — Attach Installation Media</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">C) Step 4 — Install OS</button>
+      <button class="kc-option" data-correct="true" onclick="checkKC(this)">D) Step 5 — Install Guest Tools</button>
+      <div class="kc-feedback correct" id="kc1-correct">✅ <strong>Correct!</strong> Guest tools are installed after the OS is running (Step 4) but before final configuration (Step 6). This is Step 5 in our six-step workflow.</div>
+      <div class="kc-feedback wrong" id="kc1-wrong">❌ <strong>Not quite.</strong> Guest tools require a running OS to install into, so they come after OS installation (Step 4). The correct answer is Step 5. Review the workflow chart in Section 1.</div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="kc-question" data-q="2">
+      <p class="q-stem">2. A dynamically allocated virtual disk starts at 2 GB on the host and the guest has written 15 GB of data. The maximum disk size was set to 40 GB. Approximately how much host disk space is consumed?</p>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">A) 2 GB</button>
+      <button class="kc-option" data-correct="true" onclick="checkKC(this)">B) ~15 GB (plus a small overhead)</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">C) 40 GB</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">D) 80 GB (the disk doubles its allocation)</button>
+      <div class="kc-feedback correct" id="kc2-correct">✅ <strong>Correct!</strong> A dynamically allocated disk grows as data is written. With 15 GB of guest data, the host file is approximately 15 GB (plus minor metadata overhead). It will never exceed the 40 GB maximum.</div>
+      <div class="kc-feedback wrong" id="kc2-wrong">❌ <strong>Not quite.</strong> Dynamically allocated disks grow to match the amount of data actually written by the guest. They don't stay at their initial size (A), and they don't pre-allocate the full maximum (C). The host file is approximately 15 GB. Review Section 5.</div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="kc-question" data-q="3">
+      <p class="q-stem">3. Which virtual disk format is native to Hyper-V and supports a maximum size of 64 TB?</p>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">A) VDI</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">B) VMDK</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">C) VHD</button>
+      <button class="kc-option" data-correct="true" onclick="checkKC(this)">D) VHDX</button>
+      <div class="kc-feedback correct" id="kc3-correct">✅ <strong>Correct!</strong> VHDX is the modern Hyper-V format supporting up to 64 TB, 4 KB sectors, and improved resilience. VHD (legacy) is limited to 2 TB.</div>
+      <div class="kc-feedback wrong" id="kc3-wrong">❌ <strong>Not quite.</strong> VDI is native to VirtualBox; VMDK is native to VMware; VHD is the older Hyper-V format (max 2 TB). VHDX is the modern Hyper-V format supporting up to 64 TB. Review the disk format tabs in Section 5.</div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="kc-question" data-q="4">
+      <p class="q-stem">4. What happens when you <strong>delete</strong> a snapshot in VirtualBox?</p>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">A) The VM is reverted to the snapshot's state</button>
+      <button class="kc-option" data-correct="true" onclick="checkKC(this)">B) The differencing disk is merged into the parent — changes are preserved</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">C) All data written since the snapshot is permanently lost</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">D) The VM's base disk is deleted</button>
+      <div class="kc-feedback correct" id="kc4-correct">✅ <strong>Correct!</strong> Deleting a snapshot merges the differencing disk into the parent. This consolidates changes — it does <em>not</em> undo them. To undo changes, you would <em>restore</em> the snapshot instead.</div>
+      <div class="kc-feedback wrong" id="kc4-wrong">❌ <strong>Not quite.</strong> Deleting a snapshot does not revert the VM (that's <em>restore</em>) and does not lose data. It <em>merges</em> the differencing disk into the parent, preserving all changes made since the snapshot. Review the Snapshot Lifecycle table in Section 6.</div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="kc-question" data-q="5">
+      <p class="q-stem">5. A classmate needs an independent copy of your VM to run on their own laptop. Which approach is best?</p>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">A) Take a snapshot and share the snapshot file</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">B) Create a linked clone</button>
+      <button class="kc-option" data-correct="true" onclick="checkKC(this)">C) Create a full clone or export as OVA</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">D) Share your VDI file only</button>
+      <div class="kc-feedback correct" id="kc5-correct">✅ <strong>Correct!</strong> A full clone or OVA export creates a completely independent VM package that can be transferred and imported on another machine. Linked clones depend on the original, and snapshot files alone don't contain the base disk.</div>
+      <div class="kc-feedback wrong" id="kc5-wrong">❌ <strong>Not quite.</strong> Snapshots depend on the base disk (A is incomplete). Linked clones depend on the original VM (B breaks if moved). Sharing just the VDI (D) lacks the VM configuration. A full clone or OVA export (C) is the correct approach for independent portability. Review Section 6.</div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="kc-question" data-q="6">
+      <p class="q-stem">6. On a Linux guest in VirtualBox, shared folders are not visible after installing Guest Additions. What is the most likely fix?</p>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">A) Increase the VM's vRAM allocation</button>
+      <button class="kc-option" data-correct="true" onclick="checkKC(this)">B) Add the user to the <code>vboxsf</code> group and log out/in</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">C) Reinstall the host OS</button>
+      <button class="kc-option" data-correct="false" onclick="checkKC(this)">D) Change the virtual disk format to VMDK</button>
+      <div class="kc-feedback correct" id="kc6-correct">✅ <strong>Correct!</strong> VirtualBox shared folders are mounted with ownership by the <code>vboxsf</code> group. If your user isn't in that group, you can't access them. Run <code>sudo usermod -aG vboxsf $USER</code> and log out/in. Review the troubleshooting table in Section 7.</div>
+      <div class="kc-feedback wrong" id="kc6-wrong">❌ <strong>Not quite.</strong> Shared folder access on Linux requires the user to be a member of the <code>vboxsf</code> group. This is a permissions issue, not a resource or disk format issue. The fix: <code>sudo usermod -aG vboxsf $USER</code> then log out and back in. Review Section 7's troubleshooting table.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══ MODULE SUMMARY ═══ -->
+<div class="callout callout-info" style="margin-top:.5rem">
+  <div class="callout-title">📋 Module 13.2 Summary</div>
+  <ul style="margin-bottom:.5rem">
+    <li>VM creation follows a six-step workflow: Define Specs → Create Shell → Attach Media → Install OS → Guest Tools → Configure &amp; Harden.</li>
+    <li>Size VMs appropriately using the reference table — balance guest needs against host resources.</li>
+    <li>Dynamically allocated disks save host space; fixed-size disks offer better performance.</li>
+    <li>VDI (VirtualBox), VMDK (VMware), and VHD/VHDX (Hyper-V) are the major disk formats — understand portability implications.</li>
+    <li>Snapshots are temporary rollback points; clones create independent (full) or dependent (linked) VM copies.</li>
+    <li>OVA/OVF is the standard format for exporting and sharing VMs across platforms.</li>
+    <li>Guest Additions / Integration Services should be installed immediately after the OS for the best VM experience.</li>
+  </ul>
+  <p style="margin-bottom:0"><strong>Next Steps:</strong> Continue to <strong>Module 13.3 – Virtual Networking &amp; Virtual Storage</strong> to learn how VMs connect to networks and manage storage. Then apply your VM creation skills in <strong>Lab 13 Part A</strong>.</p>
+</div>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="page-footer" role="contentinfo">
+  <strong>CSC 152</strong> · Network Operating Systems and Administration · Mendocino College<br>
+  Module 13.2 – Virtual Machine Creation &amp; Management · Week 13 of 17 · April 13–19, 2026<br>
+  Instructor: David Pai
+</footer>
+
+<!-- Back to Top -->
+<button class="btt" id="bttBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top" title="Back to top">↑</button>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+/* ── Back to Top Button ── */
+(function(){
+  const b=document.getElementById('bttBtn');
+  window.addEventListener('scroll',function(){b.classList.toggle('show',window.scrollY>400)});
+})();
+
+/* ── Tab Switching ── */
+function switchTab(btn,panelId){
+  const tabs=btn.closest('.tabs');
+  tabs.querySelectorAll('.tab-btn').forEach(function(t){t.classList.remove('active');t.setAttribute('aria-selected','false')});
+  tabs.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active')});
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected','true');
+  document.getElementById(panelId).classList.add('active');
+}
+
+/* ── Scenario Interaction ── */
+function handleScenario(btn){
+  var scenarioId=btn.getAttribute('data-scenario');
+  var isCorrect=btn.getAttribute('data-correct')==='true';
+  var siblings=btn.parentElement.querySelectorAll('.choice-btn');
+  siblings.forEach(function(s){s.classList.remove('correct','incorrect','highlight');s.disabled=true});
+  if(isCorrect){
+    btn.classList.add('correct');
+  } else {
+    btn.classList.add('incorrect');
+    siblings.forEach(function(s){if(s.getAttribute('data-correct')==='true')s.classList.add('highlight')});
+  }
+  var fb=document.getElementById('sf-'+scenarioId);
+  if(isCorrect){
+    fb.className='scenario-feedback show feedback-correct';
+    fb.innerHTML='✅ <strong>Correct!</strong> Great reasoning.';
+  } else {
+    fb.className='scenario-feedback show feedback-incorrect';
+    fb.innerHTML='❌ <strong>Not quite.</strong> The correct answer is highlighted in green. Click <em>Show Model Answer</em> for a full explanation.';
+  }
+}
+
+function revealModel(id){
+  var el=document.getElementById(id);
+  var btn=el.previousElementSibling;
+  if(el.classList.contains('show')){
+    el.classList.remove('show');
+    btn.setAttribute('aria-expanded','false');
+    btn.textContent='Show Model Answer';
+  } else {
+    el.classList.add('show');
+    btn.setAttribute('aria-expanded','true');
+    btn.textContent='Hide Model Answer';
+  }
+}
+
+/* ── Knowledge Check ── */
+function checkKC(btn){
+  var q=btn.closest('.kc-question');
+  if(q.classList.contains('answered'))return;
+  q.classList.add('answered');
+  var isCorrect=btn.getAttribute('data-correct')==='true';
+  var options=q.querySelectorAll('.kc-option');
+  options.forEach(function(o){
+    o.disabled=true;
+    if(o.getAttribute('data-correct')==='true')o.classList.add('show-correct');
+  });
+  if(isCorrect){
+    btn.classList.add('selected-correct');
+    q.querySelector('.kc-feedback.correct').classList.add('show');
+  } else {
+    btn.classList.add('selected-wrong');
+    q.querySelector('.kc-feedback.wrong').classList.add('show');
+  }
+}
+
+/* ── Keyboard support for tabs ── */
+document.querySelectorAll('.tab-buttons').forEach(function(container){
+  container.addEventListener('keydown',function(e){
+    var tabs=Array.from(container.querySelectorAll('.tab-btn'));
+    var idx=tabs.indexOf(document.activeElement);
+    if(idx<0)return;
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();var next=(idx+1)%tabs.length;tabs[next].focus();tabs[next].click()}
+    if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();var prev=(idx-1+tabs.length)%tabs.length;tabs[prev].focus();tabs[prev].click()}
+  });
+});
+</script>
+</body>
+</html>
