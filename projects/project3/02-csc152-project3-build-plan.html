@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build 02: pfSense Firewall VM | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      line-height: 1.7;
+    }
+
+    /* ── Skip Link ── */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 0;
+      background: #17a2b8;
+      color: #fff;
+      padding: 10px 18px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-decoration: none;
+      z-index: 9999;
+      border-radius: 0 0 6px 0;
+    }
+    .skip-link:focus { top: 0; }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Mobile hamburger button ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 300;
+      background: #0d1b2a;
+      border: 2px solid #17a2b8;
+      border-radius: 6px;
+      width: 42px;
+      height: 42px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .hamburger:focus-visible {
+      outline: 3px solid #17a2b8;
+      outline-offset: 2px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #fff;
+      border-radius: 2px;
+      transition: transform 0.3s, opacity 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #e0e0e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 200;
+      transition: transform 0.3s ease;
+    }
+
+    /* Sidebar scrollbar */
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-track { background: #0d1b2a; }
+    .sidebar::-webkit-scrollbar-thumb { background: #17a2b8; border-radius: 3px; }
+
+    /* Sidebar header */
+    .sidebar-header {
+      background: #0a141f;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #17a2b8;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #17a2b8;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-build-badge {
+      display: inline-block;
+      background: #17a2b8;
+      color: #0d1b2a;
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-bottom: 6px;
+    }
+    .sidebar-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8ba8c0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 14px 18px;
+      background: #0a141f;
+      border-bottom: 1px solid #1a2f42;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8ba8c0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-bar-track {
+      background: #1a2f42;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #17a2b8, #20c997);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a2f42;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8ba8c0;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a8a9e;
+    }
+    .doc-seq-item.current { color: #17a2b8; font-weight: 700; }
+    .doc-seq-item.done { color: #20c997; }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 6px 0 2px 16px;
+      font-style: italic;
+    }
+    .doc-seq-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2a4055;
+      flex-shrink: 0;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #17a2b8; }
+    .doc-seq-item.done .doc-seq-dot { background: #20c997; }
+
+    /* Nav */
+    .sidebar-nav { padding: 12px 0; flex: 1; }
+    .nav-section-title {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #17a2b8;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.78rem;
+      color: #8ba8c0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: #0a141f;
+      border-left-color: #17a2b8;
+    }
+    .sidebar-nav a:focus-visible {
+      outline: 2px solid #17a2b8;
+      outline-offset: -2px;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px 20px;
+      border-top: 1px solid #1a2f42;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8ba8c0;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.74rem;
+      color: #8ba8c0;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #17a2b8;
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+    .check-item:hover { color: #c0d8e8; }
+    .check-item.checked { color: #20c997; text-decoration: line-through; }
+
+    /* ── Main Content ── */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 0 0 60px;
+    }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #0e2233 60%, #0a2e42 100%);
+      color: white;
+      padding: 40px 48px 32px;
+      border-bottom: 4px solid #17a2b8;
+    }
+    .header-eyebrow {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #17a2b8;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .page-header h1 span { color: #17a2b8; }
+    .header-subtitle {
+      font-size: 0.92rem;
+      color: #a0c4d8;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .header-meta-chip {
+      background: rgba(23, 162, 184, 0.15);
+      border: 1px solid rgba(23, 162, 184, 0.35);
+      border-radius: 5px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      color: #a0c4d8;
+    }
+    .header-meta-chip strong { color: #ffffff; }
+
+    /* Where-you-are banner */
+    .where-banner {
+      background: #e0f7fa;
+      border-left: 5px solid #17a2b8;
+      padding: 12px 48px;
+      font-size: 0.85rem;
+      color: #0d4b56;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .where-banner strong { color: #0a7a8a; }
+
+    /* Content area */
+    .content-area { padding: 28px 48px; }
+
+    /* Info box (priority notice) */
+    .priority-box {
+      background: linear-gradient(135deg, #fff8e1, #fff3cd);
+      border: 2px solid #ffc107;
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .priority-box-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .priority-box-body h3 {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #856404;
+      margin-bottom: 6px;
+    }
+    .priority-box-body p { font-size: 0.85rem; color: #664d03; line-height: 1.6; }
+
+    /* Spec card */
+    .spec-card {
+      background: white;
+      border-radius: 10px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #17a2b8;
+    }
+    .spec-card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0d1b2a;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Sections */
+    .tutorial-section {
+      background: white;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .section-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+      border-left: 5px solid #17a2b8;
+    }
+    .section-toggle:hover { background: #f0fafc; }
+    .section-toggle[aria-expanded="true"] { background: #e8f7fa; }
+    .section-toggle:focus-visible {
+      outline: 3px solid #17a2b8;
+      outline-offset: -3px;
+    }
+    .section-toggle-inner { display: flex; align-items: center; gap: 14px; }
+    .section-num {
+      background: #17a2b8;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 5px;
+      letter-spacing: 0.5px;
+      min-width: 38px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .section-toggle h2 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #0d1b2a;
+    }
+    .toggle-icon {
+      font-size: 1.4rem;
+      color: #17a2b8;
+      font-weight: 300;
+      transition: transform 0.3s;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .section-toggle[aria-expanded="true"] .toggle-icon { transform: rotate(45deg); }
+
+    .section-body { padding: 0 26px 26px; display: none; }
+    .section-body.open { display: block; }
+
+    .section-intro {
+      background: #f0f9fb;
+      border-left: 4px solid #17a2b8;
+      padding: 12px 16px;
+      margin: 16px 0 20px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.86rem;
+      color: #1a3a40;
+    }
+
+    /* h3 within section */
+    .section-body h3 {
+      font-size: 0.93rem;
+      font-weight: 700;
+      color: #0d1b2a;
+      margin: 20px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #e8f0f2;
+    }
+
+    /* Callouts */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+    .callout-body { flex: 1; font-size: 0.85rem; line-height: 1.6; }
+    .callout-body strong { display: block; margin-bottom: 4px; font-size: 0.87rem; }
+    .callout-body p { margin-top: 5px; }
+    .callout-body ul { margin: 6px 0 0 16px; }
+    .callout-body li { margin-bottom: 3px; }
+
+    .callout-warning { background: #fff8e1; border: 1px solid #ffe082; }
+    .callout-warning .callout-icon { color: #f57c00; }
+    .callout-warning .callout-body strong { color: #e65100; }
+
+    .callout-info { background: #e0f7fa; border: 1px solid #80deea; }
+    .callout-info .callout-icon { color: #00838f; }
+    .callout-info .callout-body strong { color: #006064; }
+
+    .callout-success { background: #e8f5e9; border: 1px solid #a5d6a7; }
+    .callout-success .callout-icon { color: #2e7d32; }
+    .callout-success .callout-body strong { color: #1b5e20; }
+
+    .callout-danger { background: #ffebee; border: 1px solid #ef9a9a; }
+    .callout-danger .callout-icon { color: #c62828; }
+    .callout-danger .callout-body strong { color: #b71c1c; }
+
+    /* Steps */
+    .step-list { margin: 14px 0; }
+    .step-card {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+      align-items: flex-start;
+    }
+    .step-number {
+      background: #0d1b2a;
+      color: white;
+      font-size: 0.78rem;
+      font-weight: 800;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-content { flex: 1; }
+    .step-content h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #0d1b2a;
+      margin-bottom: 5px;
+    }
+    .step-content p { font-size: 0.85rem; color: #333; margin-bottom: 6px; }
+    .step-content ul { font-size: 0.85rem; color: #333; margin-left: 16px; margin-bottom: 6px; }
+    .step-content li { margin-bottom: 4px; }
+
+    /* Sub-steps (wizard tab steps) */
+    .wizard-steps { margin: 14px 0 14px 16px; }
+    .wizard-step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 12px 14px;
+      background: #f8fafb;
+      border-radius: 7px;
+      border-left: 3px solid #17a2b8;
+      align-items: flex-start;
+    }
+    .wizard-step-badge {
+      background: #17a2b8;
+      color: white;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .wizard-step-body { flex: 1; font-size: 0.84rem; color: #333; }
+    .wizard-step-body strong { color: #0d1b2a; display: block; margin-bottom: 3px; }
+    .wizard-step-body ul { margin: 4px 0 0 14px; }
+    .wizard-step-body li { margin-bottom: 3px; }
+    .wizard-step-body .note {
+      font-size: 0.78rem;
+      color: #666;
+      font-style: italic;
+      margin-top: 4px;
+    }
+
+    /* Code blocks */
+    pre {
+      background: #0d1b2a;
+      color: #d4e8f0;
+      border-radius: 8px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      margin: 10px 0;
+      position: relative;
+      white-space: pre;
+    }
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    }
+    p code, li code, td code, h4 code {
+      background: #e8f4f6;
+      border: 1px solid #b0dce4;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.82rem;
+      color: #0a6670;
+    }
+    .code-comment { color: #6db88a; }
+    .code-label {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 0.62rem;
+      color: #17a2b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .console-output {
+      background: #0a1e10;
+      color: #7aff6e;
+      border-radius: 8px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      margin: 10px 0;
+      position: relative;
+      white-space: pre;
+    }
+    .console-output .co-prompt { color: #17a2b8; }
+    .console-output .co-input  { color: #ffffff; font-weight: 600; }
+    .console-output .co-comment { color: #4caf50; font-style: italic; }
+    .console-label {
+      display: block;
+      font-size: 0.7rem;
+      color: #4caf50;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 12px 0;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+      background: white;
+    }
+    thead tr { background: #0d1b2a; color: white; }
+    thead th {
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.77rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    tbody tr:nth-child(even) { background: #f4fbfc; }
+    tbody tr:hover { background: #e0f7fa; }
+    tbody td { padding: 9px 14px; border-bottom: 1px solid #e0ecee; color: #333; }
+    tbody td:first-child { font-weight: 600; color: #0d1b2a; }
+
+    /* NIC assignment table */
+    .nic-table thead tr { background: #0a3040; }
+    .nic-table tbody td:nth-child(2) { color: #0a6670; font-family: 'Cascadia Code','Consolas',monospace; }
+    .nic-table tbody td:nth-child(3) { color: #0a6670; font-family: 'Cascadia Code','Consolas',monospace; }
+
+    /* What's Next footer */
+    .whats-next {
+      background: linear-gradient(135deg, #0d1b2a, #0a2233);
+      color: white;
+      padding: 28px 48px;
+      margin-top: 20px;
+      border-top: 4px solid #17a2b8;
+    }
+    .whats-next h3 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #17a2b8;
+      margin-bottom: 10px;
+    }
+    .whats-next p {
+      font-size: 0.88rem;
+      color: #8ba8c0;
+      margin-bottom: 14px;
+    }
+    .next-doc-card {
+      background: #0a2233;
+      border: 1px solid #17a2b8;
+      border-radius: 8px;
+      padding: 14px 20px;
+      display: inline-flex;
+      gap: 14px;
+      align-items: center;
+      max-width: 500px;
+    }
+    .next-doc-icon { font-size: 1.8rem; }
+    .next-doc-info h4 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #17a2b8;
+      margin-bottom: 3px;
+    }
+    .next-doc-info p { font-size: 0.78rem; color: #8ba8c0; margin: 0; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0; top: 0;
+        transform: translateX(-100%);
+        height: 100vh;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { padding-top: 0; }
+      .page-header { padding: 56px 20px 28px; }
+      .where-banner { padding: 12px 20px; }
+      .content-area { padding: 20px; }
+      .whats-next { padding: 24px 20px; }
+      .header-meta { gap: 10px; }
+    }
+    @media (max-width: 600px) {
+      .page-header h1 { font-size: 1.4rem; }
+      .next-doc-card { flex-direction: column; gap: 8px; }
+    }
+
+    /* Focus styles */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid #17a2b8;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Skip navigation -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar" onclick="toggleSidebar()">
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+
+<div class="page-wrapper">
+
+  <!-- ══════════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar" aria-label="Build tutorial navigation">
+
+    <div class="sidebar-header">
+      <div class="sidebar-course">CSC 152 · Project 3</div>
+      <div class="sidebar-build-badge">Build 02 of 15</div>
+      <div class="sidebar-title">pfSense VM</div>
+      <div class="sidebar-subtitle">Create &amp; Install pfSense Firewall</div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="sidebar-progress" aria-label="Completion progress">
+      <div class="progress-label">
+        <span>Progress</span>
+        <span id="progress-text">0 / 8</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-labelledby="progress-text" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="progress-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Document sequence -->
+    <div class="doc-sequence" aria-label="Build sequence">
+      <div class="doc-sequence-label">Build Sequence</div>
+
+      <div class="doc-seq-item done">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>01 · Proxmox Network Bridges</span>
+      </div>
+      <div class="doc-seq-item current" aria-current="page">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>02 · pfSense VM Build ◀</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>03 · Ubuntu Template + linux-server</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>04 · Windows Server dc01</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>05 · Xubuntu Template + mgmt-vm</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>06 · linux-client VM</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>07 · splunk-vm Build</span>
+      </div>
+
+      <div class="doc-seq-divider">— Integration Plans —</div>
+
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>08 · pfSense Full Configuration</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>09 · Active Directory &amp; DNS</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>10 · Linux Server Hardening</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>11 · Windows Server Hardening</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>12 · Splunk Deployment</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>13 · Linux Log Forwarder</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>14 · Windows Log Forwarder</span>
+      </div>
+      <div class="doc-seq-item">
+        <div class="doc-seq-dot" aria-hidden="true"></div>
+        <span>15 · Backup Strategy</span>
+      </div>
+    </div>
+
+    <!-- Section nav -->
+    <nav class="sidebar-nav" aria-label="Page sections">
+      <div class="nav-section-title">Sections</div>
+      <a href="#sec-spec">1 · VM Specification</a>
+      <a href="#sec-iso">2 · Download pfSense ISO</a>
+      <a href="#sec-create">3 · Create VM in Proxmox</a>
+      <a href="#sec-nics">4 · Add Network Interfaces</a>
+      <a href="#sec-install">5 · Install pfSense</a>
+      <a href="#sec-interfaces">6 · Interface Assignment</a>
+      <a href="#sec-verify">7 · Verify WAN Connectivity</a>
+    </nav>
+
+    <!-- Completion checklist -->
+    <div class="sidebar-checks">
+      <div class="sidebar-checks-label">Completion Checklist</div>
+
+      <label class="check-item" id="chk1-wrap">
+        <input type="checkbox" id="chk1" data-progress="true" aria-label="pfSense ISO downloaded and uploaded to Proxmox" onchange="updateProgress(this)" />
+        <span>pfSense ISO downloaded &amp; uploaded to Proxmox</span>
+      </label>
+      <label class="check-item" id="chk2-wrap">
+        <input type="checkbox" id="chk2" data-progress="true" aria-label="VM 1001 pfsense created in Proxmox" onchange="updateProgress(this)" />
+        <span>VM 1001 (pfsense) created in Proxmox</span>
+      </label>
+      <label class="check-item" id="chk3-wrap">
+        <input type="checkbox" id="chk3" data-progress="true" aria-label="All 4 network adapters attached vmbr0 through vmbr3" onchange="updateProgress(this)" />
+        <span>All 4 NICs attached (vmbr0–vmbr3)</span>
+      </label>
+      <label class="check-item" id="chk4-wrap">
+        <input type="checkbox" id="chk4" data-progress="true" aria-label="pfSense installed not just live CD" onchange="updateProgress(this)" />
+        <span>pfSense installed (not just live CD)</span>
+      </label>
+      <label class="check-item" id="chk5-wrap">
+        <input type="checkbox" id="chk5" data-progress="true" aria-label="ISO removed from VM hardware" onchange="updateProgress(this)" />
+        <span>ISO removed from VM hardware</span>
+      </label>
+      <label class="check-item" id="chk6-wrap">
+        <input type="checkbox" id="chk6" data-progress="true" aria-label="Interfaces assigned vtnet0 WAN vtnet1 LAN vtnet2 OPT1 vtnet3 OPT2" onchange="updateProgress(this)" />
+        <span>Interfaces assigned (vtnet0=WAN, vtnet1=LAN, vtnet2=OPT1, vtnet3=OPT2)</span>
+      </label>
+      <label class="check-item" id="chk7-wrap">
+        <input type="checkbox" id="chk7" data-progress="true" aria-label="WAN receives DHCP from home router" onchange="updateProgress(this)" />
+        <span>WAN receives DHCP from home router</span>
+      </label>
+      <label class="check-item" id="chk8-wrap">
+        <input type="checkbox" id="chk8" data-progress="true" aria-label="Ping to 192.168.50.1 succeeds from pfSense console" onchange="updateProgress(this)" />
+        <span>Ping 192.168.50.1 succeeds from pfSense console</span>
+      </label>
+    </div>
+
+  </aside><!-- /sidebar -->
+
+  <!-- ══════════════════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════════════════ -->
+  <main class="main-content" id="main-content" tabindex="-1">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-eyebrow">CSC 152 — Network OS &amp; Administration · Project 3</div>
+      <h1>Build 02: <span>pfSense Firewall VM</span></h1>
+      <p class="header-subtitle">
+        Create the pfSense VM in Proxmox and complete initial installation and WAN assignment
+      </p>
+      <div class="header-meta" aria-label="VM specifications">
+        <div class="header-meta-chip"><strong>VM ID:</strong> 1001</div>
+        <div class="header-meta-chip"><strong>vCPU:</strong> 2</div>
+        <div class="header-meta-chip"><strong>RAM:</strong> 2 GB</div>
+        <div class="header-meta-chip"><strong>Disk:</strong> 32 GB</div>
+        <div class="header-meta-chip"><strong>Network:</strong> vmbr0, vmbr1, vmbr2, vmbr3</div>
+      </div>
+    </header>
+
+    <!-- Where-you-are banner -->
+    <div class="where-banner" role="navigation" aria-label="Document position">
+      ▶ <strong>Build 02 of 15</strong>&nbsp;— pfSense VM Build &nbsp;|&nbsp;
+      <strong>Previous:</strong> Build 01 · Proxmox Network Bridges &nbsp;|&nbsp;
+      <strong>Next:</strong> Build 03 · Ubuntu Template + linux-server
+    </div>
+
+    <div class="content-area">
+
+      <!-- Priority notice -->
+      <div class="priority-box" role="note" aria-label="Important note about build order">
+        <div class="priority-box-icon" aria-hidden="true">&#128270;</div>
+        <div class="priority-box-body">
+          <h3>Build pfSense First — Everything Else Depends On It</h3>
+          <p>pfSense is the first VM to build because all other VMs depend on it for routing
+          and internet access. Build and perform the basic installation before touching any
+          other VMs. Full interface configuration (DHCP, DNS, firewall rules) happens later
+          in Integration Plan 08 once all VMs are in place.</p>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════
+           SECTION 1: VM SPECIFICATION SUMMARY
+      ═══════════════════════════════════════ -->
+      <section class="tutorial-section" id="sec-spec">
+        <div class="section-toggle" role="button" tabindex="0"
+             aria-expanded="true" aria-controls="spec-body"
+             onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+          <div class="section-toggle-inner">
+            <div class="section-num">§1</div>
+            <h2>VM Specification Summary</h2>
+          </div>
+          <span class="toggle-icon" aria-hidden="true">+</span>
+        </div>
+        <div class="section-body open" id="spec-body">
+
+          <div class="section-intro">
+            Review these specifications before creating the VM. The settings below
+            are what you will enter in the Proxmox VM creation wizard.
+          </div>
+
+          <div class="table-container">
+            <table aria-label="pfSense VM specifications">
+              <thead>
+                <tr>
+                  <th scope="col">Setting</th>
+                  <th scope="col">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>VM ID</td>
+                  <td><code>1001</code></td>
+                </tr>
+                <tr>
+                  <td>Name</td>
+                  <td><code>pfsense</code></td>
+                </tr>
+                <tr>
+                  <td>OS</td>
+                  <td>pfSense CE 2.7.x (FreeBSD-based)</td>
+                </tr>
+                <tr>
+                  <td>vCPU</td>
+                  <td>2 (1 socket × 2 cores, type: <code>host</code>)</td>
+                </tr>
+                <tr>
+                  <td>RAM</td>
+                  <td>2 GB (2048 MB)</td>
+                </tr>
+                <tr>
+                  <td>Disk</td>
+                  <td>32 GB (VirtIO SCSI)</td>
+                </tr>
+                <tr>
+                  <td>Network Adapters</td>
+                  <td>4 — vtnet0–vtnet3 mapped to vmbr0–vmbr3</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Network Interface Mapping</h3>
+          <div class="table-container">
+            <table class="nic-table" aria-label="Network interface to bridge mapping">
+              <thead>
+                <tr>
+                  <th scope="col">pfSense Interface</th>
+                  <th scope="col">Proxmox Bridge</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>vtnet0</td>
+                  <td><code>vmbr0</code></td>
+                  <td>WAN</td>
+                  <td>Bridged to physical NIC — home router provides DHCP</td>
+                </tr>
+                <tr>
+                  <td>vtnet1</td>
+                  <td><code>vmbr1</code></td>
+                  <td>LAN (Management)</td>
+                  <td>mgmt-vm connects here — configured in Build 08</td>
+                </tr>
+                <tr>
+                  <td>vtnet2</td>
+                  <td><code>vmbr2</code></td>
+                  <td>OPT1 (Servers)</td>
+                  <td>linux-server, dc01, splunk-vm — configured in Build 08</td>
+                </tr>
+                <tr>
+                  <td>vtnet3</td>
+                  <td><code>vmbr3</code></td>
+                  <td>OPT2 (Clients)</td>
+                  <td>linux-client connects here — configured in Build 08</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </section><!-- /sec-spec -->
+
+      <!-- ═══════════════════════════════════════
+           SECTION 2: DOWNLOAD PFSENSE ISO
+      ═══════════════════════════════════════ -->
+      <section class="tutorial-section" id="sec-iso">
+        <div class="section-toggle" role="button" tabindex="0"
+             aria-expanded="false" aria-controls="iso-body"
+             onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+          <div class="section-toggle-inner">
+            <div class="section-num">§2</div>
+            <h2>Download pfSense ISO</h2>
+          </div>
+          <span class="toggle-icon" aria-hidden="true">+</span>
+        </div>
+        <div class="section-body" id="iso-body">
+
+          <div class="section-intro">
+            Download the pfSense Community Edition ISO and upload it to your Proxmox node's
+            local storage before creating the VM.
+          </div>
+
+          <h3>Option A — Download via Browser and Upload to Proxmox (Recommended)</h3>
+
+          <div class="step-list">
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">1</div>
+              <div class="step-content">
+                <h4>Go to the pfSense Download Page</h4>
+                <p>Navigate to <strong>pfsense.org/download</strong> and select
+                <strong>Community Edition (CE)</strong>.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">2</div>
+              <div class="step-content">
+                <h4>Select Download Options</h4>
+                <ul>
+                  <li><strong>Architecture:</strong> AMD64</li>
+                  <li><strong>Installer:</strong> DVD Image (ISO) Installer</li>
+                  <li><strong>Mirror:</strong> select the closest server to you</li>
+                </ul>
+                <p>Click <strong>Download</strong> and save the <code>.iso</code>
+                (or <code>.iso.gz</code>) file locally.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">3</div>
+              <div class="step-content">
+                <h4>Upload ISO to Proxmox</h4>
+                <p>In the Proxmox web UI:</p>
+                <ul>
+                  <li>Expand <strong>Datacenter → pve</strong> in the left panel</li>
+                  <li>Click <strong>local</strong> storage</li>
+                  <li>Select the <strong>ISO Images</strong> tab</li>
+                  <li>Click <strong>Upload</strong> and select your downloaded ISO file</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <h3>Option B — CLI Upload via SSH (Alternative)</h3>
+          <p style="font-size:0.85rem;color:#444;margin-bottom:8px;">
+            If you prefer to download directly to the Proxmox host over SSH:
+          </p>
+
+          <div style="position:relative;">
+            <span class="code-label">Bash — Proxmox SSH</span>
+            <pre><code><span class="code-comment"># SSH to your Proxmox host first, then:</span>
+
+<span class="code-comment"># Download the compressed ISO directly to Proxmox ISO storage</span>
+wget -P /var/lib/vz/template/iso/ \
+  "https://atxfiles.netgate.com/mirror/downloads/pfSense-CE-2.7.2-RELEASE-amd64.iso.gz"
+
+<span class="code-comment"># Decompress the .gz archive (removes .gz, leaves .iso)</span>
+gunzip /var/lib/vz/template/iso/pfSense-CE-2.7.2-RELEASE-amd64.iso.gz
+
+<span class="code-comment"># Confirm the ISO is present</span>
+ls -lh /var/lib/vz/template/iso/pfSense*.iso</code></pre>
+          </div>
+
+          <div class="callout callout-info">
+            <span class="callout-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <div class="callout-body">
+              <strong>After CLI Upload</strong>
+              <p>After using the CLI method, refresh the Proxmox web UI storage view
+              (<strong>local → ISO Images</strong>) — the ISO should appear automatically.
+              No further steps needed; Proxmox discovers ISOs in that directory.</p>
+            </div>
+          </div>
+
+        </div>
+      </section><!-- /sec-iso -->
+
+      <!-- ═══════════════════════════════════════
+           SECTION 3: CREATE VM IN PROXMOX
+      ═══════════════════════════════════════ -->
+      <section class="tutorial-section" id="sec-create">
+        <div class="section-toggle" role="button" tabindex="0"
+             aria-expanded="false" aria-controls="create-body"
+             onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+          <div class="section-toggle-inner">
+            <div class="section-num">§3</div>
+            <h2>Create the VM in Proxmox (Web UI Wizard)</h2>
+          </div>
+          <span class="toggle-icon" aria-hidden="true">+</span>
+        </div>
+        <div class="section-body" id="create-body">
+
+          <div class="section-intro">
+            Click <strong>Create VM</strong> in the top-right of the Proxmox web UI.
+            Walk through the wizard tabs in order. After creating the VM with one NIC,
+            you will add the remaining three NICs in Section 4.
+          </div>
+
+          <h3>VM Creation Wizard — Tab by Tab</h3>
+
+          <div class="wizard-steps">
+
+            <div class="wizard-step">
+              <div class="wizard-step-badge">Step 1</div>
+              <div class="wizard-step-body">
+                <strong>General Tab</strong>
+                <ul>
+                  <li><strong>Node:</strong> <code>pve</code></li>
+                  <li><strong>VM ID:</strong> <code>1001</code></li>
+                  <li><strong>Name:</strong> <code>pfsense</code></li>
+                </ul>
+                <p class="note">Click <strong>Next</strong> when done.</p>
+              </div>
+            </div>
+
+            <div class="wizard-step">
+              <div class="wizard-step-badge">Step 2</div>
+              <div class="wizard-step-body">
+                <strong>OS Tab</strong>
+                <ul>
+                  <li><strong>ISO image:</strong> select the pfSense ISO you uploaded</li>
+                  <li><strong>Guest OS Type:</strong> Other</li>
+                </ul>
+                <p class="note">Click <strong>Next</strong> when done.</p>
+              </div>
+            </div>
+
+            <div class="wizard-step">
+              <div class="wizard-step-badge">Step 3</div>
+              <div class="wizard-step-body">
+                <strong>System Tab</strong>
+                <ul>
+                  <li><strong>Machine:</strong> <code>q35</code></li>
+                  <li><strong>BIOS:</strong> <code>SeaBIOS</code> — use SeaBIOS for pfSense compatibility</li>
+                  <li>Leave all other defaults as-is</li>
+                </ul>
+                <p class="note">Do <strong>not</strong> select OVMF (UEFI) — pfSense CE 2.7.x installs more reliably with SeaBIOS. Click <strong>Next</strong>.</p>
+              </div>
+            </div>
+
+            <div class="wizard-step">
+              <div class="wizard-step-badge">Step 4</div>
+              <div class="wizard-step-body">
+                <strong>Disk Tab</strong>
+                <ul>
+                  <li><strong>Bus/Device:</strong> SCSI with VirtIO SCSI controller (or VirtIO Block)</li>
+                  <li><strong>Disk size:</strong> <code>32</code> GB</li>
+                  <li><strong>Storage:</strong> <code>local-lvm</code> (or your primary storage pool)</li>
+                </ul>
+                <p class="note">Click <strong>Next</strong> when done.</p>
+              </div>
+            </div>
+
+            <div class="wizard-step">
+              <div class="wizard-step-badge">Step 5</div>
+              <div class="wizard-step-body">
+                <strong>CPU Tab</strong>
+                <ul>
+                  <li><strong>Sockets:</strong> 1</li>
+                  <li><strong>Cores:</strong> 2</li>
+                  <li><strong>Type:</strong> <code>host</code> (best performance for home lab)</li>
+                </ul>
+                <p class="note">Click <strong>Next</strong> when done.</p>
+              </div>
+            </div>
+
+            <div class="wizard-step">
+              <div class="wizard-step-badge">Step 6</div>
+              <div class="wizard-step-body">
+                <strong>Memory Tab</strong>
+                <ul>
+                  <li><strong>Memory:</strong> <code>2048</code> MB (2 GB)</li>
+                </ul>
+                <p class="note">Click <strong>Next</strong> when done.</p>
+              </div>
+            </div>
+
+            <div class="wizard-step">
+              <div class="wizard-step-badge">Step 7</div>
+              <div class="wizard-step-body">
+                <strong>Network Tab</strong>
+                <ul>
+                  <li><strong>Bridge:</strong> <code>vmbr0</code></li>
+                  <li><strong>Model:</strong> VirtIO (paravirtualized)</li>
+                </ul>
+                <p class="note">This adds the first NIC (vtnet0 = WAN). You will add the remaining 3 NICs
+                after the VM is created — see Section 4. Click <strong>Next</strong>.</p>
+              </div>
+            </div>
+
+            <div class="wizard-step">
+              <div class="wizard-step-badge">Step 8</div>
+              <div class="wizard-step-body">
+                <strong>Confirm Tab</strong>
+                <ul>
+                  <li>Review all settings against the spec table in Section 1</li>
+                  <li><strong>Uncheck</strong> "Start after created" — you need to add NICs first</li>
+                  <li>Click <strong>Finish</strong></li>
+                </ul>
+                <p class="note">VM 1001 will appear in the left panel. Do not start it yet.</p>
+              </div>
+            </div>
+
+          </div><!-- /wizard-steps -->
+
+        </div>
+      </section><!-- /sec-create -->
+
+      <!-- ═══════════════════════════════════════
+           SECTION 4: ADD ADDITIONAL NICS
+      ═══════════════════════════════════════ -->
+      <section class="tutorial-section" id="sec-nics">
+        <div class="section-toggle" role="button" tabindex="0"
+             aria-expanded="false" aria-controls="nics-body"
+             onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+          <div class="section-toggle-inner">
+            <div class="section-num">§4</div>
+            <h2>Add Additional Network Interfaces</h2>
+          </div>
+          <span class="toggle-icon" aria-hidden="true">+</span>
+        </div>
+        <div class="section-body" id="nics-body">
+
+          <div class="section-intro">
+            The VM wizard only allows one NIC during creation. Add the remaining
+            three network adapters now, before starting the VM.
+          </div>
+
+          <div class="step-list">
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">1</div>
+              <div class="step-content">
+                <h4>Open VM Hardware Settings</h4>
+                <p>In the Proxmox left panel, click <strong>VM 1001 (pfsense)</strong>,
+                then select the <strong>Hardware</strong> tab in the main panel.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">2</div>
+              <div class="step-content">
+                <h4>Add vmbr1 (Management / LAN)</h4>
+                <p>Click <strong>Add → Network Device</strong>:</p>
+                <ul>
+                  <li><strong>Bridge:</strong> <code>vmbr1</code></li>
+                  <li><strong>Model:</strong> VirtIO</li>
+                </ul>
+                <p>Click <strong>Add</strong>.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">3</div>
+              <div class="step-content">
+                <h4>Add vmbr2 (Servers / OPT1)</h4>
+                <p>Click <strong>Add → Network Device</strong> again:</p>
+                <ul>
+                  <li><strong>Bridge:</strong> <code>vmbr2</code></li>
+                  <li><strong>Model:</strong> VirtIO</li>
+                </ul>
+                <p>Click <strong>Add</strong>.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">4</div>
+              <div class="step-content">
+                <h4>Add vmbr3 (Clients / OPT2)</h4>
+                <p>Click <strong>Add → Network Device</strong> one final time:</p>
+                <ul>
+                  <li><strong>Bridge:</strong> <code>vmbr3</code></li>
+                  <li><strong>Model:</strong> VirtIO</li>
+                </ul>
+                <p>Click <strong>Add</strong>.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">5</div>
+              <div class="step-content">
+                <h4>Verify All 4 NICs Are Listed</h4>
+                <p>The Hardware tab should now show four network devices:
+                <code>net0 (vmbr0)</code>, <code>net1 (vmbr1)</code>,
+                <code>net2 (vmbr2)</code>, <code>net3 (vmbr3)</code>.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-info">
+            <span class="callout-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <div class="callout-body">
+              <strong>NIC Order Matters</strong>
+              <p>Proxmox assigns NICs to pfSense interfaces in the order they appear
+              (<code>net0</code> = vtnet0, <code>net1</code> = vtnet1, etc.).
+              Adding them in bridge order (vmbr0 → vmbr3) ensures vtnet0 is WAN,
+              which is what pfSense expects when you assign interfaces in Section 6.</p>
+            </div>
+          </div>
+
+        </div>
+      </section><!-- /sec-nics -->
+
+      <!-- ═══════════════════════════════════════
+           SECTION 5: INSTALL PFSENSE
+      ═══════════════════════════════════════ -->
+      <section class="tutorial-section" id="sec-install">
+        <div class="section-toggle" role="button" tabindex="0"
+             aria-expanded="false" aria-controls="install-body"
+             onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+          <div class="section-toggle-inner">
+            <div class="section-num">§5</div>
+            <h2>Install pfSense from ISO</h2>
+          </div>
+          <span class="toggle-icon" aria-hidden="true">+</span>
+        </div>
+        <div class="section-body" id="install-body">
+
+          <div class="section-intro">
+            Start the VM, boot from the ISO, and run the pfSense installer.
+            This permanently installs pfSense to the 32 GB virtual disk.
+          </div>
+
+          <div class="step-list">
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">1</div>
+              <div class="step-content">
+                <h4>Start the VM and Open Console</h4>
+                <p>Select <strong>VM 1001</strong> in the Proxmox panel. Click
+                <strong>Start</strong>, then immediately click <strong>Console</strong>
+                (noVNC) to watch the boot process.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">2</div>
+              <div class="step-content">
+                <h4>Boot from ISO</h4>
+                <p>At the pfSense boot menu, press <kbd>Enter</kbd> (or wait — it boots
+                automatically after a short countdown). The installer will load.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">3</div>
+              <div class="step-content">
+                <h4>Accept the Copyright Notice</h4>
+                <p>Read and accept the "Copyright and distribution notice" screen
+                by pressing <kbd>Enter</kbd> (or choosing Accept).</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">4</div>
+              <div class="step-content">
+                <h4>Select Install pfSense</h4>
+                <p>Choose <strong>Install</strong> from the menu (not "Rescue Shell"
+                or "Live CD / No Changes"). This begins the installation wizard.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">5</div>
+              <div class="step-content">
+                <h4>Keymap Selection</h4>
+                <p>Select your keyboard layout. The default
+                <strong>US</strong> is correct for most users. Press
+                <kbd>Enter</kbd> to continue.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">6</div>
+              <div class="step-content">
+                <h4>Partitioning — Select UFS (Recommended for Lab)</h4>
+                <p>Choose <strong>Auto (UFS)</strong> for simplicity in a lab environment.
+                (ZFS also works but requires more RAM for optimal performance.)</p>
+                <ul>
+                  <li>Select the <strong>32 GB VirtIO disk</strong> as the target</li>
+                  <li>Confirm the partition scheme and proceed</li>
+                </ul>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">7</div>
+              <div class="step-content">
+                <h4>Wait for Installation to Complete</h4>
+                <p>Installation will copy pfSense to disk — this typically takes
+                2–5 minutes. When it finishes, you will be prompted to reboot.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">8</div>
+              <div class="step-content">
+                <h4>Remove ISO Before Rebooting</h4>
+                <p><strong>Before</strong> selecting Reboot — in the Proxmox Hardware tab:</p>
+                <ul>
+                  <li>Select the <strong>CD/DVD Drive</strong> entry</li>
+                  <li>Click <strong>Edit</strong></li>
+                  <li>Select <strong>"Do not use any media"</strong></li>
+                  <li>Click <strong>OK</strong></li>
+                </ul>
+                <p>Now go back to the console and select <strong>Reboot</strong>.
+                The VM will boot from the installed disk.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-warning">
+            <span class="callout-icon" aria-hidden="true">&#9888;&#65039;</span>
+            <div class="callout-body">
+              <strong>Remove the ISO Before Rebooting</strong>
+              <p>If you forget to remove the ISO and the VM reboots back into the
+              pfSense installer, power off the VM, remove the ISO from Hardware,
+              then start the VM again. The installed system on disk is not affected.</p>
+            </div>
+          </div>
+
+        </div>
+      </section><!-- /sec-install -->
+
+      <!-- ═══════════════════════════════════════
+           SECTION 6: INTERFACE ASSIGNMENT
+      ═══════════════════════════════════════ -->
+      <section class="tutorial-section" id="sec-interfaces">
+        <div class="section-toggle" role="button" tabindex="0"
+             aria-expanded="false" aria-controls="iface-body"
+             onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+          <div class="section-toggle-inner">
+            <div class="section-num">§6</div>
+            <h2>Initial Interface Assignment (Console)</h2>
+          </div>
+          <span class="toggle-icon" aria-hidden="true">+</span>
+        </div>
+        <div class="section-body" id="iface-body">
+
+          <div class="section-intro">
+            On first boot, pfSense displays a console menu asking you to assign
+            network interfaces. This maps each physical virtual NIC to a pfSense
+            role (WAN, LAN, OPT1, OPT2).
+          </div>
+
+          <p style="font-size:0.86rem;color:#333;margin-bottom:10px;">
+            The console will list the detected interfaces with their MAC addresses.
+            Respond to the prompts as shown below:
+          </p>
+
+          <span class="console-label" aria-hidden="true">pfSense Console — Interface Assignment</span>
+          <div class="console-output" role="region" aria-label="pfSense console interface assignment session">
+<span class="co-comment"># pfSense detects available interfaces on first boot</span>
+
+Valid interfaces are:
+  vtnet0   xx:xx:xx:xx:xx:xx  <span class="co-comment">(vmbr0 = WAN)</span>
+  vtnet1   xx:xx:xx:xx:xx:xx  <span class="co-comment">(vmbr1 = Management/LAN)</span>
+  vtnet2   xx:xx:xx:xx:xx:xx  <span class="co-comment">(vmbr2 = Servers/OPT1)</span>
+  vtnet3   xx:xx:xx:xx:xx:xx  <span class="co-comment">(vmbr3 = Clients/OPT2)</span>
+
+<span class="co-prompt">Do you want to set up VLANs now? [y|n]:</span> <span class="co-input">n</span>
+
+<span class="co-prompt">Enter the WAN interface name or 'a' for auto-detection:</span> <span class="co-input">vtnet0</span>
+
+<span class="co-prompt">Enter the LAN interface name or 'a' for auto-detection
+(or nothing if finished):</span> <span class="co-input">vtnet1</span>
+
+<span class="co-prompt">Enter the Optional 1 interface name or 'a' for auto-detection
+(or nothing if finished):</span> <span class="co-input">vtnet2</span>
+
+<span class="co-prompt">Enter the Optional 2 interface name or 'a' for auto-detection
+(or nothing if finished):</span> <span class="co-input">vtnet3</span>
+
+<span class="co-prompt">Enter the Optional 3 interface name or 'a' for auto-detection
+(or nothing if finished):</span> <span class="co-input">[press Enter — no more interfaces]</span>
+
+<span class="co-prompt">The interfaces will be assigned as follows:
+  WAN  -&gt; vtnet0
+  LAN  -&gt; vtnet1
+  OPT1 -&gt; vtnet2
+  OPT2 -&gt; vtnet3
+
+Do you want to proceed? [y|n]:</span> <span class="co-input">y</span>
+</div>
+
+          <div class="callout callout-info">
+            <span class="callout-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <div class="callout-body">
+              <strong>Default LAN Address After Assignment</strong>
+              <p>After interface assignment, pfSense assigns LAN (<code>vtnet1</code>)
+              the default address <code>192.168.1.1/24</code>. You will see this
+              displayed in the console menu. This address is temporary — full
+              interface reconfiguration with your lab's subnet plan happens in
+              Integration Plan 08. Do not try to access the pfSense web UI yet.</p>
+            </div>
+          </div>
+
+        </div>
+      </section><!-- /sec-interfaces -->
+
+      <!-- ═══════════════════════════════════════
+           SECTION 7: VERIFY WAN CONNECTIVITY
+      ═══════════════════════════════════════ -->
+      <section class="tutorial-section" id="sec-verify">
+        <div class="section-toggle" role="button" tabindex="0"
+             aria-expanded="false" aria-controls="verify-body"
+             onclick="toggleSection(this)" onkeydown="keyToggle(event,this)">
+          <div class="section-toggle-inner">
+            <div class="section-num">§7</div>
+            <h2>Verify WAN Connectivity</h2>
+          </div>
+          <span class="toggle-icon" aria-hidden="true">+</span>
+        </div>
+        <div class="section-body" id="verify-body">
+
+          <div class="section-intro">
+            Confirm that pfSense received a DHCP address on WAN from your home router
+            and can reach the internet. Use the pfSense console menu to run pings.
+          </div>
+
+          <div class="step-list">
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">1</div>
+              <div class="step-content">
+                <h4>Check WAN IP in Console Menu</h4>
+                <p>The pfSense console main menu shows the current addresses.
+                Verify that <strong>WAN (vtnet0)</strong> shows an IP address
+                in the <code>192.168.50.x</code> range (assigned by your home router).
+                If it shows no IP, see the warning below.</p>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">2</div>
+              <div class="step-content">
+                <h4>Ping the Home Router (Option 7)</h4>
+                <p>From the pfSense console menu, enter <strong>7</strong>
+                (Ping host) and ping your home gateway:</p>
+                <ul>
+                  <li>Host to ping: <code>192.168.50.1</code></li>
+                  <li>Expected result: replies received — WAN connectivity confirmed</li>
+                </ul>
+              </div>
+            </div>
+            <div class="step-card">
+              <div class="step-number" aria-hidden="true">3</div>
+              <div class="step-content">
+                <h4>Ping a Public DNS Server</h4>
+                <p>From the same ping menu, ping a public address:</p>
+                <ul>
+                  <li>Host to ping: <code>8.8.8.8</code></li>
+                  <li>Expected result: replies received — internet access confirmed</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-warning">
+            <span class="callout-icon" aria-hidden="true">&#9888;&#65039;</span>
+            <div class="callout-body">
+              <strong>WAN Not Getting a DHCP Address?</strong>
+              <p>If WAN does not receive an IP from your home router (shown as
+              <code>0.0.0.0</code> or blank), the most likely cause is a misconfigured
+              bridge:</p>
+              <ul>
+                <li>In the Proxmox web UI, go to your <strong>node (pve) → Network</strong></li>
+                <li>Select <strong>vmbr0</strong> and verify that your physical NIC
+                (e.g., <code>enp3s0</code> or similar) is listed as a bridge port</li>
+                <li>If the physical NIC is missing, edit vmbr0, add the NIC, then
+                click <strong>Apply Configuration</strong> and recheck</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout-info">
+            <span class="callout-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <div class="callout-body">
+              <strong>What Comes Next</strong>
+              <p>Full pfSense interface configuration — including OPT1 and OPT2 IP
+              addresses, DHCP server, DNS resolver, firewall rules, and NAT — is
+              covered in <strong>Integration Plan 08</strong>, after all seven VMs
+              are built. For now, pfSense just needs WAN connectivity and correct
+              interface assignments.</p>
+            </div>
+          </div>
+
+          <div class="callout callout-success">
+            <span class="callout-icon" aria-hidden="true">&#10003;</span>
+            <div class="callout-body">
+              <strong>Build 02 Complete</strong>
+              <p>If WAN has a DHCP address and you can ping <code>192.168.50.1</code>
+              and <code>8.8.8.8</code> from the pfSense console, this build is complete.
+              Check off all items in the sidebar checklist and proceed to
+              <strong>Build 03 — Ubuntu Template + linux-server</strong>.</p>
+            </div>
+          </div>
+
+        </div>
+      </section><!-- /sec-verify -->
+
+    </div><!-- /content-area -->
+
+    <!-- What's next -->
+    <div class="whats-next">
+      <h3>Up Next in Project 3</h3>
+      <p>pfSense is installed and has WAN connectivity. Next, create the Ubuntu Server
+      template and deploy the linux-server VM that will run your server workloads.</p>
+      <div class="next-doc-card">
+        <div class="next-doc-icon" aria-hidden="true">&#128196;</div>
+        <div class="next-doc-info">
+          <h4>Build 03 · Ubuntu Template + linux-server</h4>
+          <p>Create a reusable Ubuntu 22.04 LTS cloud-init template and deploy
+          linux-server on the Servers (OPT1) network segment.</p>
+        </div>
+      </div>
+    </div>
+
+  </main><!-- /main-content -->
+
+</div><!-- /page-wrapper -->
+
+<!-- ══════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════ -->
+<script>
+  /* ── Progress bar ── */
+  function updateProgress(changedCheckbox) {
+    var checkboxes = document.querySelectorAll('[data-progress="true"]');
+    var total = checkboxes.length;
+    var checked = 0;
+    checkboxes.forEach(function(cb) { if (cb.checked) checked++; });
+
+    var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = checked + ' / ' + total;
+    document.getElementById('progress-track').setAttribute('aria-valuenow', pct);
+
+    // Visually mark checked labels
+    if (changedCheckbox) {
+      var label = changedCheckbox.closest('.check-item');
+      if (label) {
+        if (changedCheckbox.checked) {
+          label.classList.add('checked');
+        } else {
+          label.classList.remove('checked');
+        }
+      }
+    }
+  }
+
+  /* ── Accordion toggle ── */
+  function toggleSection(btn) {
+    var expanded = btn.getAttribute('aria-expanded') === 'true';
+    var bodyId = btn.getAttribute('aria-controls');
+    var body = document.getElementById(bodyId);
+    if (!body) return;
+
+    if (expanded) {
+      btn.setAttribute('aria-expanded', 'false');
+      body.classList.remove('open');
+    } else {
+      btn.setAttribute('aria-expanded', 'true');
+      body.classList.add('open');
+    }
+  }
+
+  function keyToggle(e, btn) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleSection(btn);
+    }
+  }
+
+  /* ── Active nav on scroll ── */
+  var navLinks = document.querySelectorAll('.sidebar-nav a');
+  var sections = [];
+  navLinks.forEach(function(a) {
+    var id = a.getAttribute('href').replace('#', '');
+    var el = document.getElementById(id);
+    if (el) sections.push({ id: id, el: el, link: a });
+  });
+
+  function onScroll() {
+    var scrollY = window.scrollY || window.pageYOffset;
+    var found = null;
+    for (var i = sections.length - 1; i >= 0; i--) {
+      if (sections[i].el.getBoundingClientRect().top + window.scrollY - 80 <= scrollY) {
+        found = sections[i].id;
+        break;
+      }
+    }
+    navLinks.forEach(function(a) { a.classList.remove('active'); });
+    if (found) {
+      sections.forEach(function(s) {
+        if (s.id === found) s.link.classList.add('active');
+      });
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  /* ── Mobile sidebar toggle ── */
+  function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    var btn = document.getElementById('hamburger-btn');
+    var isOpen = sidebar.classList.contains('open');
+    if (isOpen) {
+      sidebar.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    } else {
+      sidebar.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      sidebar.focus();
+    }
+  }
+
+  /* Close sidebar when a nav link is clicked on mobile */
+  navLinks.forEach(function(a) {
+    a.addEventListener('click', function() {
+      var sidebar = document.getElementById('sidebar');
+      var btn = document.getElementById('hamburger-btn');
+      if (window.innerWidth <= 900 && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+
+  /* Close sidebar on outside click */
+  document.addEventListener('click', function(e) {
+    var sidebar = document.getElementById('sidebar');
+    var btn = document.getElementById('hamburger-btn');
+    if (window.innerWidth > 900) return;
+    if (sidebar.classList.contains('open') &&
+        !sidebar.contains(e.target) &&
+        !btn.contains(e.target)) {
+      sidebar.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  /* Escape key closes sidebar */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var sidebar = document.getElementById('sidebar');
+      var btn = document.getElementById('hamburger-btn');
+      if (sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+        btn.focus();
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

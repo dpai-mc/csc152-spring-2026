@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration 11: Windows Server Hardening | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a2332;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #d0d8e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      background: #0a1520;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #7c3aed;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8a9bb0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 12px 18px;
+      background: #0f2235;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-label span:last-child { color: #a78bfa; font-weight: 700; }
+    .progress-bar-track {
+      background: #0d1b2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      height: 100%;
+      border-radius: 6px;
+      width: 73%; /* 11 of 15 = 73% */
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      padding: 6px 0 2px;
+      letter-spacing: 0.5px;
+      border-top: 1px solid #1a3350;
+      margin-top: 4px;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a7f94;
+      line-height: 1.4;
+    }
+    .doc-seq-item.current { color: #a78bfa; font-weight: 700; }
+    .doc-seq-item.done { color: #20c997; }
+    .doc-seq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a3d50;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #7c3aed; }
+    .doc-seq-item.done .doc-seq-dot { background: #20c997; }
+
+    /* Section nav */
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.77rem;
+      color: #8a9bb0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: rgba(124,58,237,0.14);
+      border-left-color: #7c3aed;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px;
+      border-top: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.73rem;
+      color: #9aacbc;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #7c3aed;
+      flex-shrink: 0;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .check-item.checked { color: #20c997; text-decoration: line-through; }
+
+    /* ── Hamburger (mobile only) ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: #0d1b2a;
+      border: 2px solid #7c3aed;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #a78bfa;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+    }
+
+    /* ── Main Content ── */
+    .main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a0a3e 55%, #2d1a6e 100%);
+      color: white;
+      padding: 40px 48px 36px;
+      border-bottom: 4px solid #7c3aed;
+    }
+    .header-eyebrow {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .page-header h1 em {
+      color: #a78bfa;
+      font-style: normal;
+    }
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(124,58,237,0.22);
+      border: 1px solid rgba(167,139,250,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #c4b5fd;
+    }
+    .meta-badge strong { color: #ffffff; }
+
+    /* Alerts */
+    .alert {
+      margin: 24px 48px 0;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .alert-info {
+      background: #ede9fe;
+      border-left: 5px solid #7c3aed;
+      color: #3b1f7a;
+    }
+    .alert-warning {
+      background: #fff8e1;
+      border-left: 5px solid #f59e0b;
+      color: #7c4a00;
+    }
+    .alert-danger {
+      background: #fef2f2;
+      border-left: 5px solid #dc2626;
+      color: #7f1d1d;
+    }
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Content area */
+    .content-area { padding: 32px 48px 0; }
+
+    /* Section cards */
+    .section-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #7c3aed;
+      scroll-margin-top: 24px;
+    }
+    .section-card h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-card p { color: #3a4a5a; font-size: 0.92rem; margin-bottom: 12px; }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    /* Sub-headings within sections */
+    .section-card h3 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1a2332;
+      margin: 20px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e8edf2;
+    }
+    .section-card h3:first-of-type { margin-top: 16px; }
+
+    /* Prose lists */
+    .prose-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .prose-list li {
+      position: relative;
+      padding: 4px 0 4px 20px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .prose-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-size: 0.7rem;
+      top: 7px;
+    }
+    .prose-list li strong { color: #0d1b2a; }
+
+    /* Tables */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 14px 0;
+    }
+    .spec-table th {
+      background: #0d1b2a;
+      color: #a78bfa;
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .spec-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+      vertical-align: top;
+    }
+    .spec-table tr:last-child td { border-bottom: none; }
+    .spec-table tr:nth-child(even) td { background: #f7f9fc; }
+    .spec-table td:first-child { font-weight: 600; color: #0d1b2a; }
+    .spec-table tfoot td {
+      background: #f0ebff;
+      font-weight: 700;
+      color: #3b1f7a;
+      border-top: 2px solid #7c3aed;
+    }
+
+    /* Rubric table variant */
+    .rubric-table td:nth-child(2) {
+      text-align: center;
+      font-weight: 700;
+      color: #7c3aed;
+    }
+    .rubric-table tfoot td:nth-child(2) {
+      color: #7c3aed;
+      font-size: 1.05rem;
+    }
+
+    /* Policy settings table */
+    .policy-table td:nth-child(2) {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #7c3aed;
+      font-weight: 700;
+    }
+    .policy-table td:nth-child(3) {
+      font-size: 0.80rem;
+      color: #166534;
+      font-weight: 600;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .code-block pre { margin: 0; }
+    .code-block pre code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* Inline code */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      background: #ede9fe;
+      color: #5b21b6;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .code-block code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+    /* Note box */
+    .note-box {
+      background: #f5f3ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #3b1f7a;
+    }
+    .note-box strong { color: #0d1b2a; }
+
+    /* Before/After label chips */
+    .state-chip {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .chip-before {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fbbf24;
+    }
+    .chip-after {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #34d399;
+    }
+
+    /* Control section header */
+    .control-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .control-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #7c3aed;
+      color: #fff;
+      padding: 3px 10px 3px 6px;
+      border-radius: 16px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+    .control-points {
+      background: #ede9fe;
+      color: #5b21b6;
+      border: 1px solid #c4b5fd;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .control-cis {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #86efac;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 0.70rem;
+      font-weight: 600;
+    }
+
+    /* Additional controls section */
+    .additional-card {
+      border-top-color: #0891b2;
+    }
+    .additional-card h2 { color: #0c4a6e; }
+    .additional-card .section-num { background: #0891b2; }
+    .additional-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0891b2;
+      color: #fff;
+      padding: 3px 10px 3px 6px;
+      border-radius: 16px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    /* Verification card */
+    .verify-card {
+      border-top-color: #16a34a;
+    }
+    .verify-card h2 { color: #14532d; }
+    .verify-card .section-num { background: #16a34a; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .page-header { padding: 50px 20px 28px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .content-area { padding: 20px 20px 0; }
+      .alert { margin: 16px 20px 0; }
+      .section-card { padding: 20px 18px; }
+      .spec-table td, .spec-table th { padding: 7px 10px; }
+      .header-meta { gap: 6px; }
+    }
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.2rem; }
+      .control-header { gap: 8px; }
+    }
+
+    /* ── Focus styles for accessibility ── */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #7c3aed;
+      outline-offset: 3px;
+    }
+    .hamburger:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      background: #7c3aed;
+      color: #fff;
+      padding: 10px 18px;
+      z-index: 999;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 0 0 6px 0;
+      text-decoration: none;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Mobile hamburger -->
+  <button class="hamburger" id="hamburger-btn" aria-expanded="false" aria-controls="sidebar" aria-label="Toggle navigation sidebar">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="page-wrapper">
+    <!-- ═══════════════════════════ SIDEBAR ═══════════════════════════ -->
+    <nav class="sidebar" id="sidebar" aria-label="Project navigation">
+
+      <div class="sidebar-header">
+        <div class="sidebar-course">CSC 152 &middot; Project 3</div>
+        <div class="sidebar-title">Integration 11 of 15</div>
+        <div class="sidebar-subtitle">Windows Server Hardening</div>
+      </div>
+
+      <div class="sidebar-progress" aria-label="Overall progress">
+        <div class="progress-label">
+          <span>Progress</span>
+          <span>11 / 15</span>
+        </div>
+        <div class="progress-bar-track" role="progressbar" aria-valuenow="73" aria-valuemin="0" aria-valuemax="100" aria-label="73% complete">
+          <div class="progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Document sequence -->
+      <div class="doc-sequence" aria-label="Document sequence">
+        <div class="doc-sequence-label">All Documents</div>
+
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>01 &middot; Proxmox Network Bridges</span>
+        </div>
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>02 &middot; pfSense VM Build</span>
+        </div>
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>03 &middot; Ubuntu Template + linux-server</span>
+        </div>
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>04 &middot; Windows Server dc01</span>
+        </div>
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>05 &middot; Xubuntu Template + mgmt-vm</span>
+        </div>
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>06 &middot; linux-client VM</span>
+        </div>
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>07 &middot; splunk-vm Build</span>
+        </div>
+
+        <div class="doc-seq-divider">&#8212; Integration Plans &#8212;</div>
+
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>08 &middot; pfSense Full Configuration</span>
+        </div>
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>09 &middot; Active Directory &amp; DNS</span>
+        </div>
+        <div class="doc-seq-item done">
+          <div class="doc-seq-dot"></div>
+          <span>10 &middot; Linux Server Hardening</span>
+        </div>
+        <div class="doc-seq-item current" aria-current="page">
+          <div class="doc-seq-dot"></div>
+          <span>11 &middot; Windows Server Hardening</span>
+        </div>
+        <div class="doc-seq-item">
+          <div class="doc-seq-dot"></div>
+          <span>12 &middot; Splunk Deployment</span>
+        </div>
+        <div class="doc-seq-item">
+          <div class="doc-seq-dot"></div>
+          <span>13 &middot; Linux Log Forwarder</span>
+        </div>
+        <div class="doc-seq-item">
+          <div class="doc-seq-dot"></div>
+          <span>14 &middot; Windows Log Forwarder</span>
+        </div>
+        <div class="doc-seq-item">
+          <div class="doc-seq-dot"></div>
+          <span>15 &middot; Backup Strategy</span>
+        </div>
+      </div>
+
+      <!-- Section nav -->
+      <div class="sidebar-nav" aria-label="Page sections">
+        <div class="nav-label">This Page</div>
+        <a href="#sec-rubric">Rubric Summary</a>
+        <a href="#sec-snapshot">Pre-Hardening Snapshot</a>
+        <a href="#sec-services">Control 1: Service Hardening</a>
+        <a href="#sec-firewall">Control 2: Firewall</a>
+        <a href="#sec-accounts">Control 3: Account Policies</a>
+        <a href="#sec-audit">Control 4: Audit Policies</a>
+        <a href="#sec-secopts">Control 5: Security Options</a>
+        <a href="#sec-updates">Control 6: Windows Update</a>
+        <a href="#sec-additional">Additional Controls 7&#8211;9</a>
+        <a href="#sec-verify">Verification</a>
+      </div>
+
+      <!-- Completion checklist -->
+      <div class="sidebar-checks" aria-label="Completion checklist">
+        <div class="sidebar-checks-label">Completion Checklist</div>
+
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Pre-hardening snapshot taken in Proxmox</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Before-state of running services documented</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Unnecessary services disabled</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Windows Defender Firewall enabled (all profiles)</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Default inbound: Block, Outbound: Allow</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>AD DS firewall rules added (LDAP, Kerberos, DNS, RDP)</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Splunk forwarder outbound rule added</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Password policy: 14 char min, 24 history, 60-day max</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Account lockout: 5 attempts, 30 min duration</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Audit policies enabled (Logon, Account Mgmt, Privilege Use)</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Security options configured (DontDisplayLastUser, NTLMv2, etc.)</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Automatic updates configured (daily at 3 AM)</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>SMBv1 disabled</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Event log sizes increased</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Windows Defender real-time protection confirmed enabled</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox" />
+          <span>Verification script run and output saved for submission</span>
+        </label>
+      </div>
+
+    </nav>
+    <!-- ══════════════════════════ END SIDEBAR ══════════════════════════ -->
+
+    <!-- ═══════════════════════════ MAIN ═══════════════════════════════ -->
+    <main class="main-content" id="main-content">
+
+      <!-- Page Header -->
+      <header class="page-header">
+        <div class="header-eyebrow">CSC 152 &middot; Project 3 &middot; Integration Plan 11 of 15</div>
+        <h1>Integration 11: <em>Windows Server Security Hardening</em></h1>
+        <p class="page-subtitle">
+          Apply 12+ CIS Benchmark controls to dc01 (Part A.2) &mdash;
+          document before and after state for each control
+        </p>
+        <div class="header-meta">
+          <span class="meta-badge"><strong>Server:</strong> dc01 (10.0.2.11)</span>
+          <span class="meta-badge"><strong>Rubric:</strong> Part A.2 &mdash; 13 pts</span>
+          <span class="meta-badge"><strong>CIS Ref:</strong> CIS Microsoft Windows Server 2022 Benchmark</span>
+          <span class="meta-badge"><strong>OS:</strong> Windows Server 2022</span>
+        </div>
+      </header>
+
+      <div class="alert alert-warning">
+        <span class="alert-icon" aria-hidden="true">&#9888;</span>
+        <div>
+          <strong>Take a Proxmox snapshot before making any changes.</strong>
+          If a misconfigured firewall or account policy locks you out of dc01,
+          the snapshot lets you roll back immediately. See Section 1 below.
+        </div>
+      </div>
+
+      <div class="content-area">
+
+        <!-- ── Rubric Summary ── -->
+        <section class="section-card" id="sec-rubric" aria-labelledby="rubric-heading">
+          <h2 id="rubric-heading">
+            <span class="section-num" aria-hidden="true">&#9776;</span>
+            Rubric Summary &mdash; Part A.2 (13 Points)
+          </h2>
+          <p>
+            This integration plan covers <strong>Part A.2</strong> of the Project 3 rubric.
+            You must apply a minimum of 12 distinct CIS Benchmark controls to dc01 and
+            document the before and after state for each. The table below maps rubric control
+            areas to point values.
+          </p>
+          <table class="spec-table rubric-table" aria-label="Rubric control areas and point values">
+            <thead>
+              <tr>
+                <th scope="col">Control Area</th>
+                <th scope="col">Points</th>
+                <th scope="col">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Service Hardening</td>
+                <td>2</td>
+                <td>Disable unnecessary Windows services</td>
+              </tr>
+              <tr>
+                <td>Windows Defender Firewall</td>
+                <td>2</td>
+                <td>All profiles enabled, default block inbound</td>
+              </tr>
+              <tr>
+                <td>Account Policies</td>
+                <td>3</td>
+                <td>Password policy + account lockout</td>
+              </tr>
+              <tr>
+                <td>Audit Policies</td>
+                <td>3</td>
+                <td>Advanced audit policy configuration</td>
+              </tr>
+              <tr>
+                <td>Security Options</td>
+                <td>2</td>
+                <td>Local security policy settings</td>
+              </tr>
+              <tr>
+                <td>Windows Update</td>
+                <td>1</td>
+                <td>Automatic updates configured</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>Total</td>
+                <td>13</td>
+                <td>Minimum 12 CIS controls applied across all areas</td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="note-box">
+            <strong>Note:</strong> Sections 8 (Additional Controls) documents three controls
+            beyond the required six categories &mdash; SMBv1, event log sizes, and Windows
+            Defender AV. Applying these ensures you comfortably exceed the 12-control minimum.
+          </div>
+        </section>
+
+        <!-- ── Section 1: Pre-hardening snapshot ── -->
+        <section class="section-card" id="sec-snapshot" aria-labelledby="snapshot-heading">
+          <h2 id="snapshot-heading">
+            <span class="section-num" aria-hidden="true">1</span>
+            Pre-Hardening Baseline Snapshot
+          </h2>
+          <p>
+            Before applying any changes, take a Proxmox snapshot of dc01 (VM 1003) and
+            capture the current state of all running services. This gives you a rollback
+            point and satisfies the rubric requirement to document the <em>before</em> state.
+          </p>
+
+          <h3>Step 1 &mdash; Proxmox snapshot</h3>
+          <p>In the Proxmox web UI: <strong>VM 1003 &rarr; Snapshots &rarr; Take Snapshot</strong></p>
+          <ul class="prose-list">
+            <li><strong>Name:</strong> <code>pre-hardening-baseline</code></li>
+            <li><strong>Description:</strong> Before CIS hardening (Part A.2)</li>
+            <li>Leave "Include RAM" unchecked unless the VM is powered on and you want a live snapshot.</li>
+          </ul>
+
+          <h3>Step 2 &mdash; Document current state via PowerShell</h3>
+          <p>Run this on dc01 to export a CSV of all currently running services for your submission:</p>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; dc01</div>
+            <pre><code># Take Proxmox snapshot of VM 1003 before hardening
+# In Proxmox UI: VM 1003 → Snapshots → Take Snapshot
+# Name: pre-hardening-baseline
+# Then in PowerShell — document current state:
+Get-Service | Where-Object {$_.Status -eq 'Running'} |
+  Select-Object Name, DisplayName |
+  Export-Csv "$env:USERPROFILE\before-services.csv" -NoTypeInformation</code></pre>
+          </div>
+          <div class="note-box">
+            <strong>Submission tip:</strong> Save the CSV file as
+            <code>before-services.csv</code> and include it with your project submission
+            along with an after-hardening export to demonstrate the before/after comparison.
+          </div>
+        </section>
+
+        <!-- ── Section 2: Service Hardening ── -->
+        <section class="section-card" id="sec-services" aria-labelledby="services-heading">
+          <h2 id="services-heading">
+            <span class="section-num" aria-hidden="true">2</span>
+            CIS Control 1 &mdash; Service Hardening
+          </h2>
+
+          <div class="control-header">
+            <span class="control-badge">&#9881; Control 1</span>
+            <span class="control-points">2 pts</span>
+            <span class="control-cis">CIS Level 1 &mdash; Windows Services</span>
+          </div>
+
+          <p>
+            Disable Windows services that are unnecessary on a domain controller.
+            Fewer running services means a smaller attack surface. The script below
+            checks for each service before attempting to disable it, so it is safe
+            to run even if a service is not installed.
+          </p>
+
+          <h3>Before</h3>
+          <span class="state-chip chip-before">Before</span>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; document running services</div>
+            <pre><code># Document running services
+Get-Service | Where-Object {$_.Status -eq 'Running'} | Select Name, DisplayName</code></pre>
+          </div>
+
+          <h3>Apply &mdash; Disable unnecessary services</h3>
+          <p>
+            Check each service for existence before disabling. These are common on
+            Windows Server 2022 but may not all be present depending on your install:
+          </p>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; disable unnecessary services</div>
+            <pre><code>$servicesToDisable = @(
+  "Fax",              # Fax service
+  "XblAuthManager",  # Xbox Live Auth
+  "XblGameSave",     # Xbox Live Game Save
+  "XboxNetApiSvc",   # Xbox Live Networking
+  "WMPNetworkSvc",   # Windows Media Player Network Sharing
+  "RemoteRegistry",  # Remote Registry (security risk)
+  "Browser",         # Computer Browser (deprecated)
+  "SSDPSRV",         # SSDP Discovery (UPnP)
+  "upnphost",        # UPnP Device Host
+  "WerSvc"           # Windows Error Reporting
+)
+
+foreach ($svc in $servicesToDisable) {
+  $service = Get-Service -Name $svc -ErrorAction SilentlyContinue
+  if ($service) {
+    Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
+    Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue
+    Write-Host "Disabled: $svc" -ForegroundColor Green
+  } else {
+    Write-Host "Not found: $svc" -ForegroundColor Yellow
+  }
+}</code></pre>
+          </div>
+
+          <h3>After</h3>
+          <span class="state-chip chip-after">After</span>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; verify running services</div>
+            <pre><code>Get-Service | Where-Object {$_.Status -eq 'Running'} | Select Name, DisplayName</code></pre>
+          </div>
+          <div class="note-box">
+            <strong>What to look for:</strong> The services listed in
+            <code>$servicesToDisable</code> should no longer appear in the
+            Running state. Export the after list to
+            <code>after-services.csv</code> for your submission.
+          </div>
+        </section>
+
+        <!-- ── Section 3: Firewall ── -->
+        <section class="section-card" id="sec-firewall" aria-labelledby="firewall-heading">
+          <h2 id="firewall-heading">
+            <span class="section-num" aria-hidden="true">3</span>
+            CIS Control 2 &mdash; Windows Defender Firewall
+          </h2>
+
+          <div class="control-header">
+            <span class="control-badge">&#128274; Control 2</span>
+            <span class="control-points">2 pts</span>
+            <span class="control-cis">CIS Level 1 &mdash; Firewall &amp; Network Protection</span>
+          </div>
+
+          <p>
+            Enable Windows Defender Firewall on all three profiles (Domain, Private, Public)
+            and set the default to block all inbound traffic. Then add explicit allow rules
+            for the protocols that a domain controller legitimately needs to accept.
+          </p>
+
+          <div class="alert alert-danger" style="margin: 0 0 14px 0; padding: 12px 16px;">
+            <span class="alert-icon" aria-hidden="true">&#9888;</span>
+            <div>
+              <strong>Critical:</strong> Always add the AD DS and RDP allow rules
+              <em>before</em> setting the default inbound action to Block. If you set
+              Block first and lose your RDP session, you will need to use the Proxmox console
+              to recover.
+            </div>
+          </div>
+
+          <h3>Before</h3>
+          <span class="state-chip chip-before">Before</span>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; check current firewall state</div>
+            <pre><code>Get-NetFirewallProfile | Select Name, Enabled, DefaultInboundAction, DefaultOutboundAction</code></pre>
+          </div>
+
+          <h3>Apply &mdash; Enable firewall and configure rules</h3>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; configure Windows Defender Firewall</div>
+            <pre><code># Enable firewall on all profiles
+Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
+
+# Set default inbound block, outbound allow
+Set-NetFirewallProfile -Profile Domain,Public,Private `
+  -DefaultInboundAction Block `
+  -DefaultOutboundAction Allow
+
+# Allow AD DS traffic (Domain Controller — essential)
+$adRules = @(
+  @{Name="AD-LDAP";        Port=389;  Protocol="TCP"},
+  @{Name="AD-LDAPS";       Port=636;  Protocol="TCP"},
+  @{Name="AD-Kerberos-TCP";Port=88;   Protocol="TCP"},
+  @{Name="AD-Kerberos-UDP";Port=88;   Protocol="UDP"},
+  @{Name="AD-DNS-TCP";     Port=53;   Protocol="TCP"},
+  @{Name="AD-DNS-UDP";     Port=53;   Protocol="UDP"},
+  @{Name="AD-GC";          Port=3268; Protocol="TCP"},
+  @{Name="AD-RPC";         Port=135;  Protocol="TCP"},
+  @{Name="RDP";            Port=3389; Protocol="TCP"},
+  @{Name="WinRM";          Port=5985; Protocol="TCP"}
+)
+foreach ($rule in $adRules) {
+  New-NetFirewallRule -DisplayName $rule.Name `
+    -Direction Inbound `
+    -Protocol $rule.Protocol `
+    -LocalPort $rule.Port `
+    -Action Allow `
+    -ErrorAction SilentlyContinue
+}
+
+# Allow Splunk forwarder outbound
+New-NetFirewallRule -DisplayName "Splunk-Forwarder-Out" `
+  -Direction Outbound -Protocol TCP `
+  -RemotePort 9997 -RemoteAddress 10.0.2.20 `
+  -Action Allow
+
+# Verify
+Get-NetFirewallProfile | Select Name, Enabled, DefaultInboundAction</code></pre>
+          </div>
+
+          <h3>After &mdash; Expected output</h3>
+          <span class="state-chip chip-after">After</span>
+          <table class="spec-table" aria-label="Expected firewall profile state after hardening">
+            <thead>
+              <tr>
+                <th scope="col">Profile</th>
+                <th scope="col">Enabled</th>
+                <th scope="col">DefaultInboundAction</th>
+                <th scope="col">DefaultOutboundAction</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Domain</td><td>True</td><td>Block</td><td>Allow</td></tr>
+              <tr><td>Private</td><td>True</td><td>Block</td><td>Allow</td></tr>
+              <tr><td>Public</td><td>True</td><td>Block</td><td>Allow</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- ── Section 4: Account Policies ── -->
+        <section class="section-card" id="sec-accounts" aria-labelledby="accounts-heading">
+          <h2 id="accounts-heading">
+            <span class="section-num" aria-hidden="true">4</span>
+            CIS Control 3 &mdash; Account Policies
+          </h2>
+
+          <div class="control-header">
+            <span class="control-badge">&#128100; Control 3</span>
+            <span class="control-points">3 pts</span>
+            <span class="control-cis">CIS Level 1 &mdash; Account &amp; Lockout Policy</span>
+          </div>
+
+          <p>
+            Because dc01 is the Domain Controller for <code>techstart.local</code>,
+            the account policy is set on the <strong>Default Domain Policy</strong> GPO
+            and applies to all domain accounts. Use
+            <code>Set-ADDefaultDomainPasswordPolicy</code> to configure both
+            password and lockout settings in a single command.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; configure domain password and lockout policy</div>
+            <pre><code># Configure domain password policy
+Set-ADDefaultDomainPasswordPolicy `
+  -Identity "techstart.local" `
+  -MinPasswordLength 14 `
+  -PasswordHistoryCount 24 `
+  -MaxPasswordAge (New-TimeSpan -Days 60) `
+  -MinPasswordAge (New-TimeSpan -Days 1) `
+  -ComplexityEnabled $true `
+  -ReversibleEncryptionEnabled $false `
+  -LockoutThreshold 5 `
+  -LockoutDuration (New-TimeSpan -Minutes 30) `
+  -LockoutObservationWindow (New-TimeSpan -Minutes 30)
+
+# Verify
+Get-ADDefaultDomainPasswordPolicy</code></pre>
+          </div>
+
+          <h3>Policy Settings &mdash; CIS Reference</h3>
+          <table class="spec-table policy-table" aria-label="Account policy settings and CIS recommended values">
+            <thead>
+              <tr>
+                <th scope="col">Setting</th>
+                <th scope="col">Configured Value</th>
+                <th scope="col">CIS Recommendation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Minimum Password Length</td>
+                <td>14 characters</td>
+                <td>&#10003; 14 or more</td>
+              </tr>
+              <tr>
+                <td>Password History</td>
+                <td>24 passwords</td>
+                <td>&#10003; 24 or more</td>
+              </tr>
+              <tr>
+                <td>Maximum Password Age</td>
+                <td>60 days</td>
+                <td>&#10003; 365 days or fewer</td>
+              </tr>
+              <tr>
+                <td>Minimum Password Age</td>
+                <td>1 day</td>
+                <td>&#10003; 1 day or more</td>
+              </tr>
+              <tr>
+                <td>Complexity Requirements</td>
+                <td>Enabled</td>
+                <td>&#10003; Enabled</td>
+              </tr>
+              <tr>
+                <td>Reversible Encryption</td>
+                <td>Disabled</td>
+                <td>&#10003; Disabled</td>
+              </tr>
+              <tr>
+                <td>Account Lockout Threshold</td>
+                <td>5 invalid attempts</td>
+                <td>&#10003; 5 or fewer</td>
+              </tr>
+              <tr>
+                <td>Lockout Duration</td>
+                <td>30 minutes</td>
+                <td>&#10003; 15 minutes or more</td>
+              </tr>
+              <tr>
+                <td>Lockout Observation Window</td>
+                <td>30 minutes</td>
+                <td>&#10003; 15 minutes or more</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- ── Section 5: Audit Policies ── -->
+        <section class="section-card" id="sec-audit" aria-labelledby="audit-heading">
+          <h2 id="audit-heading">
+            <span class="section-num" aria-hidden="true">5</span>
+            CIS Control 4 &mdash; Audit Policies
+          </h2>
+
+          <div class="control-header">
+            <span class="control-badge">&#128196; Control 4</span>
+            <span class="control-points">3 pts</span>
+            <span class="control-cis">CIS Level 1 &mdash; Advanced Audit Policy</span>
+          </div>
+
+          <p>
+            Advanced audit policies give granular control over which security events are
+            written to the Windows Security event log. These settings are essential for
+            Splunk to have meaningful log data. Configure them using
+            <code>auditpol</code> from an elevated PowerShell prompt.
+          </p>
+
+          <h3>Audit policy plan</h3>
+          <table class="spec-table" aria-label="Audit subcategory settings">
+            <thead>
+              <tr>
+                <th scope="col">Subcategory</th>
+                <th scope="col">Success</th>
+                <th scope="col">Failure</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Credential Validation</td><td>&#10003;</td><td>&#10003;</td></tr>
+              <tr><td>User Account Management</td><td>&#10003;</td><td>&#10003;</td></tr>
+              <tr><td>Security Group Management</td><td>&#10003;</td><td>&#10003;</td></tr>
+              <tr><td>Logon</td><td>&#10003;</td><td>&#10003;</td></tr>
+              <tr><td>Logoff</td><td>&#10003;</td><td>&mdash;</td></tr>
+              <tr><td>Special Logon</td><td>&#10003;</td><td>&mdash;</td></tr>
+              <tr><td>Account Lockout</td><td>&#10003;</td><td>&#10003;</td></tr>
+              <tr><td>Audit Policy Change</td><td>&#10003;</td><td>&#10003;</td></tr>
+              <tr><td>Sensitive Privilege Use</td><td>&#10003;</td><td>&#10003;</td></tr>
+              <tr><td>Security State Change</td><td>&#10003;</td><td>&#10003;</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Apply via auditpol</h3>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell / Command Prompt &mdash; apply audit policies</div>
+            <pre><code>auditpol /set /subcategory:"Logon" /success:enable /failure:enable
+auditpol /set /subcategory:"Logoff" /success:enable
+auditpol /set /subcategory:"Account Lockout" /success:enable /failure:enable
+auditpol /set /subcategory:"User Account Management" /success:enable /failure:enable
+auditpol /set /subcategory:"Security Group Management" /success:enable /failure:enable
+auditpol /set /subcategory:"Credential Validation" /success:enable /failure:enable
+auditpol /set /subcategory:"Audit Policy Change" /success:enable /failure:enable
+auditpol /set /subcategory:"Sensitive Privilege Use" /success:enable /failure:enable
+auditpol /set /subcategory:"Special Logon" /success:enable
+
+# Verify all categories
+auditpol /get /category:*</code></pre>
+          </div>
+          <div class="note-box">
+            <strong>Note:</strong> <code>auditpol</code> subcategory names are
+            locale-sensitive. If you receive a "No subcategory" error, run
+            <code>auditpol /list /subcategory:*</code> to see the exact names
+            used on your system.
+          </div>
+        </section>
+
+        <!-- ── Section 6: Security Options ── -->
+        <section class="section-card" id="sec-secopts" aria-labelledby="secopts-heading">
+          <h2 id="secopts-heading">
+            <span class="section-num" aria-hidden="true">6</span>
+            CIS Control 5 &mdash; Security Options
+          </h2>
+
+          <div class="control-header">
+            <span class="control-badge">&#128272; Control 5</span>
+            <span class="control-points">2 pts</span>
+            <span class="control-cis">CIS Level 1 &mdash; Local Security Policy</span>
+          </div>
+
+          <p>
+            These settings harden local security policy options that are not covered by
+            other controls. They can be applied via <code>secpol.msc</code> (Local
+            Security Policy) or directly via registry edits in PowerShell. The registry
+            approach below is repeatable and scriptable.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; apply security option registry settings</div>
+            <pre><code># Do not display last username on login screen
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" `
+  -Name "DontDisplayLastUserName" -Value 1
+
+# Require Ctrl+Alt+Del for login
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" `
+  -Name "DisableCAD" -Value 0
+
+# UAC — notify but don't dim desktop (balanced for server use)
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" `
+  -Name "ConsentPromptBehaviorAdmin" -Value 1
+
+# Disable anonymous SID/Name translation
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
+  -Name "RestrictAnonymousSAM" -Value 1
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
+  -Name "RestrictAnonymous" -Value 1
+
+# Disable LM hash storage
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
+  -Name "NoLMHash" -Value 1
+
+# Set NTLMv2 only (LmCompatibilityLevel 5)
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
+  -Name "LmCompatibilityLevel" -Value 5</code></pre>
+          </div>
+
+          <h3>Settings Reference</h3>
+          <table class="spec-table" aria-label="Security option registry settings reference">
+            <thead>
+              <tr>
+                <th scope="col">Setting</th>
+                <th scope="col">Value</th>
+                <th scope="col">Why It Matters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>DontDisplayLastUserName</td>
+                <td><code>1</code></td>
+                <td>Prevents attackers from seeing the last logged-in account name at the login screen</td>
+              </tr>
+              <tr>
+                <td>DisableCAD</td>
+                <td><code>0</code></td>
+                <td>Requires Ctrl+Alt+Del before login, preventing credential-stealing spoofed login screens</td>
+              </tr>
+              <tr>
+                <td>ConsentPromptBehaviorAdmin</td>
+                <td><code>1</code></td>
+                <td>UAC prompts for credentials on the secure desktop for admin actions</td>
+              </tr>
+              <tr>
+                <td>RestrictAnonymousSAM / RestrictAnonymous</td>
+                <td><code>1</code></td>
+                <td>Blocks unauthenticated enumeration of SAM accounts and shares</td>
+              </tr>
+              <tr>
+                <td>NoLMHash</td>
+                <td><code>1</code></td>
+                <td>Stops Windows from storing the weak LAN Manager password hash</td>
+              </tr>
+              <tr>
+                <td>LmCompatibilityLevel</td>
+                <td><code>5</code></td>
+                <td>Accept only NTLMv2 responses; refuse LM and NTLM. Mitigates pass-the-hash attacks.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- ── Section 7: Windows Update ── -->
+        <section class="section-card" id="sec-updates" aria-labelledby="updates-heading">
+          <h2 id="updates-heading">
+            <span class="section-num" aria-hidden="true">7</span>
+            CIS Control 6 &mdash; Windows Update
+          </h2>
+
+          <div class="control-header">
+            <span class="control-badge">&#128257; Control 6</span>
+            <span class="control-points">1 pt</span>
+            <span class="control-cis">CIS Level 1 &mdash; Patch Management</span>
+          </div>
+
+          <p>
+            Configure Windows Update to automatically download and install patches.
+            Because this lab environment does not use WSUS, the registry settings below
+            point directly at Microsoft Update and schedule installs daily at 3&nbsp;AM.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; configure automatic updates</div>
+            <pre><code># Configure automatic updates via registry (WSUS-free, direct Microsoft Update)
+$wuPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
+New-Item -Path $wuPath -Force | Out-Null
+Set-ItemProperty -Path $wuPath -Name "NoAutoUpdate"         -Value 0
+Set-ItemProperty -Path $wuPath -Name "AUOptions"            -Value 4  # 4 = auto download and schedule install
+Set-ItemProperty -Path $wuPath -Name "ScheduledInstallDay"  -Value 0  # 0 = every day
+Set-ItemProperty -Path $wuPath -Name "ScheduledInstallTime" -Value 3  # 3 AM
+
+# Verify current update status
+Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 10</code></pre>
+          </div>
+
+          <h3>AUOptions values reference</h3>
+          <table class="spec-table" aria-label="AUOptions registry values">
+            <thead>
+              <tr>
+                <th scope="col">Value</th>
+                <th scope="col">Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>2</code></td><td>Notify before download</td></tr>
+              <tr><td><code>3</code></td><td>Auto download, notify before install</td></tr>
+              <tr><td><code>4</code></td><td>Auto download and schedule install (recommended)</td></tr>
+              <tr><td><code>5</code></td><td>Let local admin choose</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- ── Section 8: Additional Controls ── -->
+        <section class="section-card additional-card" id="sec-additional" aria-labelledby="additional-heading">
+          <h2 id="additional-heading">
+            <span class="section-num" aria-hidden="true">+</span>
+            Additional Controls Beyond Required 6 Categories
+          </h2>
+
+          <p>
+            The three controls below are not in the rubric's six named categories, but
+            they each address a distinct CIS Benchmark recommendation. Applying them
+            ensures you exceed the 12-control minimum and adds real security value to dc01.
+          </p>
+
+          <!-- Control 7: SMBv1 -->
+          <h3>Control 7 &mdash; Disable SMBv1</h3>
+          <div class="control-header">
+            <span class="additional-badge">&#128274; Control 7</span>
+            <span class="control-cis">CIS &mdash; SMB Protocol Hardening</span>
+          </div>
+          <p>
+            SMBv1 is the protocol exploited by <strong>WannaCry</strong>, NotPetya, and
+            EternalBlue. It has been disabled by default in modern Windows Server builds,
+            but explicitly disabling it via configuration ensures it cannot be re-enabled
+            accidentally.
+          </p>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; disable SMBv1</div>
+            <pre><code># Disable SMBv1
+Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
+
+# Verify
+Get-SmbServerConfiguration | Select EnableSMB1Protocol</code></pre>
+          </div>
+          <p>Expected output: <code>EnableSMB1Protocol : False</code></p>
+
+          <!-- Control 8: Event logs -->
+          <h3>Control 8 &mdash; Configure Event Log Sizes</h3>
+          <div class="control-header">
+            <span class="additional-badge">&#128196; Control 8</span>
+            <span class="control-cis">CIS &mdash; Event Log Management</span>
+          </div>
+          <p>
+            The default Security event log size is too small for an active domain
+            controller. Increasing log capacity prevents security events from being
+            overwritten before Splunk can forward them.
+          </p>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; increase event log sizes</div>
+            <pre><code># Increase security log to hold more events
+Limit-EventLog -LogName Security    -MaximumSize 512MB -OverflowAction OverwriteOlder
+Limit-EventLog -LogName System      -MaximumSize 128MB -OverflowAction OverwriteOlder
+Limit-EventLog -LogName Application -MaximumSize 128MB -OverflowAction OverwriteOlder</code></pre>
+          </div>
+
+          <!-- Control 9: Windows Defender -->
+          <h3>Control 9 &mdash; Windows Defender Antivirus</h3>
+          <div class="control-header">
+            <span class="additional-badge">&#128737; Control 9</span>
+            <span class="control-cis">CIS &mdash; Antivirus / Endpoint Protection</span>
+          </div>
+          <p>
+            Confirm that Windows Defender real-time protection is running and ensure
+            it has not been disabled. On Windows Server 2022, Defender is the built-in
+            antivirus and should be active by default.
+          </p>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; verify and enable Windows Defender</div>
+            <pre><code>Get-MpComputerStatus | Select AMRunningMode, RealTimeProtectionEnabled, AntivirusEnabled
+
+# Ensure real-time monitoring is on
+Set-MpPreference -DisableRealtimeMonitoring $false</code></pre>
+          </div>
+          <p>Expected: <code>RealTimeProtectionEnabled : True</code> and <code>AntivirusEnabled : True</code></p>
+        </section>
+
+        <!-- ── Section 9: Verification ── -->
+        <section class="section-card verify-card" id="sec-verify" aria-labelledby="verify-heading">
+          <h2 id="verify-heading">
+            <span class="section-num" aria-hidden="true">&#10003;</span>
+            Verification &mdash; Confirm All Controls Applied
+          </h2>
+
+          <p>
+            Run the comprehensive verification script below after completing all controls.
+            Save the output to a text file and include it with your submission to demonstrate
+            the post-hardening state.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; comprehensive verification</div>
+            <pre><code>Write-Host "=== Firewall Status ===" -ForegroundColor Cyan
+Get-NetFirewallProfile | Select Name, Enabled, DefaultInboundAction
+
+Write-Host "`n=== Password Policy ===" -ForegroundColor Cyan
+Get-ADDefaultDomainPasswordPolicy | Select MinPasswordLength, PasswordHistoryCount, LockoutThreshold
+
+Write-Host "`n=== Audit Policies ===" -ForegroundColor Cyan
+auditpol /get /subcategory:"Logon","Account Lockout","Credential Validation"
+
+Write-Host "`n=== SMBv1 Status ===" -ForegroundColor Cyan
+Get-SmbServerConfiguration | Select EnableSMB1Protocol
+
+Write-Host "`n=== Windows Defender ===" -ForegroundColor Cyan
+Get-MpComputerStatus | Select RealTimeProtectionEnabled</code></pre>
+          </div>
+
+          <h3>Save output for submission</h3>
+          <div class="code-block">
+            <div class="code-block-label">PowerShell &mdash; capture all verification output to file</div>
+            <pre><code># Run the verification block and save output
+$outFile = "$env:USERPROFILE\dc01-hardening-verification.txt"
+& {
+  Write-Output "=== Firewall Status ==="
+  Get-NetFirewallProfile | Select Name, Enabled, DefaultInboundAction | Out-String
+
+  Write-Output "`n=== Password Policy ==="
+  Get-ADDefaultDomainPasswordPolicy |
+    Select MinPasswordLength, PasswordHistoryCount, LockoutThreshold | Out-String
+
+  Write-Output "`n=== Audit Policies ==="
+  auditpol /get /subcategory:"Logon","Account Lockout","Credential Validation"
+
+  Write-Output "`n=== SMBv1 Status ==="
+  Get-SmbServerConfiguration | Select EnableSMB1Protocol | Out-String
+
+  Write-Output "`n=== Windows Defender ==="
+  Get-MpComputerStatus | Select RealTimeProtectionEnabled | Out-String
+} | Out-File $outFile -Encoding UTF8
+
+Write-Host "Verification saved to: $outFile" -ForegroundColor Green</code></pre>
+          </div>
+
+          <h3>Controls summary</h3>
+          <table class="spec-table" aria-label="Summary of all 9 applied controls">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Control</th>
+                <th scope="col">Category</th>
+                <th scope="col">Rubric Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>Disable unnecessary services</td><td>Service Hardening</td><td>2</td></tr>
+              <tr><td>2</td><td>Enable firewall, default block inbound</td><td>Windows Defender Firewall</td><td>2</td></tr>
+              <tr><td>3</td><td>AD DS &amp; RDP allow rules</td><td>Windows Defender Firewall</td><td>(included above)</td></tr>
+              <tr><td>4</td><td>Domain password policy (14 char, 24 history, 60-day max)</td><td>Account Policies</td><td>3</td></tr>
+              <tr><td>5</td><td>Account lockout (5 attempts, 30 min)</td><td>Account Policies</td><td>(included above)</td></tr>
+              <tr><td>6</td><td>Advanced audit policies (10 subcategories)</td><td>Audit Policies</td><td>3</td></tr>
+              <tr><td>7</td><td>Security options (DontDisplayLastUser, NTLMv2, no LM hash)</td><td>Security Options</td><td>2</td></tr>
+              <tr><td>8</td><td>Automatic updates (daily at 3 AM)</td><td>Windows Update</td><td>1</td></tr>
+              <tr><td>9</td><td>Disable SMBv1</td><td>Additional</td><td>&mdash;</td></tr>
+              <tr><td>10</td><td>Increase event log sizes</td><td>Additional</td><td>&mdash;</td></tr>
+              <tr><td>11</td><td>Confirm Windows Defender real-time protection</td><td>Additional</td><td>&mdash;</td></tr>
+              <tr><td>12</td><td>Splunk forwarder outbound firewall rule</td><td>Additional</td><td>&mdash;</td></tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2">Total Rubric Points</td>
+                <td>13 / 13</td>
+                <td>12+ CIS controls applied &#10003;</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="note-box">
+            <strong>Submission checklist:</strong> Include these files with your Project 3 submission:
+            <ul class="prose-list" style="margin-top: 8px;">
+              <li><code>before-services.csv</code> &mdash; running services before hardening</li>
+              <li><code>after-services.csv</code> &mdash; running services after hardening</li>
+              <li><code>dc01-hardening-verification.txt</code> &mdash; full verification output</li>
+              <li>Screenshots of the Proxmox snapshot taken before changes</li>
+            </ul>
+          </div>
+        </section>
+
+      </div><!-- /.content-area -->
+    </main>
+    <!-- ════════════════════════ END MAIN ═══════════════════════════════ -->
+  </div><!-- /.page-wrapper -->
+
+  <script>
+    'use strict';
+
+    // ── Mobile sidebar toggle ──────────────────────────────────────────
+    const hamburger = document.getElementById('hamburger-btn');
+    const sidebar   = document.getElementById('sidebar');
+    const overlay   = document.getElementById('sidebar-overlay');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      hamburger.setAttribute('aria-expanded', 'true');
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+
+    hamburger.addEventListener('click', () => {
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+    });
+
+    // ── Active nav link on scroll ──────────────────────────────────────
+    const navLinks = document.querySelectorAll('.sidebar-nav a[href^="#"]');
+    const sections = Array.from(navLinks)
+      .map(link => document.querySelector(link.getAttribute('href')))
+      .filter(Boolean);
+
+    function updateActiveNav() {
+      let current = null;
+      const scrollY = window.scrollY + 80;
+      sections.forEach(section => {
+        if (section.offsetTop <= scrollY) current = section;
+      });
+      navLinks.forEach(link => {
+        const target = document.querySelector(link.getAttribute('href'));
+        link.classList.toggle('active', target === current);
+      });
+    }
+
+    window.addEventListener('scroll', updateActiveNav, { passive: true });
+    updateActiveNav();
+
+    // ── Checklist persistence (session-only via JS state) ─────────────
+    const checkItems = document.querySelectorAll('.check-item input[type="checkbox"]');
+    checkItems.forEach(cb => {
+      cb.addEventListener('change', () => {
+        cb.closest('.check-item').classList.toggle('checked', cb.checked);
+      });
+    });
+  </script>
+</body>
+</html>

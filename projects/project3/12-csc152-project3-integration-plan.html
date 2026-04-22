@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration 12: Splunk Enterprise Deployment | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a2332;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #d0d8e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      background: #0a1520;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #7c3aed;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8a9bb0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 12px 18px;
+      background: #0f2235;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-label span:last-child { color: #a78bfa; font-weight: 700; }
+    .progress-bar-track {
+      background: #0d1b2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      padding: 6px 0 2px;
+      letter-spacing: 0.5px;
+      border-top: 1px solid #1a3350;
+      margin-top: 4px;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a7f94;
+      line-height: 1.4;
+    }
+    .doc-seq-item.current { color: #a78bfa; font-weight: 700; }
+    .doc-seq-item.done { color: #20c997; }
+    .doc-seq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a3d50;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #7c3aed; }
+    .doc-seq-item.done .doc-seq-dot { background: #20c997; }
+
+    /* Section nav */
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.77rem;
+      color: #8a9bb0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: rgba(124,58,237,0.14);
+      border-left-color: #7c3aed;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px;
+      border-top: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.73rem;
+      color: #9aacbc;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #7c3aed;
+      flex-shrink: 0;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .check-item.checked { color: #20c997; text-decoration: line-through; }
+
+    /* ── Hamburger (mobile only) ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: #0d1b2a;
+      border: 2px solid #7c3aed;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #a78bfa;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+    }
+
+    /* ── Main Content ── */
+    .main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a0a3e 55%, #2d1a6e 100%);
+      color: white;
+      padding: 40px 48px 36px;
+      border-bottom: 4px solid #7c3aed;
+    }
+    .header-eyebrow {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .page-header h1 em {
+      color: #a78bfa;
+      font-style: normal;
+    }
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(124,58,237,0.22);
+      border: 1px solid rgba(167,139,250,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #c4b5fd;
+    }
+    .meta-badge strong { color: #ffffff; }
+
+    /* Alerts */
+    .alert {
+      margin: 0 48px 0;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .alert-info {
+      background: #ede9fe;
+      border-left: 5px solid #7c3aed;
+      color: #3b1f7a;
+    }
+    .alert-warning {
+      background: #fff8e1;
+      border-left: 5px solid #f59e0b;
+      color: #7c4a00;
+    }
+    .alert-danger {
+      background: #fef2f2;
+      border-left: 5px solid #dc2626;
+      color: #7f1d1d;
+    }
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Content area */
+    .content-area { padding: 32px 48px 0; }
+
+    /* Section cards */
+    .section-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #7c3aed;
+      scroll-margin-top: 24px;
+    }
+    .section-card h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-card p { color: #3a4a5a; font-size: 0.92rem; margin-bottom: 12px; }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    /* Sub-headings within sections */
+    .section-card h3 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1a2332;
+      margin: 20px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e8edf2;
+    }
+    .section-card h3:first-of-type { margin-top: 16px; }
+
+    /* Prose lists */
+    .prose-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .prose-list li {
+      position: relative;
+      padding: 4px 0 4px 20px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .prose-list li::before {
+      content: '&#9658;';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-size: 0.7rem;
+      top: 7px;
+    }
+    .prose-list li strong { color: #0d1b2a; }
+
+    /* Tables */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 14px 0;
+    }
+    .spec-table th {
+      background: #0d1b2a;
+      color: #a78bfa;
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .spec-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+      vertical-align: top;
+    }
+    .spec-table tr:last-child td { border-bottom: none; }
+    .spec-table tr:nth-child(even) td { background: #f7f9fc; }
+    .spec-table td:first-child { font-weight: 600; color: #0d1b2a; }
+    .spec-table tfoot td {
+      background: #f0ebff;
+      font-weight: 700;
+      color: #3b1f7a;
+      border-top: 2px solid #7c3aed;
+    }
+
+    /* Rubric table variant */
+    .rubric-table td:nth-child(2) {
+      text-align: center;
+      font-weight: 700;
+      color: #7c3aed;
+    }
+    .rubric-table tfoot td:nth-child(2) {
+      color: #7c3aed;
+      font-size: 1.05rem;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .code-block pre { margin: 0; }
+    .code-block pre code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* Inline code */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      background: #ede9fe;
+      color: #5b21b6;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .code-block code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+    /* Note box */
+    .note-box {
+      background: #f5f3ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #3b1f7a;
+    }
+    .note-box strong { color: #0d1b2a; }
+
+    /* Step list */
+    .step-list {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0;
+      counter-reset: steps;
+    }
+    .step-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 6px 0;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+      counter-increment: steps;
+    }
+    .step-list li::before {
+      content: counter(steps);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      border-radius: 50%;
+      background: #ede9fe;
+      color: #7c3aed;
+      font-size: 0.72rem;
+      font-weight: 800;
+      margin-top: 1px;
+    }
+
+    /* UI step list (dashes for UI clicks) */
+    .ui-steps {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px 0;
+    }
+    .ui-steps li {
+      position: relative;
+      padding: 4px 0 4px 22px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .ui-steps li::before {
+      content: '&#10142;';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-size: 0.78rem;
+      top: 6px;
+    }
+
+    /* Splunk SPL comment highlighting */
+    .spl-comment { color: #94a3b8; }
+
+    /* Method tabs */
+    .method-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 0;
+      border-bottom: 2px solid #e8edf2;
+    }
+    .method-tab {
+      background: none;
+      border: none;
+      padding: 7px 16px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #6a7f94;
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .method-tab:hover { color: #7c3aed; background: #f5f3ff; }
+    .method-tab[aria-selected="true"] {
+      color: #7c3aed;
+      background: #f5f3ff;
+      border-color: #e8edf2;
+      border-bottom-color: #f5f3ff;
+      margin-bottom: -2px;
+    }
+    .method-panel { display: none; background: #f5f3ff; border-radius: 0 6px 6px 6px; padding: 16px; border: 1px solid #e8edf2; }
+    .method-panel.active { display: block; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .page-header { padding: 50px 20px 28px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .content-area { padding: 20px 20px 0; }
+      .alert { margin: 0 20px 0; }
+      .section-card { padding: 20px 18px; }
+      .spec-table td, .spec-table th { padding: 7px 10px; }
+      .header-meta { gap: 6px; }
+    }
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.2rem; }
+    }
+
+    /* ── Focus styles for accessibility ── */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #7c3aed;
+      outline-offset: 3px;
+    }
+    .hamburger:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      background: #7c3aed;
+      color: #fff;
+      padding: 10px 18px;
+      z-index: 999;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 0 0 6px 0;
+      text-decoration: none;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="page-wrapper">
+
+  <!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
+  <nav class="sidebar" id="sidebar" aria-label="Integration guide navigation">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-course">CSC 152 &middot; Project 3</div>
+      <div class="sidebar-title">Integration 12 of 15</div>
+      <div class="sidebar-subtitle">Splunk Deployment</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="sidebar-progress" aria-label="Checklist progress">
+      <div class="progress-label">
+        <span>Checklist Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Doc sequence -->
+    <div class="doc-sequence" aria-label="Document sequence">
+      <div class="doc-sequence-label">Build Sequence</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>01 &middot; Proxmox Network Bridges</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>02 &middot; pfSense VM Build</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>03 &middot; Ubuntu Template + linux-server</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>04 &middot; Windows Server dc01</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>05 &middot; Xubuntu Template + mgmt-vm</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>06 &middot; linux-client VM</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>07 &middot; splunk-vm Build</div>
+
+      <div class="doc-seq-divider">&#8212;&#8212; Integration Plans &#8212;&#8212;</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>08 &middot; pfSense Full Configuration</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>09 &middot; Active Directory &amp; DNS</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>10 &middot; Linux Server Hardening</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>11 &middot; Windows Server Hardening</div>
+      <div class="doc-seq-item current" aria-current="page"><span class="doc-seq-dot"></span>12 &middot; Splunk Deployment</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>13 &middot; Linux Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>14 &middot; Windows Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>15 &middot; Backup Strategy</div>
+    </div>
+
+    <!-- Section nav -->
+    <div class="sidebar-nav">
+      <div class="nav-label">Sections</div>
+      <a href="#rubric">Rubric Summary</a>
+      <a href="#s1-download">1 &middot; Download Splunk</a>
+      <a href="#s2-install">2 &middot; Install Splunk</a>
+      <a href="#s3-webui">3 &middot; Access Web Interface</a>
+      <a href="#s4-receiving">4 &middot; Configure Port 9997</a>
+      <a href="#s5-indexes">5 &middot; Create Indexes</a>
+      <a href="#s6-addons">6 &middot; Install Add-ons</a>
+      <a href="#s7-auth-dash">7 &middot; Authentication Dashboard</a>
+      <a href="#s8-sys-dash">8 &middot; System Events Dashboard</a>
+      <a href="#s9-alerts">9 &middot; Security Alerts</a>
+      <a href="#s10-verify">10 &middot; Verify Setup</a>
+    </div>
+
+    <!-- Checklist -->
+    <div class="sidebar-checks">
+      <div class="sidebar-checks-label">Deployment Checklist</div>
+
+      <label class="check-item" id="ck-label-0">
+        <input type="checkbox" id="ck0" aria-label="Splunk Enterprise downloaded (free Splunk account created)" />
+        <span>Splunk Enterprise downloaded (free account created)</span>
+      </label>
+      <label class="check-item" id="ck-label-1">
+        <input type="checkbox" id="ck1" aria-label="Splunk installed on splunk-vm (dpkg -i)" />
+        <span>Splunk installed on splunk-vm (dpkg -i)</span>
+      </label>
+      <label class="check-item" id="ck-label-2">
+        <input type="checkbox" id="ck2" aria-label="Splunk started and admin credentials set" />
+        <span>Splunk started and admin credentials set</span>
+      </label>
+      <label class="check-item" id="ck-label-3">
+        <input type="checkbox" id="ck3" aria-label="Boot-start enabled (splunk user)" />
+        <span>Boot-start enabled (splunk user)</span>
+      </label>
+      <label class="check-item" id="ck-label-4">
+        <input type="checkbox" id="ck4" aria-label="Splunk web accessible at http://10.0.2.20:8000" />
+        <span>Splunk web accessible at http://10.0.2.20:8000</span>
+      </label>
+      <label class="check-item" id="ck-label-5">
+        <input type="checkbox" id="ck5" aria-label="Receiving port 9997 configured" />
+        <span>Receiving port 9997 configured</span>
+      </label>
+      <label class="check-item" id="ck-label-6">
+        <input type="checkbox" id="ck6" aria-label="linux_logs index created (10 GB max)" />
+        <span>linux_logs index created (10 GB max)</span>
+      </label>
+      <label class="check-item" id="ck-label-7">
+        <input type="checkbox" id="ck7" aria-label="windows_logs index created (10 GB max)" />
+        <span>windows_logs index created (10 GB max)</span>
+      </label>
+      <label class="check-item" id="ck-label-8">
+        <input type="checkbox" id="ck8" aria-label="firewall_logs index created (5 GB max)" />
+        <span>firewall_logs index created (5 GB max)</span>
+      </label>
+      <label class="check-item" id="ck-label-9">
+        <input type="checkbox" id="ck9" aria-label="Splunk Add-on for Unix and Linux installed" />
+        <span>Splunk Add-on for Unix and Linux installed</span>
+      </label>
+      <label class="check-item" id="ck-label-10">
+        <input type="checkbox" id="ck10" aria-label="Splunk Add-on for Microsoft Windows installed" />
+        <span>Splunk Add-on for Microsoft Windows installed</span>
+      </label>
+      <label class="check-item" id="ck-label-11">
+        <input type="checkbox" id="ck11" aria-label="Authentication Events dashboard created (4 panels)" />
+        <span>Authentication Events dashboard created (4 panels)</span>
+      </label>
+      <label class="check-item" id="ck-label-12">
+        <input type="checkbox" id="ck12" aria-label="System Events dashboard created (3 panels)" />
+        <span>System Events dashboard created (3 panels)</span>
+      </label>
+      <label class="check-item" id="ck-label-13">
+        <input type="checkbox" id="ck13" aria-label="Multiple Failed Logins alert configured" />
+        <span>&ldquo;Multiple Failed Logins&rdquo; alert configured</span>
+      </label>
+      <label class="check-item" id="ck-label-14">
+        <input type="checkbox" id="ck14" aria-label="After-Hours Login alert configured" />
+        <span>&ldquo;After-Hours Login&rdquo; alert configured</span>
+      </label>
+      <label class="check-item" id="ck-label-15">
+        <input type="checkbox" id="ck15" aria-label="Splunk status verified (no critical errors)" />
+        <span>Splunk status verified (no critical errors)</span>
+      </label>
+    </div>
+
+  </nav>
+  <!-- end sidebar -->
+
+  <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
+  <main class="main-content" id="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-eyebrow">CSC 152 &middot; Project 3 &middot; Integration 12 of 15</div>
+      <h1>Integration 12: Splunk Enterprise <em>Deployment</em></h1>
+      <p class="page-subtitle">
+        Install Splunk on splunk-vm, configure indexes and add-ons, build security dashboards and alerts (Part B &mdash; 20 pts)
+      </p>
+      <div class="header-meta" aria-label="Assignment specifications">
+        <div class="meta-badge"><strong>Server:</strong> splunk-vm (10.0.2.20)</div>
+        <div class="meta-badge"><strong>Web Port:</strong> 8000</div>
+        <div class="meta-badge"><strong>Forwarder Input:</strong> Port 9997</div>
+        <div class="meta-badge"><strong>OS:</strong> Ubuntu Server 22.04 LTS</div>
+        <div class="meta-badge"><strong>Rubric:</strong> Part B &mdash; 20 pts</div>
+      </div>
+    </header>
+
+    <!-- Top alert -->
+    <div class="alert alert-info" role="note" style="margin-top: 20px;">
+      <span class="alert-icon" aria-hidden="true">&#8505;</span>
+      <div>
+        <strong>Splunk Free vs. Trial:</strong> Splunk Enterprise starts as a 60-day free trial with no data limit. After the trial expires it automatically converts to <strong>Splunk Free</strong>, which limits indexing to <strong>500 MB/day</strong>. For this lab the Free limit is more than sufficient.
+      </div>
+    </div>
+
+    <!-- ─── Content Area ─── -->
+    <div class="content-area">
+
+      <!-- ══ Section: Rubric ══ -->
+      <section class="section-card" id="rubric" aria-labelledby="h-rubric">
+        <h2 id="h-rubric"><span class="section-num" aria-hidden="true">&#10003;</span> Part B Rubric Summary</h2>
+        <p>This integration plan covers all Part B tasks. The table below maps each task to its point value. Complete every item and document your work with screenshots or terminal output for submission.</p>
+
+        <table class="spec-table rubric-table" aria-label="Part B rubric by task">
+          <thead>
+            <tr>
+              <th scope="col">Task</th>
+              <th scope="col">Points</th>
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>B.1: Download &amp; Install Splunk</td>
+              <td>3</td>
+              <td>Install Splunk Enterprise on splunk-vm</td>
+            </tr>
+            <tr>
+              <td>B.1: Initial Configuration</td>
+              <td>2</td>
+              <td>Setup wizard, admin password</td>
+            </tr>
+            <tr>
+              <td>B.1: Index Structure</td>
+              <td>1</td>
+              <td>Create linux_logs, windows_logs, firewall_logs indexes</td>
+            </tr>
+            <tr>
+              <td>B.1: Receiving Configuration</td>
+              <td>1</td>
+              <td>Configure port 9997 for forwarder input</td>
+            </tr>
+            <tr>
+              <td>B.1: Add-ons Installation</td>
+              <td>1</td>
+              <td>Install Unix and Windows add-ons</td>
+            </tr>
+            <tr>
+              <td>B.2: Authentication Dashboard</td>
+              <td>4</td>
+              <td>Failed logins, successful logins by user</td>
+            </tr>
+            <tr>
+              <td>B.2: System Events Dashboard</td>
+              <td>4</td>
+              <td>Service changes, system errors</td>
+            </tr>
+            <tr>
+              <td>B.2: Security Alerts</td>
+              <td>4</td>
+              <td>2 configured alerts (brute force, after-hours)</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>Total B</td>
+              <td>20</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+
+      <!-- ══ Section 1: Download ══ -->
+      <section class="section-card" id="s1-download" aria-labelledby="h-s1">
+        <h2 id="h-s1"><span class="section-num" aria-hidden="true">1</span> Download Splunk Enterprise</h2>
+        <p>SSH into <strong>splunk-vm</strong> (10.0.2.20) and download the Splunk Enterprise installer package.</p>
+
+        <div class="code-block" role="region" aria-label="Download Splunk command block">
+          <div class="code-block-label">bash &mdash; splunk-vm</div>
+          <pre><code># Create downloads directory
+mkdir -p ~/splunk-install && cd ~/splunk-install
+
+# Download Splunk Enterprise 9.x for Linux (64-bit DEB)
+# Get the latest download URL from: splunk.com/en_us/download/splunk-enterprise.html
+# You need a free Splunk account. After logging in, get the wget link.
+# Example command (URL will vary — get current version from splunk.com):
+wget -O splunk-9.x.x-linux-amd64.deb \
+  'https://download.splunk.com/products/splunk/releases/9.x.x/linux/splunk-9.x.x-linux-amd64.deb'
+
+# Verify download
+ls -lh splunk-*.deb</code></pre>
+        </div>
+
+        <div class="alert alert-info" role="note" style="margin: 0 0 0 0;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Free Splunk account required:</strong> You must create a free account at <strong>splunk.com</strong> to download Splunk Enterprise. After logging in, navigate to the download page and copy the <code>wget</code> link for the latest Linux 64-bit <code>.deb</code> package. Your Splunk account also gives you access to Splunk's free training courses (Splunk Fundamentals 1 is excellent).
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Section 2: Install ══ -->
+      <section class="section-card" id="s2-install" aria-labelledby="h-s2">
+        <h2 id="h-s2"><span class="section-num" aria-hidden="true">2</span> Install Splunk Enterprise</h2>
+        <p>Install the downloaded <code>.deb</code> package, accept the license, set admin credentials, and configure Splunk to start automatically on boot.</p>
+
+        <div class="code-block" role="region" aria-label="Install Splunk command block">
+          <div class="code-block-label">bash &mdash; splunk-vm</div>
+          <pre><code># Install (Ubuntu/Debian)
+sudo dpkg -i splunk-9.x.x-linux-amd64.deb
+
+# Start Splunk and accept the license
+sudo /opt/splunk/bin/splunk start --accept-license
+
+# You will be prompted to create an admin username and password
+# Username: admin
+# Password: (use a strong password, at least 8 chars with mixed case and numbers)
+
+# Enable Splunk to start on boot
+sudo /opt/splunk/bin/splunk enable boot-start -user splunk
+
+# Check Splunk status
+sudo /opt/splunk/bin/splunk status</code></pre>
+        </div>
+
+        <h3>Expected Output After Start</h3>
+        <p>If Splunk starts successfully you will see output similar to the following:</p>
+
+        <div class="code-block" role="region" aria-label="Expected Splunk startup output">
+          <div class="code-block-label">expected output</div>
+          <pre><code>Splunk&gt; Take the sh out of IT.
+
+Checking prerequisites...
+  Checking http port [8000]: open
+  Checking mgmt port [8089]: open
+  ...
+Done.
+All preliminary checks passed.
+
+Starting splunk server daemon (splunkd)...
+Done.</code></pre>
+        </div>
+
+        <div class="note-box" role="note">
+          <strong>Admin password rules:</strong> Splunk requires a password of at least 8 characters containing uppercase letters, lowercase letters, and numbers. Choose a password you will remember &mdash; you will use it throughout the remaining integration plans.
+        </div>
+      </section>
+
+      <!-- ══ Section 3: Web UI ══ -->
+      <section class="section-card" id="s3-webui" aria-labelledby="h-s3">
+        <h2 id="h-s3"><span class="section-num" aria-hidden="true">3</span> Access the Web Interface</h2>
+        <p>The Splunk web interface is accessible from any VM that has firewall access to <strong>10.0.2.20:8000</strong>. Use mgmt-vm's Firefox browser for the best experience.</p>
+
+        <ul class="prose-list" aria-label="Steps to access Splunk web">
+          <li>Open Firefox on <strong>mgmt-vm</strong> (or any VM with access to the 10.0.2.x network)</li>
+          <li>Navigate to: <strong>http://10.0.2.20:8000</strong></li>
+          <li>Login with username <code>admin</code> and the password you set during installation</li>
+          <li>The Splunk Home page loads, showing the search bar and app launcher</li>
+        </ul>
+
+        <div class="note-box" role="note">
+          <strong>What you should see:</strong> After login, the Splunk Home page displays the Search &amp; Reporting app icon, a search bar, and navigation menus at the top: <em>Search &amp; Reporting</em>, <em>Settings</em>, and <em>Apps</em>. The home page may also display a "Getting Started" tour prompt &mdash; you can dismiss it.
+        </div>
+
+        <div class="alert alert-warning" role="alert" style="margin: 14px 0 0 0;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Do NOT enable Splunk SSL on port 8000 yet.</strong> Leave it as HTTP for the lab environment. Enabling HTTPS requires certificate management that is beyond the scope of this project. Changing to HTTPS mid-lab will break the forwarder configurations in Integration Plans 13 and 14.
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Section 4: Receiving Port ══ -->
+      <section class="section-card" id="s4-receiving" aria-labelledby="h-s4">
+        <h2 id="h-s4"><span class="section-num" aria-hidden="true">4</span> Configure Receiving Port (9997)</h2>
+        <p>Port 9997 is the standard Splunk receiving port. Universal Forwarders installed on linux-server and dc01 (Integration Plans 13 &amp; 14) will send logs to this port.</p>
+
+        <div class="method-tabs" role="tablist" aria-label="Configuration method">
+          <button class="method-tab" role="tab" aria-selected="true" aria-controls="tab-recv-cli" id="tab-recv-cli-btn">CLI Method</button>
+          <button class="method-tab" role="tab" aria-selected="false" aria-controls="tab-recv-ui" id="tab-recv-ui-btn">Web UI Method</button>
+        </div>
+        <div class="method-panel active" id="tab-recv-cli" role="tabpanel" aria-labelledby="tab-recv-cli-btn">
+          <div class="code-block" role="region" aria-label="Configure receiving port via CLI">
+            <div class="code-block-label">bash &mdash; splunk-vm</div>
+            <pre><code># Enable Splunk to receive data from forwarders on port 9997
+sudo /opt/splunk/bin/splunk enable listen 9997 -auth admin:yourpassword
+
+# Verify receiver is configured
+sudo /opt/splunk/bin/splunk list receiver -auth admin:yourpassword</code></pre>
+          </div>
+        </div>
+        <div class="method-panel" id="tab-recv-ui" role="tabpanel" aria-labelledby="tab-recv-ui-btn">
+          <ul class="ui-steps">
+            <li>In Splunk Web, click <strong>Settings</strong> in the top navigation bar</li>
+            <li>Click <strong>Forwarding and receiving</strong></li>
+            <li>Under <em>Receive data</em>, click <strong>Configure receiving</strong></li>
+            <li>Click <strong>New Receiving Port</strong></li>
+            <li>Enter port <strong>9997</strong> and click <strong>Save</strong></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ══ Section 5: Indexes ══ -->
+      <section class="section-card" id="s5-indexes" aria-labelledby="h-s5">
+        <h2 id="h-s5"><span class="section-num" aria-hidden="true">5</span> Create Indexes</h2>
+        <p>Create three dedicated indexes to keep log sources organized and searchable. Using separate indexes makes queries faster and access control simpler.</p>
+
+        <table class="spec-table" aria-label="Index definitions">
+          <thead>
+            <tr>
+              <th scope="col">Index Name</th>
+              <th scope="col">Purpose</th>
+              <th scope="col">Max Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>linux_logs</td>
+              <td>Linux auth, syslog, and audit logs from linux-server</td>
+              <td>10 GB</td>
+            </tr>
+            <tr>
+              <td>windows_logs</td>
+              <td>Windows Security, System, and Application event logs from dc01</td>
+              <td>10 GB</td>
+            </tr>
+            <tr>
+              <td>firewall_logs</td>
+              <td>Reserved for pfSense/firewall logs (future use)</td>
+              <td>5 GB</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="method-tabs" role="tablist" aria-label="Index creation method">
+          <button class="method-tab" role="tab" aria-selected="true" aria-controls="tab-idx-cli" id="tab-idx-cli-btn">CLI Method</button>
+          <button class="method-tab" role="tab" aria-selected="false" aria-controls="tab-idx-ui" id="tab-idx-ui-btn">Web UI Method</button>
+        </div>
+        <div class="method-panel active" id="tab-idx-cli" role="tabpanel" aria-labelledby="tab-idx-cli-btn">
+          <div class="code-block" role="region" aria-label="Create indexes via CLI">
+            <div class="code-block-label">bash &mdash; splunk-vm</div>
+            <pre><code># Create linux_logs index
+sudo /opt/splunk/bin/splunk add index linux_logs \
+  -maxTotalDataSizeMB 10240 \
+  -auth admin:yourpassword
+
+# Create windows_logs index
+sudo /opt/splunk/bin/splunk add index windows_logs \
+  -maxTotalDataSizeMB 10240 \
+  -auth admin:yourpassword
+
+# Create firewall_logs index
+sudo /opt/splunk/bin/splunk add index firewall_logs \
+  -maxTotalDataSizeMB 5120 \
+  -auth admin:yourpassword</code></pre>
+          </div>
+        </div>
+        <div class="method-panel" id="tab-idx-ui" role="tabpanel" aria-labelledby="tab-idx-ui-btn">
+          <ul class="ui-steps">
+            <li>Click <strong>Settings &rarr; Indexes &rarr; New Index</strong></li>
+            <li>Index Name: <code>linux_logs</code> &mdash; Max raw data size: <strong>10 GB</strong> &rarr; <strong>Save</strong></li>
+            <li>Repeat: Index Name: <code>windows_logs</code> &mdash; Max size: <strong>10 GB</strong> &rarr; <strong>Save</strong></li>
+            <li>Repeat: Index Name: <code>firewall_logs</code> &mdash; Max size: <strong>5 GB</strong> &rarr; <strong>Save</strong></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ══ Section 6: Add-ons ══ -->
+      <section class="section-card" id="s6-addons" aria-labelledby="h-s6">
+        <h2 id="h-s6"><span class="section-num" aria-hidden="true">6</span> Install Splunk Add-ons</h2>
+        <p>Add-ons (also called Technology Add-ons or TAs) provide field extractions and source type definitions that make log data searchable with meaningful field names. Install both add-ons before configuring dashboards.</p>
+
+        <h3>Required Add-ons</h3>
+        <ul class="prose-list">
+          <li><strong>Splunk Add-on for Unix and Linux</strong> &mdash; field extractions for syslog, auth logs, auditd</li>
+          <li><strong>Splunk Add-on for Microsoft Windows</strong> &mdash; field extractions for Windows Event Logs</li>
+        </ul>
+
+        <div class="method-tabs" role="tablist" aria-label="Add-on installation method">
+          <button class="method-tab" role="tab" aria-selected="true" aria-controls="tab-addon-ui" id="tab-addon-ui-btn">Web UI Method (easiest)</button>
+          <button class="method-tab" role="tab" aria-selected="false" aria-controls="tab-addon-cli" id="tab-addon-cli-btn">CLI Method (if UI fails)</button>
+        </div>
+        <div class="method-panel active" id="tab-addon-ui" role="tabpanel" aria-labelledby="tab-addon-ui-btn">
+          <ul class="ui-steps">
+            <li>In Splunk Web, click <strong>Apps</strong> in the top navigation bar</li>
+            <li>Click <strong>Find More Apps</strong></li>
+            <li>Search for <strong>Splunk Add-on for Unix and Linux</strong> &rarr; click <strong>Install</strong></li>
+            <li>Enter your <strong>Splunk.com</strong> account credentials when prompted</li>
+            <li>After the Unix add-on installs, search for <strong>Splunk Add-on for Microsoft Windows</strong> &rarr; click <strong>Install</strong></li>
+            <li>Click <strong>Restart Now</strong> when prompted to activate the add-ons</li>
+          </ul>
+        </div>
+        <div class="method-panel" id="tab-addon-cli" role="tabpanel" aria-labelledby="tab-addon-cli-btn">
+          <p style="font-size:0.85rem; color:#3a4a5a; margin-bottom:10px;">
+            If the web app browser cannot reach Splunkbase, download the <code>.tgz</code> files from <strong>splunkbase.splunk.com</strong> on mgmt-vm, then copy them to splunk-vm using <code>scp</code>.
+          </p>
+          <div class="code-block" role="region" aria-label="Install add-ons via CLI">
+            <div class="code-block-label">bash &mdash; splunk-vm</div>
+            <pre><code># Copy downloaded .tgz files to splunk-vm, then install:
+
+# Install Unix add-on
+sudo /opt/splunk/bin/splunk install app /tmp/splunk-add-on-for-unix-and-linux.tgz \
+  -auth admin:yourpassword
+
+# Install Windows add-on
+sudo /opt/splunk/bin/splunk install app /tmp/splunk-add-on-for-microsoft-windows.tgz \
+  -auth admin:yourpassword
+
+# Restart Splunk to activate add-ons
+sudo /opt/splunk/bin/splunk restart</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Section 7: Auth Dashboard ══ -->
+      <section class="section-card" id="s7-auth-dash" aria-labelledby="h-s7">
+        <h2 id="h-s7"><span class="section-num" aria-hidden="true">7</span> Create Authentication Dashboard <span style="font-size:0.8rem; font-weight:600; color:#7c3aed; margin-left:8px;">B.2 &mdash; 4 pts</span></h2>
+        <p>This dashboard tracks login activity across Linux and Windows systems. It is the primary tool for detecting unauthorized access attempts.</p>
+
+        <h3>Create the Dashboard</h3>
+        <ul class="ui-steps">
+          <li>In Splunk Web, click <strong>Dashboards</strong> in the left navigation or app bar</li>
+          <li>Click <strong>Create New Dashboard</strong></li>
+          <li>Title: <code>Security - Authentication Events</code></li>
+          <li>Type: <strong>Classic Dashboard</strong> &rarr; <strong>Create</strong></li>
+        </ul>
+
+        <h3>Panel 1 &mdash; Failed SSH Logins (Linux)</h3>
+        <p>Shows failed SSH password attempts by source IP and username, sorted by attempt count (highest first).</p>
+        <div class="code-block" role="region" aria-label="Failed SSH logins SPL query">
+          <div class="code-block-label">splunk SPL &mdash; panel visualization: Table</div>
+          <pre><code>index=linux_logs sourcetype=linux_secure "Failed password"
+| stats count by src_ip, user
+| sort -count
+| rename count AS "Attempts", src_ip AS "Source IP", user AS "Username"</code></pre>
+        </div>
+
+        <h3>Panel 2 &mdash; Failed Windows Logins</h3>
+        <p>Queries Windows Security Event 4625 (failed logon) grouped by account name and source IP.</p>
+        <div class="code-block" role="region" aria-label="Failed Windows logins SPL query">
+          <div class="code-block-label">splunk SPL &mdash; panel visualization: Bar Chart</div>
+          <pre><code>index=windows_logs sourcetype=WinEventLog:Security EventCode=4625
+| stats count by Account_Name, Source_Network_Address
+| sort -count
+| rename count AS "Attempts", Account_Name AS "Account", Source_Network_Address AS "Source IP"</code></pre>
+        </div>
+
+        <h3>Panel 3 &mdash; Successful Logins (Windows)</h3>
+        <p>Queries Windows Security Event 4624 (successful logon) for interactive (type 2) and remote interactive (type 10) sessions.</p>
+        <div class="code-block" role="region" aria-label="Successful Windows logins SPL query">
+          <div class="code-block-label">splunk SPL &mdash; panel visualization: Pie Chart</div>
+          <pre><code>index=windows_logs sourcetype=WinEventLog:Security EventCode=4624
+  (Logon_Type=2 OR Logon_Type=10)
+| stats count by Account_Name
+| sort -count</code></pre>
+        </div>
+
+        <h3>Panel 4 &mdash; Sudo Usage (Linux)</h3>
+        <p>Shows sudo command usage by user over time, sorted by most recent activity.</p>
+        <div class="code-block" role="region" aria-label="Sudo usage SPL query">
+          <div class="code-block-label">splunk SPL &mdash; panel visualization: Timeline</div>
+          <pre><code>index=linux_logs sourcetype=linux_secure sudo
+| stats count by user, _time
+| sort -_time</code></pre>
+        </div>
+
+        <div class="note-box" role="note">
+          <strong>Saving panels:</strong> After entering each SPL query, click <strong>Add to Dashboard</strong> (or <strong>Save As &rarr; Dashboard Panel</strong>) and select the existing <em>Security - Authentication Events</em> dashboard. Choose the visualization type listed above for each panel, then click <strong>Save</strong>.
+        </div>
+      </section>
+
+      <!-- ══ Section 8: System Dashboard ══ -->
+      <section class="section-card" id="s8-sys-dash" aria-labelledby="h-s8">
+        <h2 id="h-s8"><span class="section-num" aria-hidden="true">8</span> Create System Events Dashboard <span style="font-size:0.8rem; font-weight:600; color:#7c3aed; margin-left:8px;">B.2 &mdash; 4 pts</span></h2>
+        <p>This dashboard monitors system-level events including Windows service changes, Linux errors, and Linux audit events.</p>
+
+        <h3>Create the Dashboard</h3>
+        <ul class="ui-steps">
+          <li>Click <strong>Dashboards &rarr; Create New Dashboard</strong></li>
+          <li>Title: <code>Security - System Events</code></li>
+          <li>Type: <strong>Classic Dashboard</strong> &rarr; <strong>Create</strong></li>
+        </ul>
+
+        <h3>Panel 1 &mdash; Windows Service Changes</h3>
+        <p>Event 7045 = new service installed. Event 7040 = service start type changed. Both are common persistence techniques used by attackers.</p>
+        <div class="code-block" role="region" aria-label="Windows service changes SPL query">
+          <div class="code-block-label">splunk SPL &mdash; panel visualization: Table</div>
+          <pre><code>index=windows_logs sourcetype=WinEventLog:System
+  (EventCode=7045 OR EventCode=7040)
+| table _time, Service_Name, Service_Type, Message
+| sort -_time</code></pre>
+        </div>
+
+        <h3>Panel 2 &mdash; Linux System Errors</h3>
+        <p>Filters syslog for error and critical-level messages by host, helping identify VMs with recurring problems.</p>
+        <div class="code-block" role="region" aria-label="Linux system errors SPL query">
+          <div class="code-block-label">splunk SPL &mdash; panel visualization: Table</div>
+          <pre><code>index=linux_logs sourcetype=syslog (level=err OR level=crit)
+| stats count by host, _raw
+| sort -count</code></pre>
+        </div>
+
+        <h3>Panel 3 &mdash; Recent Audit Events (Linux)</h3>
+        <p>Summarizes auditd events by audit key, showing which audit rules are triggering most frequently.</p>
+        <div class="code-block" role="region" aria-label="Linux audit events SPL query">
+          <div class="code-block-label">splunk SPL &mdash; panel visualization: Bar Chart</div>
+          <pre><code>index=linux_logs sourcetype=linux_audit
+| stats count by key
+| sort -count</code></pre>
+        </div>
+      </section>
+
+      <!-- ══ Section 9: Alerts ══ -->
+      <section class="section-card" id="s9-alerts" aria-labelledby="h-s9">
+        <h2 id="h-s9"><span class="section-num" aria-hidden="true">9</span> Configure Security Alerts <span style="font-size:0.8rem; font-weight:600; color:#7c3aed; margin-left:8px;">B.2 &mdash; 4 pts</span></h2>
+        <p>Alerts run SPL queries on a schedule and notify you when conditions are met. Configure both alerts below. To create an alert: run the query in Search, then click <strong>Save As &rarr; Alert</strong>.</p>
+
+        <h3>Alert 1 &mdash; Multiple Failed Logins (Brute Force Detection)</h3>
+        <p>This alert fires when any single IP address generates more than 5 failed login attempts in a 5-minute window across both Linux and Windows systems.</p>
+
+        <div class="code-block" role="region" aria-label="Brute force detection SPL query">
+          <div class="code-block-label">splunk SPL &mdash; brute force alert query</div>
+          <pre><code>(index=linux_logs sourcetype=linux_secure "Failed password")
+OR
+(index=windows_logs sourcetype=WinEventLog:Security EventCode=4625)
+| stats count by src_ip
+| where count &gt; 5</code></pre>
+        </div>
+
+        <h3>Alert 1 Settings</h3>
+        <ul class="prose-list">
+          <li><strong>Title:</strong> Multiple Failed Logins - Possible Brute Force</li>
+          <li><strong>Schedule:</strong> Run every <strong>5 minutes</strong>, looking back <strong>5 minutes</strong></li>
+          <li><strong>Trigger condition:</strong> Number of Results &gt; 0</li>
+          <li><strong>Actions:</strong> Add to Triggered Alerts</li>
+        </ul>
+
+        <h3>Alert 2 &mdash; After-Hours Login</h3>
+        <p>This alert detects successful interactive logins to Windows systems outside of business hours (before 6:00 AM or after 6:00 PM).</p>
+
+        <div class="code-block" role="region" aria-label="After-hours login SPL query">
+          <div class="code-block-label">splunk SPL &mdash; after-hours login alert query</div>
+          <pre><code>index=windows_logs sourcetype=WinEventLog:Security EventCode=4624
+  (Logon_Type=2 OR Logon_Type=10)
+| eval hour=strftime(_time, "%H")
+| where hour >= 18 OR hour &lt; 6
+| table _time, Account_Name, Source_Network_Address</code></pre>
+        </div>
+
+        <h3>Alert 2 Settings</h3>
+        <ul class="prose-list">
+          <li><strong>Title:</strong> After-Hours Successful Login</li>
+          <li><strong>Schedule:</strong> Run every <strong>30 minutes</strong>, looking back <strong>30 minutes</strong></li>
+          <li><strong>Trigger condition:</strong> Number of Results &gt; 0</li>
+          <li><strong>Actions:</strong> Add to Triggered Alerts</li>
+        </ul>
+
+        <div class="note-box" role="note">
+          <strong>Viewing triggered alerts:</strong> After the alerts are saved you can see them under <strong>Activity &rarr; Triggered Alerts</strong> in Splunk Web. Until log forwarders send data, the alerts will not fire &mdash; this is expected behavior.
+        </div>
+      </section>
+
+      <!-- ══ Section 10: Verify ══ -->
+      <section class="section-card" id="s10-verify" aria-labelledby="h-s10">
+        <h2 id="h-s10"><span class="section-num" aria-hidden="true">10</span> Verify Splunk Setup</h2>
+        <p>Run these commands to confirm Splunk is running correctly, indexes exist, and the receiver is active before moving on to Integration Plan 13.</p>
+
+        <div class="code-block" role="region" aria-label="Splunk verification command block">
+          <div class="code-block-label">bash &mdash; splunk-vm</div>
+          <pre><code># Check Splunk is running
+sudo /opt/splunk/bin/splunk status
+
+# List configured indexes (should show linux_logs, windows_logs, firewall_logs)
+sudo /opt/splunk/bin/splunk list index -auth admin:yourpassword
+
+# List configured receivers (should show port 9997)
+sudo /opt/splunk/bin/splunk list receiver -auth admin:yourpassword
+
+# Check for any errors
+sudo tail -100 /opt/splunk/var/log/splunk/splunkd.log | grep ERROR</code></pre>
+        </div>
+
+        <div class="alert alert-info" role="note" style="margin: 14px 0 0 0;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>No data yet &mdash; this is expected.</strong> Until log forwarders are configured in Integration Plans 13 (Linux) and 14 (Windows), the dashboards will show <em>"No results found"</em>. Splunk is ready to receive data &mdash; no data has been sent yet.
+          </div>
+        </div>
+
+        <h3>Verification Checklist</h3>
+        <p>Before submitting, confirm each item below:</p>
+        <ul class="prose-list">
+          <li><code>splunk status</code> shows <strong>splunkd is running</strong></li>
+          <li><code>list index</code> output includes <strong>linux_logs</strong>, <strong>windows_logs</strong>, and <strong>firewall_logs</strong></li>
+          <li><code>list receiver</code> shows <strong>port 9997</strong></li>
+          <li>No <code>FATAL</code> or <code>ERROR</code> lines in the most recent splunkd.log entries</li>
+          <li>Both dashboards visible in Splunk Web under <strong>Dashboards</strong></li>
+          <li>Both alerts visible under <strong>Settings &rarr; Searches, reports, and alerts</strong></li>
+        </ul>
+      </section>
+
+    </div><!-- end content-area -->
+  </main>
+
+</div><!-- end page-wrapper -->
+
+<script>
+  /* ── Hamburger ── */
+  const hamburger = document.getElementById('hamburger');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    overlay.removeAttribute('aria-hidden');
+    hamburger.setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  });
+
+  /* ── Method Tabs ── */
+  document.querySelectorAll('.method-tabs').forEach(tabGroup => {
+    const tabs   = tabGroup.querySelectorAll('.method-tab');
+    const panels = [];
+    tabs.forEach(tab => panels.push(document.getElementById(tab.getAttribute('aria-controls'))));
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t, j) => {
+          const selected = (j === i);
+          t.setAttribute('aria-selected', String(selected));
+          panels[j].classList.toggle('active', selected);
+        });
+      });
+      tab.addEventListener('keydown', e => {
+        let idx = i;
+        if (e.key === 'ArrowRight') idx = (i + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft') idx = (i - 1 + tabs.length) % tabs.length;
+        else return;
+        e.preventDefault();
+        tabs[idx].click();
+        tabs[idx].focus();
+      });
+    });
+  });
+
+  /* ── Checklist Progress ── */
+  const checkboxes    = document.querySelectorAll('.sidebar-checks input[type="checkbox"]');
+  const progressBar   = document.getElementById('progress-bar');
+  const progressPct   = document.getElementById('progress-pct');
+  const progressTrack = document.getElementById('progress-bar-track');
+
+  function updateProgress() {
+    const total   = checkboxes.length;
+    const checked = Array.from(checkboxes).filter(c => c.checked).length;
+    const pct     = total === 0 ? 0 : Math.round((checked / total) * 100);
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    progressTrack.setAttribute('aria-valuenow', pct);
+  }
+
+  checkboxes.forEach((cb, i) => {
+    const label = document.getElementById('ck-label-' + i);
+    cb.addEventListener('change', () => {
+      if (label) label.classList.toggle('checked', cb.checked);
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+  /* ── Active Nav on Scroll ── */
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+  const sections = Array.from(navLinks).map(link => {
+    const id = link.getAttribute('href').replace('#', '');
+    return document.getElementById(id);
+  }).filter(Boolean);
+
+  function onScroll() {
+    let current = sections[0];
+    sections.forEach(sec => {
+      if (sec && window.scrollY + 120 >= sec.offsetTop) current = sec;
+    });
+    navLinks.forEach(link => {
+      const active = current && link.getAttribute('href') === '#' + current.id;
+      link.classList.toggle('active', active);
+      link.setAttribute('aria-current', active ? 'location' : 'false');
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>
+</body>
+</html>

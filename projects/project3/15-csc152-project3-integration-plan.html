@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration 15: Backup Strategy | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a2332;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #d0d8e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      background: #0a1520;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #7c3aed;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8a9bb0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 12px 18px;
+      background: #0f2235;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-label span:last-child { color: #a78bfa; font-weight: 700; }
+    .progress-bar-track {
+      background: #0d1b2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      padding: 6px 0 2px;
+      letter-spacing: 0.5px;
+      border-top: 1px solid #1a3350;
+      margin-top: 4px;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a7f94;
+      line-height: 1.4;
+    }
+    .doc-seq-item.current { color: #a78bfa; font-weight: 700; }
+    .doc-seq-item.done { color: #20c997; }
+    .doc-seq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a3d50;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #7c3aed; }
+    .doc-seq-item.done .doc-seq-dot { background: #20c997; }
+
+    /* Section nav */
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.77rem;
+      color: #8a9bb0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: rgba(124,58,237,0.14);
+      border-left-color: #7c3aed;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px;
+      border-top: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.73rem;
+      color: #9aacbc;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #7c3aed;
+      flex-shrink: 0;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .check-item.checked { color: #20c997; text-decoration: line-through; }
+
+    /* ── Hamburger (mobile only) ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: #0d1b2a;
+      border: 2px solid #7c3aed;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #a78bfa;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+    }
+
+    /* ── Main Content ── */
+    .main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a0a3e 55%, #2d1a6e 100%);
+      color: white;
+      padding: 40px 48px 36px;
+      border-bottom: 4px solid #7c3aed;
+    }
+    .header-eyebrow {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .page-header h1 em {
+      color: #a78bfa;
+      font-style: normal;
+    }
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(124,58,237,0.22);
+      border: 1px solid rgba(167,139,250,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #c4b5fd;
+    }
+    .meta-badge strong { color: #ffffff; }
+
+    /* Alerts */
+    .alert {
+      margin: 24px 48px 0;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .alert-info {
+      background: #ede9fe;
+      border-left: 5px solid #7c3aed;
+      color: #3b1f7a;
+    }
+    .alert-warning {
+      background: #fff8e1;
+      border-left: 5px solid #f59e0b;
+      color: #7c4a00;
+    }
+    .alert-success {
+      background: #d1fae5;
+      border-left: 5px solid #059669;
+      color: #064e3b;
+    }
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Content area */
+    .content-area { padding: 32px 48px 0; }
+
+    /* Section cards */
+    .section-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #7c3aed;
+      scroll-margin-top: 24px;
+    }
+    .section-card h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-card p { color: #3a4a5a; font-size: 0.92rem; margin-bottom: 12px; }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    /* Sub-headings within sections */
+    .section-card h3 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1a2332;
+      margin: 22px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e8edf2;
+    }
+    .section-card h3:first-of-type { margin-top: 16px; }
+
+    /* Prose lists */
+    .prose-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .prose-list li {
+      position: relative;
+      padding: 4px 0 4px 20px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .prose-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-size: 0.7rem;
+      top: 7px;
+    }
+    .prose-list li strong { color: #0d1b2a; }
+
+    /* Ordered steps */
+    .step-list {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0;
+      counter-reset: step-counter;
+    }
+    .step-list li {
+      counter-increment: step-counter;
+      position: relative;
+      padding: 6px 0 6px 36px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+      line-height: 1.5;
+    }
+    .step-list li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 5px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-list li strong { color: #0d1b2a; }
+
+    /* Tables */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+      margin: 14px 0;
+    }
+    .spec-table th {
+      background: #0d1b2a;
+      color: #a78bfa;
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .spec-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+      vertical-align: top;
+    }
+    .spec-table tr:last-child td { border-bottom: none; }
+    .spec-table tr:nth-child(even) td { background: #f7f9fc; }
+    .spec-table td:first-child { font-weight: 600; color: #0d1b2a; }
+    .spec-table tfoot td {
+      background: #f0ebff;
+      font-weight: 700;
+      color: #3b1f7a;
+      border-top: 2px solid #7c3aed;
+    }
+
+    /* Rubric table */
+    .rubric-table td:nth-child(2) {
+      text-align: center;
+      font-weight: 700;
+      color: #7c3aed;
+    }
+    .rubric-table tfoot td:nth-child(2) {
+      color: #7c3aed;
+      font-size: 1.05rem;
+    }
+
+    /* Priority badges inside tables */
+    .badge-critical {
+      display: inline-block;
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 0.70rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-high {
+      display: inline-block;
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fdba74;
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 0.70rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-medium {
+      display: inline-block;
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #86efac;
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 0.70rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .code-block pre { margin: 0; }
+    .code-block pre code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* Inline code */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      background: #ede9fe;
+      color: #5b21b6;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .code-block code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+    /* Note box */
+    .note-box {
+      background: #f5f3ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #3b1f7a;
+    }
+    .note-box strong { color: #0d1b2a; }
+
+    /* Sub-section label */
+    .sub-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #7c3aed;
+      color: #fff;
+      padding: 3px 12px 3px 8px;
+      border-radius: 16px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin-bottom: 12px;
+    }
+    .pts-chip {
+      background: #ede9fe;
+      color: #5b21b6;
+      border: 1px solid #c4b5fd;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+
+    /* ── Completion Banner ── */
+    .completion-banner {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a0a3e 40%, #12401e 100%);
+      border-top: 4px solid #059669;
+      border-radius: 10px;
+      padding: 36px 40px;
+      margin-bottom: 28px;
+      color: #ffffff;
+      text-align: center;
+      scroll-margin-top: 24px;
+    }
+    .completion-banner .banner-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .completion-banner h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #6ee7b7;
+      margin-bottom: 8px;
+    }
+    .completion-banner .banner-sub {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .built-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      text-align: left;
+      margin-top: 20px;
+    }
+    .built-item {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(110,231,183,0.25);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.82rem;
+      color: #d0e8d8;
+      line-height: 1.4;
+    }
+    .built-item strong {
+      display: block;
+      color: #6ee7b7;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+    .completion-divider {
+      border: none;
+      border-top: 1px solid rgba(110,231,183,0.2);
+      margin: 20px 0;
+    }
+    .submit-note {
+      background: rgba(5,150,105,0.18);
+      border: 1px solid rgba(110,231,183,0.35);
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-size: 0.85rem;
+      color: #a7f3d0;
+      line-height: 1.5;
+    }
+    .submit-note strong { color: #6ee7b7; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .page-header { padding: 50px 20px 28px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .content-area { padding: 20px 20px 0; }
+      .alert { margin: 20px 20px 0; }
+      .section-card { padding: 20px 18px; }
+      .completion-banner { padding: 24px 20px; }
+      .spec-table { font-size: 0.78rem; }
+      .spec-table td, .spec-table th { padding: 7px 10px; }
+      .header-meta { gap: 6px; }
+      .built-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.2rem; }
+    }
+
+    /* ── Focus styles for accessibility ── */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #7c3aed;
+      outline-offset: 3px;
+    }
+    .hamburger:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      background: #7c3aed;
+      color: #fff;
+      padding: 10px 18px;
+      z-index: 999;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 0 0 6px 0;
+      text-decoration: none;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="page-wrapper">
+
+  <!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
+  <nav class="sidebar" id="sidebar" aria-label="Integration guide navigation">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-course">CSC 152 · Project 3</div>
+      <div class="sidebar-title">Integration 15 of 15</div>
+      <div class="sidebar-subtitle">Backup Strategy</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="sidebar-progress" aria-label="Checklist progress">
+      <div class="progress-label">
+        <span>Checklist Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Doc sequence -->
+    <div class="doc-sequence" aria-label="Document sequence">
+      <div class="doc-sequence-label">Build Sequence</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>01 · Proxmox Network Bridges</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>02 · pfSense VM Build</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>03 · Ubuntu Template + linux-server</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>04 · Windows Server dc01</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>05 · Xubuntu Template + mgmt-vm</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>06 · linux-client VM</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>07 · splunk-vm Build</div>
+
+      <div class="doc-seq-divider">&#8212;&#8212; Integration Plans &#8212;&#8212;</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>08 · pfSense Full Configuration</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>09 · Active Directory &amp; DNS</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>10 · Linux Server Hardening</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>11 · Windows Server Hardening</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>12 · Splunk Deployment</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>13 · Linux Log Forwarder</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>14 · Windows Log Forwarder</div>
+      <div class="doc-seq-item current" aria-current="page"><span class="doc-seq-dot"></span>15 · Backup Strategy</div>
+    </div>
+
+    <!-- Section nav -->
+    <div class="sidebar-nav">
+      <div class="nav-label">Sections</div>
+      <a href="#rubric">Rubric Summary</a>
+      <a href="#s1-design">1 · Strategy Design (D.1)</a>
+      <a href="#s2-linux">2 · Linux Backup Script (D.2)</a>
+      <a href="#s3-windows">3 · Windows Server Backup (D.2)</a>
+      <a href="#s4-pfsense">4 · pfSense Config Export (D.2)</a>
+      <a href="#s5-verify">5 · Backup Verification (D.2)</a>
+      <a href="#s6-docs">6 · Documentation for Submission</a>
+      <a href="#s7-complete">7 · Project 3 Completion</a>
+    </div>
+
+    <!-- Checklist -->
+    <div class="sidebar-checks">
+      <div class="sidebar-checks-label">Part D Checklist</div>
+
+      <label class="check-item">
+        <input type="checkbox" /> Critical data inventory documented
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> Backup schedule defined (daily for linux-server &amp; dc01)
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> RTO (4 hours) and RPO (24 hours) defined
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> /backup directory created on linux-server (chmod 700)
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> backup.sh script created and made executable
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> Backup script tested manually (files appear in /backup/)
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> Cron job scheduled (0 2 * * *)
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> Windows Server Backup feature installed on dc01
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> System State backup policy configured
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> Windows backup run and verified (Get-WBSummary shows success)
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> pfSense config.xml exported and saved
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> pfSense backup copied off-system (or noted as future improvement)
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> Linux backup archives verified (tar -tzf integrity test)
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> Windows backup verification documented
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> Backup documentation table completed for submission
+      </label>
+      <label class="check-item">
+        <input type="checkbox" /> Ready to compile project submission PDF
+      </label>
+    </div>
+
+  </nav>
+  <!-- ═══════════════════════════════ END SIDEBAR ═══════════════════════════════ -->
+
+  <!-- ═══════════════════════════════ MAIN CONTENT ═══════════════════════════════ -->
+  <main class="main-content" id="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-eyebrow">CSC 152 · Project 3 · Integration Plan 15 of 15</div>
+      <h1>Integration 15: <em>Backup Strategy Implementation</em></h1>
+      <p class="page-subtitle">Design and implement backup procedures for all critical systems (Part D &#8212; 15 pts)</p>
+      <div class="header-meta">
+        <span class="meta-badge">&#128196; <strong>Rubric:</strong>&nbsp;Part D &#8212; 15 pts</span>
+        <span class="meta-badge">&#128187; <strong>Systems:</strong>&nbsp;linux-server, dc01 (System State), pfSense</span>
+        <span class="meta-badge">&#128190; <strong>Storage:</strong>&nbsp;Local disk on each VM</span>
+        <span class="meta-badge">&#9989; <strong>Final integration step</strong></span>
+      </div>
+    </header>
+
+    <div class="content-area">
+
+      <!-- ── Rubric Summary ── -->
+      <section class="section-card" id="rubric" aria-labelledby="rubric-heading">
+        <h2 id="rubric-heading"><span class="section-num" aria-hidden="true">&#9733;</span> Rubric Summary &#8212; Part D</h2>
+        <p>All items below are graded in Part D of the Project 3 rubric. Complete every task and document your work with screenshots before compiling your submission PDF.</p>
+        <div style="overflow-x:auto;">
+          <table class="spec-table rubric-table" aria-label="Part D rubric point breakdown">
+            <thead>
+              <tr>
+                <th scope="col">Task</th>
+                <th scope="col">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>D.1: Identify Critical Data</td><td>2</td></tr>
+              <tr><td>D.1: Backup Schedule</td><td>2</td></tr>
+              <tr><td>D.1: Recovery Objectives (RTO / RPO)</td><td>1</td></tr>
+              <tr><td>D.2: Linux Backup Script</td><td>3</td></tr>
+              <tr><td>D.2: Windows Backup (System State)</td><td>3</td></tr>
+              <tr><td>D.2: pfSense Config Export</td><td>2</td></tr>
+              <tr><td>D.2: Backup Verification</td><td>2</td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td><strong>Total Part D</strong></td><td><strong>15</strong></td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 1: Strategy Design
+      ════════════════════════════════════════════════════════════════ -->
+      <section class="section-card" id="s1-design" aria-labelledby="s1-heading">
+        <h2 id="s1-heading"><span class="section-num" aria-hidden="true">1</span> Backup Strategy Design <span class="pts-chip">D.1 &#8212; 5 pts</span></h2>
+        <p>Before touching any system, document <em>what</em> needs to be backed up, <em>when</em> backups will run, and <em>how quickly</em> you could recover if something failed. This design section satisfies D.1 of the rubric (5 points total).</p>
+
+        <!-- 1a: Critical Data Inventory -->
+        <h3 id="s1a-inventory">1a. Critical Data Inventory</h3>
+        <span class="sub-label" aria-label="Rubric sub-task D.1">D.1 &#8212; 2 pts</span>
+        <p>Identify exactly which files and configuration data must be preserved on each system. Losing any <span class="badge-critical">Critical</span> item could require rebuilding the system from scratch.</p>
+        <div style="overflow-x:auto;">
+          <table class="spec-table" aria-label="Critical data inventory by system">
+            <thead>
+              <tr>
+                <th scope="col">System</th>
+                <th scope="col">Data / Configuration</th>
+                <th scope="col">Location</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Backup Method</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>linux-server</td>
+                <td>System configuration</td>
+                <td><code>/etc/</code></td>
+                <td><span class="badge-critical">Critical</span></td>
+                <td>tar archive</td>
+              </tr>
+              <tr>
+                <td>linux-server</td>
+                <td>User home directories</td>
+                <td><code>/home/</code></td>
+                <td><span class="badge-high">High</span></td>
+                <td>tar archive</td>
+              </tr>
+              <tr>
+                <td>linux-server</td>
+                <td>Splunk forwarder config</td>
+                <td><code>/opt/splunkforwarder/etc/</code></td>
+                <td><span class="badge-medium">Medium</span></td>
+                <td>tar archive</td>
+              </tr>
+              <tr>
+                <td>linux-server</td>
+                <td>Audit logs</td>
+                <td><code>/var/log/audit/</code></td>
+                <td><span class="badge-high">High</span></td>
+                <td>tar archive</td>
+              </tr>
+              <tr>
+                <td>dc01</td>
+                <td>Active Directory database</td>
+                <td>System State (NTDS.dit)</td>
+                <td><span class="badge-critical">Critical</span></td>
+                <td>Windows Server Backup</td>
+              </tr>
+              <tr>
+                <td>dc01</td>
+                <td>Group Policy Objects</td>
+                <td>SYSVOL</td>
+                <td><span class="badge-critical">Critical</span></td>
+                <td>Windows Server Backup</td>
+              </tr>
+              <tr>
+                <td>dc01</td>
+                <td>DNS zones (AD-integrated)</td>
+                <td>System State</td>
+                <td><span class="badge-critical">Critical</span></td>
+                <td>Windows Server Backup</td>
+              </tr>
+              <tr>
+                <td>dc01</td>
+                <td>Windows Event Logs</td>
+                <td><code>C:\Windows\System32\winevt\</code></td>
+                <td><span class="badge-medium">Medium</span></td>
+                <td>Windows Server Backup</td>
+              </tr>
+              <tr>
+                <td>pfSense</td>
+                <td>Firewall configuration</td>
+                <td><code>config.xml</code></td>
+                <td><span class="badge-critical">Critical</span></td>
+                <td>XML export</td>
+              </tr>
+              <tr>
+                <td>pfSense</td>
+                <td>Firewall rules, NAT, DHCP</td>
+                <td>Included in config.xml</td>
+                <td><span class="badge-critical">Critical</span></td>
+                <td>XML export</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 1b: Backup Schedule -->
+        <h3 id="s1b-schedule">1b. Backup Schedule</h3>
+        <span class="sub-label" aria-label="Rubric sub-task D.1">D.1 &#8212; 2 pts</span>
+        <div style="overflow-x:auto;">
+          <table class="spec-table" aria-label="Backup schedule for each system">
+            <thead>
+              <tr>
+                <th scope="col">System</th>
+                <th scope="col">Backup Type</th>
+                <th scope="col">Frequency</th>
+                <th scope="col">Time</th>
+                <th scope="col">Retention</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>linux-server</td>
+                <td>Full (tar)</td>
+                <td>Daily</td>
+                <td>2:00 AM</td>
+                <td>7 days</td>
+              </tr>
+              <tr>
+                <td>dc01</td>
+                <td>System State</td>
+                <td>Daily</td>
+                <td>3:00 AM</td>
+                <td>7 days</td>
+              </tr>
+              <tr>
+                <td>pfSense</td>
+                <td>Config XML</td>
+                <td>After any change</td>
+                <td>Manual</td>
+                <td>Keep last 5</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 1c: Recovery Objectives -->
+        <h3 id="s1c-rto">1c. Recovery Objectives (RTO / RPO)</h3>
+        <span class="sub-label" aria-label="Rubric sub-task D.1">D.1 &#8212; 1 pt</span>
+        <div style="overflow-x:auto;">
+          <table class="spec-table" aria-label="Recovery time and recovery point objectives">
+            <thead>
+              <tr>
+                <th scope="col">Objective</th>
+                <th scope="col">Target</th>
+                <th scope="col">Justification</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>RTO (Recovery Time Objective)</td>
+                <td>4 hours</td>
+                <td>Time to rebuild a VM from backup in this lab environment</td>
+              </tr>
+              <tr>
+                <td>RPO (Recovery Point Objective)</td>
+                <td>24 hours</td>
+                <td>Daily backup = maximum 24 hours of potential data loss</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="alert alert-info" role="note" aria-label="Production context note">
+          <span class="alert-icon" aria-hidden="true">&#128161;</span>
+          <div>In a production environment, RTO and RPO would be much tighter (e.g., 1-hour RTO, 1-hour RPO with real-time replication or incremental snapshots). For this lab, daily backups to local disk is a reasonable starting point that demonstrates the core concept of backup planning.</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 2: Linux Backup Script
+      ════════════════════════════════════════════════════════════════ -->
+      <section class="section-card" id="s2-linux" aria-labelledby="s2-heading">
+        <h2 id="s2-heading"><span class="section-num" aria-hidden="true">2</span> Linux Backup Script <span class="pts-chip">D.2 &#8212; 3 pts</span></h2>
+        <p>SSH to <strong>linux-server</strong> (10.0.2.10) and complete all steps below. You will create a backup directory, write an automated script, test it manually, and schedule it with cron.</p>
+
+        <!-- Step 1 -->
+        <h3>Step 1 &#8212; Create the backup directory</h3>
+        <div class="code-block" aria-label="Bash: Create backup directory">
+          <div class="code-block-label">bash &#8212; linux-server</div>
+          <pre><code># Create backup destination with restricted permissions
+sudo mkdir -p /backup
+sudo chmod 700 /backup
+sudo chown root:root /backup
+
+# Verify disk space available
+df -h /</code></pre>
+        </div>
+
+        <!-- Step 2 -->
+        <h3>Step 2 &#8212; Create the backup script</h3>
+        <div class="code-block" aria-label="Bash: Create backup.sh script">
+          <div class="code-block-label">bash &#8212; linux-server</div>
+          <pre><code>sudo tee /usr/local/bin/backup.sh &lt;&lt; 'SCRIPT'
+#!/bin/bash
+# backup.sh - Automated backup script for linux-server
+# Part of CSC 152 Project 3, Integration Plan 15
+
+# Configuration
+BACKUP_DIR="/backup"
+DATE=$(date +%Y%m%d_%H%M%S)
+RETENTION_DAYS=7
+LOG_FILE="${BACKUP_DIR}/backup.log"
+
+# Ensure backup directory exists
+mkdir -p "${BACKUP_DIR}"
+
+echo "$(date '+%Y-%m-%d %H:%M:%S') Backup started" &gt;&gt; "${LOG_FILE}"
+
+# Function for timed backup
+backup_item() {
+  local name="$1"
+  local source="$2"
+  local dest="${BACKUP_DIR}/${name}_${DATE}.tar.gz"
+
+  if tar -czf "${dest}" "${source}" 2&gt;/dev/null; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [OK] ${name}: $(du -sh ${dest} | cut -f1)" &gt;&gt; "${LOG_FILE}"
+  else
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [WARN] ${name}: completed with warnings" &gt;&gt; "${LOG_FILE}"
+  fi
+}
+
+# Backup /etc (system configuration)
+backup_item "etc" "/etc"
+
+# Backup /home (user home directories)
+backup_item "home" "/home"
+
+# Backup Splunk forwarder configuration
+if [ -d "/opt/splunkforwarder/etc" ]; then
+  backup_item "splunkforwarder_etc" "/opt/splunkforwarder/etc"
+fi
+
+# Backup audit logs
+if [ -d "/var/log/audit" ]; then
+  backup_item "audit_logs" "/var/log/audit"
+fi
+
+# Remove backups older than retention period
+find "${BACKUP_DIR}" -name "*.tar.gz" -mtime +${RETENTION_DAYS} -delete
+echo "$(date '+%Y-%m-%d %H:%M:%S') Old backups cleaned (&gt;${RETENTION_DAYS} days)" &gt;&gt; "${LOG_FILE}"
+
+# Show current backup inventory
+echo "$(date '+%Y-%m-%d %H:%M:%S') Backup complete. Files:" &gt;&gt; "${LOG_FILE}"
+ls -lh "${BACKUP_DIR}"/*.tar.gz 2&gt;/dev/null &gt;&gt; "${LOG_FILE}"
+
+echo "$(date '+%Y-%m-%d %H:%M:%S') Backup finished" &gt;&gt; "${LOG_FILE}"
+echo "---" &gt;&gt; "${LOG_FILE}"
+SCRIPT
+
+# Make executable and set ownership
+sudo chmod 700 /usr/local/bin/backup.sh
+sudo chown root:root /usr/local/bin/backup.sh
+echo "Backup script created"</code></pre>
+        </div>
+
+        <!-- Step 3 -->
+        <h3>Step 3 &#8212; Test the script manually</h3>
+        <div class="code-block" aria-label="Bash: Run backup script manually">
+          <div class="code-block-label">bash &#8212; linux-server</div>
+          <pre><code># Run backup script manually (first test)
+sudo /usr/local/bin/backup.sh
+
+# Verify output — you should see .tar.gz files
+ls -lh /backup/
+
+# Review the log
+cat /backup/backup.log</code></pre>
+        </div>
+        <div class="note-box">
+          <strong>Screenshot required:</strong> Capture the output of <code>ls -lh /backup/</code> showing the archive files and <code>cat /backup/backup.log</code> showing the timestamped log entries. Both are needed for Part D.2 credit.
+        </div>
+
+        <!-- Step 4 -->
+        <h3>Step 4 &#8212; Schedule with cron</h3>
+        <div class="code-block" aria-label="Bash: Schedule cron job for backup">
+          <div class="code-block-label">bash &#8212; linux-server</div>
+          <pre><code># Add cron entry directly (daily at 2 AM)
+(sudo crontab -l 2&gt;/dev/null; echo "0 2 * * * /usr/local/bin/backup.sh") | sudo crontab -
+
+# Verify cron entry
+sudo crontab -l</code></pre>
+        </div>
+        <p>The cron expression <code>0 2 * * *</code> means: minute 0, hour 2, every day of the month, every month, every day of the week. The script will run automatically at 2:00 AM every night.</p>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 3: Windows Server Backup
+      ════════════════════════════════════════════════════════════════ -->
+      <section class="section-card" id="s3-windows" aria-labelledby="s3-heading">
+        <h2 id="s3-heading"><span class="section-num" aria-hidden="true">3</span> Windows Server Backup (System State) <span class="pts-chip">D.2 &#8212; 3 pts</span></h2>
+        <p>On <strong>dc01</strong>, open PowerShell as Administrator. You will install the Windows Server Backup feature, configure a System State backup policy, run an immediate backup, and verify the result.</p>
+
+        <!-- Step 1 -->
+        <h3>Step 1 &#8212; Install Windows Server Backup feature</h3>
+        <div class="code-block" aria-label="PowerShell: Install Windows Server Backup">
+          <div class="code-block-label">PowerShell &#8212; dc01 (Run as Administrator)</div>
+          <pre><code># Install Windows Server Backup feature
+Install-WindowsFeature Windows-Server-Backup -IncludeManagementTools
+
+# Verify installation
+Get-WindowsFeature Windows-Server-Backup | Select Name, InstallState</code></pre>
+        </div>
+
+        <!-- Step 2 -->
+        <h3>Step 2 &#8212; Create backup directory and configure policy</h3>
+        <div class="code-block" aria-label="PowerShell: Configure System State backup policy">
+          <div class="code-block-label">PowerShell &#8212; dc01</div>
+          <pre><code># Create backup destination directory
+New-Item -ItemType Directory -Path "C:\Backups" -Force
+
+# Note: For proper System State backup, ideally use a separate volume (D:)
+# In this lab, we use a folder on C:\ — acceptable for educational purposes.
+
+# Create a new backup policy
+$policy = New-WBPolicy
+
+# Add System State (includes AD DS, DNS, Registry, SYSVOL)
+Add-WBSystemState -Policy $policy
+
+# Set backup target location (folder-based, lab use)
+$backupTarget = New-WBBackupTarget -VolumePath "C:" -PreserveExistingBackups $true
+Add-WBBackupTarget -Policy $policy -Target $backupTarget
+
+# Schedule daily at 3 AM
+Set-WBSchedule -Policy $policy -Schedule 03:00
+
+# Save the policy
+Set-WBPolicy -Policy $policy
+
+# Verify policy was saved
+Get-WBPolicy | Select-Object *</code></pre>
+        </div>
+
+        <!-- Step 3 -->
+        <h3>Step 3 &#8212; Run an immediate backup to test</h3>
+        <div class="code-block" aria-label="PowerShell: Start Windows Server Backup">
+          <div class="code-block-label">PowerShell &#8212; dc01</div>
+          <pre><code># Run backup now (System State takes approximately 5&#8211;15 minutes)
+Start-WBBackup -Policy (Get-WBPolicy)
+
+# Monitor job status while it runs
+Get-WBJob -Previous 1</code></pre>
+        </div>
+
+        <!-- Step 4 -->
+        <h3>Step 4 &#8212; Verify the backup completed successfully</h3>
+        <div class="code-block" aria-label="PowerShell: Verify backup success">
+          <div class="code-block-label">PowerShell &#8212; dc01</div>
+          <pre><code># Check backup history summary
+Get-WBSummary
+
+# List backed-up versions
+Get-WBBackupSet -BackupTarget (Get-WBBackupTarget -Policy (Get-WBPolicy))</code></pre>
+        </div>
+        <div class="note-box">
+          <strong>Screenshot required:</strong> Capture <code>Get-WBSummary</code> output showing <em>LastBackupResultDetail: The operation completed successfully.</em> and the <em>LastBackupTime</em> timestamp. This is your primary evidence for D.2 credit.
+        </div>
+
+        <div class="alert alert-info" role="note" aria-label="System State backup context">
+          <span class="alert-icon" aria-hidden="true">&#128161;</span>
+          <div>System State backup on a Domain Controller includes the <strong>Active Directory database (NTDS.dit)</strong>, <strong>SYSVOL</strong> (Group Policy files), <strong>AD-integrated DNS zones</strong>, and the <strong>registry</strong>. This is the minimum backup for a DC &#8212; losing a DC without a System State backup means rebuilding Active Directory from scratch.</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 4: pfSense Config Backup
+      ════════════════════════════════════════════════════════════════ -->
+      <section class="section-card" id="s4-pfsense" aria-labelledby="s4-heading">
+        <h2 id="s4-heading"><span class="section-num" aria-hidden="true">4</span> pfSense Configuration Backup <span class="pts-chip">D.2 &#8212; 2 pts</span></h2>
+        <p>From <strong>mgmt-vm</strong>, open Firefox and navigate to the pfSense web UI at <code>http://10.0.1.1</code>. Log in as admin. The entire pfSense configuration &#8212; firewall rules, NAT, DHCP, interfaces &#8212; is stored in a single <code>config.xml</code> file that can be exported in seconds.</p>
+
+        <!-- Manual backup steps -->
+        <h3>Manual backup procedure</h3>
+        <ol class="step-list">
+          <li>Navigate to <strong>Diagnostics &#8594; Backup &amp; Restore</strong></li>
+          <li>Under <em>Backup area</em>, select <strong>ALL</strong></li>
+          <li>Encryption: optional (recommended for production &#8212; skip for this lab)</li>
+          <li>Click <strong>&#8220;Download configuration as XML&#8221;</strong></li>
+          <li>Save the file to mgmt-vm under <code>Documents/pfSense-Backups/</code></li>
+        </ol>
+
+        <h3>Naming convention for the backup file</h3>
+        <p>Name the downloaded file with an ISO date so backups are easy to sort:</p>
+        <div class="code-block" aria-label="Example pfSense backup filename">
+          <div class="code-block-label">Filename example</div>
+          <pre><code>pfsense-config-20260421.xml</code></pre>
+        </div>
+
+        <h3>Store a copy off-system</h3>
+        <p>After saving to mgmt-vm, copy the config.xml to at least one additional location:</p>
+        <ul class="prose-list">
+          <li>A shared folder accessible from outside the lab network</li>
+          <li>A USB drive or external disk</li>
+          <li>Cloud storage (Google Drive, OneDrive, etc.)</li>
+          <li>Your personal laptop or desktop &#8212; acceptable for this lab</li>
+        </ul>
+
+        <div class="alert alert-warning" role="note" aria-label="Off-system backup warning">
+          <span class="alert-icon" aria-hidden="true">&#9888;&#65039;</span>
+          <div>A pfSense backup stored <em>only</em> on mgmt-vm (which lives on the same Proxmox infrastructure) is <strong>not truly safe</strong>. If Proxmox fails, both the firewall and the backup disappear together. In production, copy the backup to an off-site location, cloud storage, or at minimum to your physical laptop/desktop.</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 5: Backup Verification
+      ════════════════════════════════════════════════════════════════ -->
+      <section class="section-card" id="s5-verify" aria-labelledby="s5-heading">
+        <h2 id="s5-heading"><span class="section-num" aria-hidden="true">5</span> Backup Verification &#8212; Test Restore Procedure <span class="pts-chip">D.2 &#8212; 2 pts</span></h2>
+        <p>A backup that has never been tested is a backup you cannot trust. For each system, perform at minimum an <em>integrity check</em>; for Linux, also perform a <em>partial test restore</em>.</p>
+
+        <!-- 5a: Linux -->
+        <h3 id="s5a-linux">5a. Verify Linux backup archives</h3>
+        <span class="sub-label" aria-label="Linux verification">linux-server</span>
+        <div class="code-block" aria-label="Bash: Verify Linux backup integrity">
+          <div class="code-block-label">bash &#8212; linux-server</div>
+          <pre><code># Integrity check — test all .tar.gz files in /backup
+for f in /backup/*.tar.gz; do
+  echo -n "Testing $f ... "
+  if tar -tzf "$f" &gt; /dev/null 2&gt;&1; then
+    echo "OK"
+  else
+    echo "CORRUPTED - investigate immediately"
+  fi
+done</code></pre>
+        </div>
+
+        <p>After confirming integrity, perform a partial test restore to verify the archive can actually be read back:</p>
+        <div class="code-block" aria-label="Bash: Test partial restore of /etc/hostname">
+          <div class="code-block-label">bash &#8212; linux-server (partial restore test)</div>
+          <pre><code># Identify the most recent /etc backup
+LATEST_ETC=$(ls -t /backup/etc_*.tar.gz | head -1)
+echo "Testing: ${LATEST_ETC}"
+
+# List contents (confirm /etc/hostname is inside)
+sudo tar -tzf "${LATEST_ETC}" | grep hostname
+
+# Extract /etc/hostname to /tmp as a non-destructive restore test
+sudo tar -xzf "${LATEST_ETC}" -C /tmp/ etc/hostname
+
+# Verify the restored file
+cat /tmp/etc/hostname
+echo "Expected: linux-server"</code></pre>
+        </div>
+        <div class="note-box">
+          <strong>Screenshot required:</strong> Show the loop output (all archives listing "OK") and the <code>cat /tmp/etc/hostname</code> result. This is your restore test evidence.
+        </div>
+
+        <!-- 5b: Windows -->
+        <h3 id="s5b-windows">5b. Verify Windows Server Backup</h3>
+        <span class="sub-label" aria-label="Windows verification">dc01</span>
+        <div class="code-block" aria-label="PowerShell: Verify Windows backup">
+          <div class="code-block-label">PowerShell &#8212; dc01</div>
+          <pre><code># Check backup set details
+$backupSet = Get-WBBackupSet -BackupTarget (Get-WBBackupTarget -Policy (Get-WBPolicy))
+$backupSet | Select-Object BackupTime, BackupTarget, RecoveryTargets
+
+# Primary verification — confirm success status
+Get-WBSummary | Select-Object LastBackupTime, LastBackupResultDetail, NextBackupTime</code></pre>
+        </div>
+        <p>The backup is considered <strong>verified</strong> when:</p>
+        <ul class="prose-list">
+          <li><code>LastBackupResultDetail</code> shows <strong>"The operation completed successfully."</strong></li>
+          <li><code>BackupSet</code> contains <strong>System State</strong> as a recovery target</li>
+        </ul>
+
+        <!-- 5c: pfSense -->
+        <h3 id="s5c-pfsense">5c. Verify pfSense backup file</h3>
+        <span class="sub-label" aria-label="pfSense verification">pfSense</span>
+        <p>Open the exported <code>config.xml</code> in a text editor on mgmt-vm and confirm:</p>
+        <ul class="prose-list">
+          <li>The root element is <strong><code>&lt;pfsense&gt;</code></strong></li>
+          <li>The file contains <strong><code>&lt;interfaces&gt;</code></strong>, <strong><code>&lt;filter&gt;</code></strong> (firewall rules), and <strong><code>&lt;dhcpd&gt;</code></strong> sections</li>
+          <li>The file is not zero bytes and is not truncated</li>
+        </ul>
+        <div class="note-box">
+          <strong>Optional full restore test:</strong> In pfSense, navigate to <strong>Diagnostics &#8594; Backup &amp; Restore &#8594; Restore Configuration</strong>, upload the XML, and click "Restore Configuration." <em>Warning: this will reboot pfSense immediately.</em> Only attempt if you can tolerate a brief network outage (approximately 1&#8211;2 minutes for this lab environment).
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 6: Documentation for Submission
+      ════════════════════════════════════════════════════════════════ -->
+      <section class="section-card" id="s6-docs" aria-labelledby="s6-heading">
+        <h2 id="s6-heading"><span class="section-num" aria-hidden="true">6</span> Backup Documentation for Submission</h2>
+        <p>Include the completed table below in your submission PDF. Fill in the actual date and pass/fail result from your testing. All three systems must be documented.</p>
+
+        <div style="overflow-x:auto;">
+          <table class="spec-table" aria-label="Backup documentation summary for submission">
+            <thead>
+              <tr>
+                <th scope="col">System</th>
+                <th scope="col">What Is Backed Up</th>
+                <th scope="col">Where (Destination)</th>
+                <th scope="col">Schedule</th>
+                <th scope="col">Last Run</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>linux-server</td>
+                <td>/etc, /home, /opt/splunkforwarder/etc, /var/log/audit</td>
+                <td>/backup/*.tar.gz</td>
+                <td>Daily 2:00 AM</td>
+                <td>[date]</td>
+                <td>[pass / fail]</td>
+              </tr>
+              <tr>
+                <td>dc01</td>
+                <td>System State (AD DS, DNS, SYSVOL, Registry)</td>
+                <td>C:\Backups\</td>
+                <td>Daily 3:00 AM</td>
+                <td>[date]</td>
+                <td>[pass / fail]</td>
+              </tr>
+              <tr>
+                <td>pfSense</td>
+                <td>Full config.xml</td>
+                <td>mgmt-vm Documents</td>
+                <td>Manual (after any change)</td>
+                <td>[date]</td>
+                <td>[pass / fail]</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note-box">
+          <strong>Required screenshots for Part D:</strong>
+          <ul class="prose-list" style="margin-top:6px;">
+            <li><code>ls -lh /backup/</code> on linux-server showing .tar.gz files</li>
+            <li><code>cat /backup/backup.log</code> showing successful backup log</li>
+            <li><code>sudo crontab -l</code> showing the scheduled cron entry</li>
+            <li><code>Get-WBSummary</code> on dc01 showing success</li>
+            <li>pfSense Diagnostics &#8594; Backup &amp; Restore page, or the downloaded config.xml filename visible in Files</li>
+            <li>Integrity check output from Linux (all archives "OK")</li>
+            <li><code>cat /tmp/etc/hostname</code> showing linux-server (restore test)</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           SECTION 7: Completion Summary
+      ════════════════════════════════════════════════════════════════ -->
+      <section class="section-card" id="s7-complete" aria-labelledby="s7-heading">
+        <h2 id="s7-heading"><span class="section-num" aria-hidden="true">7</span> Project 3 Completion Summary</h2>
+        <p>This is the <strong>final integration plan</strong> for Project 3. With backup strategies implemented and verified, the lab environment is complete. Here is a summary of everything that has been built across all 15 integration steps.</p>
+
+        <h3>What you have built</h3>
+        <ul class="prose-list">
+          <li><strong>Proxmox virtualization environment</strong> &#8212; 5 active VMs across 4 network segments</li>
+          <li><strong>pfSense multi-segment firewall</strong> &#8212; 4 interfaces (WAN, LAN, DMZ, MGMT) with firewall rules, NAT, and DHCP</li>
+          <li><strong>Active Directory domain (techstart.local)</strong> &#8212; users, groups, OUs, and AD-integrated DNS on dc01</li>
+          <li><strong>CIS-hardened Linux server</strong> &#8212; 12+ controls applied, host-based firewall (UFW), and auditd logging</li>
+          <li><strong>CIS-hardened Windows Server / Domain Controller</strong> &#8212; 12+ controls applied with Group Policy enforcement</li>
+          <li><strong>Dedicated Splunk SIEM</strong> &#8212; centralized log ingestion from both Linux and Windows systems</li>
+          <li><strong>Security dashboards and automated alerts</strong> &#8212; configured in Splunk for key security events</li>
+          <li><strong>Backup procedures for all critical systems</strong> &#8212; Linux (tar + cron), Windows (System State), pfSense (config.xml)</li>
+        </ul>
+
+        <div class="alert alert-success" role="note" aria-label="Project completion notice">
+          <span class="alert-icon" aria-hidden="true">&#9989;</span>
+          <div>Project 3 is complete! Compile your screenshots and documentation into your submission PDF following the document structure in the assignment. <strong>Remember:</strong> screenshots must show your VM name or IP address to confirm you performed the work in your own environment.</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           COMPLETION BANNER
+      ════════════════════════════════════════════════════════════════ -->
+      <div class="completion-banner" id="s7-banner" aria-labelledby="banner-heading">
+        <span class="banner-icon" aria-hidden="true">&#127881;</span>
+        <h2 id="banner-heading">Project 3 Complete</h2>
+        <p class="banner-sub">
+          You have completed all 15 integration plans for CSC 152 Project 3.<br>
+          Below is a summary of the enterprise-grade lab environment you designed and built from scratch.
+        </p>
+
+        <hr class="completion-divider" />
+
+        <div class="built-grid" aria-label="Summary of systems built in Project 3">
+          <div class="built-item">
+            <strong>Virtualization</strong>
+            Proxmox VE hypervisor with 5 VMs: linux-server, dc01, pfSense, mgmt-vm, splunk-vm
+          </div>
+          <div class="built-item">
+            <strong>Network Segmentation</strong>
+            pfSense firewall &#8212; 4 segments: WAN, LAN (10.0.2.0/24), DMZ (10.0.3.0/24), MGMT (10.0.1.0/24)
+          </div>
+          <div class="built-item">
+            <strong>Identity &amp; Directory</strong>
+            Active Directory domain techstart.local &#8212; users, security groups, OUs, GPOs, AD-integrated DNS
+          </div>
+          <div class="built-item">
+            <strong>Linux Hardening</strong>
+            CIS Benchmark controls &#8212; UFW firewall, SSH hardening, auditd, file permissions, service minimization
+          </div>
+          <div class="built-item">
+            <strong>Windows Hardening</strong>
+            CIS Benchmark controls &#8212; GPO enforcement, Windows Firewall, auditing, account policies
+          </div>
+          <div class="built-item">
+            <strong>SIEM / Logging</strong>
+            Splunk Enterprise &#8212; Universal Forwarder on linux-server, WinEventLog on dc01, dashboards, alerts
+          </div>
+          <div class="built-item">
+            <strong>Backup &amp; Recovery</strong>
+            Linux tar + cron (daily 2 AM, 7-day retention), Windows System State (daily 3 AM), pfSense config.xml export
+          </div>
+          <div class="built-item">
+            <strong>Recovery Planning</strong>
+            RTO: 4 hours &#8212; RPO: 24 hours &#8212; documented backup schedule and critical data inventory
+          </div>
+        </div>
+
+        <hr class="completion-divider" />
+
+        <div class="submit-note" role="note">
+          <strong>Submission reminder:</strong> Your PDF must include screenshots from every major step, your backup documentation table with real dates and pass/fail results, and your RTO/RPO definitions. Every screenshot should show the VM hostname or IP address so the grader can confirm it is your work. Good luck!
+        </div>
+      </div>
+
+    </div><!-- /.content-area -->
+  </main>
+  <!-- ═══════════════════════════════ END MAIN CONTENT ═══════════════════════════════ -->
+
+</div><!-- /.page-wrapper -->
+
+<script>
+  /* ── Mobile sidebar toggle ── */
+  const hamburger = document.getElementById('hamburger');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    overlay.removeAttribute('aria-hidden');
+    hamburger.setAttribute('aria-expanded', 'true');
+    sidebar.focus();
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    hamburger.setAttribute('aria-expanded', 'false');
+    hamburger.focus();
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  });
+
+  /* ── Checklist with progress bar ── */
+  const checkboxes = document.querySelectorAll('.check-item input[type="checkbox"]');
+  const progressBar = document.getElementById('progress-bar');
+  const progressPct = document.getElementById('progress-pct');
+  const progressTrack = document.getElementById('progress-bar-track');
+
+  function updateProgress() {
+    const total = checkboxes.length;
+    const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    progressTrack.setAttribute('aria-valuenow', pct);
+  }
+
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const label = cb.closest('.check-item');
+      if (cb.checked) {
+        label.classList.add('checked');
+      } else {
+        label.classList.remove('checked');
+      }
+      updateProgress();
+    });
+  });
+  updateProgress();
+
+  /* ── Active sidebar nav link on scroll ── */
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+  function updateActiveNav() {
+    let current = '';
+    sections.forEach(sec => {
+      const top = sec.getBoundingClientRect().top;
+      if (top <= 80) current = sec.id;
+    });
+    navLinks.forEach(link => {
+      link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+    });
+  }
+
+  window.addEventListener('scroll', updateActiveNav, { passive: true });
+  updateActiveNav();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build 06: linux-client VM | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a2332;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #d0d8e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      background: #0a1520;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #17a2b8;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #17a2b8;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8a9bb0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 12px 18px;
+      background: #0f2235;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-label span:last-child { color: #17a2b8; font-weight: 700; }
+    .progress-bar-track {
+      background: #0d1b2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #17a2b8, #20c997);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      padding: 6px 0 2px;
+      letter-spacing: 0.5px;
+      border-top: 1px solid #1a3350;
+      margin-top: 4px;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a7f94;
+      line-height: 1.4;
+    }
+    .doc-seq-item.current { color: #17a2b8; font-weight: 700; }
+    .doc-seq-item.done { color: #20c997; }
+    .doc-seq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a3d50;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #17a2b8; }
+    .doc-seq-item.done .doc-seq-dot { background: #20c997; }
+
+    /* Section nav */
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #17a2b8;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.77rem;
+      color: #8a9bb0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: rgba(23,162,184,0.12);
+      border-left-color: #17a2b8;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px;
+      border-top: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.73rem;
+      color: #9aacbc;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #17a2b8;
+      flex-shrink: 0;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .check-item.checked { color: #20c997; text-decoration: line-through; }
+
+    /* ── Hamburger (mobile only) ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: #0d1b2a;
+      border: 2px solid #17a2b8;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #17a2b8;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+    }
+
+    /* ── Main Content ── */
+    .main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #112233 55%, #0f3460 100%);
+      color: white;
+      padding: 40px 48px 36px;
+      border-bottom: 4px solid #17a2b8;
+    }
+    .header-eyebrow {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #17a2b8;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .page-header h1 em {
+      color: #20c997;
+      font-style: normal;
+    }
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(23,162,184,0.18);
+      border: 1px solid rgba(23,162,184,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #a0d8e8;
+    }
+    .meta-badge strong { color: #ffffff; }
+
+    /* Info alert */
+    .alert {
+      margin: 0 48px 0;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .alert-info {
+      background: #e8f4f8;
+      border-left: 5px solid #17a2b8;
+      color: #0c4a5e;
+    }
+    .alert-warning {
+      background: #fff8e1;
+      border-left: 5px solid #f59e0b;
+      color: #7c4a00;
+    }
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Content area */
+    .content-area { padding: 32px 48px 0; }
+
+    /* Section cards */
+    .section-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #17a2b8;
+      scroll-margin-top: 24px;
+    }
+    .section-card h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #17a2b8;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-card p { color: #3a4a5a; font-size: 0.92rem; margin-bottom: 12px; }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    /* Optional badge */
+    .optional-badge {
+      display: inline-block;
+      background: #f0f4f8;
+      border: 1px solid #c0cdd8;
+      color: #5a6f84;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-radius: 12px;
+      padding: 2px 10px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    /* Prose lists */
+    .prose-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .prose-list li {
+      position: relative;
+      padding: 4px 0 4px 20px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .prose-list li::before {
+      content: '&#9658;';
+      position: absolute;
+      left: 0;
+      color: #17a2b8;
+      font-size: 0.7rem;
+      top: 7px;
+    }
+    .prose-list li strong { color: #0d1b2a; }
+
+    /* VM Spec table */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 14px 0;
+    }
+    .spec-table th {
+      background: #0d1b2a;
+      color: #17a2b8;
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .spec-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+    }
+    .spec-table tr:last-child td { border-bottom: none; }
+    .spec-table tr:nth-child(even) td { background: #f7f9fc; }
+    .spec-table td:first-child { font-weight: 600; color: #0d1b2a; width: 38%; }
+
+    /* Proxmox steps layout */
+    .proxmox-steps {
+      background: #f7f9fc;
+      border: 1px solid #d0dce8;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 14px 0;
+    }
+    .proxmox-steps .px-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid #e0e8f0;
+      font-size: 0.85rem;
+      color: #3a4a5a;
+    }
+    .proxmox-steps .px-row:last-child { border-bottom: none; }
+    .proxmox-steps .px-field {
+      font-weight: 700;
+      color: #0d1b2a;
+      min-width: 160px;
+      flex-shrink: 0;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #17a2b8;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .code-block pre { margin: 0; }
+    .code-block pre code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #c8d8e8;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* Inline code */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      background: #e8f4f8;
+      color: #0c4a5e;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .code-block code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+    /* Note box */
+    .note-box {
+      background: #f0f9fc;
+      border: 1px solid #b2dde8;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #1a4a5e;
+    }
+    .note-box strong { color: #0d1b2a; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .page-header { padding: 50px 20px 28px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .content-area { padding: 20px 20px 0; }
+      .alert { margin: 0 20px 0; }
+      .section-card { padding: 20px 18px; }
+      .spec-table td, .spec-table th { padding: 7px 10px; }
+      .header-meta { gap: 6px; }
+    }
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.2rem; }
+    }
+
+    /* ── Focus styles for accessibility ── */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #17a2b8;
+      outline-offset: 3px;
+    }
+    .hamburger:focus-visible { outline: 3px solid #17a2b8; outline-offset: 2px; }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      background: #17a2b8;
+      color: #fff;
+      padding: 10px 18px;
+      z-index: 999;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 0 0 6px 0;
+      text-decoration: none;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="page-wrapper">
+
+  <!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
+  <nav class="sidebar" id="sidebar" aria-label="Build guide navigation">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-course">CSC 152 &middot; Project 3</div>
+      <div class="sidebar-title">Build 06 of 15</div>
+      <div class="sidebar-subtitle">linux-client VM</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="sidebar-progress" aria-label="Checklist progress">
+      <div class="progress-label">
+        <span>Checklist Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Doc sequence -->
+    <div class="doc-sequence" aria-label="Document sequence">
+      <div class="doc-sequence-label">Build Sequence</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>01 &middot; Proxmox Network Bridges</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>02 &middot; pfSense VM Build</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>03 &middot; Ubuntu Template + linux-server</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>04 &middot; Windows Server dc01</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>05 &middot; Xubuntu Template + mgmt-vm</div>
+      <div class="doc-seq-item current" aria-current="page"><span class="doc-seq-dot"></span>06 &middot; linux-client VM</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>07 &middot; splunk-vm Build</div>
+
+      <div class="doc-seq-divider">&#8212;&#8212; Integration Plans &#8212;&#8212;</div>
+
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>08 &middot; pfSense Full Configuration</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>09 &middot; Active Directory &amp; DNS</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>10 &middot; Linux Server Hardening</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>11 &middot; Windows Server Hardening</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>12 &middot; Splunk Deployment</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>13 &middot; Linux Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>14 &middot; Windows Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>15 &middot; Backup Strategy</div>
+    </div>
+
+    <!-- Section nav -->
+    <div class="sidebar-nav">
+      <div class="nav-label">Sections</div>
+      <a href="#overview">Overview</a>
+      <a href="#clone-template">Clone from Template 9002</a>
+      <a href="#configure-dhcp">Configure linux-client (DHCP)</a>
+      <a href="#domain-join">Domain Join (Optional)</a>
+      <a href="#power-off">Power Off &amp; Store</a>
+    </div>
+
+    <!-- Checklist -->
+    <div class="sidebar-checks">
+      <div class="sidebar-checks-label">Build Checklist</div>
+
+      <label class="check-item" id="ck-label-0">
+        <input type="checkbox" id="ck0" aria-label="VM 1005 linux-client cloned from template 9002" />
+        <span>VM 1005 (linux-client) cloned from template 9002</span>
+      </label>
+      <label class="check-item" id="ck-label-1">
+        <input type="checkbox" id="ck1" aria-label="Network bridge confirmed as vmbr3 Clients" />
+        <span>Network bridge confirmed as vmbr3 (Clients)</span>
+      </label>
+      <label class="check-item" id="ck-label-2">
+        <input type="checkbox" id="ck2" aria-label="Hostname set to linux-client" />
+        <span>Hostname set to linux-client</span>
+      </label>
+      <label class="check-item" id="ck-label-3">
+        <input type="checkbox" id="ck3" aria-label="Netplan configured for DHCP on vmbr3" />
+        <span>Netplan configured for DHCP on vmbr3</span>
+      </label>
+      <label class="check-item" id="ck-label-4">
+        <input type="checkbox" id="ck4" aria-label="VM powered off and ready for Project 4 testing" />
+        <span>VM powered off (ready for Project 4 / testing)</span>
+      </label>
+    </div>
+
+  </nav>
+  <!-- end sidebar -->
+
+  <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
+  <main class="main-content" id="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-eyebrow">CSC 152 &middot; Project 3 &middot; Build 06 of 15</div>
+      <h1>Build 06: <em>linux-client</em> VM</h1>
+      <p class="page-subtitle">
+        Clone the Xubuntu template to create a test client VM on the Clients network &mdash;
+        kept available for testing and Project 4
+      </p>
+      <div class="header-meta" aria-label="VM specifications">
+        <div class="meta-badge"><strong>VM ID:</strong> 1005</div>
+        <div class="meta-badge"><strong>vCPU:</strong> 1</div>
+        <div class="meta-badge"><strong>RAM:</strong> 2 GB</div>
+        <div class="meta-badge"><strong>Disk:</strong> 20 GB</div>
+        <div class="meta-badge"><strong>Network:</strong> vmbr3 (Clients)</div>
+        <div class="meta-badge"><strong>IP:</strong> DHCP (10.0.3.100&ndash;200)</div>
+      </div>
+    </header>
+
+    <!-- Top alert -->
+    <div class="alert alert-info" role="note" style="margin-top: 20px;">
+      <span class="alert-icon" aria-hidden="true">&#8505;</span>
+      <div>
+        <strong>Build and shelve:</strong> You will likely not power this VM on during Project 3.
+        Build it now, leave it off, and it will be ready when Project 4 needs a client system.
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <!-- ── Section 1: Overview ── -->
+      <section class="section-card" id="overview" aria-labelledby="h-overview">
+        <h2 id="h-overview"><span class="section-num" aria-hidden="true">1</span> Overview</h2>
+        <p>
+          The <strong>linux-client</strong> VM is a lightweight Xubuntu desktop on the
+          <strong>Clients network (vmbr3)</strong>. It represents an end-user workstation in the
+          TechStart Solutions environment &mdash; the kind of machine a typical employee would use
+          day-to-day.
+        </p>
+        <p>
+          Project 3 does not actively use this VM. It is built now so it is available for two
+          future purposes:
+        </p>
+        <ul class="prose-list">
+          <li><strong>Firewall rule testing</strong> &mdash; used in Integration Plan 08 to verify
+            pfSense is correctly segmenting Clients from Servers and Management networks.</li>
+          <li><strong>Project 4</strong> &mdash; the client VM will be used for end-to-end testing
+            of domain authentication, log forwarding, and network services.</li>
+        </ul>
+        <p>
+          Because the VM is cloned from the Xubuntu minimal template (9002), no ISO download
+          or OS installation is required. The entire build takes only a few minutes.
+        </p>
+
+        <table class="spec-table" aria-label="linux-client VM specifications">
+          <thead>
+            <tr>
+              <th scope="col">Specification</th>
+              <th scope="col">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>VM ID</td><td>1005</td></tr>
+            <tr><td>Name</td><td>linux-client</td></tr>
+            <tr><td>Source template</td><td>9002 (xubuntu-minimal-template)</td></tr>
+            <tr><td>vCPU</td><td>1</td></tr>
+            <tr><td>RAM</td><td>2 GB (2048 MB)</td></tr>
+            <tr><td>Disk</td><td>20 GB</td></tr>
+            <tr><td>Network bridge</td><td>vmbr3 (Clients &mdash; 10.0.3.0/24)</td></tr>
+            <tr><td>IP assignment</td><td>DHCP (will receive 10.0.3.100&ndash;200 from pfSense)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ── Section 2: Clone from Template 9002 ── -->
+      <section class="section-card" id="clone-template" aria-labelledby="h-clone-template">
+        <h2 id="h-clone-template"><span class="section-num" aria-hidden="true">2</span> Clone from Template 9002</h2>
+        <p>
+          In the Proxmox web UI, right-click <strong>template 9002 (xubuntu-minimal-template)</strong>
+          and select <strong>Clone</strong>. Use the following settings:
+        </p>
+
+        <div class="proxmox-steps">
+          <div class="px-row">
+            <span class="px-field">Mode</span>
+            <span><strong>Full Clone</strong> &mdash; creates an independent disk copy, not linked to the template</span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">VM ID</span>
+            <span><strong>1005</strong></span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Name</span>
+            <span><strong>linux-client</strong></span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Target Storage</span>
+            <span><strong>local-lvm</strong></span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Click</span>
+            <span><strong>Clone</strong> and wait for the task to complete (~1&ndash;2 minutes)</span>
+          </div>
+        </div>
+
+        <p>
+          After cloning, verify the VM resources. No changes are needed &mdash; the template
+          defaults match the target spec:
+        </p>
+
+        <ul class="prose-list">
+          <li><strong>CPU:</strong> keep 1 vCPU (no change needed)</li>
+          <li><strong>RAM:</strong> keep 2 GB (no change needed)</li>
+          <li><strong>Disk:</strong> keep 20 GB (no change needed)</li>
+          <li><strong>Network:</strong> confirm the bridge is <code>vmbr3</code> (Clients) &mdash;
+            <em>not</em> vmbr2 (Servers). If it shows vmbr1 or vmbr2, edit the network device
+            and change it to vmbr3 before proceeding.</li>
+        </ul>
+
+        <div class="note-box">
+          <strong>Why vmbr3?</strong> The Clients network (vmbr3 / 10.0.3.0/24) is intentionally
+          separated from the Servers network (vmbr2 / 10.0.2.0/24) by pfSense firewall rules.
+          Placing a client workstation on vmbr3 correctly models real-world network segmentation.
+        </div>
+      </section>
+
+      <!-- ── Section 3: Configure linux-client (DHCP) ── -->
+      <section class="section-card" id="configure-dhcp" aria-labelledby="h-configure-dhcp">
+        <h2 id="h-configure-dhcp"><span class="section-num" aria-hidden="true">3</span> Configure linux-client (DHCP)</h2>
+        <p>
+          Start VM 1005 and log in as <code>sysadmin</code>. Open a terminal (right-click the
+          desktop &rarr; Terminal Emulator) and run the following commands:
+        </p>
+
+        <div class="code-block" role="region" aria-label="Set hostname command">
+          <div class="code-block-label">Step 1 &mdash; Set hostname</div>
+          <pre><code># Set hostname
+sudo hostnamectl set-hostname linux-client</code></pre>
+        </div>
+
+        <div class="code-block" role="region" aria-label="Open Netplan configuration">
+          <div class="code-block-label">Step 2 &mdash; Open Netplan config (verify DHCP is set)</div>
+          <pre><code># Configure DHCP via Netplan (should already be default, but verify)
+sudo nano /etc/netplan/01-netcfg.yaml</code></pre>
+        </div>
+
+        <p>
+          The file should contain the following. If it does not, replace its contents with
+          the DHCP configuration below:
+        </p>
+
+        <div class="code-block" role="region" aria-label="Netplan DHCP configuration YAML">
+          <div class="code-block-label">Netplan config &mdash; /etc/netplan/01-netcfg.yaml</div>
+          <pre><code>network:
+  version: 2
+  ethernets:
+    ens18:
+      dhcp4: true</code></pre>
+        </div>
+
+        <div class="code-block" role="region" aria-label="Apply Netplan and check IP">
+          <div class="code-block-label">Step 3 &mdash; Apply and verify</div>
+          <pre><code>sudo netplan apply
+
+# Verify — expect an IP in 10.0.3.100-200 range after pfSense is configured
+ip addr show ens18</code></pre>
+        </div>
+
+        <div class="alert alert-info" role="note" style="margin: 14px 0 0; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>No IP yet &mdash; that is normal.</strong> The DHCP lease from pfSense will
+            not work until pfSense is fully configured in Integration Plan 08. At this stage the
+            VM will show no IP or a <code>169.254.x.x</code> link-local address. This is expected
+            behavior.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section 4: Domain Join (Optional) ── -->
+      <section class="section-card" id="domain-join" aria-labelledby="h-domain-join">
+        <h2 id="h-domain-join">
+          <span class="section-num" aria-hidden="true">4</span>
+          Domain Join
+          <span class="optional-badge">Optional for Project 3</span>
+        </h2>
+        <p>
+          Joining the linux-client to the <code>techstart.local</code> Active Directory domain
+          is <strong>not required for Project 3</strong>. These steps are provided for reference
+          and will become relevant in Project 4 once Active Directory is fully configured
+          (Build 09).
+        </p>
+
+        <div class="code-block" role="region" aria-label="Domain join commands">
+          <div class="code-block-label">Domain join &mdash; run after Active Directory is configured (Build 09)</div>
+          <pre><code># Install sssd and realmd for domain join
+sudo apt install -y realmd sssd adcli samba-common-bin
+
+# Discover the domain (after AD is configured in Build 09)
+realm discover techstart.local
+
+# Join the domain
+sudo realm join -U ts.admin techstart.local</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Prerequisites before domain join:</strong> Active Directory must be running and
+          reachable on dc01 (10.0.2.11), DNS must resolve <code>techstart.local</code>, and
+          pfSense firewall rules must allow traffic from the Clients network (vmbr3) to reach
+          the Servers network (vmbr2). None of these are true yet at this stage.
+        </div>
+      </section>
+
+      <!-- ── Section 5: Power Off and Store ── -->
+      <section class="section-card" id="power-off" aria-labelledby="h-power-off">
+        <h2 id="h-power-off"><span class="section-num" aria-hidden="true">5</span> Power Off and Store</h2>
+        <p>
+          Once the hostname and Netplan configuration are confirmed, shut the VM down cleanly:
+        </p>
+
+        <div class="code-block" role="region" aria-label="Shutdown command">
+          <div class="code-block-label">Shut down VM 1005</div>
+          <pre><code>sudo poweroff</code></pre>
+        </div>
+
+        <p>
+          Leave VM 1005 powered off. No further action is needed for this build. The VM is
+          ready and waiting for use in:
+        </p>
+
+        <ul class="prose-list">
+          <li><strong>Integration Plan 08</strong> &mdash; power on temporarily to test pfSense
+            firewall rules from the Clients network</li>
+          <li><strong>Project 4</strong> &mdash; used as the primary end-user client for
+            testing domain authentication, network services, and log collection</li>
+        </ul>
+
+        <div class="alert alert-info" role="note" style="margin: 14px 0 0; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Build 06 is complete.</strong> The linux-client VM (1005) is built, configured
+            for DHCP on the Clients network, and stored offline. Proceed to
+            <strong>Build 07: splunk-vm</strong> to set up the dedicated Splunk SIEM server.
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /content-area -->
+  </main>
+</div><!-- /page-wrapper -->
+
+<script>
+  'use strict';
+
+  /* ── Hamburger / sidebar toggle ── */
+  const hamburger = document.getElementById('hamburger');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    overlay.removeAttribute('aria-hidden');
+    hamburger.setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  });
+
+  /* ── Checklist → progress bar ── */
+  const checkboxes    = document.querySelectorAll('.sidebar-checks input[type="checkbox"]');
+  const progressBar   = document.getElementById('progress-bar');
+  const progressPct   = document.getElementById('progress-pct');
+  const progressTrack = document.getElementById('progress-bar-track');
+
+  function updateProgress() {
+    const total   = checkboxes.length;
+    const checked = Array.from(checkboxes).filter(c => c.checked).length;
+    const pct     = total > 0 ? Math.round((checked / total) * 100) : 0;
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    progressTrack.setAttribute('aria-valuenow', pct);
+  }
+
+  checkboxes.forEach((cb, i) => {
+    const label = document.getElementById('ck-label-' + i);
+    cb.addEventListener('change', () => {
+      if (label) label.classList.toggle('checked', cb.checked);
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+  /* ── Active section nav highlighting ── */
+  const sections = document.querySelectorAll('.section-card[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(link => {
+          const href = link.getAttribute('href');
+          link.classList.toggle('active', href === '#' + id);
+          if (href === '#' + id) {
+            link.setAttribute('aria-current', 'true');
+          } else {
+            link.removeAttribute('aria-current');
+          }
+        });
+      }
+    });
+  }, { root: null, rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+  sections.forEach(section => observer.observe(section));
+
+  /* ── Close sidebar on nav link click (mobile) ── */
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) closeSidebar();
+    });
+  });
+</script>
+
+</body>
+</html>

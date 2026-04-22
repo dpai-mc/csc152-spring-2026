@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration 08: pfSense Full Configuration | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a2332;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #d0d8e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      background: #0a1520;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #7c3aed;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #7c3aed;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8a9bb0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 12px 18px;
+      background: #0f2235;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-label span:last-child { color: #7c3aed; font-weight: 700; }
+    .progress-bar-track {
+      background: #0d1b2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      padding: 6px 0 2px;
+      letter-spacing: 0.5px;
+      border-top: 1px solid #1a3350;
+      margin-top: 4px;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a7f94;
+      line-height: 1.4;
+    }
+    .doc-seq-item.current { color: #7c3aed; font-weight: 700; }
+    .doc-seq-item.done { color: #20c997; }
+    .doc-seq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a3d50;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #7c3aed; }
+    .doc-seq-item.done .doc-seq-dot { background: #20c997; }
+
+    /* Section nav */
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #7c3aed;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.77rem;
+      color: #8a9bb0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: rgba(124,58,237,0.12);
+      border-left-color: #7c3aed;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px;
+      border-top: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.73rem;
+      color: #9aacbc;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #7c3aed;
+      flex-shrink: 0;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .check-item.checked { color: #20c997; text-decoration: line-through; }
+
+    /* ── Hamburger (mobile only) ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: #0d1b2a;
+      border: 2px solid #7c3aed;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #7c3aed;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+    }
+
+    /* ── Main Content ── */
+    .main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #150d2e 55%, #2d1b69 100%);
+      color: white;
+      padding: 40px 48px 36px;
+      border-bottom: 4px solid #7c3aed;
+    }
+    .header-eyebrow {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .page-header h1 em {
+      color: #a78bfa;
+      font-style: normal;
+    }
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(124,58,237,0.18);
+      border: 1px solid rgba(124,58,237,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #c4b5fd;
+    }
+    .meta-badge strong { color: #ffffff; }
+
+    /* Alerts */
+    .alert {
+      margin: 0 48px 0;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .alert-info {
+      background: #e8f4f8;
+      border-left: 5px solid #17a2b8;
+      color: #0c4a5e;
+    }
+    .alert-warning {
+      background: #fff8e1;
+      border-left: 5px solid #f59e0b;
+      color: #7c4a00;
+    }
+    .alert-purple {
+      background: #f5f0ff;
+      border-left: 5px solid #7c3aed;
+      color: #3b1f7a;
+    }
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Content area */
+    .content-area { padding: 32px 48px 0; }
+
+    /* Section cards */
+    .section-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #7c3aed;
+      scroll-margin-top: 24px;
+    }
+    .section-card h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-card h3 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1a2332;
+      margin: 20px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #e8edf2;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-card p { color: #3a4a5a; font-size: 0.92rem; margin-bottom: 12px; }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    /* Prose lists */
+    .prose-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .prose-list li {
+      position: relative;
+      padding: 4px 0 4px 20px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .prose-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-size: 0.7rem;
+      top: 7px;
+    }
+    .prose-list li strong { color: #0d1b2a; }
+
+    /* Spec / config table */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 14px 0;
+    }
+    .spec-table th {
+      background: #0d1b2a;
+      color: #a78bfa;
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .spec-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+    }
+    .spec-table tr:last-child td { border-bottom: none; }
+    .spec-table tr:nth-child(even) td { background: #f7f9fc; }
+    .spec-table td:first-child { font-weight: 600; color: #0d1b2a; width: 38%; }
+    .spec-table td code { font-size: 0.82em; }
+
+    /* Firewall rules table */
+    .fw-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin: 14px 0;
+    }
+    .fw-table th {
+      background: #1a2332;
+      color: #c4b5fd;
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+    }
+    .fw-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+      vertical-align: top;
+    }
+    .fw-table tr:last-child td { border-bottom: none; }
+    .fw-table tr:nth-child(even) td { background: #f7f9fc; }
+    .fw-table .rule-pass {
+      display: inline-block;
+      background: #d1fae5;
+      color: #065f46;
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .fw-table .rule-block {
+      display: inline-block;
+      background: #fee2e2;
+      color: #991b1b;
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* DNS host overrides table */
+    .dns-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+      margin: 14px 0;
+    }
+    .dns-table th {
+      background: #0d1b2a;
+      color: #a78bfa;
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .dns-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+    }
+    .dns-table tr:last-child td { border-bottom: none; }
+    .dns-table tr:nth-child(even) td { background: #f7f9fc; }
+    .dns-table td code { font-size: 0.85em; }
+
+    /* Numbered steps */
+    .steps-list {
+      list-style: none;
+      padding: 0;
+      counter-reset: steps;
+      margin: 14px 0;
+    }
+    .steps-list li {
+      counter-increment: steps;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid #edf0f4;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+      line-height: 1.55;
+    }
+    .steps-list li:last-child { border-bottom: none; }
+    .steps-list li::before {
+      content: counter(steps);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .steps-list li strong { color: #0d1b2a; }
+    .steps-list li .sub-note {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.80rem;
+      color: #6a7f94;
+      font-style: italic;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: #0d1b2a;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #17a2b8;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .code-block pre { margin: 0; }
+    .code-block pre code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #c8d8e8;
+      white-space: pre;
+      line-height: 1.6;
+    }
+    .code-block pre code .c { color: #6a8fa8; }
+    .code-block pre code .k { color: #17a2b8; }
+
+    /* Inline code */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      background: #e8f4f8;
+      color: #0c4a5e;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .code-block code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+    /* UI navigation path */
+    .ui-path {
+      background: #f5f0ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 12px 18px;
+      margin: 12px 0;
+      font-size: 0.85rem;
+      color: #3b1f7a;
+      font-weight: 600;
+    }
+    .ui-path .arrow { color: #7c3aed; margin: 0 4px; }
+
+    /* Config block */
+    .config-block {
+      background: #f7f9fc;
+      border: 1px solid #d0dce8;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 14px 0;
+    }
+    .config-block p { font-size: 0.88rem; color: #3a4a5a; margin: 0; }
+    .config-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid #e0e8f0;
+      font-size: 0.85rem;
+      color: #3a4a5a;
+    }
+    .config-row:last-child { border-bottom: none; }
+    .config-field {
+      font-weight: 700;
+      color: #0d1b2a;
+      min-width: 200px;
+      flex-shrink: 0;
+    }
+
+    /* Note box */
+    .note-box {
+      background: #f0f9fc;
+      border: 1px solid #b2dde8;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #1a4a5e;
+    }
+    .note-box strong { color: #0d1b2a; }
+
+    /* Network topology display */
+    .topo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .topo-card {
+      background: #f7f9fc;
+      border: 1px solid #d0dce8;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .topo-card-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #7c3aed;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .topo-card-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #0d1b2a;
+      margin-bottom: 4px;
+    }
+    .topo-card-detail {
+      font-size: 0.78rem;
+      color: #4a6070;
+      line-height: 1.5;
+    }
+    .topo-card-detail code { font-size: 0.85em; }
+
+    /* Subsection badge */
+    .sub-badge {
+      display: inline-block;
+      background: #ede9fe;
+      color: #5b21b6;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .page-header { padding: 50px 20px 28px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .content-area { padding: 20px 20px 0; }
+      .alert { margin: 0 20px 0; }
+      .section-card { padding: 20px 18px; }
+      .spec-table td, .spec-table th { padding: 7px 10px; }
+      .fw-table td, .fw-table th { padding: 6px 8px; font-size: 0.78rem; }
+      .header-meta { gap: 6px; }
+      .config-field { min-width: 140px; }
+      .topo-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.2rem; }
+      .topo-grid { grid-template-columns: 1fr; }
+      .fw-table { font-size: 0.76rem; }
+    }
+
+    /* ── Focus styles for accessibility ── */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #7c3aed;
+      outline-offset: 3px;
+    }
+    .hamburger:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      background: #7c3aed;
+      color: #fff;
+      padding: 10px 18px;
+      z-index: 999;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 0 0 6px 0;
+      text-decoration: none;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="page-wrapper">
+
+  <!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
+  <nav class="sidebar" id="sidebar" aria-label="Integration guide navigation">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-course">CSC 152 · Project 3</div>
+      <div class="sidebar-title">Integration 08 of 15</div>
+      <div class="sidebar-subtitle">pfSense Full Configuration</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="sidebar-progress" aria-label="Checklist progress">
+      <div class="progress-label">
+        <span>Checklist Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Doc sequence -->
+    <div class="doc-sequence" aria-label="Document sequence">
+      <div class="doc-sequence-label">Build Sequence</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>01 · Proxmox Network Bridges</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>02 · pfSense VM Build</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>03 · Ubuntu Template + linux-server</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>04 · Windows Server dc01</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>05 · Xubuntu Template + mgmt-vm</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>06 · linux-client VM</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>07 · splunk-vm Build</div>
+
+      <div class="doc-seq-divider">&#8212;&#8212; Integration Plans &#8212;&#8212;</div>
+
+      <div class="doc-seq-item current" aria-current="page"><span class="doc-seq-dot"></span>08 · pfSense Full Configuration</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>09 · Active Directory &amp; DNS</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>10 · Linux Server Hardening</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>11 · Windows Server Hardening</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>12 · Splunk Deployment</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>13 · Linux Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>14 · Windows Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>15 · Backup Strategy</div>
+    </div>
+
+    <!-- Section nav -->
+    <div class="sidebar-nav">
+      <div class="nav-label">Sections</div>
+      <a href="#overview">Overview &amp; Access</a>
+      <a href="#opt1">OPT1 — Servers Network</a>
+      <a href="#opt2">OPT2 — Clients Network</a>
+      <a href="#dhcp">DHCP Server (Clients)</a>
+      <a href="#dns">DNS Resolver</a>
+      <a href="#firewall">Firewall Rules</a>
+      <a href="#nat">NAT / Outbound</a>
+      <a href="#verify">Connectivity Verification</a>
+    </div>
+
+    <!-- Checklist -->
+    <div class="sidebar-checks">
+      <div class="sidebar-checks-label">Integration Checklist</div>
+
+      <label class="check-item" id="ck-label-0">
+        <input type="checkbox" id="ck0" aria-label="pfSense web UI accessed from mgmt-vm at 10.0.1.1" />
+        <span>pfSense web UI accessed from mgmt-vm at 10.0.1.1</span>
+      </label>
+      <label class="check-item" id="ck-label-1">
+        <input type="checkbox" id="ck1" aria-label="Setup wizard completed with hostname, DNS, and admin password changed" />
+        <span>Setup wizard completed (hostname, DNS, admin password changed)</span>
+      </label>
+      <label class="check-item" id="ck-label-2">
+        <input type="checkbox" id="ck2" aria-label="OPT1 SERVERS configured at 10.0.2.1/24" />
+        <span>OPT1 (SERVERS) configured: 10.0.2.1/24</span>
+      </label>
+      <label class="check-item" id="ck-label-3">
+        <input type="checkbox" id="ck3" aria-label="OPT2 CLIENTS configured at 10.0.3.1/24" />
+        <span>OPT2 (CLIENTS) configured: 10.0.3.1/24</span>
+      </label>
+      <label class="check-item" id="ck-label-4">
+        <input type="checkbox" id="ck4" aria-label="DHCP server enabled on CLIENTS with pool 10.0.3.100-200" />
+        <span>DHCP server enabled on CLIENTS (pool 10.0.3.100&#8211;200)</span>
+      </label>
+      <label class="check-item" id="ck-label-5">
+        <input type="checkbox" id="ck5" aria-label="DNS Resolver configured with host overrides" />
+        <span>DNS Resolver configured with host overrides</span>
+      </label>
+      <label class="check-item" id="ck-label-6">
+        <input type="checkbox" id="ck6" aria-label="LAN firewall rules: allow all from management" />
+        <span>LAN firewall rules: allow all from management</span>
+      </label>
+      <label class="check-item" id="ck-label-7">
+        <input type="checkbox" id="ck7" aria-label="SERVERS firewall rules: allow internet, inter-server, Splunk web" />
+        <span>SERVERS rules: allow internet, inter-server, Splunk web</span>
+      </label>
+      <label class="check-item" id="ck-label-8">
+        <input type="checkbox" id="ck8" aria-label="CLIENTS firewall rules: allow internet, limited server access" />
+        <span>CLIENTS rules: allow internet, limited server access</span>
+      </label>
+      <label class="check-item" id="ck-label-9">
+        <input type="checkbox" id="ck9" aria-label="NAT outbound verified in automatic mode" />
+        <span>NAT outbound verified (auto mode)</span>
+      </label>
+      <label class="check-item" id="ck-label-10">
+        <input type="checkbox" id="ck10" aria-label="Ping tests pass from mgmt-vm to all VMs" />
+        <span>Ping tests pass from mgmt-vm to all VMs</span>
+      </label>
+      <label class="check-item" id="ck-label-11">
+        <input type="checkbox" id="ck11" aria-label="Internet access verified from linux-server" />
+        <span>Internet access verified from linux-server</span>
+      </label>
+      <label class="check-item" id="ck-label-12">
+        <input type="checkbox" id="ck12" aria-label="linux-client receives DHCP address in 10.0.3.x range" />
+        <span>linux-client receives DHCP address (10.0.3.x)</span>
+      </label>
+    </div>
+
+  </nav>
+  <!-- end sidebar -->
+
+  <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
+  <main class="main-content" id="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-eyebrow">CSC 152 · Project 3 · Integration 08 of 15</div>
+      <h1>Integration 08: <em>pfSense</em> Full Network Configuration</h1>
+      <p class="page-subtitle">
+        Configure all pfSense interfaces, DHCP, DNS, firewall rules, and NAT &mdash;
+        establishing full connectivity for all VMs
+      </p>
+      <div class="header-meta" aria-label="Access information">
+        <div class="meta-badge"><strong>Access:</strong> http://10.0.1.1 from mgmt-vm</div>
+        <div class="meta-badge"><strong>Admin:</strong> admin / pfsense (change immediately)</div>
+        <div class="meta-badge"><strong>WAN:</strong> DHCP 192.168.50.x</div>
+      </div>
+    </header>
+
+    <!-- Top alert -->
+    <div class="alert alert-purple" role="note" style="margin-top: 20px;">
+      <span class="alert-icon" aria-hidden="true">&#9679;</span>
+      <div>
+        <strong>All 7 VMs are built.</strong> This integration step brings everything together.
+        After completing this guide, pfSense will route traffic between all three networks
+        (Management, Servers, Clients) and provide internet access to all VMs through NAT.
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <!-- ── Section 1: Overview & Access ── -->
+      <section class="section-card" id="overview" aria-labelledby="h-overview">
+        <h2 id="h-overview"><span class="section-num" aria-hidden="true">1</span> Overview and Access</h2>
+
+        <p>
+          pfSense is already installed and running from Build 02. At this stage it only has
+          its WAN and LAN interfaces active. This integration step configures the remaining
+          interfaces, services, and security rules that make the full lab network functional.
+        </p>
+
+        <h3>Network Topology</h3>
+        <div class="topo-grid" aria-label="Network topology summary">
+          <div class="topo-card">
+            <div class="topo-card-label">WAN</div>
+            <div class="topo-card-name">vtnet0 / vmbr0</div>
+            <div class="topo-card-detail">
+              DHCP from home router<br>
+              <code>192.168.50.0/24</code>
+            </div>
+          </div>
+          <div class="topo-card">
+            <div class="topo-card-label">LAN — Management</div>
+            <div class="topo-card-name">vtnet1 / vmbr1</div>
+            <div class="topo-card-detail">
+              pfSense: <code>10.0.1.1/24</code><br>
+              mgmt-vm: <code>10.0.1.10</code>
+            </div>
+          </div>
+          <div class="topo-card">
+            <div class="topo-card-label">OPT1 — Servers</div>
+            <div class="topo-card-name">vtnet2 / vmbr2</div>
+            <div class="topo-card-detail">
+              pfSense: <code>10.0.2.1/24</code><br>
+              linux-server: <code>.10</code> &nbsp; dc01: <code>.11</code><br>
+              splunk-vm: <code>.20</code>
+            </div>
+          </div>
+          <div class="topo-card">
+            <div class="topo-card-label">OPT2 — Clients</div>
+            <div class="topo-card-name">vtnet3 / vmbr3</div>
+            <div class="topo-card-detail">
+              pfSense: <code>10.0.3.1/24</code><br>
+              DHCP pool: <code>.100</code> &ndash; <code>.200</code>
+            </div>
+          </div>
+        </div>
+
+        <h3>Access the pfSense Web UI</h3>
+        <ol class="steps-list" aria-label="Steps to access pfSense web UI">
+          <li>
+            <div>
+              <strong>Start mgmt-vm</strong> (VM 1004) in Proxmox if it is not already running.
+              Open its console or log in from the Proxmox noVNC session.
+            </div>
+          </li>
+          <li>
+            <div>
+              On mgmt-vm, open <strong>Firefox</strong> and navigate to
+              <code>http://10.0.1.1</code>. The pfSense login page will appear.
+            </div>
+          </li>
+          <li>
+            <div>
+              Log in with the default credentials: username <code>admin</code>, password
+              <code>pfsense</code>.
+              <span class="sub-note">The Setup Wizard launches automatically on first login.</span>
+            </div>
+          </li>
+        </ol>
+
+        <h3>Setup Wizard Steps</h3>
+        <p>Walk through the pfSense Setup Wizard using these values:</p>
+
+        <div class="config-block" aria-label="Setup wizard configuration">
+          <div class="config-row">
+            <span class="config-field">Step 1 — General Information</span>
+            <span>Hostname: <code>pfsense</code> &nbsp; Domain: <code>techstart.local</code><br>
+            Primary DNS: <code>10.0.2.11</code> &nbsp; Secondary DNS: <code>8.8.8.8</code><br>
+            Uncheck "Override DNS"</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Step 2 — Time Server</span>
+            <span>NTP: <code>0.pfsense.pool.ntp.org</code><br>
+            Timezone: <code>America/Los_Angeles</code> (or your local timezone)</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Step 3 — WAN Interface</span>
+            <span>Type: <strong>DHCP</strong> — leave all defaults, do not change</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Step 4 — LAN Interface</span>
+            <span>Confirm IP address is <code>10.0.1.1/24</code> — leave as-is</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Step 5 — Admin Password</span>
+            <span><strong>Change the admin password now.</strong> Use a strong password and record it securely.</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Step 6 — Reload</span>
+            <span>Click <strong>Reload</strong>. pfSense saves settings and returns to the dashboard.</span>
+          </div>
+        </div>
+
+        <div class="alert alert-warning" role="note" style="margin: 14px 0 0; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Change the default password immediately.</strong> The default
+            <code>admin / pfsense</code> credential is publicly documented. Any student
+            leaving this unchanged in a production environment creates a critical security risk.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section 2: OPT1 ── -->
+      <section class="section-card" id="opt1" aria-labelledby="h-opt1">
+        <h2 id="h-opt1"><span class="section-num" aria-hidden="true">2</span> Configure OPT1 (Servers Network)</h2>
+
+        <p>
+          OPT1 corresponds to the second virtual NIC (<code>vtnet2</code> / <code>vmbr2</code>),
+          which connects to linux-server, dc01, and splunk-vm. By default it is unassigned and
+          disabled. We will enable it and give it a static IP.
+        </p>
+
+        <div class="ui-path" aria-label="pfSense navigation path">
+          <strong>Interfaces</strong> <span class="arrow">&#8594;</span>
+          <strong>[OPT1]</strong>
+        </div>
+
+        <div class="config-block" aria-label="OPT1 interface settings">
+          <div class="config-row">
+            <span class="config-field">Enable Interface</span>
+            <span><strong>Check the box</strong> to enable this interface</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Description</span>
+            <span><code>SERVERS</code></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">IPv4 Configuration Type</span>
+            <span><strong>Static IPv4</strong></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">IPv4 Address</span>
+            <span><code>10.0.2.1</code> &nbsp; Subnet: <code>/24</code></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">IPv4 Upstream Gateway</span>
+            <span><strong>None</strong> (pfSense is the gateway, not a downstream device)</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">IPv6 Configuration Type</span>
+            <span>None</span>
+          </div>
+        </div>
+
+        <ul class="prose-list">
+          <li>Click <strong>Save</strong> at the bottom of the page</li>
+          <li>Click <strong>Apply Changes</strong> in the banner that appears at the top</li>
+          <li>The interface now appears as <strong>SERVERS</strong> in the Interfaces menu</li>
+        </ul>
+
+        <div class="note-box">
+          <strong>Reminder:</strong> The linux-server, dc01, and splunk-vm VMs already have static
+          IPs configured in their network settings (10.0.2.10, 10.0.2.11, 10.0.2.20 respectively).
+          They will not respond to pings until pfSense has firewall rules allowing inter-VLAN traffic.
+        </div>
+      </section>
+
+      <!-- ── Section 3: OPT2 ── -->
+      <section class="section-card" id="opt2" aria-labelledby="h-opt2">
+        <h2 id="h-opt2"><span class="section-num" aria-hidden="true">3</span> Configure OPT2 (Clients Network)</h2>
+
+        <p>
+          OPT2 connects to the client VLAN (<code>vtnet3</code> / <code>vmbr3</code>). Client
+          machines on this network will receive IP addresses automatically via DHCP (configured
+          in Section 4).
+        </p>
+
+        <div class="ui-path" aria-label="pfSense navigation path">
+          <strong>Interfaces</strong> <span class="arrow">&#8594;</span>
+          <strong>[OPT2]</strong>
+        </div>
+
+        <div class="config-block" aria-label="OPT2 interface settings">
+          <div class="config-row">
+            <span class="config-field">Enable Interface</span>
+            <span><strong>Check the box</strong> to enable this interface</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Description</span>
+            <span><code>CLIENTS</code></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">IPv4 Configuration Type</span>
+            <span><strong>Static IPv4</strong></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">IPv4 Address</span>
+            <span><code>10.0.3.1</code> &nbsp; Subnet: <code>/24</code></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">IPv4 Upstream Gateway</span>
+            <span><strong>None</strong></span>
+          </div>
+        </div>
+
+        <ul class="prose-list">
+          <li>Click <strong>Save</strong>, then <strong>Apply Changes</strong></li>
+          <li>The interface now appears as <strong>CLIENTS</strong> in the Interfaces menu</li>
+        </ul>
+      </section>
+
+      <!-- ── Section 4: DHCP ── -->
+      <section class="section-card" id="dhcp" aria-labelledby="h-dhcp">
+        <h2 id="h-dhcp"><span class="section-num" aria-hidden="true">4</span> DHCP Server for Clients (OPT2)</h2>
+
+        <p>
+          The CLIENTS network uses DHCP so that linux-client and any future client VMs receive
+          IP addresses automatically. We configure pfSense as the DHCP server for this subnet.
+        </p>
+
+        <div class="ui-path" aria-label="pfSense navigation path">
+          <strong>Services</strong> <span class="arrow">&#8594;</span>
+          <strong>DHCP Server</strong> <span class="arrow">&#8594;</span>
+          <strong>CLIENTS</strong> tab
+        </div>
+
+        <div class="config-block" aria-label="DHCP server settings for CLIENTS network">
+          <div class="config-row">
+            <span class="config-field">Enable DHCP Server</span>
+            <span><strong>Check the box</strong> to enable on this interface</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Range — From</span>
+            <span><code>10.0.3.100</code></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Range — To</span>
+            <span><code>10.0.3.200</code></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">DNS Servers</span>
+            <span>Primary: <code>10.0.2.11</code> (dc01) &nbsp; Secondary: <code>10.0.2.10</code> (linux-server)</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Gateway</span>
+            <span><code>10.0.3.1</code></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Domain Name</span>
+            <span><code>techstart.local</code></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Default Lease Time</span>
+            <span>7200 (leave default)</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Maximum Lease Time</span>
+            <span>86400 (leave default)</span>
+          </div>
+        </div>
+
+        <ul class="prose-list">
+          <li>Click <strong>Save</strong> at the bottom</li>
+          <li>When linux-client boots, it will request a DHCP lease and receive an address in the <code>10.0.3.100</code>&ndash;<code>10.0.3.200</code> range</li>
+          <li>View active leases at <strong>Status</strong> &rarr; <strong>DHCP Leases</strong></li>
+        </ul>
+
+        <div class="note-box">
+          <strong>DNS note:</strong> We set dc01 (<code>10.0.2.11</code>) as the primary DNS for
+          clients because after Integration 09 (Active Directory &amp; DNS), dc01 will be the
+          authoritative DNS server for <code>techstart.local</code>. Using pfSense's resolver
+          as a secondary/fallback is also acceptable.
+        </div>
+      </section>
+
+      <!-- ── Section 5: DNS Resolver ── -->
+      <section class="section-card" id="dns" aria-labelledby="h-dns">
+        <h2 id="h-dns"><span class="section-num" aria-hidden="true">5</span> DNS Resolver Configuration</h2>
+
+        <p>
+          pfSense includes Unbound as its DNS resolver. We configure it to answer DNS queries
+          from all internal networks and add static host overrides so VMs can resolve each
+          other by name before Active Directory is fully configured.
+        </p>
+
+        <div class="ui-path" aria-label="pfSense navigation path">
+          <strong>Services</strong> <span class="arrow">&#8594;</span>
+          <strong>DNS Resolver</strong>
+        </div>
+
+        <h3>General Settings</h3>
+        <div class="config-block" aria-label="DNS Resolver general settings">
+          <div class="config-row">
+            <span class="config-field">Enable DNS Resolver</span>
+            <span><strong>Checked</strong></span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Network Interfaces</span>
+            <span>Select <strong>All</strong>, or individually select LAN, SERVERS, CLIENTS</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">Enable DNSSEC</span>
+            <span>Optional — leave unchecked if you experience DNS resolution delays</span>
+          </div>
+          <div class="config-row">
+            <span class="config-field">DNS Query Forwarding</span>
+            <span><strong>Check "Use Forwarding Mode"</strong> — forwards unresolved names to 8.8.8.8</span>
+          </div>
+        </div>
+
+        <h3>Host Overrides</h3>
+        <p>
+          Scroll down to the <strong>Host Overrides</strong> section and add the following
+          entries. Click <strong>Add</strong> for each row:
+        </p>
+
+        <table class="dns-table" aria-label="DNS host overrides">
+          <thead>
+            <tr>
+              <th scope="col">Host</th>
+              <th scope="col">Domain</th>
+              <th scope="col">IP Address</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>pfsense-mgmt</code></td>
+              <td><code>techstart.local</code></td>
+              <td><code>10.0.1.1</code></td>
+              <td>pfSense LAN interface</td>
+            </tr>
+            <tr>
+              <td><code>linux-server</code></td>
+              <td><code>techstart.local</code></td>
+              <td><code>10.0.2.10</code></td>
+              <td>Linux server</td>
+            </tr>
+            <tr>
+              <td><code>dc01</code></td>
+              <td><code>techstart.local</code></td>
+              <td><code>10.0.2.11</code></td>
+              <td>Domain controller</td>
+            </tr>
+            <tr>
+              <td><code>splunk-vm</code></td>
+              <td><code>techstart.local</code></td>
+              <td><code>10.0.2.20</code></td>
+              <td>Splunk SIEM server</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <ul class="prose-list">
+          <li>Click <strong>Save</strong> after adding all four overrides</li>
+          <li>Click <strong>Apply Changes</strong> in the top banner</li>
+          <li>Test from mgmt-vm: <code>nslookup dc01.techstart.local 10.0.1.1</code></li>
+        </ul>
+      </section>
+
+      <!-- ── Section 6: Firewall Rules ── -->
+      <section class="section-card" id="firewall" aria-labelledby="h-firewall">
+        <h2 id="h-firewall"><span class="section-num" aria-hidden="true">6</span> Firewall Rules</h2>
+
+        <p>
+          pfSense blocks all traffic by default on newly-created interfaces. Each interface
+          requires explicit <em>pass</em> rules for the traffic we want to allow.
+        </p>
+
+        <div class="alert alert-info" role="note" style="margin: 0 0 18px; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Rule order matters.</strong> pfSense evaluates firewall rules
+            top-to-bottom on each interface — the first matching rule wins. Always place
+            more specific rules (e.g., block a single IP) <em>above</em> broader rules
+            (e.g., allow a whole subnet). A block rule below a matching allow rule will
+            never be reached.
+          </div>
+        </div>
+
+        <!-- 6a: LAN -->
+        <h3 id="h-fw-lan">6a: LAN Rules (Management — 10.0.1.0/24)</h3>
+        <div class="ui-path" aria-label="pfSense navigation path">
+          <strong>Firewall</strong> <span class="arrow">&#8594;</span>
+          <strong>Rules</strong> <span class="arrow">&#8594;</span>
+          <strong>LAN</strong>
+        </div>
+        <p>
+          The Management network is where the administrator works. It needs unrestricted
+          outbound access to all other networks and the internet.
+        </p>
+
+        <table class="fw-table" aria-label="LAN firewall rules">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Action</th>
+              <th scope="col">Source</th>
+              <th scope="col">Destination</th>
+              <th scope="col">Protocol</th>
+              <th scope="col">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><span class="rule-pass">Pass</span></td>
+              <td>LAN subnet</td>
+              <td>any</td>
+              <td>any</td>
+              <td>Allow management workstations full access to all networks and internet</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note-box">
+          <strong>Note:</strong> pfSense ships with a default "allow LAN to any" rule.
+          Verify it is present and enabled. If it was removed, add it back using the values above.
+        </div>
+
+        <!-- 6b: SERVERS -->
+        <h3 id="h-fw-servers">6b: SERVERS Rules (OPT1 — 10.0.2.0/24)</h3>
+        <div class="ui-path" aria-label="pfSense navigation path">
+          <strong>Firewall</strong> <span class="arrow">&#8594;</span>
+          <strong>Rules</strong> <span class="arrow">&#8594;</span>
+          <strong>SERVERS</strong>
+        </div>
+        <p>
+          Server VMs need internet access for updates and must communicate with each other,
+          but should not initiate connections to the management network. Add rules in this
+          order (top to bottom):
+        </p>
+
+        <table class="fw-table" aria-label="SERVERS firewall rules">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Action</th>
+              <th scope="col">Source</th>
+              <th scope="col">Destination</th>
+              <th scope="col">Protocol</th>
+              <th scope="col">Port</th>
+              <th scope="col">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><span class="rule-pass">Pass</span></td>
+              <td>SERVERS subnet</td>
+              <td>!RFC1918 networks</td>
+              <td>any</td>
+              <td>any</td>
+              <td>Allow servers to reach the internet (for updates, package installs)</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><span class="rule-pass">Pass</span></td>
+              <td>SERVERS subnet</td>
+              <td>SERVERS subnet</td>
+              <td>any</td>
+              <td>any</td>
+              <td>Allow inter-server communication (replication, queries, syslog)</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><span class="rule-pass">Pass</span></td>
+              <td>LAN subnet</td>
+              <td>10.0.2.20</td>
+              <td>TCP</td>
+              <td>8000</td>
+              <td>Allow admin access to Splunk web UI from management network</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><span class="rule-block">Block</span></td>
+              <td>SERVERS subnet</td>
+              <td>LAN subnet</td>
+              <td>any</td>
+              <td>any</td>
+              <td>Prevent servers from initiating connections to management network</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note-box">
+          <strong>!RFC1918 alias:</strong> In pfSense, "!RFC1918 networks" means "not
+          private address space." Create a firewall alias called <code>RFC1918</code>
+          containing 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16, then use
+          <code>! RFC1918</code> (invert) as the destination to represent the internet.
+          Alternatively, use the built-in negated alias if available in your pfSense version.
+        </div>
+
+        <!-- 6c: CLIENTS -->
+        <h3 id="h-fw-clients">6c: CLIENTS Rules (OPT2 — 10.0.3.0/24)</h3>
+        <div class="ui-path" aria-label="pfSense navigation path">
+          <strong>Firewall</strong> <span class="arrow">&#8594;</span>
+          <strong>Rules</strong> <span class="arrow">&#8594;</span>
+          <strong>CLIENTS</strong>
+        </div>
+        <p>
+          Client VMs get internet access and limited access to server resources (web and DNS)
+          but must not reach the management network.
+        </p>
+
+        <table class="fw-table" aria-label="CLIENTS firewall rules">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Action</th>
+              <th scope="col">Source</th>
+              <th scope="col">Destination</th>
+              <th scope="col">Protocol</th>
+              <th scope="col">Port</th>
+              <th scope="col">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><span class="rule-pass">Pass</span></td>
+              <td>CLIENTS subnet</td>
+              <td>!RFC1918 networks</td>
+              <td>any</td>
+              <td>any</td>
+              <td>Allow clients to reach the internet</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><span class="rule-pass">Pass</span></td>
+              <td>CLIENTS subnet</td>
+              <td>SERVERS subnet</td>
+              <td>TCP/UDP</td>
+              <td>80, 443, 53</td>
+              <td>Allow clients to use web services and DNS on the servers network</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><span class="rule-block">Block</span></td>
+              <td>CLIENTS subnet</td>
+              <td>LAN subnet</td>
+              <td>any</td>
+              <td>any</td>
+              <td>Prevent clients from accessing management network</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="alert alert-info" role="note" style="margin: 14px 0 0; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Tip — Creating a port alias:</strong> Rather than entering 80, 443, and 53
+            individually in the port field, create a pfSense alias called
+            <code>CLIENT_ALLOWED_PORTS</code> containing those three ports. This makes the
+            rule easier to read and modify later. Aliases are created at
+            <strong>Firewall &rarr; Aliases</strong>.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section 7: NAT ── -->
+      <section class="section-card" id="nat" aria-labelledby="h-nat">
+        <h2 id="h-nat"><span class="section-num" aria-hidden="true">7</span> NAT / Outbound</h2>
+
+        <p>
+          Network Address Translation (NAT) allows internal VMs to reach the internet through
+          pfSense's WAN IP address. By default, pfSense uses <strong>Automatic Outbound NAT</strong>
+          which handles this without any manual rules.
+        </p>
+
+        <div class="ui-path" aria-label="pfSense navigation path">
+          <strong>Firewall</strong> <span class="arrow">&#8594;</span>
+          <strong>NAT</strong> <span class="arrow">&#8594;</span>
+          <strong>Outbound</strong>
+        </div>
+
+        <div class="config-block" aria-label="NAT outbound settings">
+          <div class="config-row">
+            <span class="config-field">Outbound NAT Mode</span>
+            <span><strong>Automatic Outbound NAT rule generation</strong> (default) — leave this selected</span>
+          </div>
+        </div>
+
+        <p>
+          With Automatic mode selected, pfSense automatically creates NAT rules for all
+          configured internal subnets. Verify that the auto-generated rules table shows
+          entries for:
+        </p>
+
+        <table class="spec-table" aria-label="Expected NAT rules">
+          <thead>
+            <tr>
+              <th scope="col">Source Network</th>
+              <th scope="col">Destination</th>
+              <th scope="col">Translation</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>10.0.1.0/24</code></td>
+              <td>WAN</td>
+              <td>WAN address (dynamic)</td>
+              <td>LAN / Management outbound NAT</td>
+            </tr>
+            <tr>
+              <td><code>10.0.2.0/24</code></td>
+              <td>WAN</td>
+              <td>WAN address (dynamic)</td>
+              <td>SERVERS outbound NAT</td>
+            </tr>
+            <tr>
+              <td><code>10.0.3.0/24</code></td>
+              <td>WAN</td>
+              <td>WAN address (dynamic)</td>
+              <td>CLIENTS outbound NAT</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note-box">
+          <strong>If a subnet is missing:</strong> After adding a new interface
+          (OPT1 or OPT2), you may need to click <strong>Save</strong> on this page even
+          without making changes. This triggers pfSense to regenerate the automatic NAT
+          rules to include the newly configured subnets.
+        </div>
+      </section>
+
+      <!-- ── Section 8: Verification ── -->
+      <section class="section-card" id="verify" aria-labelledby="h-verify">
+        <h2 id="h-verify"><span class="section-num" aria-hidden="true">8</span> Connectivity Verification</h2>
+
+        <p>
+          Run these tests in order. Each test verifies a different layer of the network
+          configuration. All tests should pass before moving on to Integration 09.
+        </p>
+
+        <!-- From mgmt-vm -->
+        <div class="sub-badge">From mgmt-vm (10.0.1.10) &mdash; Firefox terminal or SSH</div>
+
+        <div class="code-block" role="region" aria-label="Connectivity tests from mgmt-vm">
+          <div class="code-block-label">Bash — mgmt-vm terminal</div>
+          <pre><code><span class="c"># Ping pfSense LAN (confirm gateway is reachable)</span>
+ping -c3 10.0.1.1
+
+<span class="c"># Ping Servers network gateway (confirm OPT1 is up)</span>
+ping -c3 10.0.2.1
+
+<span class="c"># Ping linux-server</span>
+ping -c3 10.0.2.10
+
+<span class="c"># Ping dc01</span>
+ping -c3 10.0.2.11
+
+<span class="c"># Ping splunk-vm</span>
+ping -c3 10.0.2.20
+
+<span class="c"># Ping internet (confirms WAN, NAT, and firewall rules)</span>
+ping -c3 8.8.8.8
+
+<span class="c"># Test DNS resolver — expects 10.0.2.10 in response</span>
+nslookup linux-server.techstart.local 10.0.1.1
+
+<span class="c"># Test DNS for dc01 — expects 10.0.2.11</span>
+nslookup dc01.techstart.local 10.0.1.1</code></pre>
+        </div>
+
+        <!-- From linux-server -->
+        <div class="sub-badge" style="margin-top: 20px;">From linux-server (10.0.2.10) &mdash; SSH session or console</div>
+
+        <div class="code-block" role="region" aria-label="Connectivity tests from linux-server">
+          <div class="code-block-label">Bash — linux-server SSH session</div>
+          <pre><code><span class="c"># Verify default gateway is reachable</span>
+ping -c3 10.0.2.1
+
+<span class="c"># Verify internet access (confirms NAT is working for SERVERS network)</span>
+ping -c3 8.8.8.8
+
+<span class="c"># Test HTTP connectivity and confirm TLS works</span>
+curl -I https://ubuntu.com
+
+<span class="c"># Verify dns resolver works from servers network</span>
+nslookup dc01.techstart.local 10.0.2.1</code></pre>
+        </div>
+
+        <!-- From linux-client -->
+        <div class="sub-badge" style="margin-top: 20px;">From linux-client &mdash; console (should receive DHCP)</div>
+
+        <div class="code-block" role="region" aria-label="Connectivity tests from linux-client">
+          <div class="code-block-label">Bash — linux-client console</div>
+          <pre><code><span class="c"># Check DHCP lease was received (expect address in 10.0.3.100-200)</span>
+ip addr show
+
+<span class="c"># Confirm gateway is reachable</span>
+ping -c3 10.0.3.1
+
+<span class="c"># Confirm internet access</span>
+ping -c3 8.8.8.8
+
+<span class="c"># Verify client cannot reach management network (should fail/timeout)</span>
+ping -c3 10.0.1.10</code></pre>
+        </div>
+
+        <h3>Expected Results Summary</h3>
+        <table class="spec-table" aria-label="Connectivity test expected results">
+          <thead>
+            <tr>
+              <th scope="col">Test</th>
+              <th scope="col">Expected Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>mgmt-vm ping 10.0.1.1</td>
+              <td>Success — pfSense LAN responds</td>
+            </tr>
+            <tr>
+              <td>mgmt-vm ping 10.0.2.x</td>
+              <td>Success — inter-VLAN routing and firewall rules allow LAN &rarr; SERVERS</td>
+            </tr>
+            <tr>
+              <td>mgmt-vm ping 8.8.8.8</td>
+              <td>Success — WAN, NAT, and LAN firewall rules are working</td>
+            </tr>
+            <tr>
+              <td>mgmt-vm nslookup dc01.techstart.local</td>
+              <td>Returns <code>10.0.2.11</code> — DNS host override is working</td>
+            </tr>
+            <tr>
+              <td>linux-server ping 8.8.8.8</td>
+              <td>Success — SERVERS NAT and firewall rule 1 are working</td>
+            </tr>
+            <tr>
+              <td>linux-client ip addr show</td>
+              <td>Shows <code>10.0.3.1xx</code> lease — DHCP server is serving CLIENTS</td>
+            </tr>
+            <tr>
+              <td>linux-client ping 10.0.1.10</td>
+              <td>Timeout / no response — CLIENTS &rarr; LAN block rule is effective</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="alert alert-info" role="note" style="margin: 18px 0 0; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Troubleshooting tip:</strong> If pings fail unexpectedly, use
+            pfSense's built-in packet capture (<strong>Diagnostics &rarr; Packet Capture</strong>)
+            to see traffic hitting an interface in real time. Also check
+            <strong>Status &rarr; System Logs &rarr; Firewall</strong> to see which rules
+            are blocking packets.
+          </div>
+        </div>
+
+        <div class="alert alert-purple" role="note" style="margin: 14px 0 0; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#10003;</span>
+          <div>
+            <strong>Integration 08 complete.</strong> All networks are now routed through pfSense
+            with appropriate firewall segmentation. The next step, Integration 09, covers
+            Active Directory and DNS on dc01 to bring domain authentication online for
+            all Windows and Linux VMs.
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /content-area -->
+  </main>
+</div><!-- /page-wrapper -->
+
+<script>
+  'use strict';
+
+  /* ── Hamburger / sidebar toggle ── */
+  const hamburger = document.getElementById('hamburger');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    overlay.removeAttribute('aria-hidden');
+    hamburger.setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  });
+
+  /* ── Checklist → progress bar ── */
+  const checkboxes    = document.querySelectorAll('.sidebar-checks input[type="checkbox"]');
+  const progressBar   = document.getElementById('progress-bar');
+  const progressPct   = document.getElementById('progress-pct');
+  const progressTrack = document.getElementById('progress-bar-track');
+
+  function updateProgress() {
+    const total   = checkboxes.length;
+    const checked = Array.from(checkboxes).filter(c => c.checked).length;
+    const pct     = total > 0 ? Math.round((checked / total) * 100) : 0;
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    progressTrack.setAttribute('aria-valuenow', pct);
+  }
+
+  checkboxes.forEach((cb, i) => {
+    const label = document.getElementById('ck-label-' + i);
+    cb.addEventListener('change', () => {
+      if (label) label.classList.toggle('checked', cb.checked);
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+  /* ── Active section nav highlighting (IntersectionObserver) ── */
+  const sections = document.querySelectorAll('.section-card[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+  const observerOptions = {
+    root: null,
+    rootMargin: '-20% 0px -70% 0px',
+    threshold: 0
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(link => {
+          const href = link.getAttribute('href');
+          link.classList.toggle('active', href === '#' + id);
+          if (href === '#' + id) {
+            link.setAttribute('aria-current', 'true');
+          } else {
+            link.removeAttribute('aria-current');
+          }
+        });
+      }
+    });
+  }, observerOptions);
+
+  sections.forEach(section => observer.observe(section));
+
+  /* ── Close sidebar on nav link click (mobile) ── */
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) closeSidebar();
+    });
+  });
+</script>
+
+</body>
+</html>

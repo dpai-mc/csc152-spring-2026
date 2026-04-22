@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build 03: Ubuntu Template + linux-server | CSC 152 Project 3</title>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-bg:     #0d1b2a;
+      --sidebar-text:   #c9d6e3;
+      --sidebar-heading:#ffffff;
+      --accent:         #17a2b8;
+      --accent-dark:    #117a8b;
+      --accent-light:   #d1ecf1;
+      --done-color:     #28a745;
+      --current-color:  #ffc107;
+      --main-bg:        #f8f9fa;
+      --main-text:      #212529;
+      --card-bg:        #ffffff;
+      --border:         #dee2e6;
+      --code-bg:        #1e2a38;
+      --code-text:      #e8f0f7;
+      --warn-bg:        #fff3cd;
+      --warn-border:    #ffc107;
+      --warn-text:      #664d03;
+      --info-bg:        #d1ecf1;
+      --info-border:    #17a2b8;
+      --info-text:      #0c5460;
+      --sidebar-width:  280px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--main-bg);
+      color: var(--main-text);
+      line-height: 1.6;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ===== SKIP LINK ===== */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 0 0 4px 4px;
+      font-weight: 600;
+      z-index: 9999;
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 0; }
+
+    /* ===== HAMBURGER ===== */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 1100;
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      width: 44px;
+      height: 44px;
+      cursor: pointer;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 8px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #fff;
+      border-radius: 2px;
+      transition: transform 0.25s, opacity 0.25s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ===== OVERLAY (mobile) ===== */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 900;
+    }
+    .overlay.active { display: block; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem 1.25rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-header .course-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+    .sidebar-header h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--sidebar-heading);
+      line-height: 1.3;
+    }
+    .sidebar-header .build-label {
+      font-size: 0.78rem;
+      color: #8fa8bf;
+      margin-top: 0.2rem;
+    }
+
+    /* Progress bar */
+    .progress-area {
+      padding: 1rem 1.25rem 0.75rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .progress-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8fa8bf;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+    }
+    .progress-bar-track {
+      background: rgba(255,255,255,0.12);
+      border-radius: 100px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #20c997);
+      border-radius: 100px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence nav */
+    .doc-sequence {
+      padding: 0.75rem 0 0.5rem;
+      flex: 1;
+    }
+    .doc-sequence .section-divider {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #5a7a96;
+      padding: 0.6rem 1.25rem 0.3rem;
+    }
+    .doc-sequence ul {
+      list-style: none;
+      padding: 0;
+    }
+    .doc-sequence li a {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.42rem 1.25rem;
+      text-decoration: none;
+      font-size: 0.82rem;
+      color: var(--sidebar-text);
+      transition: background 0.15s, color 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .doc-sequence li a:hover,
+    .doc-sequence li a:focus {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      outline: none;
+      border-left-color: var(--accent);
+    }
+    .doc-sequence li.done a { color: #6b8fa8; }
+    .doc-sequence li.done a .status-icon { color: var(--done-color); }
+    .doc-sequence li.current a {
+      color: #fff;
+      background: rgba(23,162,184,0.18);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+    .doc-sequence li.current a .status-icon { color: var(--current-color); }
+    .status-icon { font-size: 0.75rem; flex-shrink: 0; width: 14px; text-align: center; }
+    .doc-num { opacity: 0.55; flex-shrink: 0; }
+
+    /* Checklist */
+    .checklist-area {
+      padding: 0.75rem 1.25rem 1.25rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .checklist-area h2 {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #8fa8bf;
+      margin-bottom: 0.6rem;
+    }
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: var(--sidebar-text);
+    }
+    .checklist li input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .checklist li label { cursor: pointer; }
+    .checklist li.checked label { text-decoration: line-through; color: #5a7a96; }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 2.5rem 2rem 4rem;
+      max-width: 900px;
+    }
+
+    /* Page header */
+    .page-header { margin-bottom: 2rem; }
+    .page-header .build-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.65rem;
+      border-radius: 100px;
+      margin-bottom: 0.75rem;
+    }
+    .page-header h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1a2e3b;
+      line-height: 1.25;
+      margin-bottom: 0.5rem;
+    }
+    .page-header .subtitle {
+      font-size: 1rem;
+      color: #495057;
+      margin-bottom: 1rem;
+    }
+
+    /* Meta strip */
+    .meta-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+    }
+    .meta-strip .meta-item { color: #495057; }
+    .meta-strip .meta-item strong { color: var(--main-text); }
+
+    /* Sections */
+    .content-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1.75rem;
+      overflow: hidden;
+    }
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      background: #f1f5f8;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .section-heading h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #1a2e3b;
+    }
+    .section-body { padding: 1.25rem; }
+    .section-body p { margin-bottom: 0.85rem; }
+    .section-body p:last-child { margin-bottom: 0; }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 1.1rem; }
+    .step {
+      border-left: 3px solid var(--accent);
+      padding-left: 1rem;
+    }
+    .step-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: #1a2e3b;
+      margin-bottom: 0.35rem;
+    }
+    .step ul, .step ol { padding-left: 1.25rem; margin-top: 0.3rem; }
+    .step li { margin-bottom: 0.25rem; font-size: 0.9rem; }
+
+    /* Ordered step list */
+    ol.step-list { padding-left: 1.4rem; }
+    ol.step-list li { margin-bottom: 0.5rem; }
+
+    ul.bullet-list { padding-left: 1.4rem; margin: 0.4rem 0 0.7rem; }
+    ul.bullet-list li { margin-bottom: 0.3rem; }
+
+    /* Code blocks */
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      border-radius: 6px;
+      padding: 1rem 1.1rem;
+      overflow-x: auto;
+      font-size: 0.83rem;
+      line-height: 1.65;
+      margin: 0.75rem 0;
+      white-space: pre;
+      tab-size: 2;
+    }
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+    p code, li code {
+      background: #e9ecef;
+      color: #c7254e;
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      font-size: 0.88em;
+    }
+    pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+    }
+    /* Comment coloring inside code blocks */
+    .comment { color: #7db3cc; font-style: italic; }
+
+    /* Alerts */
+    .alert {
+      display: flex;
+      gap: 0.75rem;
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .alert-icon { flex-shrink: 0; font-size: 1rem; margin-top: 0.05rem; }
+    .alert-warn {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      color: var(--warn-text);
+    }
+    .alert-info {
+      background: var(--info-bg);
+      border: 1px solid var(--info-border);
+      color: var(--info-text);
+    }
+    .alert strong { display: block; margin-bottom: 0.2rem; }
+
+    /* YAML / Netplan block label */
+    .code-label {
+      display: inline-block;
+      background: #2c3e50;
+      color: #7db3cc;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.6rem;
+      border-radius: 4px 4px 0 0;
+      margin-bottom: -2px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 4rem 1rem 3rem;
+      }
+
+      .page-header h2 { font-size: 1.35rem; }
+      .meta-strip { gap: 0.4rem 1rem; }
+    }
+
+    /* Focus styles */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Active section in doc nav */
+    .doc-sequence li.active-section a {
+      background: rgba(23,162,184,0.1);
+      border-left-color: #20c997;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+
+<!-- Mobile overlay -->
+<div class="overlay" id="overlay" aria-hidden="true"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<nav class="sidebar" id="sidebar" aria-label="Course navigation">
+
+  <div class="sidebar-header">
+    <div class="course-label">CSC 152 &middot; Project 3</div>
+    <h1>Ubuntu Template<br>+ linux-server</h1>
+    <div class="build-label">Build 03 of 15</div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-area" aria-label="Checklist progress">
+    <div class="progress-label">
+      <span>Build Progress</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-labelledby="progress-pct">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Document sequence -->
+  <div class="doc-sequence" aria-label="Build document sequence">
+    <ul>
+      <li class="done"><a href="#"><span class="doc-num">01</span> <span class="status-icon" aria-label="Done">&#10003;</span> Proxmox Network Bridges</a></li>
+      <li class="done"><a href="#"><span class="doc-num">02</span> <span class="status-icon" aria-label="Done">&#10003;</span> pfSense VM Build</a></li>
+      <li class="current" aria-current="page"><a href="#"><span class="doc-num">03</span> <span class="status-icon" aria-label="Current">&#9654;</span> Ubuntu Template + linux-server</a></li>
+      <li><a href="#"><span class="doc-num">04</span> <span class="status-icon" aria-hidden="true"></span> Windows Server dc01</a></li>
+      <li><a href="#"><span class="doc-num">05</span> <span class="status-icon" aria-hidden="true"></span> Xubuntu Template + mgmt-vm</a></li>
+      <li><a href="#"><span class="doc-num">06</span> <span class="status-icon" aria-hidden="true"></span> linux-client VM</a></li>
+      <li><a href="#"><span class="doc-num">07</span> <span class="status-icon" aria-hidden="true"></span> splunk-vm Build</a></li>
+    </ul>
+    <div class="section-divider" aria-label="Integration plans section">&#8212; Integration Plans &#8212;</div>
+    <ul>
+      <li><a href="#"><span class="doc-num">08</span> <span class="status-icon" aria-hidden="true"></span> pfSense Full Configuration</a></li>
+      <li><a href="#"><span class="doc-num">09</span> <span class="status-icon" aria-hidden="true"></span> Active Directory &amp; DNS</a></li>
+      <li><a href="#"><span class="doc-num">10</span> <span class="status-icon" aria-hidden="true"></span> Linux Server Hardening</a></li>
+      <li><a href="#"><span class="doc-num">11</span> <span class="status-icon" aria-hidden="true"></span> Windows Server Hardening</a></li>
+      <li><a href="#"><span class="doc-num">12</span> <span class="status-icon" aria-hidden="true"></span> Splunk Deployment</a></li>
+      <li><a href="#"><span class="doc-num">13</span> <span class="status-icon" aria-hidden="true"></span> Linux Log Forwarder</a></li>
+      <li><a href="#"><span class="doc-num">14</span> <span class="status-icon" aria-hidden="true"></span> Windows Log Forwarder</a></li>
+      <li><a href="#"><span class="doc-num">15</span> <span class="status-icon" aria-hidden="true"></span> Backup Strategy</a></li>
+    </ul>
+  </div>
+
+  <!-- Checklist -->
+  <div class="checklist-area">
+    <h2 id="checklist-heading">Build Checklist</h2>
+    <ul class="checklist" aria-labelledby="checklist-heading" id="checklist">
+      <li id="chk-item-0">
+        <input type="checkbox" id="chk0" aria-label="Ubuntu Server 22.04 LTS ISO downloaded and uploaded to Proxmox">
+        <label for="chk0">Ubuntu Server 22.04 LTS ISO downloaded and uploaded to Proxmox</label>
+      </li>
+      <li id="chk-item-1">
+        <input type="checkbox" id="chk1" aria-label="Base VM 9001 (ubuntu-2204-template) created and Ubuntu installed">
+        <label for="chk1">Base VM 9001 created and Ubuntu installed</label>
+      </li>
+      <li id="chk-item-2">
+        <input type="checkbox" id="chk2" aria-label="qemu-guest-agent installed and enabled">
+        <label for="chk2">qemu-guest-agent installed and enabled</label>
+      </li>
+      <li id="chk-item-3">
+        <input type="checkbox" id="chk3" aria-label="machine-id, SSH host keys, and bash history cleared">
+        <label for="chk3">machine-id, SSH keys, and history cleared</label>
+      </li>
+      <li id="chk-item-4">
+        <input type="checkbox" id="chk4" aria-label="VM 9001 converted to template in Proxmox">
+        <label for="chk4">VM 9001 converted to template in Proxmox</label>
+      </li>
+      <li id="chk-item-5">
+        <input type="checkbox" id="chk5" aria-label="VM 1002 (linux-server) cloned from template 9001">
+        <label for="chk5">VM 1002 (linux-server) cloned from template 9001</label>
+      </li>
+      <li id="chk-item-6">
+        <input type="checkbox" id="chk6" aria-label="linux-server RAM increased to 4 GB, disk resized to 40 GB">
+        <label for="chk6">RAM increased to 4 GB, disk resized to 40 GB</label>
+      </li>
+      <li id="chk-item-7">
+        <input type="checkbox" id="chk7" aria-label="Hostname set to linux-server">
+        <label for="chk7">Hostname set to linux-server</label>
+      </li>
+      <li id="chk-item-8">
+        <input type="checkbox" id="chk8" aria-label="Static IP 10.0.2.10/24 configured via Netplan">
+        <label for="chk8">Static IP 10.0.2.10/24 configured via Netplan</label>
+      </li>
+      <li id="chk-item-9">
+        <input type="checkbox" id="chk9" aria-label="IP address verified with ip addr show">
+        <label for="chk9">IP address verified with <code>ip addr show</code></label>
+      </li>
+    </ul>
+  </div>
+
+</nav><!-- /sidebar -->
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content" id="main-content">
+
+  <header class="page-header">
+    <div class="build-badge">Build 03 of 15</div>
+    <h2>Build 03: Ubuntu Server 22.04 Template + linux-server VM</h2>
+    <p class="subtitle">Create a reusable Ubuntu template (ID&nbsp;9001), then clone it to build linux-server (ID&nbsp;1002)</p>
+    <div class="meta-strip" aria-label="VM specifications">
+      <span class="meta-item"><strong>Template ID:</strong> 9001</span>
+      <span class="meta-item"><strong>VM ID:</strong> 1002</span>
+      <span class="meta-item"><strong>vCPU:</strong> 2</span>
+      <span class="meta-item"><strong>RAM:</strong> 4 GB</span>
+      <span class="meta-item"><strong>Disk:</strong> 40 GB</span>
+      <span class="meta-item"><strong>IP:</strong> 10.0.2.10</span>
+    </div>
+  </header>
+
+  <!-- SECTION 1 -->
+  <section class="content-section" id="sec1" aria-labelledby="sec1-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">1</div>
+      <h3 id="sec1-heading">Why Use a Template?</h3>
+    </div>
+    <div class="section-body">
+      <p>
+        A <strong>Proxmox template</strong> is a VM that has been converted to a read-only, non-bootable master image. Once converted, you can <em>clone</em> the template to produce fully independent VMs in seconds, without repeating a full OS installation each time.
+      </p>
+      <p>
+        In this project, we create <strong>one template (ID 9001)</strong> based on Ubuntu Server 22.04 LTS. That single template is then cloned twice: once for <strong>linux-server</strong> (this build) and again later for <strong>splunk-vm</strong> (Build 07). Every clone starts from the same validated, cleaned-up baseline, which means:
+      </p>
+      <ul class="bullet-list">
+        <li><strong>Consistency</strong> &mdash; every Ubuntu VM has the same package versions, tools, and configuration starting point.</li>
+        <li><strong>Speed</strong> &mdash; cloning takes seconds; a full install takes 10&ndash;20 minutes.</li>
+        <li><strong>Cleanliness</strong> &mdash; the template is prepared with a cleared machine-id and SSH host keys, so each clone gets its own unique identity on first boot.</li>
+        <li><strong>Safety</strong> &mdash; the template itself is never started after conversion, so it cannot drift from its known-good state.</li>
+      </ul>
+      <p>
+        The template VM uses modest resources (1 socket, 2 cores, 2 GB RAM, 20 GB disk). After cloning, you adjust each clone&rsquo;s resources to match what that VM actually needs.
+      </p>
+    </div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section class="content-section" id="sec2" aria-labelledby="sec2-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">2</div>
+      <h3 id="sec2-heading">Download Ubuntu Server 22.04 LTS ISO</h3>
+    </div>
+    <div class="section-body">
+      <div class="steps">
+        <div class="step">
+          <div class="step-title">Option A &mdash; Download via browser, then upload to Proxmox</div>
+          <ol class="step-list">
+            <li>Go to <strong>ubuntu.com/download/server</strong> and download <strong>Ubuntu Server 22.04.x LTS</strong> (the <code>.iso</code> file).</li>
+            <li>In the Proxmox web UI, navigate to:<br>
+              <strong>Datacenter &rarr; pve &rarr; local &rarr; ISO Images &rarr; Upload</strong>
+            </li>
+            <li>Select the downloaded ISO and click <strong>Upload</strong>. Wait for the upload to complete.</li>
+          </ol>
+        </div>
+        <div class="step">
+          <div class="step-title">Option B &mdash; Download directly on the Proxmox host (CLI)</div>
+          <p>SSH into the Proxmox host and run:</p>
+<div class="code-label">bash</div>
+<pre><code>cd /var/lib/vz/template/iso/
+wget https://releases.ubuntu.com/22.04/ubuntu-22.04.4-live-server-amd64.iso</code></pre>
+          <p>The ISO will appear under <strong>local &rarr; ISO Images</strong> in the Proxmox UI automatically.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section class="content-section" id="sec3" aria-labelledby="sec3-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">3</div>
+      <h3 id="sec3-heading">Create the Template Base VM (ID 9001)</h3>
+    </div>
+    <div class="section-body">
+      <div class="steps">
+
+        <div class="step">
+          <div class="step-title">Step 1 &mdash; Create VM in Proxmox</div>
+          <p>In the Proxmox web UI, click <strong>Create VM</strong> (top-right) and fill in each tab:</p>
+          <ul class="bullet-list">
+            <li><strong>General:</strong> VM ID: <code>9001</code> &mdash; Name: <code>ubuntu-2204-template</code></li>
+            <li><strong>OS:</strong> Select the Ubuntu Server 22.04 ISO &mdash; Guest OS: <em>Linux</em>, version <em>6.x &ndash; 2.6 Kernel</em></li>
+            <li><strong>System:</strong> SCSI Controller: <em>VirtIO SCSI Single</em> &mdash; Machine: <em>q35</em></li>
+            <li><strong>Disks:</strong> Bus: <em>VirtIO Block</em> &mdash; Storage: <em>local-lvm</em> &mdash; Size: <em>20 GB</em> &mdash; enable <em>Discard</em></li>
+            <li><strong>CPU:</strong> Sockets: <em>1</em> &mdash; Cores: <em>2</em> &mdash; Type: <em>host</em></li>
+            <li><strong>Memory:</strong> <em>2048 MB</em></li>
+            <li><strong>Network:</strong> Bridge: <em>vmbr2</em> (Servers network) &mdash; Model: <em>VirtIO</em> &mdash; uncheck <em>Firewall</em></li>
+            <li><strong>Confirm:</strong> <em>Uncheck</em> &ldquo;Start after created&rdquo; &mdash; then click <strong>Finish</strong></li>
+          </ul>
+        </div>
+
+        <div class="step">
+          <div class="step-title">Step 2 &mdash; Note on qemu-guest-agent</div>
+          <p>
+            The <strong>qemu-guest-agent</strong> is a small service installed <em>inside</em> the VM that allows Proxmox to report the VM&rsquo;s IP address and perform clean shutdowns. We will install it after Ubuntu is installed (Section 5). No extra hardware configuration is needed now in Proxmox &mdash; the VirtIO channel is available by default.
+          </p>
+        </div>
+
+        <div class="step">
+          <div class="step-title">Step 3 &mdash; Start VM 9001 and open the console</div>
+          <p>
+            Select VM 9001 in the left panel, click <strong>Start</strong>, then click <strong>Console</strong> to open the noVNC console. The Ubuntu Server installer will boot from the ISO.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 -->
+  <section class="content-section" id="sec4" aria-labelledby="sec4-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">4</div>
+      <h3 id="sec4-heading">Ubuntu Server 22.04 Installation Walkthrough</h3>
+    </div>
+    <div class="section-body">
+      <p>Walk through the Ubuntu Server installer screens in order:</p>
+      <ol class="step-list">
+        <li><strong>Language</strong> &rarr; English</li>
+        <li>
+          <strong>Installer update</strong> &rarr; <em>Continue without updating</em><br>
+          <span style="font-size:0.88rem;color:#6c757d;">(Saves time in the lab; packages will be updated after install.)</span>
+        </li>
+        <li><strong>Keyboard configuration</strong> &rarr; English (US) / English (US)</li>
+        <li>
+          <strong>Network configuration</strong> &rarr; Leave as DHCP for now.<br>
+          <span style="font-size:0.88rem;color:#6c757d;">(Static IP is configured after cloning, in Section 8.)</span>
+        </li>
+        <li><strong>Proxy</strong> &rarr; Leave blank, press Enter.</li>
+        <li>
+          <strong>Mirror address</strong> &rarr; Accept the default or use:<br>
+          <code>http://archive.ubuntu.com/ubuntu</code>
+        </li>
+        <li>
+          <strong>Storage configuration</strong> &rarr; <em>Use an entire disk</em>.<br>
+          LVM is acceptable; keep defaults. This is a template &mdash; storage layout does not need to be elaborate.
+        </li>
+        <li><strong>Storage summary</strong> &rarr; Review, then select <em>Done</em> and confirm the destructive action.</li>
+        <li>
+          <strong>Profile setup</strong> &mdash; enter the following:
+          <ul class="bullet-list" style="margin-top:0.4rem;">
+            <li><strong>Your name:</strong> <code>sysadmin</code></li>
+            <li><strong>Your server&rsquo;s name:</strong> <code>ubuntu-template</code></li>
+            <li><strong>Pick a username:</strong> <code>sysadmin</code></li>
+            <li><strong>Choose a password:</strong> Choose a strong password and record it. Students will change this after cloning.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>SSH Setup</strong> &rarr; Check <em>Install OpenSSH server</em>: <strong>Yes</strong>.<br>
+          Import SSH identity: <strong>No</strong>.
+        </li>
+        <li><strong>Featured server snaps</strong> &rarr; Skip all. Do not select any snaps.</li>
+        <li>
+          <strong>Installation complete</strong> &rarr; Select <em>Reboot Now</em>.<br>
+          When prompted, press <kbd>Enter</kbd> to remove the installation media (Proxmox unmounts the ISO automatically).
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- SECTION 5 -->
+  <section class="content-section" id="sec5" aria-labelledby="sec5-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">5</div>
+      <h3 id="sec5-heading">Post-Install Template Preparation</h3>
+    </div>
+    <div class="section-body">
+      <p>
+        After VM 9001 reboots, log in via the Proxmox console as <code>sysadmin</code>. Run the following commands to prepare a clean template. Read the inline comments carefully &mdash; each block serves a specific purpose.
+      </p>
+<div class="code-label">bash &mdash; run on VM 9001 as sysadmin</div>
+<pre><code><span class="comment"># Update all packages to their latest versions</span>
+sudo apt update &amp;&amp; sudo apt upgrade -y
+
+<span class="comment"># Install qemu-guest-agent (required for Proxmox IP reporting and clean shutdown)</span>
+sudo apt install -y qemu-guest-agent
+sudo systemctl enable --now qemu-guest-agent
+
+<span class="comment"># Install common administrative tools</span>
+sudo apt install -y curl wget net-tools vim htop
+
+<span class="comment"># Clean up apt cache to reduce the template's disk footprint</span>
+sudo apt clean
+sudo apt autoremove -y
+
+<span class="comment"># Clear machine-id so each clone gets a unique ID on first boot</span>
+sudo truncate -s 0 /etc/machine-id
+sudo truncate -s 0 /var/lib/dbus/machine-id
+
+<span class="comment"># Clear SSH host keys so each clone generates its own unique key pair</span>
+sudo rm -f /etc/ssh/ssh_host_*
+
+<span class="comment"># Clear bash history (both root and sysadmin)</span>
+history -c
+sudo sh -c 'cat /dev/null > /root/.bash_history'
+cat /dev/null > ~/.bash_history
+
+<span class="comment"># Shut down cleanly before converting to template</span>
+sudo poweroff</code></pre>
+
+      <div class="alert alert-info" role="note">
+        <span class="alert-icon" aria-hidden="true">&#8505;</span>
+        <div>
+          <strong>Why clear machine-id?</strong>
+          The <code>/etc/machine-id</code> file is a unique identifier used by systemd and other services. If every clone shares the same machine-id, DHCP servers and some applications will treat them as the same machine. Truncating it (not deleting it) causes systemd to regenerate a new unique ID on the first boot of each clone.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6 -->
+  <section class="content-section" id="sec6" aria-labelledby="sec6-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">6</div>
+      <h3 id="sec6-heading">Convert VM 9001 to a Template</h3>
+    </div>
+    <div class="section-body">
+      <p>
+        Once VM 9001 is fully powered off (confirm <em>Status: stopped</em> in Proxmox), convert it to a template:
+      </p>
+      <ol class="step-list">
+        <li>In the Proxmox left panel, <strong>right-click</strong> on VM 9001.</li>
+        <li>Select <strong>Convert to Template</strong>.</li>
+        <li>Confirm the dialog that appears.</li>
+        <li>VM 9001 will now show a <strong>template icon</strong> (a stack of pages) in the left panel instead of a normal VM icon.</li>
+      </ol>
+
+      <div class="alert alert-warn" role="alert">
+        <span class="alert-icon" aria-hidden="true">&#9888;</span>
+        <div>
+          <strong>Template is now read-only &mdash; do not try to start it directly.</strong>
+          Once converted, VM 9001 cannot be started or modified. It exists only as a cloning source. If you later need to update the template (e.g., to apply newer packages), clone it, make your changes, power it off, and convert the clone to a new template. You can then delete or archive the old one.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7 -->
+  <section class="content-section" id="sec7" aria-labelledby="sec7-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">7</div>
+      <h3 id="sec7-heading">Clone Template to Create linux-server (ID 1002)</h3>
+    </div>
+    <div class="section-body">
+      <div class="steps">
+
+        <div class="step">
+          <div class="step-title">Step 1 &mdash; Clone the template</div>
+          <ol class="step-list">
+            <li><strong>Right-click</strong> template 9001 &rarr; <strong>Clone</strong>.</li>
+            <li>Set the following options:
+              <ul class="bullet-list">
+                <li><strong>Mode:</strong> <em>Full Clone</em> &mdash; not Linked Clone. A full clone is completely independent of the template.</li>
+                <li><strong>Target Node:</strong> <em>pve</em></li>
+                <li><strong>VM ID:</strong> <em>1002</em></li>
+                <li><strong>Name:</strong> <em>linux-server</em></li>
+                <li><strong>Target Storage:</strong> <em>local-lvm</em></li>
+              </ul>
+            </li>
+            <li>Click <strong>Clone</strong> and wait for the task to complete (watch the task log at the bottom of the screen).</li>
+          </ol>
+        </div>
+
+        <div class="step">
+          <div class="step-title">Step 2 &mdash; Adjust resources for linux-server</div>
+          <p>The clone inherits the template&rsquo;s minimal specs. Increase them for linux-server:</p>
+          <ol class="step-list">
+            <li>Select <strong>VM 1002 &rarr; Hardware</strong>.</li>
+            <li><strong>Memory:</strong> double-click &rarr; change to <em>4096 MB</em> (4 GB).</li>
+            <li><strong>Processors:</strong> already set to 2 cores &mdash; leave as-is.</li>
+            <li>
+              <strong>Disk resize:</strong> select the disk (e.g., <em>virtio0</em>) &rarr; click <strong>Disk Action &rarr; Resize</strong> &rarr; add <em>20 GB</em> (brings total to 40 GB).
+            </li>
+          </ol>
+          <p>After the first boot, expand the filesystem to use the new space (see Section 8).</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 8 -->
+  <section class="content-section" id="sec8" aria-labelledby="sec8-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">8</div>
+      <h3 id="sec8-heading">First Boot Configuration of linux-server</h3>
+    </div>
+    <div class="section-body">
+      <p>
+        Start VM 1002 in Proxmox, then open the console and log in as <code>sysadmin</code>.
+      </p>
+
+      <div class="steps">
+
+        <div class="step">
+          <div class="step-title">Set the hostname</div>
+<div class="code-label">bash</div>
+<pre><code>sudo hostnamectl set-hostname linux-server</code></pre>
+        </div>
+
+        <div class="step">
+          <div class="step-title">Check the network interface name</div>
+          <p>Interface names vary. Identify yours before editing Netplan:</p>
+<div class="code-label">bash</div>
+<pre><code>ip link show</code></pre>
+          <p>Look for the primary Ethernet interface &mdash; it will be <code>ens18</code>, <code>ens3</code>, or similar. Use that name in the Netplan file below.</p>
+        </div>
+
+        <div class="step">
+          <div class="step-title">Configure static IP via Netplan</div>
+<div class="code-label">bash</div>
+<pre><code>sudo nano /etc/netplan/00-installer-config.yaml</code></pre>
+          <p>Replace the file contents with the following (adjust the interface name if needed):</p>
+<div class="code-label">yaml &mdash; /etc/netplan/00-installer-config.yaml</div>
+<pre><code>network:
+  version: 2
+  ethernets:
+    ens18:
+      dhcp4: false
+      addresses:
+        - 10.0.2.10/24
+      routes:
+        - to: default
+          via: 10.0.2.1
+      nameservers:
+        addresses:
+          - 10.0.2.11
+          - 8.8.8.8</code></pre>
+          <p>Apply the configuration:</p>
+<div class="code-label">bash</div>
+<pre><code>sudo netplan apply</code></pre>
+        </div>
+
+        <div class="step">
+          <div class="step-title">Verify connectivity</div>
+<div class="code-label">bash</div>
+<pre><code>ip addr show ens18
+ping -c3 10.0.2.1</code></pre>
+        </div>
+
+        <div class="step">
+          <div class="step-title">Expand the filesystem to use the resized disk (if needed)</div>
+          <p>If you used LVM during installation:</p>
+<div class="code-label">bash &mdash; LVM layout</div>
+<pre><code><span class="comment"># Expand the partition</span>
+sudo growpart /dev/vda 3
+
+<span class="comment"># Resize the logical volume and filesystem</span>
+sudo lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv
+sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv</code></pre>
+          <p>If you used a simple partition (no LVM):</p>
+<div class="code-label">bash &mdash; simple partition layout</div>
+<pre><code>sudo growpart /dev/vda 2
+sudo resize2fs /dev/vda2</code></pre>
+          <p>Confirm the result:</p>
+<div class="code-label">bash</div>
+<pre><code>df -h /</code></pre>
+        </div>
+
+      </div>
+
+      <div class="alert alert-info" role="note">
+        <span class="alert-icon" aria-hidden="true">&#8505;</span>
+        <div>
+          <strong>Gateway pings may fail at this stage &mdash; that is expected.</strong>
+          The default gateway <code>10.0.2.1</code> is the pfSense OPT1 interface. If pfSense has not yet been fully configured (that happens in Build 08), ICMP will be blocked and pings to the gateway will time out. What matters now is that <code>ip addr show</code> shows <code>10.0.2.10/24</code> on the correct interface.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 9 -->
+  <section class="content-section" id="sec9" aria-labelledby="sec9-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">9</div>
+      <h3 id="sec9-heading">Verify VM Identity</h3>
+    </div>
+    <div class="section-body">
+      <p>Run these commands to confirm linux-server has the correct identity and address:</p>
+<div class="code-label">bash</div>
+<pre><code><span class="comment"># Confirm hostname</span>
+hostname
+
+<span class="comment"># Confirm IP address assignment</span>
+ip addr show
+
+<span class="comment"># Confirm machine-id is populated (not empty)</span>
+<span class="comment"># A non-empty machine-id means systemd regenerated a unique ID on first boot</span>
+cat /etc/machine-id</code></pre>
+
+      <p>Expected results:</p>
+      <ul class="bullet-list">
+        <li><code>hostname</code> returns <strong>linux-server</strong></li>
+        <li><code>ip addr show</code> shows <code>10.0.2.10/24</code> on the primary interface</li>
+        <li><code>cat /etc/machine-id</code> returns a 32-character hex string (not empty)</li>
+      </ul>
+
+      <p>
+        If all three checks pass, <strong>linux-server is complete</strong>. This VM will later receive DNS secondary configuration, Samba file sharing, and the Splunk Universal Forwarder. Those services are configured in their respective Integration Plan builds (08&ndash;13).
+      </p>
+    </div>
+  </section>
+
+</main><!-- /main-content -->
+
+<script>
+(function () {
+  "use strict";
+
+  /* ===== HAMBURGER TOGGLE ===== */
+  var hamburger = document.getElementById("hamburger");
+  var sidebar   = document.getElementById("sidebar");
+  var overlay   = document.getElementById("overlay");
+
+  function openSidebar() {
+    sidebar.classList.add("open");
+    overlay.classList.add("active");
+    hamburger.setAttribute("aria-expanded", "true");
+    hamburger.setAttribute("aria-label", "Close navigation menu");
+    overlay.setAttribute("aria-hidden", "false");
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove("open");
+    overlay.classList.remove("active");
+    hamburger.setAttribute("aria-expanded", "false");
+    hamburger.setAttribute("aria-label", "Open navigation menu");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  hamburger.addEventListener("click", function () {
+    if (sidebar.classList.contains("open")) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+
+  overlay.addEventListener("click", closeSidebar);
+
+  // Close sidebar with Escape key
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && sidebar.classList.contains("open")) {
+      closeSidebar();
+      hamburger.focus();
+    }
+  });
+
+  /* ===== PROGRESS BAR ===== */
+  var checkboxes   = document.querySelectorAll("#checklist input[type='checkbox']");
+  var fillEl       = document.getElementById("progress-fill");
+  var pctEl        = document.getElementById("progress-pct");
+  var progressBar  = document.querySelector(".progress-bar-track");
+
+  function updateProgress() {
+    var total   = checkboxes.length;
+    var checked = 0;
+    checkboxes.forEach(function (cb) {
+      if (cb.checked) checked++;
+    });
+    var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+    fillEl.style.width = pct + "%";
+    pctEl.textContent  = pct + "%";
+    progressBar.setAttribute("aria-valuenow", pct);
+
+    // Update checked styling on list items
+    checkboxes.forEach(function (cb) {
+      var li = cb.closest("li");
+      if (li) {
+        if (cb.checked) {
+          li.classList.add("checked");
+        } else {
+          li.classList.remove("checked");
+        }
+      }
+    });
+  }
+
+  checkboxes.forEach(function (cb) {
+    cb.addEventListener("change", updateProgress);
+  });
+
+  // Initialize
+  updateProgress();
+
+  /* ===== ACTIVE SECTION HIGHLIGHTING ===== */
+  var sections = document.querySelectorAll("section[id]");
+  var docItems = document.querySelectorAll(".doc-sequence li:not(.done):not(.current)");
+
+  // Map section IDs to sidebar items (doc sequence items 4+ could link to sections,
+  // but here we just highlight the current doc item as active while scrolling
+  // within sections, since the doc nav links to external builds).
+  // Instead, we highlight sections in the sidebar checklist area by adding
+  // a visual indicator when the corresponding section is in view.
+
+  if ("IntersectionObserver" in window) {
+    var activeSection = null;
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          activeSection = entry.target.id;
+        }
+      });
+    }, {
+      rootMargin: "-20% 0px -60% 0px",
+      threshold: 0
+    });
+
+    sections.forEach(function (sec) {
+      observer.observe(sec);
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>

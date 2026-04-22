@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration 13: Linux Universal Forwarder | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a2332;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #d0d8e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      background: #0a1520;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #7c3aed;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8a9bb0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 12px 18px;
+      background: #0f2235;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-label span:last-child { color: #a78bfa; font-weight: 700; }
+    .progress-bar-track {
+      background: #0d1b2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      padding: 6px 0 2px;
+      letter-spacing: 0.5px;
+      border-top: 1px solid #1a3350;
+      margin-top: 4px;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a7f94;
+      line-height: 1.4;
+    }
+    .doc-seq-item.current { color: #a78bfa; font-weight: 700; }
+    .doc-seq-item.done { color: #20c997; }
+    .doc-seq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a3d50;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #7c3aed; }
+    .doc-seq-item.done .doc-seq-dot { background: #20c997; }
+
+    /* Section nav */
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.77rem;
+      color: #8a9bb0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: rgba(124,58,237,0.14);
+      border-left-color: #7c3aed;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px;
+      border-top: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.73rem;
+      color: #9aacbc;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #7c3aed;
+      flex-shrink: 0;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .check-item.checked { color: #20c997; text-decoration: line-through; }
+
+    /* ── Hamburger (mobile only) ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: #0d1b2a;
+      border: 2px solid #7c3aed;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #a78bfa;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+    }
+
+    /* ── Main Content ── */
+    .main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a0a3e 55%, #2d1a6e 100%);
+      color: white;
+      padding: 40px 48px 36px;
+      border-bottom: 4px solid #7c3aed;
+    }
+    .header-eyebrow {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .page-header h1 em {
+      color: #a78bfa;
+      font-style: normal;
+    }
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(124,58,237,0.22);
+      border: 1px solid rgba(167,139,250,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #c4b5fd;
+    }
+    .meta-badge strong { color: #ffffff; }
+
+    /* Alerts */
+    .alert {
+      margin: 0 48px 0;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .alert-info {
+      background: #ede9fe;
+      border-left: 5px solid #7c3aed;
+      color: #3b1f7a;
+    }
+    .alert-warning {
+      background: #fff8e1;
+      border-left: 5px solid #f59e0b;
+      color: #7c4a00;
+    }
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Content area */
+    .content-area { padding: 32px 48px 0; }
+
+    /* Section cards */
+    .section-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #7c3aed;
+      scroll-margin-top: 24px;
+    }
+    .section-card h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-card p { color: #3a4a5a; font-size: 0.92rem; margin-bottom: 12px; }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    /* Sub-headings within sections */
+    .section-card h3 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1a2332;
+      margin: 20px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e8edf2;
+    }
+    .section-card h3:first-of-type { margin-top: 16px; }
+
+    /* Prose lists */
+    .prose-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .prose-list li {
+      position: relative;
+      padding: 4px 0 4px 20px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .prose-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-size: 0.7rem;
+      top: 7px;
+    }
+    .prose-list li strong { color: #0d1b2a; }
+
+    /* Ordered list */
+    .steps-list {
+      padding-left: 22px;
+      margin: 10px 0 14px;
+    }
+    .steps-list li {
+      font-size: 0.88rem;
+      color: #3a4a5a;
+      padding: 3px 0;
+    }
+    .steps-list li strong { color: #0d1b2a; }
+
+    /* Tables */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 14px 0;
+    }
+    .spec-table th {
+      background: #0d1b2a;
+      color: #a78bfa;
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .spec-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+      vertical-align: top;
+    }
+    .spec-table tr:last-child td { border-bottom: none; }
+    .spec-table tr:nth-child(even) td { background: #f7f9fc; }
+    .spec-table td:first-child { font-weight: 600; color: #0d1b2a; }
+    .spec-table tfoot td {
+      background: #f0ebff;
+      font-weight: 700;
+      color: #3b1f7a;
+      border-top: 2px solid #7c3aed;
+    }
+
+    /* Rubric table variant */
+    .rubric-table td:nth-child(2) {
+      text-align: center;
+      font-weight: 700;
+      color: #7c3aed;
+    }
+    .rubric-table tfoot td:nth-child(2) {
+      color: #7c3aed;
+      font-size: 1.05rem;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .code-block pre { margin: 0; }
+    .code-block pre code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* Inline code */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      background: #ede9fe;
+      color: #5b21b6;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .code-block code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+    /* Note box */
+    .note-box {
+      background: #f5f3ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #3b1f7a;
+    }
+    .note-box strong { color: #0d1b2a; }
+
+    /* Expected output box */
+    .expected-box {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #14532d;
+    }
+    .expected-box strong { color: #0d1b2a; }
+    .expected-box code { background: #dcfce7; color: #166534; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .page-header { padding: 50px 20px 28px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .content-area { padding: 20px 20px 0; }
+      .alert { margin: 0 20px 0; }
+      .section-card { padding: 20px 18px; }
+      .spec-table td, .spec-table th { padding: 7px 10px; }
+      .header-meta { gap: 6px; }
+    }
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.2rem; }
+    }
+
+    /* ── Focus styles for accessibility ── */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #7c3aed;
+      outline-offset: 3px;
+    }
+    .hamburger:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      background: #7c3aed;
+      color: #fff;
+      padding: 10px 18px;
+      z-index: 999;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 0 0 6px 0;
+      text-decoration: none;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="page-wrapper">
+
+  <!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
+  <nav class="sidebar" id="sidebar" aria-label="Integration guide navigation">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-course">CSC 152 · Project 3</div>
+      <div class="sidebar-title">Integration 13 of 15</div>
+      <div class="sidebar-subtitle">Linux Log Forwarder</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="sidebar-progress" aria-label="Checklist progress">
+      <div class="progress-label">
+        <span>Checklist Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Doc sequence -->
+    <div class="doc-sequence" aria-label="Document sequence">
+      <div class="doc-sequence-label">Build Sequence</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>01 · Proxmox Network Bridges</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>02 · pfSense VM Build</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>03 · Ubuntu Template + linux-server</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>04 · Windows Server dc01</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>05 · Xubuntu Template + mgmt-vm</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>06 · linux-client VM</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>07 · splunk-vm Build</div>
+
+      <div class="doc-seq-divider">&#8212;&#8212; Integration Plans &#8212;&#8212;</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>08 · pfSense Full Configuration</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>09 · Active Directory &amp; DNS</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>10 · Linux Server Hardening</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>11 · Windows Server Hardening</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>12 · Splunk Deployment</div>
+      <div class="doc-seq-item current" aria-current="page"><span class="doc-seq-dot"></span>13 · Linux Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>14 · Windows Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>15 · Backup Strategy</div>
+    </div>
+
+    <!-- Section nav -->
+    <div class="sidebar-nav">
+      <div class="nav-label">Sections</div>
+      <a href="#rubric">Rubric Summary</a>
+      <a href="#overview">1 — Overview</a>
+      <a href="#install">2 — Download &amp; Install</a>
+      <a href="#outputs">3 — Configure outputs.conf</a>
+      <a href="#inputs">4 — Configure inputs.conf</a>
+      <a href="#permissions">5 — File Read Permissions</a>
+      <a href="#restart">6 — Restart &amp; Verify Connection</a>
+      <a href="#verify">7 — Verify Data in Splunk</a>
+    </div>
+
+    <!-- Checklist -->
+    <div class="sidebar-checks">
+      <div class="sidebar-checks-label">Completion Checklist</div>
+
+      <label class="check-item" id="ck-label-0">
+        <input type="checkbox" id="ck0" aria-label="Splunk Universal Forwarder downloaded (matching version to Enterprise)" />
+        <span>Forwarder downloaded (matching Enterprise version)</span>
+      </label>
+      <label class="check-item" id="ck-label-1">
+        <input type="checkbox" id="ck1" aria-label="Forwarder installed on linux-server at /opt/splunkforwarder/" />
+        <span>Forwarder installed (/opt/splunkforwarder/)</span>
+      </label>
+      <label class="check-item" id="ck-label-2">
+        <input type="checkbox" id="ck2" aria-label="Boot-start enabled for forwarder" />
+        <span>Boot-start enabled for forwarder</span>
+      </label>
+      <label class="check-item" id="ck-label-3">
+        <input type="checkbox" id="ck3" aria-label="outputs.conf created (points to 10.0.2.20:9997)" />
+        <span>outputs.conf created (→ 10.0.2.20:9997)</span>
+      </label>
+      <label class="check-item" id="ck-label-4">
+        <input type="checkbox" id="ck4" aria-label="inputs.conf created (auth.log, syslog, audit.log, ufw.log)" />
+        <span>inputs.conf created (auth.log, syslog, audit.log, ufw.log)</span>
+      </label>
+      <label class="check-item" id="ck-label-5">
+        <input type="checkbox" id="ck5" aria-label="splunk user added to adm group" />
+        <span>splunk user added to adm group</span>
+      </label>
+      <label class="check-item" id="ck-label-6">
+        <input type="checkbox" id="ck6" aria-label="setfacl applied for audit.log read access" />
+        <span>setfacl applied for audit.log read access</span>
+      </label>
+      <label class="check-item" id="ck-label-7">
+        <input type="checkbox" id="ck7" aria-label="Forwarder restarted successfully" />
+        <span>Forwarder restarted successfully</span>
+      </label>
+      <label class="check-item" id="ck-label-8">
+        <input type="checkbox" id="ck8" aria-label="list forward-server shows 10.0.2.20:9997 as active" />
+        <span>list forward-server shows 10.0.2.20:9997 active</span>
+      </label>
+      <label class="check-item" id="ck-label-9">
+        <input type="checkbox" id="ck9" aria-label="index=linux_logs search returns results in Splunk web" />
+        <span>index=linux_logs returns results in Splunk</span>
+      </label>
+      <label class="check-item" id="ck-label-10">
+        <input type="checkbox" id="ck10" aria-label="Test log message verified in Splunk search" />
+        <span>Test log message verified in Splunk search</span>
+      </label>
+    </div>
+
+  </nav>
+  <!-- end sidebar -->
+
+  <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
+  <main class="main-content" id="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-eyebrow">CSC 152 · Project 3 · Integration 13 of 15</div>
+      <h1>Integration 13: Linux <em>Universal Forwarder</em> Configuration</h1>
+      <p class="page-subtitle">
+        Install and configure Splunk Universal Forwarder on linux-server to forward logs to splunk-vm (Part C.1 — 7 pts)
+      </p>
+      <div class="header-meta" aria-label="Assignment specifications">
+        <div class="meta-badge"><strong>Source:</strong> linux-server (10.0.2.10)</div>
+        <div class="meta-badge"><strong>Destination:</strong> splunk-vm (10.0.2.20:9997)</div>
+        <div class="meta-badge"><strong>Rubric:</strong> Part C.1 — 7 pts</div>
+      </div>
+    </header>
+
+    <!-- ─── Content Area ─── -->
+    <div class="content-area">
+
+      <!-- ══ Rubric ══ -->
+      <section class="section-card" id="rubric" aria-labelledby="h-rubric">
+        <h2 id="h-rubric"><span class="section-num" aria-hidden="true">&#10003;</span> Part C.1 Rubric Summary</h2>
+        <p>This integration covers installing and configuring the Splunk Universal Forwarder on linux-server. All four tasks below must be completed and documented for full credit.</p>
+
+        <table class="spec-table rubric-table" aria-label="Part C.1 rubric">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Install Universal Forwarder</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>Configure Outputs (point to Splunk)</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>Configure Inputs (log sources)</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>Verify data appearing in Splunk</td>
+              <td>1</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td><strong>Total C.1</strong></td>
+              <td><strong>7</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+
+      <!-- ══ Section 1: Overview ══ -->
+      <section class="section-card" id="overview" aria-labelledby="h-overview">
+        <h2 id="h-overview"><span class="section-num" aria-hidden="true">1</span> Overview</h2>
+
+        <p>The Splunk Universal Forwarder (SUF) is a lightweight agent that streams log files to the Splunk indexer. It does <strong>not</strong> index data itself — it simply forwards. Install on <strong>linux-server (10.0.2.10)</strong>, forward to <strong>splunk-vm (10.0.2.20)</strong> on port <strong>9997</strong>.</p>
+
+        <p>The following log sources will be monitored and forwarded to the <code>linux_logs</code> index on splunk-vm:</p>
+
+        <table class="spec-table" aria-label="Log sources to forward">
+          <thead>
+            <tr>
+              <th>Log File</th>
+              <th>sourcetype</th>
+              <th>Index</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/var/log/auth.log</code></td>
+              <td>linux_secure</td>
+              <td>linux_logs</td>
+              <td>Auth events (SSH, sudo)</td>
+            </tr>
+            <tr>
+              <td><code>/var/log/syslog</code></td>
+              <td>syslog</td>
+              <td>linux_logs</td>
+              <td>System events</td>
+            </tr>
+            <tr>
+              <td><code>/var/log/audit/audit.log</code></td>
+              <td>linux_audit</td>
+              <td>linux_logs</td>
+              <td>Auditd security events</td>
+            </tr>
+            <tr>
+              <td><code>/var/log/ufw.log</code></td>
+              <td>ufw</td>
+              <td>linux_logs</td>
+              <td>Host firewall events</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note-box">
+          <strong>Prerequisite:</strong> Integration 10 (Linux Server Hardening) must be complete. auditd must be configured and running to produce <code>/var/log/audit/audit.log</code>, and UFW must be enabled to produce <code>/var/log/ufw.log</code>.
+        </div>
+      </section>
+
+      <!-- ══ Section 2: Install ══ -->
+      <section class="section-card" id="install" aria-labelledby="h-install">
+        <h2 id="h-install"><span class="section-num" aria-hidden="true">2</span> Download and Install the Universal Forwarder</h2>
+
+        <p>SSH to <strong>linux-server (10.0.2.10)</strong> and run the commands below. The forwarder version must match the Splunk Enterprise version running on splunk-vm.</p>
+
+        <div class="code-block" aria-label="Download and install Splunk Universal Forwarder">
+          <div class="code-block-label">Terminal — linux-server (10.0.2.10)</div>
+          <pre><code># Create install directory
+mkdir -p ~/splunk-forwarder && cd ~/splunk-forwarder
+
+# Download Splunk Universal Forwarder for Linux
+# Get current download URL from: splunk.com/en_us/download/universal-forwarder.html
+# The forwarder version MUST match the Splunk Enterprise version on splunk-vm
+wget -O splunkforwarder-9.x.x-linux-amd64.deb \
+  'https://download.splunk.com/products/universalforwarder/releases/9.x.x/linux/splunkforwarder-9.x.x-linux-amd64.deb'
+
+# Install
+sudo dpkg -i splunkforwarder-9.x.x-linux-amd64.deb
+
+# Start and accept license
+sudo /opt/splunkforwarder/bin/splunk start --accept-license \
+  --answer-yes \
+  --no-prompt \
+  --seed-passwd 'ForwarderPass1!'
+
+# Enable boot-start
+sudo /opt/splunkforwarder/bin/splunk enable boot-start</code></pre>
+        </div>
+
+        <div class="alert alert-info" role="note" style="margin: 14px 0 0;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Path note:</strong> The Universal Forwarder is installed to <code>/opt/splunkforwarder/</code>, separate from Splunk Enterprise at <code>/opt/splunk/</code>. They use the same binary but different paths. The Forwarder version should match the Enterprise server version.
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Section 3: outputs.conf ══ -->
+      <section class="section-card" id="outputs" aria-labelledby="h-outputs">
+        <h2 id="h-outputs"><span class="section-num" aria-hidden="true">3</span> Configure outputs.conf (point to Splunk indexer)</h2>
+
+        <p>The <code>outputs.conf</code> file tells the forwarder where to send data. Create it in the <code>system/local/</code> directory, which overrides any default settings.</p>
+
+        <div class="code-block" aria-label="Create outputs.conf">
+          <div class="code-block-label">Terminal — linux-server</div>
+          <pre><code># Create the outputs configuration
+sudo mkdir -p /opt/splunkforwarder/etc/system/local/
+
+sudo tee /opt/splunkforwarder/etc/system/local/outputs.conf &lt;&lt; 'EOF'
+[tcpout]
+defaultGroup = splunk-indexers
+
+[tcpout:splunk-indexers]
+server = 10.0.2.20:9997
+compressed = true
+sendCookedData = true
+
+[tcpout-server://10.0.2.20:9997]
+EOF
+
+echo "outputs.conf created successfully"
+cat /opt/splunkforwarder/etc/system/local/outputs.conf</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Port 9997:</strong> This is Splunk's default receiving port. The Splunk Enterprise instance on splunk-vm must have a TCP input listener configured on port 9997 (set up during Integration 12 — Splunk Deployment). Verify this is enabled in Splunk web under Settings &rarr; Forwarding and Receiving.
+        </div>
+      </section>
+
+      <!-- ══ Section 4: inputs.conf ══ -->
+      <section class="section-card" id="inputs" aria-labelledby="h-inputs">
+        <h2 id="h-inputs"><span class="section-num" aria-hidden="true">4</span> Configure inputs.conf (what to monitor)</h2>
+
+        <p>The <code>inputs.conf</code> file specifies which log files the forwarder monitors and the sourcetype and index for each. Each stanza defines one log source.</p>
+
+        <div class="code-block" aria-label="Create inputs.conf">
+          <div class="code-block-label">Terminal — linux-server</div>
+          <pre><code>sudo tee /opt/splunkforwarder/etc/system/local/inputs.conf &lt;&lt; 'EOF'
+# SSH and authentication events
+[monitor:///var/log/auth.log]
+disabled = false
+sourcetype = linux_secure
+index = linux_logs
+
+# System log
+[monitor:///var/log/syslog]
+disabled = false
+sourcetype = syslog
+index = linux_logs
+
+# Audit daemon log (requires auditd configured in Build 10)
+[monitor:///var/log/audit/audit.log]
+disabled = false
+sourcetype = linux_audit
+index = linux_logs
+
+# UFW host firewall log
+[monitor:///var/log/ufw.log]
+disabled = false
+sourcetype = ufw
+index = linux_logs
+
+# Cron log
+[monitor:///var/log/cron.log]
+disabled = false
+sourcetype = cron
+index = linux_logs
+EOF
+
+echo "inputs.conf created successfully"
+cat /opt/splunkforwarder/etc/system/local/inputs.conf</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Index must exist:</strong> The <code>linux_logs</code> index must be created on splunk-vm before data will be accepted. Create it in Splunk web: Settings &rarr; Indexes &rarr; New Index &rarr; Name: <code>linux_logs</code>. If the index does not exist, events will be silently dropped or sent to the default index.
+        </div>
+      </section>
+
+      <!-- ══ Section 5: Permissions ══ -->
+      <section class="section-card" id="permissions" aria-labelledby="h-permissions">
+        <h2 id="h-permissions"><span class="section-num" aria-hidden="true">5</span> Grant File Read Permissions</h2>
+
+        <p>The Splunk forwarder runs as the <code>splunk</code> user and needs read access to system log files. Without this, the forwarder starts but cannot read the log files specified in <code>inputs.conf</code>.</p>
+
+        <div class="code-block" aria-label="Grant splunk user read access to log files">
+          <div class="code-block-label">Terminal — linux-server</div>
+          <pre><code># Add splunk user to adm group (gives read access to /var/log files)
+sudo usermod -aG adm splunk
+
+# For audit log specifically (restricted permissions):
+sudo setfacl -m u:splunk:r /var/log/audit/audit.log
+# If setfacl not available:
+sudo apt install -y acl
+sudo setfacl -m u:splunk:r /var/log/audit/audit.log
+
+# Verify
+sudo -u splunk cat /var/log/auth.log | head -5
+sudo -u splunk cat /var/log/audit/audit.log | head -5</code></pre>
+        </div>
+
+        <div class="alert alert-warning" role="note" style="margin: 14px 0 0;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Group membership requires restart:</strong> After running <code>usermod -aG adm splunk</code>, the forwarder service must be restarted before the new group membership takes effect. The restart in Section 6 will apply this change.
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Section 6: Restart ══ -->
+      <section class="section-card" id="restart" aria-labelledby="h-restart">
+        <h2 id="h-restart"><span class="section-num" aria-hidden="true">6</span> Restart Forwarder and Verify Connection</h2>
+
+        <div class="code-block" aria-label="Restart forwarder and verify connection">
+          <div class="code-block-label">Terminal — linux-server</div>
+          <pre><code># Restart forwarder to apply config
+sudo /opt/splunkforwarder/bin/splunk restart
+
+# Check forwarder status
+sudo /opt/splunkforwarder/bin/splunk status
+
+# Check connections to Splunk
+sudo /opt/splunkforwarder/bin/splunk list forward-server
+
+# View forwarder logs for connection status
+sudo tail -50 /opt/splunkforwarder/var/log/splunk/splunkd.log | grep -i "tcpout\|connect\|error"</code></pre>
+        </div>
+
+        <p>Expected output from <code>list forward-server</code>:</p>
+
+        <div class="expected-box" role="note">
+          <strong>Expected output:</strong>
+          <div class="code-block" style="margin-top:8px;">
+            <pre><code>Active forwards:
+    10.0.2.20:9997
+Configured but inactive forwards:
+    (none)</code></pre>
+          </div>
+          If <code>10.0.2.20:9997</code> appears under "Configured but inactive forwards" instead, the forwarder cannot reach splunk-vm. Check the network path and verify that Splunk Enterprise on splunk-vm is running and listening on port 9997.
+        </div>
+      </section>
+
+      <!-- ══ Section 7: Verify ══ -->
+      <section class="section-card" id="verify" aria-labelledby="h-verify">
+        <h2 id="h-verify"><span class="section-num" aria-hidden="true">7</span> Verify Data in Splunk Web</h2>
+
+        <p>From <strong>mgmt-vm</strong> Firefox &rarr; <code>http://10.0.2.20:8000</code> &rarr; Login with admin credentials:</p>
+
+        <ol class="steps-list">
+          <li>Go to <strong>Search &amp; Reporting</strong> &rarr; Search bar</li>
+          <li>Run: <code>index=linux_logs | head 20</code></li>
+          <li>Should return log events from linux-server within 1–2 minutes of restarting the forwarder</li>
+          <li>Check specific log types with the queries below</li>
+        </ol>
+
+        <div class="code-block" aria-label="Splunk search queries to verify data">
+          <div class="code-block-label">Splunk Search — verify sourcetypes</div>
+          <pre><code>index=linux_logs sourcetype=linux_secure | head 10
+index=linux_logs sourcetype=linux_audit | head 10</code></pre>
+        </div>
+
+        <h3>Generate test events to confirm end-to-end</h3>
+        <p>Run the following on linux-server to produce known log entries, then search for them in Splunk to confirm the full forwarding pipeline is working.</p>
+
+        <div class="code-block" aria-label="Generate test log events on linux-server">
+          <div class="code-block-label">Terminal — linux-server — generate test events</div>
+          <pre><code># Generate a failed sudo attempt (creates an auth event)
+sudo -u nobody whoami 2>/dev/null || true
+
+# Generate a test syslog entry with a unique search string
+logger -p auth.info "TEST: Integration 13 forwarder verification - $(date)"</code></pre>
+        </div>
+
+        <div class="code-block" aria-label="Splunk search for test event">
+          <div class="code-block-label">Splunk Search — find the test event</div>
+          <pre><code">index=linux_logs "Integration 13 forwarder verification"</code></pre>
+        </div>
+
+        <div class="expected-box" role="note">
+          <strong>Success criteria:</strong> The <code>logger</code> message should appear in Splunk within 60 seconds. If it does not appear after 2 minutes, check the forwarder log at <code>/opt/splunkforwarder/var/log/splunk/splunkd.log</code> for connection errors, and verify the <code>linux_logs</code> index exists on splunk-vm.
+        </div>
+      </section>
+
+    </div>
+    <!-- end content-area -->
+
+  </main>
+  <!-- end main -->
+
+</div>
+<!-- end page-wrapper -->
+
+<script>
+  // ── Mobile sidebar toggle ──
+  const hamburger = document.getElementById('hamburger');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    overlay.removeAttribute('aria-hidden');
+    hamburger.setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  });
+
+  // ── Checklist progress ──
+  const checkboxes   = document.querySelectorAll('.sidebar-checks input[type="checkbox"]');
+  const progressBar  = document.getElementById('progress-bar');
+  const progressPct  = document.getElementById('progress-pct');
+  const progressTrack = document.getElementById('progress-bar-track');
+
+  function updateProgress() {
+    const total   = checkboxes.length;
+    const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const pct     = total ? Math.round((checked / total) * 100) : 0;
+
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    progressTrack.setAttribute('aria-valuenow', pct);
+  }
+
+  checkboxes.forEach((cb, i) => {
+    const labelEl = document.getElementById('ck-label-' + i);
+    cb.addEventListener('change', () => {
+      if (labelEl) labelEl.classList.toggle('checked', cb.checked);
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+  // ── Sidebar section nav: active link on scroll ──
+  const sections = document.querySelectorAll('.section-card[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

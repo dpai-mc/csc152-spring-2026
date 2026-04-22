@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration 10: Linux Server Hardening | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a2332;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #d0d8e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      background: #0a1520;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #7c3aed;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8a9bb0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 12px 18px;
+      background: #0f2235;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-label span:last-child { color: #a78bfa; font-weight: 700; }
+    .progress-bar-track {
+      background: #0d1b2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      padding: 6px 0 2px;
+      letter-spacing: 0.5px;
+      border-top: 1px solid #1a3350;
+      margin-top: 4px;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a7f94;
+      line-height: 1.4;
+    }
+    .doc-seq-item.current { color: #a78bfa; font-weight: 700; }
+    .doc-seq-item.done { color: #20c997; }
+    .doc-seq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a3d50;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #7c3aed; }
+    .doc-seq-item.done .doc-seq-dot { background: #20c997; }
+
+    /* Section nav */
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.77rem;
+      color: #8a9bb0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: rgba(124,58,237,0.14);
+      border-left-color: #7c3aed;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px;
+      border-top: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.73rem;
+      color: #9aacbc;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #7c3aed;
+      flex-shrink: 0;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .check-item.checked { color: #20c997; text-decoration: line-through; }
+
+    /* ── Hamburger (mobile only) ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: #0d1b2a;
+      border: 2px solid #7c3aed;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #a78bfa;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+    }
+
+    /* ── Main Content ── */
+    .main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a0a3e 55%, #2d1a6e 100%);
+      color: white;
+      padding: 40px 48px 36px;
+      border-bottom: 4px solid #7c3aed;
+    }
+    .header-eyebrow {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .page-header h1 em {
+      color: #a78bfa;
+      font-style: normal;
+    }
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(124,58,237,0.22);
+      border: 1px solid rgba(167,139,250,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #c4b5fd;
+    }
+    .meta-badge strong { color: #ffffff; }
+
+    /* Alerts */
+    .alert {
+      margin: 0 48px 0;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .alert-info {
+      background: #ede9fe;
+      border-left: 5px solid #7c3aed;
+      color: #3b1f7a;
+    }
+    .alert-warning {
+      background: #fff8e1;
+      border-left: 5px solid #f59e0b;
+      color: #7c4a00;
+    }
+    .alert-danger {
+      background: #fef2f2;
+      border-left: 5px solid #dc2626;
+      color: #7f1d1d;
+    }
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Content area */
+    .content-area { padding: 32px 48px 0; }
+
+    /* Section cards */
+    .section-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #7c3aed;
+      scroll-margin-top: 24px;
+    }
+    .section-card h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-card p { color: #3a4a5a; font-size: 0.92rem; margin-bottom: 12px; }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    /* Sub-headings within sections */
+    .section-card h3 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1a2332;
+      margin: 20px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e8edf2;
+    }
+    .section-card h3:first-of-type { margin-top: 16px; }
+
+    /* Prose lists */
+    .prose-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .prose-list li {
+      position: relative;
+      padding: 4px 0 4px 20px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .prose-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-size: 0.7rem;
+      top: 7px;
+    }
+    .prose-list li strong { color: #0d1b2a; }
+
+    /* Tables */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 14px 0;
+    }
+    .spec-table th {
+      background: #0d1b2a;
+      color: #a78bfa;
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .spec-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+      vertical-align: top;
+    }
+    .spec-table tr:last-child td { border-bottom: none; }
+    .spec-table tr:nth-child(even) td { background: #f7f9fc; }
+    .spec-table td:first-child { font-weight: 600; color: #0d1b2a; }
+    .spec-table tfoot td {
+      background: #f0ebff;
+      font-weight: 700;
+      color: #3b1f7a;
+      border-top: 2px solid #7c3aed;
+    }
+
+    /* Rubric table variant */
+    .rubric-table td:nth-child(2) {
+      text-align: center;
+      font-weight: 700;
+      color: #7c3aed;
+    }
+    .rubric-table tfoot td:nth-child(2) {
+      color: #7c3aed;
+      font-size: 1.05rem;
+    }
+
+    /* SSH settings table */
+    .ssh-table td:nth-child(2) {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #7c3aed;
+      font-weight: 700;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .code-block pre { margin: 0; }
+    .code-block pre code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* Inline code */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      background: #ede9fe;
+      color: #5b21b6;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .code-block code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+    /* Note box */
+    .note-box {
+      background: #f5f3ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #3b1f7a;
+    }
+    .note-box strong { color: #0d1b2a; }
+
+    /* Before/After label chips */
+    .state-chip {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .chip-before {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fbbf24;
+    }
+    .chip-after {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #34d399;
+    }
+
+    /* Control section header */
+    .control-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .control-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #7c3aed;
+      color: #fff;
+      padding: 3px 10px 3px 6px;
+      border-radius: 16px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+    .control-points {
+      background: #ede9fe;
+      color: #5b21b6;
+      border: 1px solid #c4b5fd;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .control-cis {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #86efac;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 0.70rem;
+      font-weight: 600;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .page-header { padding: 50px 20px 28px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .content-area { padding: 20px 20px 0; }
+      .alert { margin: 0 20px 0; }
+      .section-card { padding: 20px 18px; }
+      .spec-table td, .spec-table th { padding: 7px 10px; }
+      .header-meta { gap: 6px; }
+    }
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.2rem; }
+      .control-header { gap: 8px; }
+    }
+
+    /* ── Focus styles for accessibility ── */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #7c3aed;
+      outline-offset: 3px;
+    }
+    .hamburger:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      background: #7c3aed;
+      color: #fff;
+      padding: 10px 18px;
+      z-index: 999;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 0 0 6px 0;
+      text-decoration: none;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="page-wrapper">
+
+  <!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
+  <nav class="sidebar" id="sidebar" aria-label="Integration guide navigation">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-course">CSC 152 · Project 3</div>
+      <div class="sidebar-title">Integration 10 of 15</div>
+      <div class="sidebar-subtitle">Linux Server Hardening</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="sidebar-progress" aria-label="Checklist progress">
+      <div class="progress-label">
+        <span>Checklist Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Doc sequence -->
+    <div class="doc-sequence" aria-label="Document sequence">
+      <div class="doc-sequence-label">Build Sequence</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>01 · Proxmox Network Bridges</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>02 · pfSense VM Build</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>03 · Ubuntu Template + linux-server</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>04 · Windows Server dc01</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>05 · Xubuntu Template + mgmt-vm</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>06 · linux-client VM</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>07 · splunk-vm Build</div>
+
+      <div class="doc-seq-divider">&#8212;&#8212; Integration Plans &#8212;&#8212;</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>08 · pfSense Full Configuration</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>09 · Active Directory &amp; DNS</div>
+      <div class="doc-seq-item current" aria-current="page"><span class="doc-seq-dot"></span>10 · Linux Server Hardening</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>11 · Windows Server Hardening</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>12 · Splunk Deployment</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>13 · Linux Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>14 · Windows Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>15 · Backup Strategy</div>
+    </div>
+
+    <!-- Section nav -->
+    <div class="sidebar-nav">
+      <div class="nav-label">Sections</div>
+      <a href="#snapshot">Pre-Hardening Snapshot</a>
+      <a href="#rubric">Rubric Summary</a>
+      <a href="#ctrl1-services">Control 1 — Service Hardening</a>
+      <a href="#ctrl2-ssh">Control 2 — SSH Hardening</a>
+      <a href="#ctrl3-ufw">Control 3 — Host Firewall (UFW)</a>
+      <a href="#ctrl4-auditd">Control 4 — auditd</a>
+      <a href="#ctrl5-permissions">Control 5 — File Permissions</a>
+      <a href="#ctrl6-updates">Control 6 — Automatic Updates</a>
+      <a href="#ctrl7-10">Controls 7–10 — Additional</a>
+      <a href="#verify">Hardening Verification</a>
+    </div>
+
+    <!-- Checklist -->
+    <div class="sidebar-checks">
+      <div class="sidebar-checks-label">Hardening Checklist</div>
+
+      <label class="check-item" id="ck-label-0">
+        <input type="checkbox" id="ck0" aria-label="Pre-hardening snapshot taken in Proxmox" />
+        <span>Pre-hardening snapshot taken in Proxmox</span>
+      </label>
+      <label class="check-item" id="ck-label-1">
+        <input type="checkbox" id="ck1" aria-label="Before-state of services documented" />
+        <span>Before-state of services documented</span>
+      </label>
+      <label class="check-item" id="ck-label-2">
+        <input type="checkbox" id="ck2" aria-label="Unnecessary services disabled (cups, avahi, bluetooth, etc.)" />
+        <span>Unnecessary services disabled (cups, avahi, bluetooth, etc.)</span>
+      </label>
+      <label class="check-item" id="ck-label-3">
+        <input type="checkbox" id="ck3" aria-label="SSH hardening applied (PermitRootLogin no, MaxAuthTries 3, etc.)" />
+        <span>SSH hardening applied (PermitRootLogin no, MaxAuthTries 3, etc.)</span>
+      </label>
+      <label class="check-item" id="ck-label-4">
+        <input type="checkbox" id="ck4" aria-label="SSH tested from second terminal before restarting sshd" />
+        <span>SSH tested from second terminal before restarting sshd</span>
+      </label>
+      <label class="check-item" id="ck-label-5">
+        <input type="checkbox" id="ck5" aria-label="UFW enabled with default deny incoming" />
+        <span>UFW enabled with default deny incoming</span>
+      </label>
+      <label class="check-item" id="ck-label-6">
+        <input type="checkbox" id="ck6" aria-label="Required UFW rules added (SSH, DNS)" />
+        <span>Required UFW rules added (SSH, DNS)</span>
+      </label>
+      <label class="check-item" id="ck-label-7">
+        <input type="checkbox" id="ck7" aria-label="auditd installed and enabled" />
+        <span>auditd installed and enabled</span>
+      </label>
+      <label class="check-item" id="ck-label-8">
+        <input type="checkbox" id="ck8" aria-label="Audit rules created (/etc/audit/rules.d/security.rules)" />
+        <span>Audit rules created (/etc/audit/rules.d/security.rules)</span>
+      </label>
+      <label class="check-item" id="ck-label-9">
+        <input type="checkbox" id="ck9" aria-label="Critical file permissions set (/etc/shadow 640, etc.)" />
+        <span>Critical file permissions set (/etc/shadow 640, etc.)</span>
+      </label>
+      <label class="check-item" id="ck-label-10">
+        <input type="checkbox" id="ck10" aria-label="unattended-upgrades installed and configured" />
+        <span>unattended-upgrades installed and configured</span>
+      </label>
+      <label class="check-item" id="ck-label-11">
+        <input type="checkbox" id="ck11" aria-label="Password quality policy configured (libpam-pwquality)" />
+        <span>Password quality policy configured (libpam-pwquality)</span>
+      </label>
+      <label class="check-item" id="ck-label-12">
+        <input type="checkbox" id="ck12" aria-label="Root account locked" />
+        <span>Root account locked</span>
+      </label>
+      <label class="check-item" id="ck-label-13">
+        <input type="checkbox" id="ck13" aria-label="Legal banner set (/etc/issue.net)" />
+        <span>Legal banner set (/etc/issue.net)</span>
+      </label>
+      <label class="check-item" id="ck-label-14">
+        <input type="checkbox" id="ck14" aria-label="Kernel hardening sysctl applied" />
+        <span>Kernel hardening sysctl applied</span>
+      </label>
+      <label class="check-item" id="ck-label-15">
+        <input type="checkbox" id="ck15" aria-label="Verification script run and output saved for submission" />
+        <span>Verification script run and output saved for submission</span>
+      </label>
+    </div>
+
+  </nav>
+  <!-- end sidebar -->
+
+  <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
+  <main class="main-content" id="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-eyebrow">CSC 152 · Project 3 · Integration 10 of 15</div>
+      <h1>Integration 10: Linux Server <em>Security Hardening</em></h1>
+      <p class="page-subtitle">
+        Apply 12+ CIS Benchmark controls to linux-server (Part A.1) — document before and after state for each control
+      </p>
+      <div class="header-meta" aria-label="Assignment specifications">
+        <div class="meta-badge"><strong>Server:</strong> linux-server (10.0.2.10)</div>
+        <div class="meta-badge"><strong>Rubric:</strong> Part A.1 — 12 pts</div>
+        <div class="meta-badge"><strong>OS:</strong> Ubuntu Server 22.04 LTS</div>
+        <div class="meta-badge"><strong>CIS Reference:</strong> CIS Ubuntu Linux 22.04 LTS Benchmark</div>
+      </div>
+    </header>
+
+    <!-- Documentation alert -->
+    <div class="alert alert-info" role="note" style="margin-top: 20px;">
+      <span class="alert-icon" aria-hidden="true">&#8505;</span>
+      <div>
+        <strong>Documentation requirement:</strong> Document your before and after state for each control using screenshots or copied terminal output. This documentation is required for your project submission.
+      </div>
+    </div>
+
+    <!-- ─── Content Area ─── -->
+    <div class="content-area">
+
+      <!-- ══ Section: Rubric ══ -->
+      <section class="section-card" id="rubric" aria-labelledby="h-rubric">
+        <h2 id="h-rubric"><span class="section-num" aria-hidden="true">&#10003;</span> Part A.1 Rubric Summary</h2>
+        <p>This integration plan covers all six required control areas. The table below maps each area to its point value and the CIS controls addressed. You must document <strong>before and after state</strong> for each area to receive full credit.</p>
+
+        <table class="spec-table rubric-table" aria-label="Part A.1 rubric by control area">
+          <thead>
+            <tr>
+              <th>Control Area</th>
+              <th>Points</th>
+              <th>CIS Controls Applied</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Service Hardening</td>
+              <td>2</td>
+              <td>Disable unnecessary services (cups, avahi, bluetooth, ModemManager, snapd)</td>
+            </tr>
+            <tr>
+              <td>SSH Hardening</td>
+              <td>3</td>
+              <td>sshd_config security settings (9 configuration directives)</td>
+            </tr>
+            <tr>
+              <td>Host Firewall (UFW)</td>
+              <td>2</td>
+              <td>Default deny incoming, allow only required ports (SSH, DNS)</td>
+            </tr>
+            <tr>
+              <td>Audit Configuration</td>
+              <td>2</td>
+              <td>auditd rules for identity, sudoers, SSH config, logins, cron</td>
+            </tr>
+            <tr>
+              <td>File Permissions</td>
+              <td>2</td>
+              <td>Critical system file permissions (/etc/shadow, /etc/passwd, etc.)</td>
+            </tr>
+            <tr>
+              <td>Automatic Updates</td>
+              <td>1</td>
+              <td>unattended-upgrades, apt-listchanges</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td><strong>Total</strong></td>
+              <td><strong>12</strong></td>
+              <td><strong>Minimum 12 CIS controls across all areas</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="note-box">
+          <strong>Additional controls (7–10):</strong> Sections below also cover password quality policy, root account lockout, legal login banner, and kernel parameter hardening. These exceed the minimum of 12 and strengthen your overall security posture.
+        </div>
+      </section>
+
+      <!-- ══ Section 1: Pre-hardening snapshot ══ -->
+      <section class="section-card" id="snapshot" aria-labelledby="h-snapshot">
+        <h2 id="h-snapshot"><span class="section-num" aria-hidden="true">1</span> Pre-Hardening Baseline Snapshot</h2>
+
+        <p>Before making any changes, take a Proxmox snapshot. This gives you a clean rollback point if a misconfiguration causes loss of access.</p>
+
+        <div class="code-block" aria-label="Proxmox snapshot instructions">
+          <div class="code-block-label">Proxmox Web UI &#8212; Snapshots Tab</div>
+          <pre><code># From Proxmox web UI: VM 1002 &#8594; Snapshots &#8594; Take Snapshot
+# Name: pre-hardening-baseline</code></pre>
+        </div>
+
+        <ul class="prose-list">
+          <li><strong>VM ID:</strong> 1002 (linux-server)</li>
+          <li><strong>Snapshot name:</strong> <code>pre-hardening-baseline</code></li>
+          <li><strong>Description:</strong> Before CIS hardening controls applied — Part A.1</li>
+          <li>Wait for the snapshot task to complete (green checkmark in Proxmox task log) before proceeding.</li>
+        </ul>
+      </section>
+
+      <!-- ══ Section 2: Control 1 — Service Hardening ══ -->
+      <section class="section-card" id="ctrl1-services" aria-labelledby="h-ctrl1">
+        <h2 id="h-ctrl1"><span class="section-num" aria-hidden="true">2</span> CIS Control 1 — Service Hardening</h2>
+
+        <div class="control-header" aria-label="Control metadata">
+          <span class="control-badge">&#128274; Control 1</span>
+          <span class="control-points">2 pts</span>
+          <span class="control-cis">CIS: Disable unnecessary services</span>
+        </div>
+
+        <p>Reduce the attack surface by disabling services that are not needed on a headless Ubuntu server. Each unnecessary running service is an additional exposure point.</p>
+
+        <h3><span class="state-chip chip-before">Before</span> Capture running services</h3>
+        <p>Run this command and save the output for your submission. The diff at the end will show exactly which services were removed.</p>
+
+        <div class="code-block" aria-label="Before state: capture running services">
+          <div class="code-block-label">Terminal — linux-server (10.0.2.10)</div>
+          <pre><code># BEFORE &#8212; capture this output for submission
+systemctl list-units --type=service --state=running &gt; ~/before-services.txt
+cat ~/before-services.txt</code></pre>
+        </div>
+
+        <h3>Identify and disable unnecessary services</h3>
+        <p>The commands below use <code>2&gt;/dev/null</code> so that services not installed on your system fail silently. Each line confirms whether the service was found and disabled.</p>
+
+        <div class="code-block" aria-label="Disable unnecessary services">
+          <div class="code-block-label">Terminal — disable unneeded services</div>
+          <pre><code># Check if services exist and are running, then disable:
+sudo systemctl disable --now cups.service 2&gt;/dev/null &amp;&amp; echo "cups disabled" || echo "cups not found"
+sudo systemctl disable --now avahi-daemon.service 2&gt;/dev/null &amp;&amp; echo "avahi disabled" || echo "avahi not found"
+sudo systemctl disable --now bluetooth.service 2&gt;/dev/null &amp;&amp; echo "bluetooth disabled" || echo "bluetooth not found"
+sudo systemctl disable --now ModemManager.service 2&gt;/dev/null &amp;&amp; echo "ModemManager disabled" || echo "not found"
+sudo systemctl disable --now snapd.service 2&gt;/dev/null &amp;&amp; echo "snapd disabled" || echo "snapd not found"</code></pre>
+        </div>
+
+        <h3><span class="state-chip chip-after">After</span> Verify and document changes</h3>
+
+        <div class="code-block" aria-label="After state: verify services removed">
+          <div class="code-block-label">Terminal — after state</div>
+          <pre><code># AFTER &#8212; capture this output for submission
+systemctl list-units --type=service --state=running &gt; ~/after-services.txt
+diff ~/before-services.txt ~/after-services.txt</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Submission tip:</strong> Copy and paste the <code>diff</code> output into your submission document. Lines preceded by <code>&lt;</code> are services that were running before hardening but are now stopped.
+        </div>
+      </section>
+
+      <!-- ══ Section 3: Control 2 — SSH Hardening ══ -->
+      <section class="section-card" id="ctrl2-ssh" aria-labelledby="h-ctrl2">
+        <h2 id="h-ctrl2"><span class="section-num" aria-hidden="true">3</span> CIS Control 2 — SSH Hardening</h2>
+
+        <div class="control-header" aria-label="Control metadata">
+          <span class="control-badge">&#128274; Control 2</span>
+          <span class="control-points">3 pts</span>
+          <span class="control-cis">CIS: sshd_config security settings</span>
+        </div>
+
+        <p>SSH is the primary remote management vector for linux-server. Hardening <code>/etc/ssh/sshd_config</code> closes common attack vectors including direct root login, brute-force attempts, and idle session persistence.</p>
+
+        <h3><span class="state-chip chip-before">Before</span> Back up and inspect current config</h3>
+
+        <div class="code-block" aria-label="Before state: backup sshd_config">
+          <div class="code-block-label">Terminal — save current SSH config</div>
+          <pre><code># BEFORE &#8212; save current config
+sudo cp /etc/ssh/sshd_config ~/before-sshd_config.bak
+cat /etc/ssh/sshd_config | grep -v "^#" | grep -v "^$"</code></pre>
+        </div>
+
+        <h3>Settings to apply</h3>
+        <p>The table below shows each CIS-recommended directive, its value, and the security rationale.</p>
+
+        <table class="spec-table ssh-table" aria-label="SSH hardening settings">
+          <thead>
+            <tr>
+              <th>Setting</th>
+              <th>Value</th>
+              <th>CIS Rationale</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>PermitRootLogin</td>
+              <td>no</td>
+              <td>Prevents direct root SSH access</td>
+            </tr>
+            <tr>
+              <td>MaxAuthTries</td>
+              <td>3</td>
+              <td>Limits brute-force attempts per connection</td>
+            </tr>
+            <tr>
+              <td>ClientAliveInterval</td>
+              <td>300</td>
+              <td>Times out idle sessions (5 minutes)</td>
+            </tr>
+            <tr>
+              <td>ClientAliveCountMax</td>
+              <td>0</td>
+              <td>Disconnects immediately after timeout</td>
+            </tr>
+            <tr>
+              <td>PermitEmptyPasswords</td>
+              <td>no</td>
+              <td>Requires passwords for authentication</td>
+            </tr>
+            <tr>
+              <td>X11Forwarding</td>
+              <td>no</td>
+              <td>Reduces attack surface (no GUI needed)</td>
+            </tr>
+            <tr>
+              <td>AllowUsers</td>
+              <td>sysadmin</td>
+              <td>Restricts SSH to named users only</td>
+            </tr>
+            <tr>
+              <td>LoginGraceTime</td>
+              <td>60</td>
+              <td>Limits time allowed to complete authentication</td>
+            </tr>
+            <tr>
+              <td>Banner</td>
+              <td>/etc/issue.net</td>
+              <td>Displays legal warning before login</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Apply hardening with sed</h3>
+        <p>The <code>sed</code> commands below modify commented-out defaults in-place. The <code>AllowUsers</code> and <code>Banner</code> directives are appended since they typically have no commented placeholder.</p>
+
+        <div class="code-block" aria-label="Apply SSH hardening settings">
+          <div class="code-block-label">Terminal &#8212; sshd_config changes</div>
+          <pre><code># Modify commented defaults in-place
+sudo sed -i 's/#PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+sudo sed -i 's/#MaxAuthTries.*/MaxAuthTries 3/' /etc/ssh/sshd_config
+sudo sed -i 's/#ClientAliveInterval.*/ClientAliveInterval 300/' /etc/ssh/sshd_config
+sudo sed -i 's/#ClientAliveCountMax.*/ClientAliveCountMax 0/' /etc/ssh/sshd_config
+sudo sed -i 's/#PermitEmptyPasswords.*/PermitEmptyPasswords no/' /etc/ssh/sshd_config
+sudo sed -i 's/#X11Forwarding.*/X11Forwarding no/' /etc/ssh/sshd_config
+sudo sed -i 's/#LoginGraceTime.*/LoginGraceTime 60/' /etc/ssh/sshd_config
+
+# Append directives that have no commented placeholder
+echo "AllowUsers sysadmin" | sudo tee -a /etc/ssh/sshd_config
+echo "Banner /etc/issue.net" | sudo tee -a /etc/ssh/sshd_config
+
+# Validate and restart
+sudo sshd -t &amp;&amp; echo "Config OK" || echo "Config ERROR - fix before restarting"
+sudo systemctl restart sshd</code></pre>
+        </div>
+
+        <div class="alert alert-warning" role="alert" style="margin: 14px 0 0;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Lock-out risk:</strong> Always test SSH access from a <em>second terminal window</em> before closing your current session. A misconfigured <code>sshd_config</code> can lock you out of the server. If that happens, use the Proxmox console (not SSH) to correct the configuration.
+          </div>
+        </div>
+
+        <h3><span class="state-chip chip-after">After</span> Verify applied settings</h3>
+
+        <div class="code-block" aria-label="After state: verify SSH settings">
+          <div class="code-block-label">Terminal &#8212; confirm key directives</div>
+          <pre><code>sudo grep -E "PermitRootLogin|MaxAuthTries|ClientAliveInterval|PermitEmptyPasswords|X11Forwarding|AllowUsers|LoginGraceTime|Banner" \
+  /etc/ssh/sshd_config | grep -v "^#"</code></pre>
+        </div>
+      </section>
+
+      <!-- ══ Section 4: Control 3 — UFW ══ -->
+      <section class="section-card" id="ctrl3-ufw" aria-labelledby="h-ctrl3">
+        <h2 id="h-ctrl3"><span class="section-num" aria-hidden="true">4</span> CIS Control 3 — Host Firewall with UFW</h2>
+
+        <div class="control-header" aria-label="Control metadata">
+          <span class="control-badge">&#128274; Control 3</span>
+          <span class="control-points">2 pts</span>
+          <span class="control-cis">CIS: Default deny, allow only needed ports</span>
+        </div>
+
+        <p>UFW (Uncomplicated Firewall) provides a host-level packet filter. The CIS Benchmark requires a default-deny posture for incoming traffic with explicit allow rules for only the services this server provides.</p>
+
+        <h3><span class="state-chip chip-before">Before</span> Check current firewall state</h3>
+
+        <div class="code-block" aria-label="Before state: check UFW">
+          <div class="code-block-label">Terminal &#8212; current UFW status</div>
+          <pre><code>sudo ufw status</code></pre>
+        </div>
+
+        <h3>Apply UFW rules</h3>
+
+        <div class="alert alert-danger" role="alert" style="margin: 0 0 14px;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Add the SSH allow rule before enabling UFW.</strong> If you enable UFW first without allowing port 22, you will be immediately locked out of the server and must use the Proxmox console to recover.
+          </div>
+        </div>
+
+        <div class="code-block" aria-label="Apply UFW firewall rules">
+          <div class="code-block-label">Terminal &#8212; configure UFW</div>
+          <pre><code># Set default policies
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# Allow SSH FIRST (before enabling UFW)
+sudo ufw allow 22/tcp comment 'SSH'
+
+# Allow DNS (linux-server provides secondary DNS)
+sudo ufw allow 53/tcp comment 'DNS TCP'
+sudo ufw allow 53/udp comment 'DNS UDP'
+
+# Enable UFW
+sudo ufw enable</code></pre>
+        </div>
+
+        <h3><span class="state-chip chip-after">After</span> Verify firewall rules</h3>
+
+        <div class="code-block" aria-label="After state: verify UFW">
+          <div class="code-block-label">Terminal &#8212; verify rules in effect</div>
+          <pre><code>sudo ufw status verbose</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Splunk forwarder note:</strong> Outbound traffic from linux-server to splunk-vm is already allowed by the default outgoing policy. No additional inbound UFW rule is needed on this server for Splunk forwarding; the receiving rule belongs on splunk-vm.
+        </div>
+      </section>
+
+      <!-- ══ Section 5: Control 4 — auditd ══ -->
+      <section class="section-card" id="ctrl4-auditd" aria-labelledby="h-ctrl4">
+        <h2 id="h-ctrl4"><span class="section-num" aria-hidden="true">5</span> CIS Control 4 — auditd Configuration</h2>
+
+        <div class="control-header" aria-label="Control metadata">
+          <span class="control-badge">&#128274; Control 4</span>
+          <span class="control-points">2 pts</span>
+          <span class="control-cis">CIS: Audit rules for security events</span>
+        </div>
+
+        <p>The Linux Audit subsystem (<code>auditd</code>) records security-relevant kernel events to a tamper-evident log. CIS requires monitoring of authentication files, privilege escalation paths, and user management commands.</p>
+
+        <div class="code-block" aria-label="Install and configure auditd">
+          <div class="code-block-label">Terminal &#8212; install, enable, and configure auditd</div>
+          <pre><code># Install auditd
+sudo apt install -y auditd audispd-plugins
+
+# Enable and start
+sudo systemctl enable --now auditd
+
+# Create security rules file
+sudo tee /etc/audit/rules.d/security.rules &lt;&lt; 'EOF'
+# Monitor authentication files
+-w /etc/passwd -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+
+# Monitor sudoers
+-w /etc/sudoers -p wa -k sudoers
+-w /etc/sudoers.d/ -p wa -k sudoers
+
+# Monitor SSH configuration
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+
+# Monitor login events
+-w /var/log/lastlog -p wa -k logins
+-w /var/log/faillog -p wa -k logins
+
+# Monitor cron
+-w /etc/crontab -p wa -k cron
+-w /etc/cron.d/ -p wa -k cron
+
+# Monitor user modifications
+-w /usr/sbin/useradd -p x -k user_modification
+-w /usr/sbin/usermod -p x -k user_modification
+-w /usr/sbin/userdel -p x -k user_modification
+EOF
+
+# Load rules
+sudo augenrules --load
+
+# Verify
+sudo auditctl -l
+sudo ausearch -k identity | head -20</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Rule flags explained:</strong> <code>-w</code> watches a file or directory. <code>-p wa</code> triggers on write and attribute-change events. <code>-p x</code> triggers on execute. <code>-k</code> assigns a searchable keyword tag to the rule.
+        </div>
+      </section>
+
+      <!-- ══ Section 6: Control 5 — File Permissions ══ -->
+      <section class="section-card" id="ctrl5-permissions" aria-labelledby="h-ctrl5">
+        <h2 id="h-ctrl5"><span class="section-num" aria-hidden="true">6</span> CIS Control 5 — File Permissions</h2>
+
+        <div class="control-header" aria-label="Control metadata">
+          <span class="control-badge">&#128274; Control 5</span>
+          <span class="control-points">2 pts</span>
+          <span class="control-cis">CIS: Critical system file permissions</span>
+        </div>
+
+        <p>Incorrect permissions on authentication and credential files can allow unprivileged users to read password hashes or modify account data. CIS specifies exact permissions for each file.</p>
+
+        <h3><span class="state-chip chip-before">Before</span> Document current permissions</h3>
+
+        <div class="code-block" aria-label="Before state: capture file permissions">
+          <div class="code-block-label">Terminal &#8212; record current permissions</div>
+          <pre><code># BEFORE &#8212; document current permissions
+stat /etc/passwd /etc/shadow /etc/group /etc/gshadow</code></pre>
+        </div>
+
+        <h3>Apply correct permissions</h3>
+
+        <div class="code-block" aria-label="Apply CIS file permissions">
+          <div class="code-block-label">Terminal &#8212; set CIS-required permissions</div>
+          <pre><code># Set correct ownership and permissions
+sudo chmod 644 /etc/passwd
+sudo chmod 640 /etc/shadow
+sudo chmod 644 /etc/group
+sudo chmod 640 /etc/gshadow
+sudo chown root:shadow /etc/shadow
+sudo chown root:shadow /etc/gshadow
+
+# Secure SSH directory and keys (root)
+sudo chmod 700 /root/.ssh 2&gt;/dev/null || true
+sudo chmod 600 /root/.ssh/authorized_keys 2&gt;/dev/null || true
+
+# Find world-writable files (document for submission)
+sudo find / -xdev -type f -perm -0002 -not -path "/proc/*" 2&gt;/dev/null | head -20</code></pre>
+        </div>
+
+        <h3><span class="state-chip chip-after">After</span> Verify permissions</h3>
+
+        <div class="code-block" aria-label="After state: verify file permissions">
+          <div class="code-block-label">Terminal &#8212; confirm permissions applied</div>
+          <pre><code># AFTER &#8212; verify permissions
+stat /etc/passwd /etc/shadow /etc/group /etc/gshadow</code></pre>
+        </div>
+
+        <table class="spec-table" aria-label="Required file permissions reference">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Mode</th>
+              <th>Owner:Group</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/etc/passwd</code></td>
+              <td>644</td>
+              <td>root:root</td>
+            </tr>
+            <tr>
+              <td><code>/etc/shadow</code></td>
+              <td>640</td>
+              <td>root:shadow</td>
+            </tr>
+            <tr>
+              <td><code>/etc/group</code></td>
+              <td>644</td>
+              <td>root:root</td>
+            </tr>
+            <tr>
+              <td><code>/etc/gshadow</code></td>
+              <td>640</td>
+              <td>root:shadow</td>
+            </tr>
+            <tr>
+              <td><code>/root/.ssh</code></td>
+              <td>700</td>
+              <td>root:root</td>
+            </tr>
+            <tr>
+              <td><code>/root/.ssh/authorized_keys</code></td>
+              <td>600</td>
+              <td>root:root</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ══ Section 7: Control 6 — Automatic Updates ══ -->
+      <section class="section-card" id="ctrl6-updates" aria-labelledby="h-ctrl6">
+        <h2 id="h-ctrl6"><span class="section-num" aria-hidden="true">7</span> CIS Control 6 — Automatic Updates</h2>
+
+        <div class="control-header" aria-label="Control metadata">
+          <span class="control-badge">&#128274; Control 6</span>
+          <span class="control-points">1 pt</span>
+          <span class="control-cis">CIS: unattended-upgrades</span>
+        </div>
+
+        <p>The <code>unattended-upgrades</code> package automatically applies security patches without manual intervention. CIS requires that this service is installed, enabled, and configured to apply at minimum security updates.</p>
+
+        <div class="code-block" aria-label="Configure unattended-upgrades">
+          <div class="code-block-label">Terminal &#8212; install and configure unattended-upgrades</div>
+          <pre><code># Install unattended-upgrades
+sudo apt install -y unattended-upgrades apt-listchanges
+
+# Interactive configuration (select YES when prompted)
+sudo dpkg-reconfigure -pmedium unattended-upgrades
+
+# Verify configuration file
+cat /etc/apt/apt.conf.d/20auto-upgrades
+# Expected output:
+# APT::Periodic::Update-Package-Lists "1";
+# APT::Periodic::Unattended-Upgrade "1";
+
+# Enable and start service
+sudo systemctl enable --now unattended-upgrades
+
+# Test dry run (no changes applied)
+sudo unattended-upgrade --dry-run --debug</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Dry-run output:</strong> The <code>--dry-run --debug</code> flags simulate an upgrade without making changes. Save this output to demonstrate the service is functional and has access to security updates.
+        </div>
+      </section>
+
+      <!-- ══ Section 8: Controls 7–10 ══ -->
+      <section class="section-card" id="ctrl7-10" aria-labelledby="h-ctrl7-10">
+        <h2 id="h-ctrl7-10"><span class="section-num" aria-hidden="true">8</span> Additional CIS Controls 7–10</h2>
+
+        <p>The six required control areas above may implement multiple discrete CIS controls. The following four additional controls bring the total well above the required minimum of 12 and address high-value attack vectors.</p>
+
+        <h3>Control 7 — Password Quality Policy</h3>
+        <div class="control-header">
+          <span class="control-cis">CIS: Minimum password complexity requirements</span>
+        </div>
+
+        <div class="code-block" aria-label="Configure password quality policy">
+          <div class="code-block-label">Terminal &#8212; libpam-pwquality</div>
+          <pre><code>sudo apt install -y libpam-pwquality
+sudo nano /etc/security/pwquality.conf
+
+# Set these values:
+# minlen = 14
+# dcredit = -1
+# ucredit = -1
+# ocredit = -1
+# lcredit = -1
+# maxrepeat = 3</code></pre>
+        </div>
+
+        <table class="spec-table" aria-label="Password policy settings">
+          <thead>
+            <tr>
+              <th>Setting</th>
+              <th>Value</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>minlen</code></td>
+              <td>14</td>
+              <td>Minimum password length of 14 characters</td>
+            </tr>
+            <tr>
+              <td><code>dcredit</code></td>
+              <td>-1</td>
+              <td>Require at least 1 digit</td>
+            </tr>
+            <tr>
+              <td><code>ucredit</code></td>
+              <td>-1</td>
+              <td>Require at least 1 uppercase letter</td>
+            </tr>
+            <tr>
+              <td><code>ocredit</code></td>
+              <td>-1</td>
+              <td>Require at least 1 special character</td>
+            </tr>
+            <tr>
+              <td><code>lcredit</code></td>
+              <td>-1</td>
+              <td>Require at least 1 lowercase letter</td>
+            </tr>
+            <tr>
+              <td><code>maxrepeat</code></td>
+              <td>3</td>
+              <td>No more than 3 consecutive identical characters</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Control 8 — Disable Root Account</h3>
+        <div class="control-header">
+          <span class="control-cis">CIS: Lock root; enforce sudo for privilege escalation</span>
+        </div>
+
+        <div class="code-block" aria-label="Lock root account">
+          <div class="code-block-label">Terminal &#8212; lock root account</div>
+          <pre><code># Lock root account (use sudo instead)
+sudo passwd -l root
+
+# Verify &#8212; output should show "L" (locked)
+sudo passwd -S root</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Note:</strong> Locking root does not prevent console access in single-user/recovery mode. Physical and Proxmox console security controls are separate concerns.
+        </div>
+
+        <h3>Control 9 — Legal Login Banner</h3>
+        <div class="control-header">
+          <span class="control-cis">CIS: Warning banner displayed before authentication</span>
+        </div>
+
+        <div class="code-block" aria-label="Set legal banner">
+          <div class="code-block-label">Terminal &#8212; create /etc/issue.net</div>
+          <pre><code>sudo tee /etc/issue.net &lt;&lt; 'EOF'
+*******************************************************************************
+                         AUTHORIZED ACCESS ONLY
+This system is the property of TechStart Solutions. Unauthorized access is
+prohibited and will be prosecuted to the fullest extent of the law.
+All activity on this system is monitored and logged.
+*******************************************************************************
+EOF</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>SSH integration:</strong> The <code>Banner /etc/issue.net</code> directive added in Control 2 (SSH hardening) ensures this text is displayed to users during SSH authentication, before they are granted access.
+        </div>
+
+        <h3>Control 10 — Kernel Parameter Hardening (sysctl)</h3>
+        <div class="control-header">
+          <span class="control-cis">CIS: Network stack and kernel security parameters</span>
+        </div>
+
+        <div class="code-block" aria-label="Apply kernel hardening via sysctl">
+          <div class="code-block-label">Terminal &#8212; /etc/sysctl.d/99-hardening.conf</div>
+          <pre><code>sudo tee /etc/sysctl.d/99-hardening.conf &lt;&lt; 'EOF'
+# Disable IP forwarding (linux-server is not a router)
+net.ipv4.ip_forward = 0
+
+# Disable ICMP redirects
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+
+# Enable SYN flood protection
+net.ipv4.tcp_syncookies = 1
+
+# Disable source routing
+net.ipv4.conf.all.accept_source_route = 0
+
+# Enable martian packet logging
+net.ipv4.conf.all.log_martians = 1
+
+# Protect against time-wait assassination
+net.ipv4.tcp_rfc1337 = 1
+EOF
+
+# Apply immediately without rebooting
+sudo sysctl --system</code></pre>
+        </div>
+
+        <table class="spec-table" aria-label="sysctl kernel hardening parameters">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Value</th>
+              <th>Security Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>net.ipv4.ip_forward</code></td>
+              <td>0</td>
+              <td>Prevents this host from routing packets between networks</td>
+            </tr>
+            <tr>
+              <td><code>accept_redirects</code></td>
+              <td>0</td>
+              <td>Ignores ICMP redirects (used in MITM attacks)</td>
+            </tr>
+            <tr>
+              <td><code>send_redirects</code></td>
+              <td>0</td>
+              <td>Does not send ICMP redirects to other hosts</td>
+            </tr>
+            <tr>
+              <td><code>tcp_syncookies</code></td>
+              <td>1</td>
+              <td>Mitigates SYN flood denial-of-service attacks</td>
+            </tr>
+            <tr>
+              <td><code>accept_source_route</code></td>
+              <td>0</td>
+              <td>Ignores source-routed packets</td>
+            </tr>
+            <tr>
+              <td><code>log_martians</code></td>
+              <td>1</td>
+              <td>Logs packets with impossible source addresses</td>
+            </tr>
+            <tr>
+              <td><code>tcp_rfc1337</code></td>
+              <td>1</td>
+              <td>Protects TCP connections from TIME-WAIT assassination</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ══ Section 9: Verification ══ -->
+      <section class="section-card" id="verify" aria-labelledby="h-verify">
+        <h2 id="h-verify"><span class="section-num" aria-hidden="true">9</span> Hardening Verification</h2>
+
+        <p>Run the verification script below after completing all controls. Save the full output for your project submission — it demonstrates each control is in effect.</p>
+
+        <div class="code-block" aria-label="Verification script">
+          <div class="code-block-label">Terminal &#8212; comprehensive verification</div>
+          <pre><code>echo "=== Service Check ==="
+systemctl list-units --type=service --state=running \
+  | grep -E "cups|avahi|bluetooth" || echo "Unnecessary services disabled ✓"
+
+echo ""
+echo "=== SSH Config ==="
+sudo grep -E "PermitRootLogin|MaxAuthTries|PermitEmptyPasswords|AllowUsers" \
+  /etc/ssh/sshd_config | grep -v "^#"
+
+echo ""
+echo "=== UFW Status ==="
+sudo ufw status
+
+echo ""
+echo "=== Auditd Status ==="
+sudo systemctl is-active auditd \
+  &amp;&amp; sudo auditctl -l | wc -l \
+  &amp;&amp; echo "audit rules loaded"
+
+echo ""
+echo "=== File Permissions ==="
+stat -c "%n %a %U:%G" /etc/passwd /etc/shadow /etc/group /etc/gshadow
+
+echo ""
+echo "=== unattended-upgrades ==="
+sudo systemctl is-active unattended-upgrades
+
+echo ""
+echo "=== Root Account Status ==="
+sudo passwd -S root
+
+echo ""
+echo "=== sysctl Hardening ==="
+sysctl net.ipv4.ip_forward net.ipv4.tcp_syncookies net.ipv4.conf.all.accept_redirects</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Submission checklist:</strong> Your submission should include the output of this verification script plus the before/after captures from each control section (before-services.txt, diff output, before-sshd_config.bak comparison, ufw status before/after, stat output for file permissions).
+        </div>
+      </section>
+
+    </div>
+    <!-- end content-area -->
+
+  </main>
+  <!-- end main -->
+
+</div>
+<!-- end page-wrapper -->
+
+<script>
+  // ── Mobile sidebar toggle ──
+  const hamburger = document.getElementById('hamburger');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    overlay.removeAttribute('aria-hidden');
+    hamburger.setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  });
+
+  // ── Checklist progress ──
+  const checkboxes  = document.querySelectorAll('.sidebar-checks input[type="checkbox"]');
+  const progressBar = document.getElementById('progress-bar');
+  const progressPct = document.getElementById('progress-pct');
+  const progressTrack = document.getElementById('progress-bar-track');
+
+  function updateProgress() {
+    const total   = checkboxes.length;
+    const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const pct     = total ? Math.round((checked / total) * 100) : 0;
+
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    progressTrack.setAttribute('aria-valuenow', pct);
+  }
+
+  checkboxes.forEach((cb, i) => {
+    const labelEl = document.getElementById('ck-label-' + i);
+    cb.addEventListener('change', () => {
+      if (labelEl) labelEl.classList.toggle('checked', cb.checked);
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+  // ── Sidebar section nav: active link on scroll ──
+  const sections = document.querySelectorAll('.section-card[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

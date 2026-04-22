@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration 14: Windows Universal Forwarder | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a2332;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #d0d8e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      background: #0a1520;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #7c3aed;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8a9bb0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 12px 18px;
+      background: #0f2235;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-label span:last-child { color: #a78bfa; font-weight: 700; }
+    .progress-bar-track {
+      background: #0d1b2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      padding: 6px 0 2px;
+      letter-spacing: 0.5px;
+      border-top: 1px solid #1a3350;
+      margin-top: 4px;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a7f94;
+      line-height: 1.4;
+    }
+    .doc-seq-item.current { color: #a78bfa; font-weight: 700; }
+    .doc-seq-item.done { color: #20c997; }
+    .doc-seq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a3d50;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #7c3aed; }
+    .doc-seq-item.done .doc-seq-dot { background: #20c997; }
+
+    /* Section nav */
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.77rem;
+      color: #8a9bb0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: rgba(124,58,237,0.14);
+      border-left-color: #7c3aed;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px;
+      border-top: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.73rem;
+      color: #9aacbc;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #7c3aed;
+      flex-shrink: 0;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .check-item.checked { color: #20c997; text-decoration: line-through; }
+
+    /* ── Hamburger (mobile only) ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: #0d1b2a;
+      border: 2px solid #7c3aed;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #a78bfa;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+    }
+
+    /* ── Main Content ── */
+    .main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a0a3e 55%, #2d1a6e 100%);
+      color: white;
+      padding: 40px 48px 36px;
+      border-bottom: 4px solid #7c3aed;
+    }
+    .header-eyebrow {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .page-header h1 em {
+      color: #a78bfa;
+      font-style: normal;
+    }
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(124,58,237,0.22);
+      border: 1px solid rgba(167,139,250,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #c4b5fd;
+    }
+    .meta-badge strong { color: #ffffff; }
+
+    /* Alerts */
+    .alert {
+      margin: 0 48px 0;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .alert-info {
+      background: #ede9fe;
+      border-left: 5px solid #7c3aed;
+      color: #3b1f7a;
+    }
+    .alert-warning {
+      background: #fff8e1;
+      border-left: 5px solid #f59e0b;
+      color: #7c4a00;
+    }
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Content area */
+    .content-area { padding: 32px 48px 0; }
+
+    /* Section cards */
+    .section-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #7c3aed;
+      scroll-margin-top: 24px;
+    }
+    .section-card h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-card p { color: #3a4a5a; font-size: 0.92rem; margin-bottom: 12px; }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    /* Sub-headings within sections */
+    .section-card h3 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1a2332;
+      margin: 20px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e8edf2;
+    }
+    .section-card h3:first-of-type { margin-top: 16px; }
+
+    /* Prose lists */
+    .prose-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .prose-list li {
+      position: relative;
+      padding: 4px 0 4px 20px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .prose-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-size: 0.7rem;
+      top: 7px;
+    }
+    .prose-list li strong { color: #0d1b2a; }
+
+    /* Ordered list */
+    .steps-list {
+      padding-left: 22px;
+      margin: 10px 0 14px;
+    }
+    .steps-list li {
+      font-size: 0.88rem;
+      color: #3a4a5a;
+      padding: 3px 0;
+    }
+    .steps-list li strong { color: #0d1b2a; }
+
+    /* Tables */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 14px 0;
+    }
+    .spec-table th {
+      background: #0d1b2a;
+      color: #a78bfa;
+      text-align: left;
+      padding: 9px 14px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .spec-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+      vertical-align: top;
+    }
+    .spec-table tr:last-child td { border-bottom: none; }
+    .spec-table tr:nth-child(even) td { background: #f7f9fc; }
+    .spec-table td:first-child { font-weight: 600; color: #0d1b2a; }
+    .spec-table tfoot td {
+      background: #f0ebff;
+      font-weight: 700;
+      color: #3b1f7a;
+      border-top: 2px solid #7c3aed;
+    }
+
+    /* Rubric table variant */
+    .rubric-table td:nth-child(2) {
+      text-align: center;
+      font-weight: 700;
+      color: #7c3aed;
+    }
+    .rubric-table tfoot td:nth-child(2) {
+      color: #7c3aed;
+      font-size: 1.05rem;
+    }
+
+    /* Event ID table — center event ID column */
+    .event-table td:first-child {
+      text-align: center;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.83rem;
+      color: #7c3aed;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .code-block pre { margin: 0; }
+    .code-block pre code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* Inline code */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      background: #ede9fe;
+      color: #5b21b6;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .code-block code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+    /* Note box */
+    .note-box {
+      background: #f5f3ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #3b1f7a;
+    }
+    .note-box strong { color: #0d1b2a; }
+
+    /* Expected output box */
+    .expected-box {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #14532d;
+    }
+    .expected-box strong { color: #0d1b2a; }
+    .expected-box code { background: #dcfce7; color: #166534; }
+
+    /* Two-column wizard steps */
+    .wizard-steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .wizard-step {
+      background: #f7f9fc;
+      border: 1px solid #dde4ee;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.84rem;
+      color: #3a4a5a;
+    }
+    .wizard-step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+    .wizard-step strong { color: #0d1b2a; }
+    @media (max-width: 600px) { .wizard-steps { grid-template-columns: 1fr; } }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .page-header { padding: 50px 20px 28px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .content-area { padding: 20px 20px 0; }
+      .alert { margin: 0 20px 0; }
+      .section-card { padding: 20px 18px; }
+      .spec-table td, .spec-table th { padding: 7px 10px; }
+      .header-meta { gap: 6px; }
+    }
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.2rem; }
+    }
+
+    /* ── Focus styles for accessibility ── */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #7c3aed;
+      outline-offset: 3px;
+    }
+    .hamburger:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      background: #7c3aed;
+      color: #fff;
+      padding: 10px 18px;
+      z-index: 999;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 0 0 6px 0;
+      text-decoration: none;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="page-wrapper">
+
+  <!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
+  <nav class="sidebar" id="sidebar" aria-label="Integration guide navigation">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-course">CSC 152 · Project 3</div>
+      <div class="sidebar-title">Integration 14 of 15</div>
+      <div class="sidebar-subtitle">Windows Log Forwarder</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="sidebar-progress" aria-label="Checklist progress">
+      <div class="progress-label">
+        <span>Checklist Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Doc sequence -->
+    <div class="doc-sequence" aria-label="Document sequence">
+      <div class="doc-sequence-label">Build Sequence</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>01 · Proxmox Network Bridges</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>02 · pfSense VM Build</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>03 · Ubuntu Template + linux-server</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>04 · Windows Server dc01</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>05 · Xubuntu Template + mgmt-vm</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>06 · linux-client VM</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>07 · splunk-vm Build</div>
+
+      <div class="doc-seq-divider">&#8212;&#8212; Integration Plans &#8212;&#8212;</div>
+
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>08 · pfSense Full Configuration</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>09 · Active Directory &amp; DNS</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>10 · Linux Server Hardening</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>11 · Windows Server Hardening</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>12 · Splunk Deployment</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>13 · Linux Log Forwarder</div>
+      <div class="doc-seq-item current" aria-current="page"><span class="doc-seq-dot"></span>14 · Windows Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>15 · Backup Strategy</div>
+    </div>
+
+    <!-- Section nav -->
+    <div class="sidebar-nav">
+      <div class="nav-label">Sections</div>
+      <a href="#rubric">Rubric Summary</a>
+      <a href="#overview">1 — Overview</a>
+      <a href="#download">2 — Download Forwarder</a>
+      <a href="#install">3 — Install via GUI / CLI</a>
+      <a href="#inputs">4 — Configure inputs.conf</a>
+      <a href="#outputs">5 — Verify outputs.conf</a>
+      <a href="#restart">6 — Restart &amp; Verify Service</a>
+      <a href="#verify">7 — Verify Data in Splunk</a>
+      <a href="#both">8 — Validate Both Forwarders</a>
+    </div>
+
+    <!-- Checklist -->
+    <div class="sidebar-checks">
+      <div class="sidebar-checks-label">Completion Checklist</div>
+
+      <label class="check-item" id="ck-label-0">
+        <input type="checkbox" id="ck0" aria-label="Windows Universal Forwarder MSI downloaded (matching Splunk Enterprise version)" />
+        <span>Forwarder MSI downloaded (matching Enterprise version)</span>
+      </label>
+      <label class="check-item" id="ck-label-1">
+        <input type="checkbox" id="ck1" aria-label="Forwarder installed on dc01 as Administrator" />
+        <span>Forwarder installed on dc01 (as Administrator)</span>
+      </label>
+      <label class="check-item" id="ck-label-2">
+        <input type="checkbox" id="ck2" aria-label="Receiving indexer set to 10.0.2.20:9997 during install" />
+        <span>Receiving indexer set to 10.0.2.20:9997 during install</span>
+      </label>
+      <label class="check-item" id="ck-label-3">
+        <input type="checkbox" id="ck3" aria-label="inputs.conf configured (Security, System, Application logs)" />
+        <span>inputs.conf configured (Security, System, Application)</span>
+      </label>
+      <label class="check-item" id="ck-label-4">
+        <input type="checkbox" id="ck4" aria-label="outputs.conf verified or created (pointing to 10.0.2.20:9997)" />
+        <span>outputs.conf verified/created (→ 10.0.2.20:9997)</span>
+      </label>
+      <label class="check-item" id="ck-label-5">
+        <input type="checkbox" id="ck5" aria-label="SplunkForwarder service running with Automatic start type" />
+        <span>SplunkForwarder service running (Automatic start)</span>
+      </label>
+      <label class="check-item" id="ck-label-6">
+        <input type="checkbox" id="ck6" aria-label="list forward-server shows 10.0.2.20:9997 as active" />
+        <span>list forward-server shows 10.0.2.20:9997 active</span>
+      </label>
+      <label class="check-item" id="ck-label-7">
+        <input type="checkbox" id="ck7" aria-label="index=windows_logs returns results in Splunk web" />
+        <span>index=windows_logs returns results in Splunk</span>
+      </label>
+      <label class="check-item" id="ck-label-8">
+        <input type="checkbox" id="ck8" aria-label="Security events EventCode 4624/4625 visible in Splunk" />
+        <span>Security events (EventCode 4624/4625) visible</span>
+      </label>
+      <label class="check-item" id="ck-label-9">
+        <input type="checkbox" id="ck9" aria-label="Both forwarders confirmed active (linux_logs + windows_logs both have data)" />
+        <span>Both forwarders active (linux_logs + windows_logs)</span>
+      </label>
+    </div>
+
+  </nav>
+  <!-- end sidebar -->
+
+  <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
+  <main class="main-content" id="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-eyebrow">CSC 152 · Project 3 · Integration 14 of 15</div>
+      <h1>Integration 14: Windows <em>Universal Forwarder</em> Configuration</h1>
+      <p class="page-subtitle">
+        Install and configure Splunk Universal Forwarder on dc01 to forward Windows Event Logs to splunk-vm (Part C.2 — 8 pts)
+      </p>
+      <div class="header-meta" aria-label="Assignment specifications">
+        <div class="meta-badge"><strong>Source:</strong> dc01 (10.0.2.11)</div>
+        <div class="meta-badge"><strong>Destination:</strong> splunk-vm (10.0.2.20:9997)</div>
+        <div class="meta-badge"><strong>Rubric:</strong> Part C.2 — 8 pts</div>
+      </div>
+    </header>
+
+    <!-- ─── Content Area ─── -->
+    <div class="content-area">
+
+      <!-- ══ Rubric ══ -->
+      <section class="section-card" id="rubric" aria-labelledby="h-rubric">
+        <h2 id="h-rubric"><span class="section-num" aria-hidden="true">&#10003;</span> Part C.2 Rubric Summary</h2>
+        <p>This integration covers installing and configuring the Splunk Universal Forwarder on dc01 (the Domain Controller). All four tasks below must be completed and documented for full credit.</p>
+
+        <table class="spec-table rubric-table" aria-label="Part C.2 rubric">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Install Universal Forwarder</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>Configure Outputs (point to Splunk)</td>
+              <td>2</td>
+            </tr>
+            <tr>
+              <td>Configure Inputs (Windows Event Logs)</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>Verify data appearing in Splunk</td>
+              <td>1</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td><strong>Total C.2</strong></td>
+              <td><strong>8</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+
+      <!-- ══ Section 1: Overview ══ -->
+      <section class="section-card" id="overview" aria-labelledby="h-overview">
+        <h2 id="h-overview"><span class="section-num" aria-hidden="true">1</span> Overview</h2>
+
+        <p>Windows Event Logs are forwarded from <strong>dc01 (the Domain Controller)</strong> to splunk-vm using the Splunk Universal Forwarder for Windows. Security, System, and Application logs will be indexed in the <code>windows_logs</code> index. As a Domain Controller, dc01 generates rich security events for authentication, account management, and service changes.</p>
+
+        <p>Key Event IDs that will become searchable in Splunk:</p>
+
+        <table class="spec-table event-table" aria-label="Windows Security Event IDs">
+          <thead>
+            <tr>
+              <th>Event ID</th>
+              <th>Category</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>4624</td>
+              <td>Logon</td>
+              <td>Successful logon</td>
+            </tr>
+            <tr>
+              <td>4625</td>
+              <td>Logon</td>
+              <td>Failed logon</td>
+            </tr>
+            <tr>
+              <td>4634</td>
+              <td>Logoff</td>
+              <td>Account logged off</td>
+            </tr>
+            <tr>
+              <td>4720</td>
+              <td>Account Mgmt</td>
+              <td>User account created</td>
+            </tr>
+            <tr>
+              <td>4722</td>
+              <td>Account Mgmt</td>
+              <td>User account enabled</td>
+            </tr>
+            <tr>
+              <td>4740</td>
+              <td>Account Mgmt</td>
+              <td>Account locked out</td>
+            </tr>
+            <tr>
+              <td>7045</td>
+              <td>Service</td>
+              <td>New service installed</td>
+            </tr>
+            <tr>
+              <td>7040</td>
+              <td>Service</td>
+              <td>Service start type changed</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note-box">
+          <strong>Prerequisite:</strong> Integration 12 (Splunk Deployment) must be complete, with a TCP receiving input configured on port 9997 and the <code>windows_logs</code> index created on splunk-vm before events will be accepted.
+        </div>
+      </section>
+
+      <!-- ══ Section 2: Download ══ -->
+      <section class="section-card" id="download" aria-labelledby="h-download">
+        <h2 id="h-download"><span class="section-num" aria-hidden="true">2</span> Download the Windows Universal Forwarder</h2>
+
+        <p>On <strong>dc01</strong>, open a browser or PowerShell as Administrator and download the Windows MSI installer. The version must match the Splunk Enterprise version running on splunk-vm.</p>
+
+        <div class="code-block" aria-label="Download Splunk Universal Forwarder for Windows via PowerShell">
+          <div class="code-block-label">PowerShell — dc01 (run as Administrator)</div>
+          <pre><code># Download from Splunk (Windows MSI installer)
+# Visit: splunk.com/en_us/download/universal-forwarder.html
+# Select: Windows, 64-bit MSI
+# Or use PowerShell to download (update URL with current version):
+$downloadUrl = "https://download.splunk.com/products/universalforwarder/releases/9.x.x/windows/splunkforwarder-9.x.x-x64-release.msi"
+Invoke-WebRequest -Uri $downloadUrl -OutFile "$env:USERPROFILE\Downloads\splunkforwarder.msi"</code></pre>
+        </div>
+
+        <div class="alert alert-info" role="note" style="margin: 14px 0 0;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Version matching:</strong> The forwarder version must match the Splunk Enterprise version on splunk-vm. A version mismatch can cause connection or protocol errors. Check the Splunk Enterprise version at <code>http://10.0.2.20:8000</code> &rarr; Settings &rarr; About before downloading.
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Section 3: Install ══ -->
+      <section class="section-card" id="install" aria-labelledby="h-install">
+        <h2 id="h-install"><span class="section-num" aria-hidden="true">3</span> Install via GUI Wizard or Command Line</h2>
+
+        <h3>GUI Wizard (recommended for first-time setup)</h3>
+
+        <div class="wizard-steps" aria-label="GUI installation steps">
+          <div class="wizard-step">
+            <span class="wizard-step-num">1</span>
+            <strong>Run as Administrator</strong><br>
+            Right-click the MSI file &rarr; Run as Administrator
+          </div>
+          <div class="wizard-step">
+            <span class="wizard-step-num">2</span>
+            <strong>Accept License</strong><br>
+            Check the License Agreement checkbox &rarr; Next
+          </div>
+          <div class="wizard-step">
+            <span class="wizard-step-num">3</span>
+            <strong>Deployment type</strong><br>
+            Select "An on-premises Splunk Enterprise instance" &rarr; Next
+          </div>
+          <div class="wizard-step">
+            <span class="wizard-step-num">4</span>
+            <strong>Create credentials</strong><br>
+            Username: <code>admin</code> &nbsp; Password: (strong password)
+          </div>
+          <div class="wizard-step">
+            <span class="wizard-step-num">5</span>
+            <strong>Receiving Indexer</strong><br>
+            Hostname or IP: <code>10.0.2.20</code> &nbsp; Port: <code>9997</code>
+          </div>
+          <div class="wizard-step">
+            <span class="wizard-step-num">6</span>
+            <strong>Complete</strong><br>
+            Click Install &rarr; wait for completion &rarr; Click Finish
+          </div>
+        </div>
+
+        <h3>Command Line (silent installation)</h3>
+        <p>Run from an Administrator PowerShell prompt in the same directory as the MSI. This method sets the receiving indexer and enables the three main Windows Event Log channels automatically.</p>
+
+        <div class="code-block" aria-label="Silent MSI installation via PowerShell">
+          <div class="code-block-label">PowerShell — silent install (Administrator)</div>
+          <pre><code># Silent install with predefined receiving indexer
+msiexec.exe /i splunkforwarder.msi SPLUNKUSERNAME=admin `
+  SPLUNKPASSWORD="ForwarderPass1!" `
+  RECEIVING_INDEXER="10.0.2.20:9997" `
+  WINEVENTLOG_SEC_ENABLE=1 `
+  WINEVENTLOG_SYS_ENABLE=1 `
+  WINEVENTLOG_APP_ENABLE=1 `
+  AGREETOLICENSE=Yes /quiet
+
+# Wait for installation to complete, then verify
+Get-Service SplunkForwarder</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Install path:</strong> The forwarder installs to <code>C:\Program Files\SplunkUniversalForwarder\</code>. All configuration files are under <code>...\etc\system\local\</code>. Do not modify files in the <code>default\</code> subdirectory — always place customizations in <code>local\</code>.
+        </div>
+      </section>
+
+      <!-- ══ Section 4: inputs.conf ══ -->
+      <section class="section-card" id="inputs" aria-labelledby="h-inputs">
+        <h2 id="h-inputs"><span class="section-num" aria-hidden="true">4</span> Configure inputs.conf</h2>
+
+        <p>After installation, create or update <code>inputs.conf</code> to specify which Windows Event Log channels to monitor. The PowerShell here-string below writes the file to the correct location.</p>
+
+        <div class="code-block" aria-label="Write inputs.conf for Windows Event Logs">
+          <div class="code-block-label">PowerShell — dc01 (Administrator)</div>
+          <pre><code># Create inputs.conf for Windows Event Logs
+$inputsConf = @"
+[WinEventLog://Security]
+disabled = 0
+index = windows_logs
+evt_resolve_ad_obj = 1
+
+[WinEventLog://System]
+disabled = 0
+index = windows_logs
+
+[WinEventLog://Application]
+disabled = 0
+index = windows_logs
+
+[WinEventLog://Microsoft-Windows-Sysmon/Operational]
+disabled = 0
+index = windows_logs
+renderXml = true
+"@
+
+$confPath = "C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf"
+$inputsConf | Out-File -FilePath $confPath -Encoding utf8 -Force
+
+Write-Host "inputs.conf written to: $confPath"
+Get-Content $confPath</code></pre>
+        </div>
+
+        <table class="spec-table" aria-label="inputs.conf channel descriptions">
+          <thead>
+            <tr>
+              <th>Channel</th>
+              <th>Key Events</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>WinEventLog://Security</td>
+              <td>4624, 4625, 4720, 4740, …</td>
+              <td><code>evt_resolve_ad_obj=1</code> resolves AD SIDs to names</td>
+            </tr>
+            <tr>
+              <td>WinEventLog://System</td>
+              <td>7045, 7040, hardware errors</td>
+              <td>System and service events</td>
+            </tr>
+            <tr>
+              <td>WinEventLog://Application</td>
+              <td>Application-level errors and info</td>
+              <td>App crashes, .NET runtime events</td>
+            </tr>
+            <tr>
+              <td>WinEventLog://…Sysmon/Operational</td>
+              <td>Process creation, network connections</td>
+              <td>Only if Sysmon is installed on dc01</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note-box">
+          <strong>Sysmon stanza:</strong> The Sysmon channel stanza is included but will only produce data if Sysmon is installed on dc01. If Sysmon is not installed, this stanza is harmless — the forwarder will skip it.
+        </div>
+      </section>
+
+      <!-- ══ Section 5: outputs.conf ══ -->
+      <section class="section-card" id="outputs" aria-labelledby="h-outputs">
+        <h2 id="h-outputs"><span class="section-num" aria-hidden="true">5</span> Verify outputs.conf</h2>
+
+        <p>If the receiving indexer was set correctly during installation (GUI or silent install), <code>outputs.conf</code> will already exist. The script below checks for the file and creates it manually if it is missing.</p>
+
+        <div class="code-block" aria-label="Verify or create outputs.conf">
+          <div class="code-block-label">PowerShell — dc01 (Administrator)</div>
+          <pre><code># Check outputs.conf (set during installation)
+$outputsPath = "C:\Program Files\SplunkUniversalForwarder\etc\system\local\outputs.conf"
+if (Test-Path $outputsPath) {
+  Get-Content $outputsPath
+} else {
+  # Create manually if not set by installer
+  $outputsConf = @"
+[tcpout]
+defaultGroup = splunk-indexers
+
+[tcpout:splunk-indexers]
+server = 10.0.2.20:9997
+"@
+  $outputsConf | Out-File -FilePath $outputsPath -Encoding utf8 -Force
+  Write-Host "outputs.conf created manually"
+}</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Verify the server line:</strong> Open the file in Notepad and confirm the line reads <code>server = 10.0.2.20:9997</code> exactly. A typo in the IP address is a common cause of a forwarder that installs correctly but never sends data.
+        </div>
+      </section>
+
+      <!-- ══ Section 6: Restart ══ -->
+      <section class="section-card" id="restart" aria-labelledby="h-restart">
+        <h2 id="h-restart"><span class="section-num" aria-hidden="true">6</span> Restart and Verify Forwarder Service</h2>
+
+        <div class="code-block" aria-label="Restart SplunkForwarder service and verify connection">
+          <div class="code-block-label">PowerShell — dc01 (Administrator)</div>
+          <pre><code># Restart the SplunkForwarder service
+Restart-Service SplunkForwarder
+
+# Check service status
+Get-Service SplunkForwarder | Select Name, Status, StartType
+
+# Verify connection to Splunk indexer
+& "C:\Program Files\SplunkUniversalForwarder\bin\splunk.exe" list forward-server `
+  -auth admin:ForwarderPass1!</code></pre>
+        </div>
+
+        <div class="expected-box" role="note">
+          <strong>Expected output from <code>list forward-server</code>:</strong>
+          <div class="code-block" style="margin-top:8px;">
+            <pre><code>Active forwards:
+    10.0.2.20:9997
+Configured but inactive forwards:
+    (none)</code></pre>
+          </div>
+          If 10.0.2.20:9997 appears under "Configured but inactive forwards," the forwarder cannot reach splunk-vm on port 9997. Check the Windows Firewall on dc01 (ensure outbound TCP 9997 is allowed) and verify that Splunk Enterprise on splunk-vm is running.
+        </div>
+
+        <div class="alert alert-warning" role="note" style="margin: 14px 0 0;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Start type:</strong> Confirm the <code>StartType</code> column shows <strong>Automatic</strong>. If it shows Manual, the forwarder will not start after a reboot. Fix with: <code>Set-Service SplunkForwarder -StartupType Automatic</code>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Section 7: Verify ══ -->
+      <section class="section-card" id="verify" aria-labelledby="h-verify">
+        <h2 id="h-verify"><span class="section-num" aria-hidden="true">7</span> Verify Data in Splunk Web</h2>
+
+        <p>From <strong>mgmt-vm</strong> &rarr; Firefox &rarr; <code>http://10.0.2.20:8000</code> &rarr; Search &amp; Reporting:</p>
+
+        <ol class="steps-list">
+          <li>Run <code>index=windows_logs | head 20</code> — should return Windows Event Log entries within 1–2 minutes of restarting the service</li>
+          <li>Test specific sourcetype queries below</li>
+          <li>Verify Security events with specific EventCode filters</li>
+        </ol>
+
+        <div class="code-block" aria-label="Splunk search queries to verify Windows log data">
+          <div class="code-block-label">Splunk Search — verify Windows sourcetypes</div>
+          <pre><code>index=windows_logs sourcetype=WinEventLog:Security | head 10
+index=windows_logs sourcetype=WinEventLog:System | head 10
+index=windows_logs EventCode=4624 | head 5</code></pre>
+        </div>
+
+        <h3>Generate test events on dc01 to verify forwarding</h3>
+        <p>The PowerShell snippet below attempts to authenticate with a nonexistent account, which generates a <strong>4625 (Failed Logon)</strong> event in the Security log. Then search Splunk to confirm end-to-end delivery.</p>
+
+        <div class="code-block" aria-label="Generate a test Security event on dc01">
+          <div class="code-block-label">PowerShell — dc01 — generate a 4625 event</div>
+          <pre><code"># Generate a test security event (failed login attempt)
+$cred = New-Object System.Management.Automation.PSCredential(
+  "nonexistentuser",
+  (ConvertTo-SecureString "wrongpassword" -AsPlainText -Force)
+)
+# This will fail and generate EventCode 4625 in the Security log
+
+# Check Event Viewer locally to confirm the event exists
+Get-EventLog -LogName Security -Newest 5 | Select EventID, Message</code></pre>
+        </div>
+
+        <div class="code-block" aria-label="Splunk search to confirm 4625 event forwarded">
+          <div class="code-block-label">Splunk Search — confirm 4625 event received</div>
+          <pre><code>index=windows_logs EventCode=4625 | head 5</code></pre>
+        </div>
+
+        <div class="expected-box" role="note">
+          <strong>Success criteria:</strong> The 4625 event should appear in Splunk within 60 seconds of the failed logon attempt on dc01. If it does not appear after 2 minutes, verify the SplunkForwarder service is running, the Security channel is enabled in <code>inputs.conf</code>, and the <code>windows_logs</code> index exists on splunk-vm.
+        </div>
+      </section>
+
+      <!-- ══ Section 8: Validate both forwarders ══ -->
+      <section class="section-card" id="both" aria-labelledby="h-both">
+        <h2 id="h-both"><span class="section-num" aria-hidden="true">8</span> Validate Both Forwarders Together</h2>
+
+        <p>With both Integration 13 (Linux) and Integration 14 (Windows) complete, run the unified query below from Splunk web to confirm data is flowing from both sources simultaneously.</p>
+
+        <div class="code-block" aria-label="Splunk query to validate both forwarders are active">
+          <div class="code-block-label">Splunk Search — http://10.0.2.20:8000</div>
+          <pre><code># Both sources active
+index=linux_logs OR index=windows_logs
+| stats count by index, host</code></pre>
+        </div>
+
+        <p>The results table should show both sources with event counts:</p>
+
+        <table class="spec-table" aria-label="Expected Splunk stats output for both forwarders">
+          <thead>
+            <tr>
+              <th>index</th>
+              <th>host</th>
+              <th>count</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>linux_logs</td>
+              <td>linux-server</td>
+              <td>&gt; 0 events</td>
+            </tr>
+            <tr>
+              <td>windows_logs</td>
+              <td>dc01</td>
+              <td>&gt; 0 events</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note-box">
+          <strong>Submission documentation:</strong> Take a screenshot of this query result showing both <code>linux_logs</code> from linux-server and <code>windows_logs</code> from dc01 with non-zero event counts. This screenshot is the primary evidence for Part C (both C.1 and C.2) verification.
+        </div>
+
+        <div class="expected-box" role="note">
+          <strong>Congratulations:</strong> With both forwarders active and confirmed in Splunk, your SIEM pipeline is complete. linux-server and dc01 are continuously shipping logs to splunk-vm, enabling centralized security monitoring across your entire lab environment. Integration 15 (Backup Strategy) is the final step.
+        </div>
+      </section>
+
+    </div>
+    <!-- end content-area -->
+
+  </main>
+  <!-- end main -->
+
+</div>
+<!-- end page-wrapper -->
+
+<script>
+  // ── Mobile sidebar toggle ──
+  const hamburger = document.getElementById('hamburger');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    overlay.removeAttribute('aria-hidden');
+    hamburger.setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  });
+
+  // ── Checklist progress ──
+  const checkboxes   = document.querySelectorAll('.sidebar-checks input[type="checkbox"]');
+  const progressBar  = document.getElementById('progress-bar');
+  const progressPct  = document.getElementById('progress-pct');
+  const progressTrack = document.getElementById('progress-bar-track');
+
+  function updateProgress() {
+    const total   = checkboxes.length;
+    const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const pct     = total ? Math.round((checked / total) * 100) : 0;
+
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    progressTrack.setAttribute('aria-valuenow', pct);
+  }
+
+  checkboxes.forEach((cb, i) => {
+    const labelEl = document.getElementById('ck-label-' + i);
+    cb.addEventListener('change', () => {
+      if (labelEl) labelEl.classList.toggle('checked', cb.checked);
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+  // ── Sidebar section nav: active link on scroll ──
+  const sections = document.querySelectorAll('.section-card[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

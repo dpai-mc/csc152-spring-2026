@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build 01: Proxmox Network Bridge Configuration · CSC 152 Project 3</title>
+  <style>
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-bg:      #0d1b2a;
+      --sidebar-text:    #c9d8e8;
+      --sidebar-muted:   #7a96b0;
+      --teal:            #17a2b8;
+      --teal-dark:       #0f7a8a;
+      --teal-light:      #e0f7fa;
+      --purple:          #7c3aed;
+      --purple-light:    #ede9fe;
+      --main-bg:         #f4f6f9;
+      --card-bg:         #ffffff;
+      --text-primary:    #1a2332;
+      --text-secondary:  #4a5568;
+      --border:          #d1dce8;
+      --code-bg:         #1e293b;
+      --code-text:       #e2e8f0;
+      --warning-bg:      #fff7ed;
+      --warning-border:  #f97316;
+      --warning-text:    #7c2d12;
+      --sidebar-width:   300px;
+      --focus-ring:      0 0 0 3px #17a2b880;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      background: var(--main-bg);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ============================================================
+       SKIP LINK
+    ============================================================ */
+    .skip-link {
+      position: absolute;
+      top: -999px;
+      left: -999px;
+      background: var(--teal);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      font-weight: 700;
+      border-radius: 0 0 4px 0;
+      z-index: 10000;
+      text-decoration: none;
+    }
+    .skip-link:focus {
+      top: 0;
+      left: 0;
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    /* ============================================================
+       FOCUS STYLES (global)
+    ============================================================ */
+    :focus-visible {
+      outline: 2px solid var(--teal);
+      outline-offset: 2px;
+    }
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      box-shadow: var(--focus-ring);
+      outline: 2px solid var(--teal);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    /* ============================================================
+       SIDEBAR OVERLAY (mobile)
+    ============================================================ */
+    #sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 200;
+    }
+    #sidebar-overlay.active { display: block; }
+
+    /* ============================================================
+       SIDEBAR
+    ============================================================ */
+    #sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 300;
+      flex-shrink: 0;
+      transition: transform 0.28s ease;
+    }
+
+    /* ---- Sidebar header ---- */
+    .sidebar-header {
+      padding: 1.25rem 1.25rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-course-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 0.3rem;
+    }
+    .sidebar-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-build-label {
+      display: inline-block;
+      margin-top: 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--sidebar-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ---- Progress bar ---- */
+    .sidebar-progress {
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--sidebar-muted);
+      margin-bottom: 0.4rem;
+    }
+    .progress-label span:last-child {
+      font-weight: 700;
+      color: var(--teal);
+    }
+    .progress-track {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--teal);
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.35s ease;
+    }
+
+    /* ---- Doc sequence ---- */
+    .sidebar-section-heading {
+      padding: 0.75rem 1.25rem 0.35rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sidebar-muted);
+    }
+    .doc-sequence {
+      list-style: none;
+      padding: 0 0 0.5rem;
+    }
+    .doc-sequence li {
+      position: relative;
+    }
+    .doc-seq-divider {
+      padding: 0.6rem 1.25rem 0.25rem;
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--purple);
+      opacity: 0.85;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.3rem 1.25rem;
+      font-size: 0.78rem;
+      line-height: 1.35;
+      color: var(--sidebar-muted);
+      text-decoration: none;
+      cursor: default;
+      border-left: 3px solid transparent;
+      transition: background 0.15s, color 0.15s;
+    }
+    .doc-seq-item.is-current {
+      color: #ffffff;
+      background: rgba(23,162,184,0.12);
+      border-left-color: var(--teal);
+      font-weight: 600;
+      cursor: default;
+    }
+    .doc-seq-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--sidebar-muted);
+    }
+    .doc-seq-item.is-current .doc-seq-dot { background: var(--teal); }
+    .doc-seq-dot.build  { background: var(--teal); opacity: 0.5; }
+    .doc-seq-dot.integ  { background: var(--purple); opacity: 0.5; }
+    .doc-seq-item.is-current .doc-seq-dot.build { opacity: 1; }
+
+    /* ---- Page nav ---- */
+    .sidebar-nav {
+      list-style: none;
+      padding: 0 0 0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 0.5rem;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 0.3rem 1.25rem;
+      font-size: 0.8rem;
+      color: var(--sidebar-muted);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .sidebar-nav a:hover {
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+    }
+    .sidebar-nav a.active {
+      color: var(--teal);
+      border-left-color: var(--teal);
+      background: rgba(23,162,184,0.08);
+      font-weight: 600;
+    }
+
+    /* ---- Checklist ---- */
+    .checklist-area {
+      padding: 0.75rem 1.25rem 1.5rem;
+    }
+    .checklist-area h3 {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sidebar-muted);
+      margin-bottom: 0.6rem;
+    }
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .checklist label {
+      font-size: 0.78rem;
+      color: var(--sidebar-text);
+      cursor: pointer;
+      line-height: 1.4;
+      flex: 1;
+    }
+    .checklist input[type="checkbox"] {
+      accent-color: var(--teal);
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+    .checklist input[type="checkbox"]:focus-visible {
+      outline: 2px solid var(--teal);
+      outline-offset: 2px;
+    }
+    .checklist label.checked {
+      color: var(--sidebar-muted);
+      text-decoration: line-through;
+    }
+
+    /* ============================================================
+       HAMBURGER BUTTON
+    ============================================================ */
+    #hamburger {
+      display: none;
+      position: fixed;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 400;
+      background: var(--sidebar-bg);
+      border: 2px solid var(--teal);
+      border-radius: 6px;
+      width: 42px;
+      height: 42px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 5px;
+      padding: 8px;
+    }
+    #hamburger span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background: var(--teal);
+      border-radius: 2px;
+      transition: opacity 0.2s;
+    }
+    #hamburger[aria-expanded="true"] span:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+    #hamburger[aria-expanded="true"] span:nth-child(2) {
+      opacity: 0;
+    }
+    #hamburger[aria-expanded="true"] span:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+    #hamburger span {
+      transition: transform 0.25s ease, opacity 0.2s;
+    }
+
+    /* ============================================================
+       MAIN CONTENT
+    ============================================================ */
+    #main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 2rem 1.5rem 4rem;
+      max-width: 900px;
+    }
+
+    /* ---- Page header ---- */
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    .page-header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--teal-light);
+      color: var(--teal-dark);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      margin-bottom: 0.75rem;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.25;
+      margin-bottom: 0.5rem;
+    }
+    .page-header .subtitle {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.85rem;
+    }
+    .page-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .meta-chip {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.2rem 0.6rem;
+    }
+    .meta-chip strong {
+      color: var(--text-primary);
+    }
+
+    /* ---- Cards / Sections ---- */
+    .content-section {
+      margin-bottom: 2rem;
+      scroll-margin-top: 1.5rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem 1.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .section-title .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: var(--teal);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.78rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    p { margin-bottom: 0.85rem; color: var(--text-secondary); }
+    p:last-child { margin-bottom: 0; }
+
+    /* ---- ASCII / topology diagram ---- */
+    .topology-box {
+      background: var(--code-bg);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .topology-box pre {
+      color: #93c5fd;
+      font-family: "Cascadia Code", "Fira Code", "Courier New", Courier, monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre;
+      margin: 0;
+    }
+
+    /* ---- Code blocks ---- */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 1rem 0;
+    }
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.4rem 1rem;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid #334155;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .code-block pre {
+      margin: 0;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+    }
+    .code-block code {
+      font-family: "Cascadia Code", "Fira Code", "Courier New", Courier, monospace;
+      font-size: 0.83rem;
+      line-height: 1.7;
+      color: var(--code-text);
+      white-space: pre;
+    }
+
+    /* ---- Ordered steps ---- */
+    .steps-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      margin-top: 0.75rem;
+    }
+    .step-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .step-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      background: var(--teal);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+    .step-content { flex: 1; min-width: 0; }
+    .step-content h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+    .step-content p { font-size: 0.88rem; margin-bottom: 0.4rem; }
+    .step-content ul {
+      margin: 0.4rem 0 0.4rem 1.1rem;
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+    }
+    .step-content ul li { margin-bottom: 0.2rem; }
+    .step-content code {
+      font-family: "Cascadia Code", "Fira Code", monospace;
+      font-size: 0.82em;
+      background: #f1f5f9;
+      color: #0f5f6d;
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      border: 1px solid #dde3ea;
+    }
+
+    /* inline code in paragraph */
+    p code, li code {
+      font-family: "Cascadia Code", "Fira Code", monospace;
+      font-size: 0.82em;
+      background: #f1f5f9;
+      color: #0f5f6d;
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      border: 1px solid #dde3ea;
+    }
+
+    /* ---- Prerequisites ---- */
+    .prereq-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      margin-top: 0.5rem;
+    }
+    .prereq-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    .prereq-list li::before {
+      content: "✓";
+      color: var(--teal);
+      font-weight: 800;
+      flex-shrink: 0;
+      line-height: 1.6;
+    }
+    .prereq-note {
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.9rem;
+      background: var(--teal-light);
+      border-left: 4px solid var(--teal);
+      border-radius: 0 6px 6px 0;
+      font-size: 0.84rem;
+      color: #0f5f6d;
+    }
+
+    /* ---- Alert / warning ---- */
+    .alert {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+    }
+    .alert-warning {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      color: var(--warning-text);
+    }
+    .alert-icon {
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      line-height: 1.5;
+    }
+    .alert strong { font-weight: 700; display: block; margin-bottom: 0.2rem; }
+
+    /* ---- Table ---- */
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    thead th {
+      background: var(--teal);
+      color: #fff;
+      padding: 0.65rem 0.9rem;
+      text-align: left;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody td { padding: 0.6rem 0.9rem; color: var(--text-secondary); vertical-align: top; }
+    tbody td:first-child { font-family: "Cascadia Code", monospace; font-weight: 700; color: var(--teal-dark); font-size: 0.82rem; }
+    tbody td:nth-child(2) { font-weight: 600; color: var(--text-primary); }
+
+    /* ---- Section divider ---- */
+    .section-divider {
+      border: none;
+      border-top: 2px dashed var(--border);
+      margin: 0.5rem 0 1rem;
+    }
+
+    /* ============================================================
+       RESPONSIVE — MOBILE
+    ============================================================ */
+    @media (max-width: 768px) {
+      body { display: block; }
+
+      #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        z-index: 300;
+      }
+      #sidebar.open { transform: translateX(0); }
+
+      #hamburger { display: flex; }
+
+      #main-content {
+        padding: 1rem 1rem 3rem;
+        padding-top: 3.75rem; /* clear hamburger */
+      }
+
+      .page-header h1 { font-size: 1.4rem; }
+    }
+
+    @media (min-width: 769px) {
+      #hamburger { display: none !important; }
+      #sidebar-overlay { display: none !important; }
+    }
+
+    @media (max-width: 500px) {
+      .code-block code { font-size: 0.75rem; }
+      .topology-box pre { font-size: 0.72rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Skip link -->
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <!-- Mobile sidebar overlay -->
+  <div id="sidebar-overlay" aria-hidden="true"></div>
+
+  <!-- Mobile hamburger button -->
+  <button id="hamburger" aria-label="Open navigation sidebar" aria-controls="sidebar" aria-expanded="false">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- ============================================================
+       SIDEBAR
+  ============================================================ -->
+  <nav id="sidebar" aria-label="Course sidebar navigation">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-course-label">CSC 152 · Project 3</div>
+      <div class="sidebar-title">Proxmox Network Setup</div>
+      <span class="sidebar-build-label">Build Plan 01 of 15</span>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="sidebar-progress">
+      <div class="progress-label">
+        <span>Completion</span>
+        <span id="progress-text">0 / 7</span>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Task completion progress">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Doc sequence -->
+    <div class="sidebar-section-heading">Build Sequence</div>
+    <ul class="doc-sequence" aria-label="Project 3 build sequence">
+      <li>
+        <span class="doc-seq-item is-current" aria-current="step">
+          <span class="doc-seq-dot build" aria-hidden="true"></span>
+          01 · Proxmox Network Bridges
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot build" aria-hidden="true"></span>
+          02 · pfSense VM Build
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot build" aria-hidden="true"></span>
+          03 · Ubuntu Template + linux-server
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot build" aria-hidden="true"></span>
+          04 · Windows Server dc01
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot build" aria-hidden="true"></span>
+          05 · Xubuntu Template + mgmt-vm
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot build" aria-hidden="true"></span>
+          06 · linux-client VM
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot build" aria-hidden="true"></span>
+          07 · splunk-vm Build
+        </span>
+      </li>
+      <li>
+        <div class="doc-seq-divider">— Integration Plans —</div>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot integ" aria-hidden="true"></span>
+          08 · pfSense Full Configuration
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot integ" aria-hidden="true"></span>
+          09 · Active Directory &amp; DNS
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot integ" aria-hidden="true"></span>
+          10 · Linux Server Hardening
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot integ" aria-hidden="true"></span>
+          11 · Windows Server Hardening
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot integ" aria-hidden="true"></span>
+          12 · Splunk Deployment
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot integ" aria-hidden="true"></span>
+          13 · Linux Log Forwarder
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot integ" aria-hidden="true"></span>
+          14 · Windows Log Forwarder
+        </span>
+      </li>
+      <li>
+        <span class="doc-seq-item">
+          <span class="doc-seq-dot integ" aria-hidden="true"></span>
+          15 · Backup Strategy
+        </span>
+      </li>
+    </ul>
+
+    <!-- Page section nav -->
+    <div class="sidebar-section-heading">On This Page</div>
+    <ul class="sidebar-nav" aria-label="Page sections">
+      <li><a href="#section-overview"     class="nav-link">1. Overview</a></li>
+      <li><a href="#section-prereqs"      class="nav-link">2. Prerequisites</a></li>
+      <li><a href="#section-web-ui"       class="nav-link">3. Web UI Method</a></li>
+      <li><a href="#section-cli"          class="nav-link">4. CLI Method</a></li>
+      <li><a href="#section-verify"       class="nav-link">5. Verification</a></li>
+      <li><a href="#section-summary"      class="nav-link">6. Bridge Summary</a></li>
+    </ul>
+
+    <!-- Checklist -->
+    <div class="checklist-area">
+      <h3>Completion Checklist</h3>
+      <ul class="checklist" aria-label="Task completion checklist">
+        <li>
+          <input type="checkbox" id="chk1" />
+          <label for="chk1">Logged into Proxmox at <span style="font-family:monospace;font-size:0.85em;">192.168.50.10:8006</span></label>
+        </li>
+        <li>
+          <input type="checkbox" id="chk2" />
+          <label for="chk2">vmbr0 verified (linked to physical NIC)</label>
+        </li>
+        <li>
+          <input type="checkbox" id="chk3" />
+          <label for="chk3">vmbr1 created (Management, internal)</label>
+        </li>
+        <li>
+          <input type="checkbox" id="chk4" />
+          <label for="chk4">vmbr2 created (Servers, internal)</label>
+        </li>
+        <li>
+          <input type="checkbox" id="chk5" />
+          <label for="chk5">vmbr3 created (Clients, internal)</label>
+        </li>
+        <li>
+          <input type="checkbox" id="chk6" />
+          <label for="chk6">Configuration applied / activated</label>
+        </li>
+        <li>
+          <input type="checkbox" id="chk7" />
+          <label for="chk7">All bridges verified with <code style="font-size:0.8em;color:var(--teal);">brctl</code> or <code style="font-size:0.8em;color:var(--teal);">ip</code></label>
+        </li>
+      </ul>
+    </div>
+
+  </nav><!-- /#sidebar -->
+
+  <!-- ============================================================
+       MAIN CONTENT
+  ============================================================ -->
+  <main id="main-content" tabindex="-1">
+
+    <!-- Page header -->
+    <header class="page-header">
+      <div class="page-header-badge">Build Plan 01 of 15</div>
+      <h1>Build 01: Proxmox Network Bridge Configuration</h1>
+      <p class="subtitle">Configure virtual network bridges on the Proxmox host before building any VMs</p>
+      <div class="page-meta" aria-label="Document metadata">
+        <span class="meta-chip"><strong>Course:</strong> CSC 152</span>
+        <span class="meta-chip"><strong>Project:</strong> 3</span>
+        <span class="meta-chip"><strong>Type:</strong> Build Plan</span>
+        <span class="meta-chip"><strong>Scope:</strong> Host Config (no VMs yet)</span>
+      </div>
+    </header>
+
+    <!-- ---- SECTION 1: Overview ---- -->
+    <section id="section-overview" class="content-section" aria-labelledby="h-overview">
+      <div class="card">
+        <h2 class="section-title" id="h-overview">
+          <span class="section-num" aria-hidden="true">1</span>
+          Overview
+        </h2>
+        <p>
+          Proxmox VE uses <strong>Linux bridges</strong> as virtual switches — the same concept as a managed
+          switch in physical networking, but implemented entirely in software on your Proxmox host.
+          Each bridge (<code>vmbr0</code>, <code>vmbr1</code>, <code>vmbr2</code>, <code>vmbr3</code>)
+          acts as an isolated Layer 2 segment. VMs attach their virtual NICs to whichever bridge corresponds
+          to the network they should live on.
+        </p>
+        <p>
+          Before any virtual machines are created, the host must have the correct bridge topology in place.
+          This build plan configures all four bridges that Project 3 requires:
+        </p>
+        <ul style="margin: 0.25rem 0 0.85rem 1.25rem; color: var(--text-secondary); font-size:0.9rem;">
+          <li><strong>vmbr0</strong> — WAN bridge (linked to your physical NIC, uplink to home router)</li>
+          <li><strong>vmbr1</strong> — Management network (admin access, pfSense LAN side)</li>
+          <li><strong>vmbr2</strong> — Servers network (linux-server, dc01, splunk-vm)</li>
+          <li><strong>vmbr3</strong> — Clients network (linux-client, DHCP pool)</li>
+        </ul>
+
+        <h3 style="font-size:0.95rem;font-weight:700;color:var(--text-primary);margin-bottom:0.5rem;">
+          Network Topology Diagram
+        </h3>
+        <div class="topology-box" role="figure" aria-label="ASCII network topology diagram showing four Proxmox bridges">
+<pre>
+Internet / Home Router (192.168.50.1)
+         |
+    [Physical NIC]
+         |
+    vmbr0 (WAN) ────────────── pfSense WAN interface
+    192.168.50.0/24                DHCP from home router
+
+    vmbr1 (Management) ─────── pfSense LAN ──── mgmt-vm
+    10.0.1.0/24                    10.0.1.1        10.0.1.10
+
+    vmbr2 (Servers) ────────── pfSense OPT1 ─── linux-server · dc01 · splunk-vm
+    10.0.2.0/24                    10.0.2.1          .10    .11     .20
+
+    vmbr3 (Clients) ────────── pfSense OPT2 ─── linux-client (DHCP)
+    10.0.3.0/24                    10.0.3.1        10.0.3.100–200
+</pre>
+        </div>
+
+        <p style="font-size:0.85rem;">
+          <strong>Key point:</strong> Only <code>vmbr0</code> connects to a physical NIC.
+          The other three bridges are <em>internal only</em> — they carry no physical port and are
+          isolated from your home network by design. pfSense will route between them once it is built
+          in Build 02.
+        </p>
+      </div>
+    </section>
+
+    <!-- ---- SECTION 2: Prerequisites ---- -->
+    <section id="section-prereqs" class="content-section" aria-labelledby="h-prereqs">
+      <div class="card">
+        <h2 class="section-title" id="h-prereqs">
+          <span class="section-num" aria-hidden="true">2</span>
+          Prerequisites
+        </h2>
+        <p>Confirm the following before starting:</p>
+        <ul class="prereq-list" aria-label="Prerequisites checklist">
+          <li>Proxmox VE 8.x installed and accessible at
+            <code>https://192.168.50.10:8006</code>
+          </li>
+          <li>Logged in as <code>root</code> or a user with the
+            <code>System.Modify</code> privilege on the node
+          </li>
+          <li>Physical NIC connected to your home network
+            (<code>192.168.50.0/24</code>) and visible in Proxmox
+          </li>
+          <li>No VMs have been created yet — bridges should be configured
+            before any guest is built
+          </li>
+        </ul>
+        <div class="prereq-note">
+          <strong>Note on vmbr0:</strong> In most Proxmox installations,
+          <code>vmbr0</code> is created automatically during the OS installer
+          and is already linked to your physical NIC. Verify it exists in the
+          Network panel before creating it. You only need to create
+          <code>vmbr1</code>, <code>vmbr2</code>, and <code>vmbr3</code> from scratch.
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- SECTION 3: Web UI Method ---- -->
+    <section id="section-web-ui" class="content-section" aria-labelledby="h-webui">
+      <div class="card">
+        <h2 class="section-title" id="h-webui">
+          <span class="section-num" aria-hidden="true">3</span>
+          Step-by-Step: Proxmox Web UI Method
+        </h2>
+        <p>
+          Use the Proxmox web interface to create each bridge. This is the recommended approach for
+          students new to Proxmox — changes are applied atomically and can be reviewed before committing.
+        </p>
+
+        <ol class="steps-list" aria-label="Bridge configuration steps">
+
+          <li class="step-item">
+            <div class="step-num" aria-label="Step 1">1</div>
+            <div class="step-content">
+              <h4>Log into the Proxmox web interface</h4>
+              <p>Open a browser and navigate to
+                <code>https://192.168.50.10:8006</code>.
+                Accept the self-signed certificate warning. Log in as
+                <code>root</code> (PAM authentication).
+              </p>
+            </div>
+          </li>
+
+          <li class="step-item">
+            <div class="step-num" aria-label="Step 2">2</div>
+            <div class="step-content">
+              <h4>Navigate to your node's Network panel</h4>
+              <p>
+                In the left-hand resource tree, click your node name (e.g., <code>pve</code>).
+                In the center panel, select <strong>Network</strong> from the node menu.
+                You will see a list of existing network interfaces.
+              </p>
+            </div>
+          </li>
+
+          <li class="step-item">
+            <div class="step-num" aria-label="Step 3">3</div>
+            <div class="step-content">
+              <h4>Verify vmbr0 exists</h4>
+              <p>
+                Confirm that <code>vmbr0</code> appears in the list and is linked to your physical
+                NIC (e.g., <code>eno1</code>, <code>eth0</code>, or similar). It should show
+                the <code>192.168.50.10/24</code> address assigned during Proxmox installation.
+              </p>
+              <p>
+                If <code>vmbr0</code> does not exist, click <strong>Create → Linux Bridge</strong>,
+                select your physical NIC as the bridge port, and assign
+                <code>192.168.50.10/24</code> with gateway <code>192.168.50.1</code>.
+              </p>
+            </div>
+          </li>
+
+          <li class="step-item">
+            <div class="step-num" aria-label="Step 4">4</div>
+            <div class="step-content">
+              <h4>Create vmbr1 — Management Network</h4>
+              <p>Click <strong>Create → Linux Bridge</strong> and fill in the following fields:</p>
+              <ul>
+                <li><strong>Name:</strong> <code>vmbr1</code></li>
+                <li><strong>IPv4/CIDR:</strong> leave blank (pfSense owns this subnet)</li>
+                <li><strong>Bridge ports:</strong> leave empty (internal only — no physical NIC)</li>
+                <li><strong>Comment:</strong> <code>Management Network 10.0.1.0/24</code></li>
+              </ul>
+              <p>Click <strong>Create</strong> to add it to the pending changes list.</p>
+            </div>
+          </li>
+
+          <li class="step-item">
+            <div class="step-num" aria-label="Step 5">5</div>
+            <div class="step-content">
+              <h4>Create vmbr2 — Servers Network</h4>
+              <p>Click <strong>Create → Linux Bridge</strong> again:</p>
+              <ul>
+                <li><strong>Name:</strong> <code>vmbr2</code></li>
+                <li><strong>IPv4/CIDR:</strong> leave blank</li>
+                <li><strong>Bridge ports:</strong> leave empty</li>
+                <li><strong>Comment:</strong> <code>Servers Network 10.0.2.0/24</code></li>
+              </ul>
+              <p>Click <strong>Create</strong>.</p>
+            </div>
+          </li>
+
+          <li class="step-item">
+            <div class="step-num" aria-label="Step 6">6</div>
+            <div class="step-content">
+              <h4>Create vmbr3 — Clients Network</h4>
+              <p>Click <strong>Create → Linux Bridge</strong> one more time:</p>
+              <ul>
+                <li><strong>Name:</strong> <code>vmbr3</code></li>
+                <li><strong>IPv4/CIDR:</strong> leave blank</li>
+                <li><strong>Bridge ports:</strong> leave empty</li>
+                <li><strong>Comment:</strong> <code>Clients Network 10.0.3.0/24</code></li>
+              </ul>
+              <p>Click <strong>Create</strong>.</p>
+            </div>
+          </li>
+
+          <li class="step-item">
+            <div class="step-num" aria-label="Step 7">7</div>
+            <div class="step-content">
+              <h4>Apply Configuration</h4>
+              <p>
+                After creating all three bridges, click the <strong>Apply Configuration</strong> button
+                at the top of the Network panel. This writes the changes to
+                <code>/etc/network/interfaces</code> and brings the new bridges up —
+                <strong>without requiring a reboot</strong>.
+              </p>
+              <p>
+                A progress dialog will appear briefly. Once it closes, all four bridges
+                (<code>vmbr0</code>–<code>vmbr3</code>) should show as active.
+              </p>
+            </div>
+          </li>
+
+        </ol>
+      </div>
+    </section>
+
+    <!-- ---- SECTION 4: CLI Method ---- -->
+    <section id="section-cli" class="content-section" aria-labelledby="h-cli">
+      <div class="card">
+        <h2 class="section-title" id="h-cli">
+          <span class="section-num" aria-hidden="true">4</span>
+          CLI Method (Alternative — SSH to Proxmox Host)
+        </h2>
+        <p>
+          If you prefer the command line, or the web UI is unavailable, you can edit
+          <code>/etc/network/interfaces</code> directly via SSH. This is equivalent to what
+          the web UI does behind the scenes.
+        </p>
+        <p>
+          Open <code>/etc/network/interfaces</code> in a text editor (e.g., <code>nano</code>)
+          and append the following stanzas after the existing <code>vmbr0</code> block:
+        </p>
+
+        <div class="code-block" role="region" aria-label="Network interfaces configuration">
+          <div class="code-block-header">
+            <span>/etc/network/interfaces — additions</span>
+          </div>
+          <pre><code>auto vmbr1
+iface vmbr1 inet manual
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+    # Management Network 10.0.1.0/24
+
+auto vmbr2
+iface vmbr2 inet manual
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+    # Servers Network 10.0.2.0/24
+
+auto vmbr3
+iface vmbr3 inet manual
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+    # Clients Network 10.0.3.0/24</code></pre>
+        </div>
+
+        <p>
+          <strong>Why <code>inet manual</code>?</strong> Setting the address family to
+          <code>manual</code> means the Proxmox host itself holds no IP address on these bridges.
+          pfSense will own those subnets — the host just provides the virtual switch layer.
+        </p>
+
+        <p>After saving the file, activate the new configuration with either command:</p>
+
+        <div class="code-block" role="region" aria-label="Reload networking commands">
+          <div class="code-block-header">
+            <span>Bash — activate bridges</span>
+          </div>
+          <pre><code># Preferred (Proxmox/Debian tool — reloads only changed interfaces)
+ifreload -a
+
+# Alternative (restarts all networking — may briefly drop SSH)
+systemctl restart networking</code></pre>
+        </div>
+
+        <div class="alert alert-warning" role="alert">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Use ifreload -a when possible.</strong>
+            Running <code>systemctl restart networking</code> will briefly drop all network
+            connections, including your SSH session. If you are connected over SSH, prefer
+            <code>ifreload -a</code>, which reloads only the changed interfaces without
+            interrupting existing connections.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- SECTION 5: Verification ---- -->
+    <section id="section-verify" class="content-section" aria-labelledby="h-verify">
+      <div class="card">
+        <h2 class="section-title" id="h-verify">
+          <span class="section-num" aria-hidden="true">5</span>
+          Verification
+        </h2>
+        <p>
+          After applying the configuration (via web UI or CLI), confirm that all four bridges
+          exist and are operational. Run the following commands on the Proxmox host:
+        </p>
+
+        <div class="code-block" role="region" aria-label="Bridge verification commands">
+          <div class="code-block-header">
+            <span>Bash — verify bridges</span>
+          </div>
+          <pre><code># List all bridges and their member ports
+brctl show
+
+# Alternative: list bridges using the ip command
+ip link show type bridge
+
+# Check each bridge individually
+ip link show vmbr1
+ip link show vmbr2
+ip link show vmbr3</code></pre>
+        </div>
+
+        <h3 style="font-size:0.95rem;font-weight:700;color:var(--text-primary);margin:1rem 0 0.4rem;">
+          Expected Output
+        </h3>
+        <p>
+          All four bridges (<code>vmbr0</code>, <code>vmbr1</code>, <code>vmbr2</code>,
+          <code>vmbr3</code>) should appear. Their state will show as either
+          <code>UP</code> or <code>UNKNOWN</code>.
+        </p>
+
+        <div class="code-block" role="region" aria-label="Expected brctl show output">
+          <div class="code-block-header">
+            <span>Expected output — brctl show</span>
+          </div>
+          <pre><code>bridge name    bridge id               STP enabled    interfaces
+vmbr0          8000.xxxxxxxxxxx        no             eno1
+vmbr1          8000.000000000000       no
+vmbr2          8000.000000000000       no
+vmbr3          8000.000000000000       no</code></pre>
+        </div>
+
+        <div class="prereq-note" style="margin-top:0.75rem;">
+          <strong>UNKNOWN state is normal.</strong> A bridge with no active VM ports attached
+          will report <code>UNKNOWN</code> rather than <code>UP</code> in some kernel versions.
+          This is expected behavior — the bridge is operational and ready to accept VM interfaces.
+          Once pfSense or any VM is attached to a bridge, the state will show <code>UP</code>.
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- SECTION 6: Bridge Summary ---- -->
+    <section id="section-summary" class="content-section" aria-labelledby="h-summary">
+      <div class="card">
+        <h2 class="section-title" id="h-summary">
+          <span class="section-num" aria-hidden="true">6</span>
+          Bridge Summary Table
+        </h2>
+        <p>
+          Reference this table when configuring VM network adapters in subsequent build plans.
+          The <strong>pfSense Interface</strong> column shows the virtual NIC name that pfSense
+          will see inside its guest OS (VirtIO naming).
+        </p>
+
+        <div class="table-wrapper">
+          <table aria-label="Proxmox bridge configuration summary">
+            <thead>
+              <tr>
+                <th scope="col">Bridge</th>
+                <th scope="col">Role</th>
+                <th scope="col">Subnet</th>
+                <th scope="col">pfSense Interface</th>
+                <th scope="col">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>vmbr0</td>
+                <td>WAN</td>
+                <td>192.168.50.0/24</td>
+                <td>vtnet0</td>
+                <td>Physical NIC; DHCP from home router; Proxmox host IP here</td>
+              </tr>
+              <tr>
+                <td>vmbr1</td>
+                <td>Management</td>
+                <td>10.0.1.0/24</td>
+                <td>vtnet1 (LAN)</td>
+                <td>Admin access only; mgmt-vm at 10.0.1.10</td>
+              </tr>
+              <tr>
+                <td>vmbr2</td>
+                <td>Servers</td>
+                <td>10.0.2.0/24</td>
+                <td>vtnet2 (OPT1)</td>
+                <td>linux-server (.10), dc01 (.11), splunk-vm (.20)</td>
+              </tr>
+              <tr>
+                <td>vmbr3</td>
+                <td>Clients</td>
+                <td>10.0.3.0/24</td>
+                <td>vtnet3 (OPT2)</td>
+                <td>linux-client; DHCP pool 10.0.3.100–200</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="alert alert-warning" role="alert">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Do not assign IP addresses to vmbr1, vmbr2, or vmbr3 on the Proxmox host.</strong>
+            pfSense will own those subnets entirely. Assigning host IPs to these bridges creates
+            routing conflicts — the Proxmox host would compete with pfSense as a router on the same
+            segment, causing unpredictable behavior and potential network loops.
+          </div>
+        </div>
+
+        <h3 style="font-size:0.95rem;font-weight:700;color:var(--text-primary);margin:1.25rem 0 0.4rem;">
+          What Comes Next
+        </h3>
+        <p>
+          With all four bridges in place, the Proxmox host is ready for VM creation. The next
+          step is <strong>Build 02: pfSense VM Build</strong>, which will create and configure the
+          virtual firewall/router that ties all four bridges together into a routed multi-segment
+          network.
+        </p>
+      </div>
+    </section>
+
+  </main><!-- /#main-content -->
+
+  <!-- ============================================================
+       JAVASCRIPT
+  ============================================================ -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ---- Progress bar ---- */
+      var checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+      var progressFill = document.getElementById('progress-fill');
+      var progressText = document.getElementById('progress-text');
+      var progressTrack = progressFill ? progressFill.parentElement : null;
+      var total = checkboxes.length;
+
+      function updateProgress() {
+        var checked = 0;
+        checkboxes.forEach(function (cb) {
+          if (cb.checked) checked++;
+          var label = cb.closest('li') ? cb.closest('li').querySelector('label') : null;
+          if (label) {
+            if (cb.checked) {
+              label.classList.add('checked');
+            } else {
+              label.classList.remove('checked');
+            }
+          }
+        });
+        var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+        if (progressFill) progressFill.style.width = pct + '%';
+        if (progressText) progressText.textContent = checked + ' / ' + total;
+        if (progressTrack) {
+          progressTrack.setAttribute('aria-valuenow', pct);
+          progressTrack.setAttribute('aria-valuetext', checked + ' of ' + total + ' tasks complete');
+        }
+      }
+
+      checkboxes.forEach(function (cb) {
+        cb.addEventListener('change', updateProgress);
+      });
+
+      updateProgress();
+
+      /* ---- Active section highlight (IntersectionObserver) ---- */
+      var navLinks = document.querySelectorAll('.sidebar-nav a.nav-link');
+      var sections = [];
+
+      navLinks.forEach(function (link) {
+        var href = link.getAttribute('href');
+        if (href) {
+          var target = document.querySelector(href);
+          if (target) sections.push(target);
+        }
+      });
+
+      function setActiveLink(id) {
+        navLinks.forEach(function (link) {
+          var href = link.getAttribute('href');
+          if (href === '#' + id) {
+            link.classList.add('active');
+            link.setAttribute('aria-current', 'location');
+          } else {
+            link.classList.remove('active');
+            link.removeAttribute('aria-current');
+          }
+        });
+      }
+
+      if ('IntersectionObserver' in window && sections.length) {
+        var activeSection = sections[0].id;
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              activeSection = entry.target.id;
+              setActiveLink(activeSection);
+            }
+          });
+        }, {
+          rootMargin: '-10% 0px -70% 0px',
+          threshold: 0
+        });
+
+        sections.forEach(function (sec) { observer.observe(sec); });
+        setActiveLink(activeSection);
+      }
+
+      /* ---- Hamburger / mobile sidebar toggle ---- */
+      var hamburger = document.getElementById('hamburger');
+      var sidebar = document.getElementById('sidebar');
+      var overlay = document.getElementById('sidebar-overlay');
+
+      function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        hamburger.setAttribute('aria-expanded', 'true');
+        hamburger.setAttribute('aria-label', 'Close navigation sidebar');
+        // Trap: move focus into sidebar
+        var firstFocusable = sidebar.querySelector('a, button, input');
+        if (firstFocusable) firstFocusable.focus();
+      }
+
+      function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+        hamburger.setAttribute('aria-expanded', 'false');
+        hamburger.setAttribute('aria-label', 'Open navigation sidebar');
+        hamburger.focus();
+      }
+
+      if (hamburger && sidebar && overlay) {
+        hamburger.addEventListener('click', function () {
+          if (sidebar.classList.contains('open')) {
+            closeSidebar();
+          } else {
+            openSidebar();
+          }
+        });
+
+        overlay.addEventListener('click', closeSidebar);
+
+        // Close sidebar when a nav link is clicked on mobile
+        sidebar.querySelectorAll('a.nav-link').forEach(function (link) {
+          link.addEventListener('click', function () {
+            if (window.innerWidth <= 768) {
+              closeSidebar();
+            }
+          });
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            closeSidebar();
+          }
+        });
+      }
+
+    }());
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration 09: Active Directory &amp; DNS | CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a2332;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #0d1b2a;
+      color: #d0d8e0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      background: #0a1520;
+      padding: 20px 18px 16px;
+      border-bottom: 3px solid #7c3aed;
+      flex-shrink: 0;
+    }
+    .sidebar-course {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sidebar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: #8a9bb0;
+      margin-top: 4px;
+    }
+
+    /* Progress */
+    .sidebar-progress {
+      padding: 12px 18px;
+      background: #0f2235;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-label span:last-child { color: #a78bfa; font-weight: 700; }
+    .progress-bar-track {
+      background: #0d1b2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    /* Doc sequence */
+    .doc-sequence {
+      padding: 12px 18px;
+      border-bottom: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .doc-sequence-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .doc-seq-divider {
+      font-size: 0.62rem;
+      color: #4a6070;
+      padding: 6px 0 2px;
+      letter-spacing: 0.5px;
+      border-top: 1px solid #1a3350;
+      margin-top: 4px;
+    }
+    .doc-seq-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 0.73rem;
+      color: #6a7f94;
+      line-height: 1.4;
+    }
+    .doc-seq-item.current { color: #a78bfa; font-weight: 700; }
+    .doc-seq-item.done { color: #34d399; }
+    .doc-seq-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #2a3d50;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .doc-seq-item.current .doc-seq-dot { background: #7c3aed; }
+    .doc-seq-item.done .doc-seq-dot { background: #34d399; }
+
+    /* Section nav */
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      padding: 8px 18px 4px;
+    }
+    .sidebar-nav a {
+      display: block;
+      padding: 5px 18px 5px 26px;
+      font-size: 0.77rem;
+      color: #8a9bb0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      color: #ffffff;
+      background: rgba(124,58,237,0.14);
+      border-left-color: #7c3aed;
+    }
+
+    /* Checklist */
+    .sidebar-checks {
+      padding: 14px 18px;
+      border-top: 1px solid #1a3350;
+      flex-shrink: 0;
+    }
+    .sidebar-checks-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8a9bb0;
+      margin-bottom: 8px;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 0.73rem;
+      color: #9aacbc;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #7c3aed;
+      flex-shrink: 0;
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+    .check-item.checked { color: #34d399; text-decoration: line-through; }
+
+    /* ── Hamburger (mobile only) ── */
+    .hamburger {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      background: #0d1b2a;
+      border: 2px solid #7c3aed;
+      border-radius: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: #a78bfa;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+    }
+
+    /* ── Main Content ── */
+    .main-content { flex: 1; min-width: 0; padding: 0 0 80px; }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, #0d1b2a 0%, #1a0a3a 55%, #2d1060 100%);
+      color: white;
+      padding: 40px 48px 36px;
+      border-bottom: 4px solid #7c3aed;
+    }
+    .header-eyebrow {
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .page-header h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .page-header h1 em {
+      color: #c4b5fd;
+      font-style: normal;
+    }
+    .page-subtitle {
+      font-size: 0.92rem;
+      color: #a0b4c8;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .header-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(124,58,237,0.22);
+      border: 1px solid rgba(167,139,250,0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #c4b5fd;
+    }
+    .meta-badge strong { color: #ffffff; }
+
+    /* Alerts */
+    .alert {
+      margin: 0 48px 0;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .alert-info {
+      background: #f3f0ff;
+      border-left: 5px solid #7c3aed;
+      color: #3b1a6e;
+    }
+    .alert-warning {
+      background: #fff8e1;
+      border-left: 5px solid #f59e0b;
+      color: #7c4a00;
+    }
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Content area */
+    .content-area { padding: 32px 48px 0; }
+
+    /* Section cards */
+    .section-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-top: 4px solid #7c3aed;
+      scroll-margin-top: 24px;
+    }
+    .section-card h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-card p { color: #3a4a5a; font-size: 0.92rem; margin-bottom: 12px; }
+    .section-card p:last-child { margin-bottom: 0; }
+
+    /* Prose lists */
+    .prose-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .prose-list li {
+      position: relative;
+      padding: 4px 0 4px 20px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .prose-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-size: 0.7rem;
+      top: 7px;
+    }
+    .prose-list li strong { color: #0d1b2a; }
+
+    /* Code blocks */
+    .code-block {
+      background: #0d1b2a;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+    .code-block-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #a78bfa;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .code-block pre { margin: 0; }
+    .code-block pre code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #c8d8e8;
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* Inline code */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+      background: #ede9fe;
+      color: #5b21b6;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .code-block code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+    /* Note box */
+    .note-box {
+      background: #f5f3ff;
+      border: 1px solid #c4b5fd;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.84rem;
+      color: #3b1a6e;
+    }
+    .note-box strong { color: #0d1b2a; }
+
+    /* Overview outcome list */
+    .outcome-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 14px;
+    }
+    .outcome-list li {
+      position: relative;
+      padding: 5px 0 5px 22px;
+      font-size: 0.88rem;
+      color: #3a4a5a;
+    }
+    .outcome-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #7c3aed;
+      font-weight: 700;
+      font-size: 0.82rem;
+      top: 6px;
+    }
+    .outcome-list li strong { color: #0d1b2a; }
+
+    /* DNS record table */
+    .dns-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+      margin: 14px 0;
+    }
+    .dns-table th {
+      background: #0d1b2a;
+      color: #a78bfa;
+      text-align: left;
+      padding: 8px 14px;
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .dns-table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid #e8edf2;
+      color: #3a4a5a;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.80rem;
+    }
+    .dns-table tr:last-child td { border-bottom: none; }
+    .dns-table tr:nth-child(even) td { background: #f7f9fc; }
+    .dns-table td:first-child { font-weight: 600; color: #0d1b2a; }
+
+    /* OU tree */
+    .ou-tree {
+      background: #0d1b2a;
+      border-radius: 8px;
+      padding: 18px 22px;
+      margin: 14px 0;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.83rem;
+      color: #c8d8e8;
+      line-height: 1.9;
+    }
+    .ou-tree .ou-domain { color: #a78bfa; font-weight: 700; }
+    .ou-tree .ou-top { color: #c4b5fd; }
+    .ou-tree .ou-child { color: #93c5fd; padding-left: 22px; }
+    .ou-tree .ou-leaf { color: #6ee7b7; padding-left: 44px; font-size: 0.78rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+      .main-content { width: 100%; }
+      .page-header { padding: 50px 20px 28px; }
+      .page-header h1 { font-size: 1.4rem; }
+      .content-area { padding: 20px 20px 0; }
+      .alert { margin: 0 20px 0; }
+      .section-card { padding: 20px 18px; }
+      .dns-table td, .dns-table th { padding: 7px 10px; }
+      .header-meta { gap: 6px; }
+    }
+    @media (max-width: 480px) {
+      .page-header h1 { font-size: 1.2rem; }
+    }
+
+    /* ── Focus styles ── */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid #7c3aed;
+      outline-offset: 3px;
+    }
+    .hamburger:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      background: #7c3aed;
+      color: #fff;
+      padding: 10px 18px;
+      z-index: 999;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 0 0 6px 0;
+      text-decoration: none;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Mobile hamburger -->
+<button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+<div class="page-wrapper">
+
+  <!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
+  <nav class="sidebar" id="sidebar" aria-label="Integration guide navigation">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-course">CSC 152 · Project 3</div>
+      <div class="sidebar-title">Integration 09 of 15</div>
+      <div class="sidebar-subtitle">Active Directory &amp; DNS</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="sidebar-progress" aria-label="Checklist progress">
+      <div class="progress-label">
+        <span>Checklist Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Doc sequence -->
+    <div class="doc-sequence" aria-label="Document sequence">
+      <div class="doc-sequence-label">Build Sequence</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>01 · Proxmox Network Bridges</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>02 · pfSense VM Build</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>03 · Ubuntu Template + linux-server</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>04 · Windows Server dc01</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>05 · Xubuntu Template + mgmt-vm</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>06 · linux-client VM</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>07 · splunk-vm Build</div>
+      <div class="doc-seq-divider">&#8212;&#8212; Integration Plans &#8212;&#8212;</div>
+      <div class="doc-seq-item done"><span class="doc-seq-dot"></span>08 · pfSense Full Configuration</div>
+      <div class="doc-seq-item current" aria-current="page"><span class="doc-seq-dot"></span>09 · Active Directory &amp; DNS</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>10 · Linux Server Hardening</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>11 · Windows Server Hardening</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>12 · Splunk Deployment</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>13 · Linux Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>14 · Windows Log Forwarder</div>
+      <div class="doc-seq-item"><span class="doc-seq-dot"></span>15 · Backup Strategy</div>
+    </div>
+
+    <!-- Section nav -->
+    <div class="sidebar-nav">
+      <div class="nav-label">Sections</div>
+      <a href="#overview">Overview</a>
+      <a href="#install-adds">Install AD DS Role</a>
+      <a href="#promote-dc">Promote to Domain Controller</a>
+      <a href="#verify-adds">Verify AD DS &amp; DNS</a>
+      <a href="#configure-dns">Configure DNS Zones</a>
+      <a href="#update-pfsense">Update pfSense DNS</a>
+      <a href="#ou-structure">Create OU Structure</a>
+      <a href="#users-groups">Create Users &amp; Groups</a>
+      <a href="#linux-dns">Update linux-server DNS</a>
+      <a href="#verify-complete">Verify Complete</a>
+    </div>
+
+    <!-- Checklist -->
+    <div class="sidebar-checks">
+      <div class="sidebar-checks-label">Integration Checklist</div>
+
+      <label class="check-item" id="ck-label-0">
+        <input type="checkbox" id="ck0" aria-label="AD DS role installed on dc01" />
+        <span>AD DS role installed on dc01</span>
+      </label>
+      <label class="check-item" id="ck-label-1">
+        <input type="checkbox" id="ck1" aria-label="dc01 promoted to first DC in new forest techstart.local" />
+        <span>dc01 promoted to first DC in new forest (techstart.local)</span>
+      </label>
+      <label class="check-item" id="ck-label-2">
+        <input type="checkbox" id="ck2" aria-label="Domain functional level set to Windows Server 2016" />
+        <span>Domain functional level: Windows Server 2016</span>
+      </label>
+      <label class="check-item" id="ck-label-3">
+        <input type="checkbox" id="ck3" aria-label="AD-integrated DNS configured" />
+        <span>AD-integrated DNS configured</span>
+      </label>
+      <label class="check-item" id="ck-label-4">
+        <input type="checkbox" id="ck4" aria-label="A records added for all hosts" />
+        <span>A records added for all hosts (pfsense-mgmt, linux-server, splunk-vm, mgmt-vm)</span>
+      </label>
+      <label class="check-item" id="ck-label-5">
+        <input type="checkbox" id="ck5" aria-label="CNAME records added (dns, ldap, splunk)" />
+        <span>CNAME records added (dns, ldap, splunk)</span>
+      </label>
+      <label class="check-item" id="ck-label-6">
+        <input type="checkbox" id="ck6" aria-label="Reverse lookup zone created 2.0.10.in-addr.arpa" />
+        <span>Reverse lookup zone created (2.0.10.in-addr.arpa)</span>
+      </label>
+      <label class="check-item" id="ck-label-7">
+        <input type="checkbox" id="ck7" aria-label="PTR records added" />
+        <span>PTR records added</span>
+      </label>
+      <label class="check-item" id="ck-label-8">
+        <input type="checkbox" id="ck8" aria-label="pfSense DNS updated to use 10.0.2.11" />
+        <span>pfSense DNS updated to use 10.0.2.11</span>
+      </label>
+      <label class="check-item" id="ck-label-9">
+        <input type="checkbox" id="ck9" aria-label="OU structure created (TechStart / IT_Admins / Employees / Computers)" />
+        <span>OU structure created (TechStart / IT_Admins / Employees / Computers)</span>
+      </label>
+      <label class="check-item" id="ck-label-10">
+        <input type="checkbox" id="ck10" aria-label="IT_Admins security group created" />
+        <span>IT_Admins security group created</span>
+      </label>
+      <label class="check-item" id="ck-label-11">
+        <input type="checkbox" id="ck11" aria-label="ts.admin user created and added to Domain Admins" />
+        <span>ts.admin user created and added to Domain Admins</span>
+      </label>
+      <label class="check-item" id="ck-label-12">
+        <input type="checkbox" id="ck12" aria-label="Employee users created (john.smith, maria.garcia, robert.chen, sarah.jones)" />
+        <span>Employee users created (john.smith, maria.garcia, robert.chen, sarah.jones)</span>
+      </label>
+      <label class="check-item" id="ck-label-13">
+        <input type="checkbox" id="ck13" aria-label="linux-server DNS updated to use dc01 (10.0.2.11)" />
+        <span>linux-server DNS updated to use dc01 (10.0.2.11)</span>
+      </label>
+      <label class="check-item" id="ck-label-14">
+        <input type="checkbox" id="ck14" aria-label="DNS resolution verified from linux-server" />
+        <span>DNS resolution verified from linux-server</span>
+      </label>
+    </div>
+
+  </nav>
+  <!-- end sidebar -->
+
+  <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
+  <main class="main-content" id="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-eyebrow">CSC 152 · Project 3 · Integration 09 of 15</div>
+      <h1>Integration 09: <em>Active Directory &amp; DNS Setup</em></h1>
+      <p class="page-subtitle">
+        Promote dc01 to domain controller, create the techstart.local domain, configure DNS,
+        build the OU structure, and add users and groups from Project 2
+      </p>
+      <div class="header-meta" aria-label="Environment specifications">
+        <div class="meta-badge"><strong>Server:</strong> dc01 (10.0.2.11)</div>
+        <div class="meta-badge"><strong>Domain:</strong> techstart.local</div>
+        <div class="meta-badge"><strong>Forest/Domain Level:</strong> Windows Server 2016</div>
+      </div>
+    </header>
+
+    <!-- Snapshot warning alert -->
+    <div class="alert alert-warning" role="note" style="margin-top: 20px;">
+      <span class="alert-icon" aria-hidden="true">&#9888;</span>
+      <div>
+        <strong>Take a Proxmox snapshot of dc01 (pre-AD-baseline) before proceeding</strong>
+        if you haven't already. AD promotion installs services and modifies the registry in ways
+        that are not easily reversed. A clean snapshot lets you roll back if something goes wrong.
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <!-- ── Section 1: Overview ── -->
+      <section class="section-card" id="overview" aria-labelledby="h-overview">
+        <h2 id="h-overview"><span class="section-num" aria-hidden="true">1</span> Overview</h2>
+        <p>
+          This integration step rebuilds the Project 2 Active Directory environment from scratch
+          on <strong>dc01</strong>. You will promote dc01 to the first domain controller in a new
+          forest, configure AD-integrated DNS, and recreate the OU structure, users, and groups
+          established in Project 2.
+        </p>
+        <p><strong>Prerequisites:</strong> pfSense is fully configured (Integration 08) and dc01
+        has network connectivity to the Servers network (10.0.2.0/24).</p>
+        <p>After completing this integration:</p>
+        <ul class="outcome-list" aria-label="Expected outcomes">
+          <li><strong>Domain:</strong> techstart.local (Windows Server 2016 functional level)</li>
+          <li><strong>DNS:</strong> AD-integrated, authoritative for techstart.local and reverse zone 2.0.10.in-addr.arpa</li>
+          <li><strong>Users:</strong> ts.admin, john.smith, maria.garcia, robert.chen, sarah.jones</li>
+          <li><strong>Groups:</strong> IT_Admins (security, global scope)</li>
+          <li><strong>OUs:</strong> TechStart &rarr; IT_Admins, Employees, Computers</li>
+        </ul>
+
+        <div class="ou-tree" role="img" aria-label="Active Directory structure diagram">
+          <div class="ou-domain">DC=techstart,DC=local</div>
+          <div class="ou-top">&#x251C;&#x2500; OU=TechStart</div>
+          <div class="ou-child">&#x251C;&#x2500; OU=IT_Admins</div>
+          <div class="ou-leaf">&#x2514;&#x2500; ts.admin</div>
+          <div class="ou-child">&#x251C;&#x2500; OU=Employees</div>
+          <div class="ou-leaf">&#x251C;&#x2500; john.smith &nbsp;&#x251C;&#x2500; maria.garcia</div>
+          <div class="ou-leaf">&#x251C;&#x2500; robert.chen &nbsp;&#x2514;&#x2500; sarah.jones</div>
+          <div class="ou-child">&#x2514;&#x2500; OU=Computers</div>
+        </div>
+      </section>
+
+      <!-- ── Section 2: Install AD DS ── -->
+      <section class="section-card" id="install-adds" aria-labelledby="h-install-adds">
+        <h2 id="h-install-adds"><span class="section-num" aria-hidden="true">2</span> Install AD DS Role</h2>
+        <p>
+          On <strong>dc01</strong>, open <strong>PowerShell as Administrator</strong> (right-click
+          the Start button &rarr; Windows PowerShell (Admin)). Run the following commands to install
+          the Active Directory Domain Services role and management tools:
+        </p>
+
+        <div class="code-block" role="region" aria-label="Install AD DS PowerShell commands">
+          <div class="code-block-label">PowerShell — dc01 (Run as Administrator)</div>
+          <pre><code># Install Active Directory Domain Services role
+Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
+
+# Verify installation
+Get-WindowsFeature AD-Domain-Services</code></pre>
+        </div>
+
+        <p>
+          The installation will take a few minutes. When complete, the <code>InstallState</code>
+          column should show <strong>Installed</strong>. The server does not need to reboot yet —
+          promotion in the next step handles that.
+        </p>
+      </section>
+
+      <!-- ── Section 3: Promote to DC ── -->
+      <section class="section-card" id="promote-dc" aria-labelledby="h-promote-dc">
+        <h2 id="h-promote-dc"><span class="section-num" aria-hidden="true">3</span> Promote to Domain Controller</h2>
+        <p>
+          Run the following PowerShell commands to promote dc01 as the first domain controller
+          in a new forest. The <code>WinThreshold</code> mode corresponds to Windows Server 2016
+          functional level.
+        </p>
+
+        <div class="code-block" role="region" aria-label="Promote to domain controller PowerShell commands">
+          <div class="code-block-label">PowerShell — dc01 (Run as Administrator)</div>
+          <pre><code># Promote dc01 as the first DC in a new forest
+Import-Module ADDSDeployment
+
+Install-ADDSForest `
+  -DomainName "techstart.local" `
+  -DomainNetbiosName "TECHSTART" `
+  -ForestMode "WinThreshold" `
+  -DomainMode "WinThreshold" `
+  -InstallDns:$true `
+  -DatabasePath "C:\Windows\NTDS" `
+  -LogPath "C:\Windows\NTDS" `
+  -SysvolPath "C:\Windows\SYSVOL" `
+  -NoRebootOnCompletion:$false `
+  -Force:$true</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>DSRM Password prompt:</strong> You will be prompted to enter a
+          <strong>Directory Services Restore Mode (DSRM) password</strong>. Choose a strong
+          password that is different from the Administrator account password. Record it securely —
+          it is needed for AD recovery operations and is not easily reset.
+          <br><br>
+          <strong>WinThreshold</strong> = Windows Server 2016 functional level. This matches
+          the environment you configured in Project 2.
+          <br><br>
+          After promotion completes, the server will <strong>reboot automatically</strong>.
+          Log in as <code>TECHSTART\Administrator</code> after the restart.
+        </div>
+      </section>
+
+      <!-- ── Section 4: Verify AD DS & DNS ── -->
+      <section class="section-card" id="verify-adds" aria-labelledby="h-verify-adds">
+        <h2 id="h-verify-adds"><span class="section-num" aria-hidden="true">4</span> Verify AD DS and DNS</h2>
+        <p>
+          After dc01 reboots and you log in as <code>TECHSTART\Administrator</code>, open
+          PowerShell as Administrator and run these verification commands:
+        </p>
+
+        <div class="code-block" role="region" aria-label="Verify AD DS and DNS PowerShell commands">
+          <div class="code-block-label">PowerShell — dc01</div>
+          <pre><code># Verify AD DS services are running
+Get-Service ADWS, DNS, Netlogon, KDC | Select Name, Status
+
+# Verify domain information
+Get-ADDomain
+
+# Verify DNS is serving the zone
+Resolve-DnsName dc01.techstart.local -Server 127.0.0.1
+Resolve-DnsName techstart.local -Server 127.0.0.1 -Type SOA</code></pre>
+        </div>
+
+        <p>
+          All four services (<code>ADWS</code>, <code>DNS</code>, <code>Netlogon</code>,
+          <code>KDC</code>) should show <strong>Running</strong>. The
+          <code>Get-ADDomain</code> output confirms the domain name, functional level, and forest
+          root. The <code>Resolve-DnsName</code> commands confirm the DNS server is answering
+          queries for its own zone.
+        </p>
+      </section>
+
+      <!-- ── Section 5: Configure DNS Zones ── -->
+      <section class="section-card" id="configure-dns" aria-labelledby="h-configure-dns">
+        <h2 id="h-configure-dns"><span class="section-num" aria-hidden="true">5</span> Configure DNS Zones</h2>
+        <p>
+          AD DS promotion automatically creates the <strong>techstart.local</strong> forward
+          lookup zone and adds the essential SRV, A, and NS records for the domain controller.
+          You now need to add A records for the remaining environment hosts, CNAME aliases,
+          and the reverse lookup zone with PTR records.
+        </p>
+
+        <h3 style="font-size:0.95rem; font-weight:700; color:#0d1b2a; margin: 18px 0 8px;">5a — Add A Records and CNAME Aliases</h3>
+        <p>Open <strong>DNS Manager</strong> (Server Manager &rarr; Tools &rarr; DNS) or use PowerShell:</p>
+
+        <div class="code-block" role="region" aria-label="Add DNS A records and CNAME records">
+          <div class="code-block-label">PowerShell — dc01 · A Records &amp; CNAMEs</div>
+          <pre><code># Add A records for all environment hosts
+Add-DnsServerResourceRecordA -ZoneName "techstart.local" `
+  -Name "pfsense-mgmt" -IPv4Address "10.0.1.1"
+
+Add-DnsServerResourceRecordA -ZoneName "techstart.local" `
+  -Name "linux-server" -IPv4Address "10.0.2.10"
+
+Add-DnsServerResourceRecordA -ZoneName "techstart.local" `
+  -Name "splunk-vm" -IPv4Address "10.0.2.20"
+
+Add-DnsServerResourceRecordA -ZoneName "techstart.local" `
+  -Name "mgmt-vm" -IPv4Address "10.0.1.10"
+
+# Add CNAME records (aliases)
+Add-DnsServerResourceRecordCName -ZoneName "techstart.local" `
+  -Name "dns" -HostNameAlias "dc01.techstart.local."
+
+Add-DnsServerResourceRecordCName -ZoneName "techstart.local" `
+  -Name "ldap" -HostNameAlias "dc01.techstart.local."
+
+Add-DnsServerResourceRecordCName -ZoneName "techstart.local" `
+  -Name "splunk" -HostNameAlias "splunk-vm.techstart.local."</code></pre>
+        </div>
+
+        <p>Reference table for all expected DNS records in the techstart.local zone:</p>
+        <table class="dns-table" aria-label="DNS records for techstart.local zone">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Type</th>
+              <th scope="col">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>dc01</td><td>A</td><td>10.0.2.11 (auto-created by AD DS)</td></tr>
+            <tr><td>pfsense-mgmt</td><td>A</td><td>10.0.1.1</td></tr>
+            <tr><td>linux-server</td><td>A</td><td>10.0.2.10</td></tr>
+            <tr><td>splunk-vm</td><td>A</td><td>10.0.2.20</td></tr>
+            <tr><td>mgmt-vm</td><td>A</td><td>10.0.1.10</td></tr>
+            <tr><td>dns</td><td>CNAME</td><td>dc01.techstart.local.</td></tr>
+            <tr><td>ldap</td><td>CNAME</td><td>dc01.techstart.local.</td></tr>
+            <tr><td>splunk</td><td>CNAME</td><td>splunk-vm.techstart.local.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size:0.95rem; font-weight:700; color:#0d1b2a; margin: 22px 0 8px;">5b — Create Reverse Lookup Zone and PTR Records</h3>
+
+        <div class="code-block" role="region" aria-label="Create reverse lookup zone and PTR records">
+          <div class="code-block-label">PowerShell — dc01 · Reverse Zone &amp; PTR Records</div>
+          <pre><code># Create reverse zone for 10.0.2.x (Servers network)
+Add-DnsServerPrimaryZone -NetworkID "10.0.2.0/24" `
+  -ReplicationScope "Domain"
+
+# Add PTR records
+Add-DnsServerResourceRecordPtr -ZoneName "2.0.10.in-addr.arpa" `
+  -Name "1" -PtrDomainName "pfsense-opt1.techstart.local."
+
+Add-DnsServerResourceRecordPtr -ZoneName "2.0.10.in-addr.arpa" `
+  -Name "10" -PtrDomainName "linux-server.techstart.local."
+
+Add-DnsServerResourceRecordPtr -ZoneName "2.0.10.in-addr.arpa" `
+  -Name "11" -PtrDomainName "dc01.techstart.local."
+
+Add-DnsServerResourceRecordPtr -ZoneName "2.0.10.in-addr.arpa" `
+  -Name "20" -PtrDomainName "splunk-vm.techstart.local."</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Note:</strong> The reverse zone <code>2.0.10.in-addr.arpa</code> covers the
+          10.0.2.x Servers network. The Management network (10.0.1.x) does not require a reverse
+          zone for this project, but you may add one using the same pattern
+          (<code>1.0.10.in-addr.arpa</code>) if desired.
+        </div>
+      </section>
+
+      <!-- ── Section 6: Update pfSense DNS ── -->
+      <section class="section-card" id="update-pfsense" aria-labelledby="h-update-pfsense">
+        <h2 id="h-update-pfsense"><span class="section-num" aria-hidden="true">6</span> Update pfSense DNS</h2>
+        <p>
+          Now that dc01 is the authoritative DNS server for <strong>techstart.local</strong>,
+          update pfSense so that DNS queries from all network segments are forwarded to dc01 first.
+        </p>
+
+        <ul class="prose-list" aria-label="pfSense DNS update steps">
+          <li>From mgmt-vm, open Firefox and navigate to <strong>https://10.0.1.1</strong> (pfSense web UI)</li>
+          <li>Go to <strong>System &rarr; General Setup &rarr; DNS Servers</strong></li>
+          <li>Set <strong>DNS Server 1:</strong> <code>10.0.2.11</code> (dc01)</li>
+          <li>Set <strong>DNS Server 2:</strong> <code>8.8.8.8</code> (Google &mdash; internet fallback)</li>
+          <li>Click <strong>Save</strong></li>
+        </ul>
+
+        <div class="note-box">
+          <strong>Also update:</strong> Netplan DNS on <strong>linux-server</strong> and
+          <strong>splunk-vm</strong> should also be updated to use 10.0.2.11 as their primary DNS.
+          This is covered in Section 9 below for linux-server; repeat the same steps for splunk-vm.
+        </div>
+      </section>
+
+      <!-- ── Section 7: OU Structure ── -->
+      <section class="section-card" id="ou-structure" aria-labelledby="h-ou-structure">
+        <h2 id="h-ou-structure"><span class="section-num" aria-hidden="true">7</span> Create Organizational Unit Structure</h2>
+        <p>
+          Run the following PowerShell commands on dc01 to create the OU hierarchy. This mirrors
+          the structure you built in Project 2.
+        </p>
+
+        <div class="code-block" role="region" aria-label="Create OU structure PowerShell commands">
+          <div class="code-block-label">PowerShell — dc01</div>
+          <pre><code># Create top-level OU
+New-ADOrganizationalUnit -Name "TechStart" `
+  -Path "DC=techstart,DC=local" `
+  -ProtectedFromAccidentalDeletion $true
+
+# Create sub-OUs inside TechStart
+New-ADOrganizationalUnit -Name "IT_Admins" `
+  -Path "OU=TechStart,DC=techstart,DC=local"
+
+New-ADOrganizationalUnit -Name "Employees" `
+  -Path "OU=TechStart,DC=techstart,DC=local"
+
+New-ADOrganizationalUnit -Name "Computers" `
+  -Path "OU=TechStart,DC=techstart,DC=local"</code></pre>
+        </div>
+
+        <p>
+          The <code>-ProtectedFromAccidentalDeletion $true</code> flag on the top-level OU
+          prevents it from being deleted through Active Directory Users and Computers without
+          first unchecking the protection option. The sub-OUs inherit the domain-level deletion
+          confirmation by default.
+        </p>
+      </section>
+
+      <!-- ── Section 8: Users and Groups ── -->
+      <section class="section-card" id="users-groups" aria-labelledby="h-users-groups">
+        <h2 id="h-users-groups"><span class="section-num" aria-hidden="true">8</span> Create Users and Groups</h2>
+        <p>
+          Create the IT_Admins security group, the <code>ts.admin</code> administrator account,
+          and four standard employee accounts. All passwords shown below are temporary — students
+          are required to change them at first logon.
+        </p>
+
+        <div class="code-block" role="region" aria-label="Create users and groups PowerShell commands">
+          <div class="code-block-label">PowerShell — dc01</div>
+          <pre><code># Create security group
+New-ADGroup -Name "IT_Admins" `
+  -GroupScope Global `
+  -GroupCategory Security `
+  -Path "OU=IT_Admins,OU=TechStart,DC=techstart,DC=local"
+
+# Create admin user (ts.admin)
+New-ADUser -Name "TS Admin" `
+  -GivenName "TS" -Surname "Admin" `
+  -SamAccountName "ts.admin" `
+  -UserPrincipalName "ts.admin@techstart.local" `
+  -Path "OU=IT_Admins,OU=TechStart,DC=techstart,DC=local" `
+  -AccountPassword (ConvertTo-SecureString "P@ssw0rd123!" -AsPlainText -Force) `
+  -Enabled $true `
+  -PasswordNeverExpires $false `
+  -ChangePasswordAtLogon $true
+
+# Add ts.admin to IT_Admins group and Domain Admins
+Add-ADGroupMember -Identity "IT_Admins" -Members "ts.admin"
+Add-ADGroupMember -Identity "Domain Admins" -Members "ts.admin"
+
+# Create employee users
+$employees = @(
+  @{First="John";   Last="Smith";  Sam="john.smith"},
+  @{First="Maria";  Last="Garcia"; Sam="maria.garcia"},
+  @{First="Robert"; Last="Chen";   Sam="robert.chen"},
+  @{First="Sarah";  Last="Jones";  Sam="sarah.jones"}
+)
+foreach ($emp in $employees) {
+  New-ADUser -Name "$($emp.First) $($emp.Last)" `
+    -GivenName $emp.First -Surname $emp.Last `
+    -SamAccountName $emp.Sam `
+    -UserPrincipalName "$($emp.Sam)@techstart.local" `
+    -Path "OU=Employees,OU=TechStart,DC=techstart,DC=local" `
+    -AccountPassword (ConvertTo-SecureString "TempP@ss1!" -AsPlainText -Force) `
+    -Enabled $true `
+    -ChangePasswordAtLogon $true
+}
+
+# Verify users were created
+Get-ADUser -Filter * -SearchBase "OU=TechStart,DC=techstart,DC=local" |
+  Select Name, SamAccountName, Enabled</code></pre>
+        </div>
+
+        <div class="alert alert-info" role="note" style="margin: 14px 0 0; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Password policy reminder:</strong> The temporary passwords above
+            (<code>P@ssw0rd123!</code> for ts.admin, <code>TempP@ss1!</code> for employees) meet
+            default Windows Server complexity requirements. Students should change them immediately
+            after first logon, or you can set them to something else before class. Never use
+            production passwords in lab documentation.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section 9: Update linux-server DNS ── -->
+      <section class="section-card" id="linux-dns" aria-labelledby="h-linux-dns">
+        <h2 id="h-linux-dns"><span class="section-num" aria-hidden="true">9</span> Update linux-server DNS</h2>
+        <p>
+          SSH to <strong>linux-server</strong> (10.0.2.10) and update its Netplan configuration
+          to use dc01 as the primary DNS server. Repeat these steps for <strong>splunk-vm</strong>
+          (10.0.2.20) as well.
+        </p>
+
+        <div class="code-block" role="region" aria-label="Update linux-server DNS via Netplan bash commands">
+          <div class="code-block-label">bash — linux-server (SSH from mgmt-vm)</div>
+          <pre><code># Open the Netplan configuration file
+sudo nano /etc/netplan/00-installer-config.yaml
+
+# In the nameservers block, update addresses to:
+#   addresses: [10.0.2.11, 8.8.8.8]
+
+# Apply the change
+sudo netplan apply
+
+# Test DNS resolution against dc01
+nslookup dc01.techstart.local
+nslookup techstart.local</code></pre>
+        </div>
+
+        <p>
+          The <code>nslookup</code> commands should return the correct IP addresses, confirming
+          linux-server is resolving names through dc01. If resolution fails, verify that
+          dc01 is reachable on port 53 from linux-server:
+        </p>
+
+        <div class="code-block" role="region" aria-label="Test DNS port connectivity bash command">
+          <div class="code-block-label">bash — linux-server · connectivity check</div>
+          <pre><code># Confirm dc01 is responding on UDP 53
+nc -zvu 10.0.2.11 53</code></pre>
+        </div>
+      </section>
+
+      <!-- ── Section 10: Verify Complete ── -->
+      <section class="section-card" id="verify-complete" aria-labelledby="h-verify-complete">
+        <h2 id="h-verify-complete"><span class="section-num" aria-hidden="true">10</span> Verify Complete</h2>
+        <p>
+          Run a final verification pass on dc01 to confirm AD, DNS, OUs, users, and groups are
+          all correctly configured:
+        </p>
+
+        <div class="code-block" role="region" aria-label="Final verification PowerShell commands">
+          <div class="code-block-label">PowerShell — dc01 · Final Verification</div>
+          <pre><code># Verify AD OU structure
+Get-ADOrganizationalUnit -Filter * |
+  Select Name, DistinguishedName
+
+# Verify all users
+Get-ADUser -Filter * |
+  Select Name, SamAccountName, Enabled
+
+# Verify groups
+Get-ADGroup -Filter * |
+  Select Name, GroupScope, GroupCategory
+
+# Verify DNS forward resolution
+nslookup linux-server.techstart.local 127.0.0.1
+nslookup splunk-vm.techstart.local 127.0.0.1
+nslookup mgmt-vm.techstart.local 127.0.0.1
+
+# Verify DNS reverse resolution
+nslookup 10.0.2.10 127.0.0.1
+nslookup 10.0.2.11 127.0.0.1
+nslookup 10.0.2.20 127.0.0.1</code></pre>
+        </div>
+
+        <div class="alert alert-info" role="note" style="margin: 18px 0 0; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Next step &mdash; Integration 10: Linux Server Hardening.</strong> With Active
+            Directory and DNS fully operational, the next integration plan covers hardening
+            linux-server: SSH key authentication, UFW firewall rules, and fail2ban configuration.
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /content-area -->
+  </main>
+</div><!-- /page-wrapper -->
+
+<script>
+  'use strict';
+
+  /* ── Hamburger / sidebar toggle ── */
+  const hamburger = document.getElementById('hamburger');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    overlay.removeAttribute('aria-hidden');
+    hamburger.setAttribute('aria-expanded', 'true');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+  });
+
+  /* ── Checklist → progress bar ── */
+  const checkboxes    = document.querySelectorAll('.sidebar-checks input[type="checkbox"]');
+  const progressBar   = document.getElementById('progress-bar');
+  const progressPct   = document.getElementById('progress-pct');
+  const progressTrack = document.getElementById('progress-bar-track');
+
+  function updateProgress() {
+    const total   = checkboxes.length;
+    const checked = Array.from(checkboxes).filter(c => c.checked).length;
+    const pct     = total > 0 ? Math.round((checked / total) * 100) : 0;
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+    progressTrack.setAttribute('aria-valuenow', pct);
+  }
+
+  checkboxes.forEach((cb, i) => {
+    const label = document.getElementById('ck-label-' + i);
+    cb.addEventListener('change', () => {
+      if (label) label.classList.toggle('checked', cb.checked);
+      updateProgress();
+    });
+  });
+
+  updateProgress();
+
+  /* ── Active section nav highlighting ── */
+  const sections = document.querySelectorAll('.section-card[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+
+  const observerOptions = {
+    root: null,
+    rootMargin: '-20% 0px -70% 0px',
+    threshold: 0
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(link => {
+          const href = link.getAttribute('href');
+          link.classList.toggle('active', href === '#' + id);
+          if (href === '#' + id) {
+            link.setAttribute('aria-current', 'true');
+          } else {
+            link.removeAttribute('aria-current');
+          }
+        });
+      }
+    });
+  }, observerOptions);
+
+  sections.forEach(section => observer.observe(section));
+
+  /* ── Close sidebar on nav link click (mobile) ── */
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) closeSidebar();
+    });
+  });
+</script>
+
+</body>
+</html>

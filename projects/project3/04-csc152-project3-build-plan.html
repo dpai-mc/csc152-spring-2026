@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build 04: Windows Server 2022 VM (dc01) — CSC 152 Project 3</title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-bg:      #0d1b2a;
+      --sidebar-text:    #c9d6e3;
+      --sidebar-heading: #ffffff;
+      --accent:          #17a2b8;
+      --accent-dark:     #117a8b;
+      --accent-light:    #d1f0f5;
+      --done-color:      #5cb85c;
+      --current-bg:      #17a2b8;
+      --current-text:    #ffffff;
+      --main-bg:         #f8f9fa;
+      --main-text:       #1a1a1a;
+      --card-bg:         #ffffff;
+      --border:          #dee2e6;
+      --code-bg:         #1e2a3a;
+      --code-text:       #e8f4f8;
+      --note-bg:         #d1ecf1;
+      --note-border:     #17a2b8;
+      --note-text:       #0c5460;
+      --warn-bg:         #fff3cd;
+      --warn-border:     #ffc107;
+      --warn-text:       #856404;
+      --sidebar-width:   280px;
+      --header-height:   56px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--main-bg);
+      color: var(--main-text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Mobile header bar ── */
+    .mobile-header {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-height);
+      background: var(--sidebar-bg);
+      color: var(--sidebar-heading);
+      align-items: center;
+      padding: 0 1rem;
+      z-index: 300;
+      gap: 0.75rem;
+    }
+
+    .hamburger {
+      background: none;
+      border: 2px solid var(--accent);
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 0.35rem 0.45rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+    .hamburger:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .hamburger span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(1) {
+      transform: translateY(6px) rotate(45deg);
+    }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) {
+      transform: translateY(-6px) rotate(-45deg);
+    }
+
+    .mobile-title { font-size: 0.9rem; font-weight: 600; color: var(--sidebar-heading); }
+
+    /* ── Layout shell ── */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s ease;
+    }
+
+    .sidebar-inner { padding: 1.25rem 1rem 2rem; flex: 1; }
+
+    .sidebar-brand {
+      border-bottom: 1px solid #1e3350;
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .sidebar-brand .course-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .sidebar-brand h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--sidebar-heading);
+      margin: 0.2rem 0;
+    }
+
+    .sidebar-brand .build-label {
+      font-size: 0.8rem;
+      color: #8baec8;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      margin-bottom: 1rem;
+    }
+    .progress-label {
+      font-size: 0.72rem;
+      color: #8baec8;
+      margin-bottom: 0.3rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .progress-bar-track {
+      height: 6px;
+      background: #1e3350;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* Nav sections */
+    .nav-section-label {
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #4a6880;
+      font-weight: 700;
+      margin: 1.2rem 0 0.4rem;
+    }
+
+    .nav-divider {
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      font-weight: 700;
+      margin: 1.2rem 0 0.4rem;
+      border-top: 1px solid #1e3350;
+      padding-top: 0.75rem;
+    }
+
+    .doc-list { list-style: none; }
+
+    .doc-list li { margin-bottom: 2px; }
+
+    .doc-list a, .doc-list span {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .doc-list a:hover { background: #1e3350; color: #fff; }
+    .doc-list a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .doc-list .status-icon {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+
+    .doc-list .done .status-icon   { background: var(--done-color); color: #fff; }
+    .doc-list .current .status-icon { background: var(--accent); color: #fff; }
+    .doc-list .todo .status-icon   { background: #2a3f55; color: #8baec8; }
+
+    .doc-list .current > a,
+    .doc-list .current > span {
+      background: #142637;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Section nav inside sidebar */
+    .section-nav-label {
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #4a6880;
+      font-weight: 700;
+      margin: 1.2rem 0 0.4rem;
+    }
+
+    .section-nav { list-style: none; }
+    .section-nav li { margin-bottom: 1px; }
+    .section-nav a {
+      display: block;
+      padding: 0.3rem 0.5rem 0.3rem 0.9rem;
+      font-size: 0.77rem;
+      color: #8baec8;
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      border-radius: 0 4px 4px 0;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .section-nav a:hover {
+      color: #fff;
+      border-left-color: var(--accent);
+      background: #1e3350;
+    }
+    .section-nav a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+    .section-nav a.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Checklist in sidebar */
+    .checklist-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8baec8;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .checklist { list-style: none; }
+    .checklist li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--sidebar-text);
+    }
+    .checklist li label {
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      line-height: 1.35;
+    }
+    .checklist li input[type="checkbox"] {
+      flex-shrink: 0;
+      margin-top: 2px;
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .checklist li.checked label { color: var(--done-color); text-decoration: line-through; }
+
+    /* Sidebar overlay for mobile */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 199;
+    }
+
+    /* ── Main content ── */
+    .main {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      min-width: 0;
+    }
+
+    .main-inner {
+      max-width: 860px;
+      padding: 2.5rem 2rem 4rem;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .build-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 0.25rem 0.65rem;
+      border-radius: 99px;
+      margin-bottom: 0.75rem;
+    }
+
+    .page-header h2 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #0d1b2a;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+      font-size: 1rem;
+      color: #4a5568;
+      margin-bottom: 1rem;
+    }
+
+    .vm-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .vm-meta-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #a8dde8;
+    }
+
+    /* ── Sections ── */
+    .content-section {
+      margin-bottom: 2.5rem;
+      scroll-margin-top: 1.5rem;
+    }
+
+    .section-heading {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0d1b2a;
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Tables ── */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      background: var(--card-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .spec-table th, .spec-table td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .spec-table th {
+      background: #e8f4f8;
+      color: var(--accent-dark);
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      width: 35%;
+    }
+
+    .spec-table tr:last-child th,
+    .spec-table tr:last-child td { border-bottom: none; }
+
+    .spec-table tr:hover td { background: #f0fbfd; }
+
+    /* ── Steps ── */
+    .steps { list-style: none; }
+    .steps > li {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+    .steps > li::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 36px;
+      bottom: -10px;
+      width: 2px;
+      background: #dee2e6;
+    }
+    .steps > li:last-child::before { display: none; }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-body { flex: 1; padding-top: 0.3rem; }
+    .step-body strong { display: block; font-size: 0.95rem; color: #0d1b2a; margin-bottom: 0.25rem; }
+    .step-body p, .step-body ul { font-size: 0.88rem; color: #3a4a58; }
+    .step-body ul { padding-left: 1.2rem; margin-top: 0.3rem; }
+    .step-body ul li { margin-bottom: 0.2rem; }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: var(--code-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 0.75rem 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background: #152233;
+      border-bottom: 1px solid #1e3350;
+    }
+
+    .code-lang {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .copy-btn {
+      background: none;
+      border: 1px solid #2a4a64;
+      color: #8baec8;
+      font-size: 0.72rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .copy-btn:hover { background: #1e3350; color: #fff; }
+    .copy-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .copy-btn.copied { border-color: var(--done-color); color: var(--done-color); }
+
+    .code-block pre {
+      margin: 0;
+      padding: 1rem 1.2rem;
+      overflow-x: auto;
+    }
+
+    .code-block pre code {
+      font-family: "Cascadia Code", "Fira Code", "Consolas", "Monaco", monospace;
+      font-size: 0.82rem;
+      color: var(--code-text);
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* ── Alerts ── */
+    .alert {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
+      margin: 0.75rem 0;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .alert-icon {
+      flex-shrink: 0;
+      font-size: 1.1rem;
+      margin-top: 1px;
+    }
+
+    .alert-info {
+      background: var(--note-bg);
+      border-left: 4px solid var(--note-border);
+      color: var(--note-text);
+    }
+
+    .alert-warning {
+      background: var(--warn-bg);
+      border-left: 4px solid var(--warn-border);
+      color: var(--warn-text);
+    }
+
+    .alert p { margin: 0; }
+    .alert p + p { margin-top: 0.4rem; }
+    .alert strong { font-weight: 700; }
+
+    /* ── Inline text ── */
+    .inline-code {
+      font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+      font-size: 0.82em;
+      background: #e8f4f8;
+      color: #0c5460;
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      border: 1px solid #a8dde8;
+    }
+
+    .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--accent-dark);
+      font-weight: 600;
+      word-break: break-all;
+    }
+    .download-link:hover { color: var(--accent); }
+    .download-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .mobile-header { display: flex; }
+
+      .sidebar {
+        transform: translateX(-100%);
+        top: var(--header-height);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.open { display: block; }
+
+      .main {
+        margin-left: 0;
+        padding-top: var(--header-height);
+      }
+
+      .main-inner {
+        padding: 1.5rem 1rem 3rem;
+      }
+
+      .page-header h2 { font-size: 1.4rem; }
+
+      .spec-table th { width: 40%; }
+    }
+
+    @media (max-width: 480px) {
+      .spec-table { font-size: 0.82rem; }
+      .spec-table th, .spec-table td { padding: 0.5rem 0.65rem; }
+      .page-header h2 { font-size: 1.2rem; }
+    }
+
+    /* ── Focus visible global ── */
+    :focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Skip link */
+    .skip-link {
+      position: absolute;
+      top: -999px;
+      left: 0;
+      background: var(--accent);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      z-index: 9999;
+      border-radius: 0 0 6px 0;
+    }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Mobile header -->
+  <header class="mobile-header" role="banner">
+    <button class="hamburger" id="hamburgerBtn" aria-expanded="false" aria-controls="sidebar" aria-label="Toggle navigation menu">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="mobile-title">Build 04 · Windows Server dc01</span>
+  </header>
+
+  <!-- Sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <div class="layout">
+
+    <!-- ════ SIDEBAR ════ -->
+    <nav class="sidebar" id="sidebar" aria-label="Course navigation">
+      <div class="sidebar-inner">
+
+        <!-- Brand -->
+        <div class="sidebar-brand">
+          <div class="course-label">CSC 152 · Project 3</div>
+          <h1>Build Lab</h1>
+          <div class="build-label">Build 04 of 15 &mdash; Windows Server dc01</div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-wrap" aria-label="Checklist progress">
+          <div class="progress-label">
+            <span>Checklist Progress</span>
+            <span id="progressText">0 / 11</span>
+          </div>
+          <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Checklist completion percentage" id="progressBar">
+            <div class="progress-bar-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <!-- Doc sequence -->
+        <div class="nav-section-label">Build Plans</div>
+        <ul class="doc-list" aria-label="Build plan sequence">
+          <li class="done">
+            <a href="#">
+              <span class="status-icon" aria-label="Done">&#10003;</span>
+              01 &middot; Proxmox Network Bridges
+            </a>
+          </li>
+          <li class="done">
+            <a href="#">
+              <span class="status-icon" aria-label="Done">&#10003;</span>
+              02 &middot; pfSense VM Build
+            </a>
+          </li>
+          <li class="done">
+            <a href="#">
+              <span class="status-icon" aria-label="Done">&#10003;</span>
+              03 &middot; Ubuntu Template + linux-server
+            </a>
+          </li>
+          <li class="current" aria-current="page">
+            <span>
+              <span class="status-icon" aria-label="Current">&#9654;</span>
+              04 &middot; Windows Server dc01
+            </span>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">05</span>
+              05 &middot; Xubuntu Template + mgmt-vm
+            </a>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">06</span>
+              06 &middot; linux-client VM
+            </a>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">07</span>
+              07 &middot; splunk-vm Build
+            </a>
+          </li>
+          <li class="nav-divider-item">
+            <div class="nav-divider">Integration Plans</div>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">08</span>
+              08 &middot; pfSense Full Configuration
+            </a>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">09</span>
+              09 &middot; Active Directory &amp; DNS
+            </a>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">10</span>
+              10 &middot; Linux Server Hardening
+            </a>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">11</span>
+              11 &middot; Windows Server Hardening
+            </a>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">12</span>
+              12 &middot; Splunk Deployment
+            </a>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">13</span>
+              13 &middot; Linux Log Forwarder
+            </a>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">14</span>
+              14 &middot; Windows Log Forwarder
+            </a>
+          </li>
+          <li class="todo">
+            <a href="#">
+              <span class="status-icon" aria-label="Upcoming">15</span>
+              15 &middot; Backup Strategy
+            </a>
+          </li>
+        </ul>
+
+        <!-- Section nav -->
+        <div class="section-nav-label" aria-label="Page sections">On this page</div>
+        <ul class="section-nav" id="sectionNav" aria-label="Page sections">
+          <li><a href="#s1">1 &middot; VM Specification</a></li>
+          <li><a href="#s2">2 &middot; Download ISOs</a></li>
+          <li><a href="#s3">3 &middot; Create the VM</a></li>
+          <li><a href="#s4">4 &middot; Install Windows</a></li>
+          <li><a href="#s5">5 &middot; VirtIO Drivers</a></li>
+          <li><a href="#s6">6 &middot; Initial Config</a></li>
+          <li><a href="#s7">7 &middot; Windows Update</a></li>
+          <li><a href="#s8">8 &middot; Remote Desktop</a></li>
+          <li><a href="#s9">9 &middot; Snapshot</a></li>
+        </ul>
+
+        <!-- Checklist -->
+        <div class="section-nav-label" style="margin-top:1.4rem;">Completion Checklist</div>
+        <ul class="checklist" id="checklist" aria-label="Build completion checklist">
+          <li id="chk-li-0">
+            <label>
+              <input type="checkbox" id="chk0" aria-describedby="chk0-desc">
+              <span id="chk0-desc">Windows Server 2022 Evaluation ISO downloaded and uploaded</span>
+            </label>
+          </li>
+          <li id="chk-li-1">
+            <label>
+              <input type="checkbox" id="chk1" aria-describedby="chk1-desc">
+              <span id="chk1-desc">VirtIO drivers ISO uploaded to Proxmox</span>
+            </label>
+          </li>
+          <li id="chk-li-2">
+            <label>
+              <input type="checkbox" id="chk2" aria-describedby="chk2-desc">
+              <span id="chk2-desc">VM 1003 (dc01) created with correct specs</span>
+            </label>
+          </li>
+          <li id="chk-li-3">
+            <label>
+              <input type="checkbox" id="chk3" aria-describedby="chk3-desc">
+              <span id="chk3-desc">VirtIO SCSI driver loaded during Windows install</span>
+            </label>
+          </li>
+          <li id="chk-li-4">
+            <label>
+              <input type="checkbox" id="chk4" aria-describedby="chk4-desc">
+              <span id="chk4-desc">Windows Server 2022 (Desktop Experience) installed</span>
+            </label>
+          </li>
+          <li id="chk-li-5">
+            <label>
+              <input type="checkbox" id="chk5" aria-describedby="chk5-desc">
+              <span id="chk5-desc">VirtIO network and guest agent drivers installed</span>
+            </label>
+          </li>
+          <li id="chk-li-6">
+            <label>
+              <input type="checkbox" id="chk6" aria-describedby="chk6-desc">
+              <span id="chk6-desc">Computer renamed to dc01</span>
+            </label>
+          </li>
+          <li id="chk-li-7">
+            <label>
+              <input type="checkbox" id="chk7" aria-describedby="chk7-desc">
+              <span id="chk7-desc">Static IP 10.0.2.11/24 configured</span>
+            </label>
+          </li>
+          <li id="chk-li-8">
+            <label>
+              <input type="checkbox" id="chk8" aria-describedby="chk8-desc">
+              <span id="chk8-desc">Windows updates installed</span>
+            </label>
+          </li>
+          <li id="chk-li-9">
+            <label>
+              <input type="checkbox" id="chk9" aria-describedby="chk9-desc">
+              <span id="chk9-desc">Remote Desktop enabled</span>
+            </label>
+          </li>
+          <li id="chk-li-10">
+            <label>
+              <input type="checkbox" id="chk10" aria-describedby="chk10-desc">
+              <span id="chk10-desc">Proxmox snapshot "pre-AD-baseline" taken</span>
+            </label>
+          </li>
+        </ul>
+
+      </div><!-- /sidebar-inner -->
+    </nav><!-- /sidebar -->
+
+    <!-- ════ MAIN CONTENT ════ -->
+    <main class="main" id="main-content" tabindex="-1">
+      <div class="main-inner">
+
+        <!-- Page header -->
+        <header class="page-header">
+          <div class="build-badge" aria-label="Build 04 of 15">
+            &#9654; Build 04 / 15
+          </div>
+          <h2>Build 04: Windows Server 2022 VM (dc01)</h2>
+          <p class="page-subtitle">
+            Create and install Windows Server 2022 Evaluation &mdash; the future Active Directory Domain Controller
+          </p>
+          <div class="vm-meta" aria-label="VM specifications summary">
+            <span class="vm-meta-item">&#128396; VM ID: 1003</span>
+            <span class="vm-meta-item">&#128260; vCPU: 2</span>
+            <span class="vm-meta-item">&#129667; RAM: 8 GB</span>
+            <span class="vm-meta-item">&#128190; Disk: 80 GB</span>
+            <span class="vm-meta-item">&#127760; IP: 10.0.2.11</span>
+          </div>
+        </header>
+
+        <!-- ── Section 1 ── -->
+        <section class="content-section" id="s1" aria-labelledby="s1-heading">
+          <h3 class="section-heading" id="s1-heading">
+            <span class="section-num" aria-hidden="true">1</span>
+            VM Specification
+          </h3>
+
+          <table class="spec-table" aria-label="dc01 VM specification">
+            <caption class="sr-only">Windows Server dc01 VM configuration settings</caption>
+            <thead>
+              <tr>
+                <th scope="col">Setting</th>
+                <th scope="col">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">VM ID</th><td>1003</td></tr>
+              <tr><th scope="row">Hostname</th><td>dc01</td></tr>
+              <tr><th scope="row">OS</th><td>Windows Server 2022 Standard Evaluation (Desktop Experience)</td></tr>
+              <tr><th scope="row">vCPU</th><td>2 cores</td></tr>
+              <tr><th scope="row">RAM</th><td>8 GB (8192 MB)</td></tr>
+              <tr><th scope="row">Disk</th><td>80 GB</td></tr>
+              <tr><th scope="row">Network</th><td>vmbr2 (Servers) &mdash; 10.0.2.11/24 static</td></tr>
+              <tr><th scope="row">Role (later)</th><td>AD DS Domain Controller for <strong>techstart.local</strong></td></tr>
+            </tbody>
+          </table>
+
+          <div class="alert alert-info" role="note">
+            <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <p>This VM is a build-only install for now. Active Directory Domain Services (AD DS) will be installed and the server promoted to a Domain Controller in <strong>Build 09 &middot; Active Directory &amp; DNS</strong>. Complete this guide first and take your snapshot before moving on.</p>
+          </div>
+        </section>
+
+        <!-- ── Section 2 ── -->
+        <section class="content-section" id="s2" aria-labelledby="s2-heading">
+          <h3 class="section-heading" id="s2-heading">
+            <span class="section-num" aria-hidden="true">2</span>
+            Download Windows Server 2022 Evaluation ISO
+          </h3>
+
+          <p style="margin-bottom:0.75rem;">You need two ISO images uploaded to Proxmox before creating the VM.</p>
+
+          <h4 style="font-size:1rem;font-weight:700;color:#0d1b2a;margin:1rem 0 0.5rem;">ISO 1 &mdash; Windows Server 2022 Evaluation</h4>
+          <ol style="padding-left:1.4rem;font-size:0.9rem;line-height:1.8;margin-bottom:0.75rem;">
+            <li>Navigate to:
+              <a class="download-link" href="https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022" target="_blank" rel="noopener noreferrer" aria-label="Microsoft Evaluation Center for Windows Server 2022 (opens in new tab)">
+                microsoft.com/en-us/evalcenter/evaluate-windows-server-2022
+              </a>
+            </li>
+            <li>Fill in the registration form and select the <strong>ISO</strong> download (approximately 4.7 GB).</li>
+            <li>In Proxmox: <span class="inline-code">Datacenter &rarr; local &rarr; ISO Images &rarr; Upload</span></li>
+          </ol>
+
+          <div class="alert alert-info" role="note">
+            <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <p>The Evaluation edition is valid for <strong>180 days</strong> with no product key required. Students who have access to MSDN or Azure Dev Tools for Teaching may use a licensed product key instead.</p>
+          </div>
+
+          <h4 style="font-size:1rem;font-weight:700;color:#0d1b2a;margin:1rem 0 0.5rem;">ISO 2 &mdash; VirtIO Drivers for Windows</h4>
+          <p style="font-size:0.9rem;margin-bottom:0.5rem;">
+            VirtIO drivers are required so Windows can see the high-performance VirtIO disk and network adapters. Without these drivers, Windows Setup will not find any disk to install to.
+          </p>
+          <ol style="padding-left:1.4rem;font-size:0.9rem;line-height:1.8;margin-bottom:0.75rem;">
+            <li>Reference page:
+              <a class="download-link" href="https://pve.proxmox.com/wiki/Windows_VirtIO_Drivers" target="_blank" rel="noopener noreferrer" aria-label="Proxmox VirtIO Drivers wiki page (opens in new tab)">
+                pve.proxmox.com/wiki/Windows_VirtIO_Drivers
+              </a>
+            </li>
+            <li>Direct ISO download:
+              <a class="download-link" href="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso" target="_blank" rel="noopener noreferrer" aria-label="Direct download for virtio-win.iso (opens in new tab)">
+                fedorapeople.org/.../stable-virtio/virtio-win.iso
+              </a>
+            </li>
+            <li>Upload <span class="inline-code">virtio-win.iso</span> to Proxmox the same way: <span class="inline-code">local &rarr; ISO Images &rarr; Upload</span></li>
+          </ol>
+
+          <div class="alert alert-warning" role="note">
+            <span class="alert-icon" aria-hidden="true">&#9888;&#65039;</span>
+            <p><strong>Do not skip the VirtIO ISO.</strong> Without it, you will not be able to load the SCSI driver during Windows Setup, and the installer will show an empty disk list with nowhere to install Windows.</p>
+          </div>
+        </section>
+
+        <!-- ── Section 3 ── -->
+        <section class="content-section" id="s3" aria-labelledby="s3-heading">
+          <h3 class="section-heading" id="s3-heading">
+            <span class="section-num" aria-hidden="true">3</span>
+            Create the VM in Proxmox
+          </h3>
+
+          <p style="margin-bottom:1rem;font-size:0.9rem;">In the Proxmox web UI, click <strong>Create VM</strong> and work through the wizard using the settings below.</p>
+
+          <ol class="steps" aria-label="VM creation steps">
+            <li>
+              <div class="step-num" aria-label="Step 1">1</div>
+              <div class="step-body">
+                <strong>General</strong>
+                <p>VM ID: <span class="inline-code">1003</span> &nbsp;&middot;&nbsp; Name: <span class="inline-code">dc01</span></p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 2">2</div>
+              <div class="step-body">
+                <strong>OS</strong>
+                <ul>
+                  <li>ISO Image: select the Windows Server 2022 ISO you uploaded</li>
+                  <li>Guest OS Type: <span class="inline-code">Microsoft Windows</span></li>
+                  <li>Version: <span class="inline-code">11/2022</span></li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 3">3</div>
+              <div class="step-body">
+                <strong>System</strong>
+                <ul>
+                  <li>Machine: <span class="inline-code">q35</span></li>
+                  <li>BIOS: <span class="inline-code">OVMF (UEFI)</span></li>
+                  <li>Add EFI Disk: <strong>Yes</strong> (auto-added by Proxmox)</li>
+                  <li>Add TPM: optional &mdash; not required for the Server 2022 Evaluation</li>
+                  <li>SCSI Controller: <span class="inline-code">VirtIO SCSI Single</span></li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 4">4</div>
+              <div class="step-body">
+                <strong>Disks</strong>
+                <ul>
+                  <li>Bus/Device: <span class="inline-code">SCSI</span></li>
+                  <li>Disk size: <span class="inline-code">80 GB</span></li>
+                  <li>Cache: <span class="inline-code">Write back</span></li>
+                  <li>Discard: <strong>enabled</strong> (if your storage supports thin provisioning)</li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 5">5</div>
+              <div class="step-body">
+                <strong>CPU</strong>
+                <p>Sockets: <span class="inline-code">1</span> &nbsp;&middot;&nbsp; Cores: <span class="inline-code">2</span> &nbsp;&middot;&nbsp; Type: <span class="inline-code">host</span></p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 6">6</div>
+              <div class="step-body">
+                <strong>Memory</strong>
+                <p><span class="inline-code">8192 MB</span> (8 GB)</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 7">7</div>
+              <div class="step-body">
+                <strong>Network</strong>
+                <p>Bridge: <span class="inline-code">vmbr2</span> &nbsp;&middot;&nbsp; Model: <span class="inline-code">VirtIO (paravirt)</span></p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 8">8</div>
+              <div class="step-body">
+                <strong>Confirm &amp; Finish</strong>
+                <p>Review the summary. <strong>Uncheck "Start after created"</strong> before clicking Finish &mdash; you need to attach the VirtIO ISO first.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 9">9</div>
+              <div class="step-body">
+                <strong>Add VirtIO ISO as a second CD/DVD drive</strong>
+                <ul>
+                  <li>Select VM 1003 in the left panel &rarr; <strong>Hardware</strong> tab &rarr; <strong>Add &rarr; CD/DVD Drive</strong></li>
+                  <li>Choose <span class="inline-code">virtio-win.iso</span> from local ISO storage</li>
+                  <li>Click Add &mdash; you should now see two CD drives listed</li>
+                </ul>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <!-- ── Section 4 ── -->
+        <section class="content-section" id="s4" aria-labelledby="s4-heading">
+          <h3 class="section-heading" id="s4-heading">
+            <span class="section-num" aria-hidden="true">4</span>
+            Install Windows Server 2022
+          </h3>
+
+          <ol class="steps" aria-label="Windows installation steps">
+            <li>
+              <div class="step-num" aria-label="Step 1">1</div>
+              <div class="step-body">
+                <strong>Start VM 1003 and open the console</strong>
+                <p>Click <strong>Start</strong> in the Proxmox toolbar, then click <strong>Console &rarr; noVNC</strong> to open the graphical console in your browser.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 2">2</div>
+              <div class="step-body">
+                <strong>Boot from CD</strong>
+                <p>When the console shows "Press any key to boot from CD or DVD…" press a key <strong>immediately</strong>. You have only a couple of seconds before it times out.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 3">3</div>
+              <div class="step-body">
+                <strong>Windows Setup &mdash; Language selection</strong>
+                <p>Language: <span class="inline-code">English (United States)</span>. Leave Time/Currency and Keyboard at defaults. Click <strong>Next</strong>.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 4">4</div>
+              <div class="step-body">
+                <strong>Click "Install now"</strong>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 5">5</div>
+              <div class="step-body">
+                <strong>Product key</strong>
+                <p>Click <strong>"I don't have a product key"</strong> to proceed with the 180-day Evaluation. If you have an MSDN key, enter it here instead.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 6">6</div>
+              <div class="step-body">
+                <strong>Select OS edition</strong>
+                <p>Choose: <strong>Windows Server 2022 Standard Evaluation (Desktop Experience)</strong></p>
+                <div class="alert alert-warning" role="note" style="margin-top:0.5rem;">
+                  <span class="alert-icon" aria-hidden="true">&#9888;&#65039;</span>
+                  <p>Do <strong>not</strong> select the "Server Core" option. You need the <strong>Desktop Experience</strong> (full GUI) version. Server Core has no graphical interface and is much harder to work with for this lab.</p>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 7">7</div>
+              <div class="step-body">
+                <strong>Accept license terms</strong>
+                <p>Check "I accept the Microsoft Software License Terms" and click <strong>Next</strong>.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 8">8</div>
+              <div class="step-body">
+                <strong>Installation type: Custom (advanced)</strong>
+                <p>Select <strong>"Custom: Install Windows only (advanced)"</strong> &mdash; not the Upgrade option.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 9">9</div>
+              <div class="step-body">
+                <strong>Load the VirtIO SCSI driver</strong>
+                <p>The disk list will be empty because Windows does not include VirtIO drivers. Load the driver now:</p>
+                <ul>
+                  <li>Click <strong>Load driver</strong></li>
+                  <li>Click <strong>Browse</strong>, then navigate to:<br>
+                    <span class="inline-code">CD Drive (virtio-win) &rarr; vioscsi &rarr; 2k22 &rarr; amd64</span>
+                  </li>
+                  <li>Click <strong>OK</strong></li>
+                  <li>Select <strong>"Red Hat VirtIO SCSI pass-through controller"</strong> &rarr; click <strong>Next</strong></li>
+                  <li>The 80 GB virtual disk now appears &mdash; select it &rarr; click <strong>Next</strong></li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 10">10</div>
+              <div class="step-body">
+                <strong>Installation runs automatically</strong>
+                <p>Windows copies files and expands the installation. This takes approximately <strong>15&ndash;20 minutes</strong>. The VM will reboot automatically one or more times. Watch the console and do not interrupt the process.</p>
+              </div>
+            </li>
+            <li>
+              <div class="step-num" aria-label="Step 11">11</div>
+              <div class="step-body">
+                <strong>Set the Administrator password</strong>
+                <p>After the final reboot, Windows prompts you to set the built-in Administrator password. Choose a <strong>strong password of at least 14 characters</strong> (uppercase, lowercase, numbers, symbol). Record it in your lab notebook.</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <!-- ── Section 5 ── -->
+        <section class="content-section" id="s5" aria-labelledby="s5-heading">
+          <h3 class="section-heading" id="s5-heading">
+            <span class="section-num" aria-hidden="true">5</span>
+            Install VirtIO Network Driver &amp; Guest Agent
+          </h3>
+
+          <p style="margin-bottom:1rem;font-size:0.9rem;">
+            After Windows boots to the desktop, the VM has no working network adapter because the VirtIO network driver is also missing. Install it now.
+          </p>
+
+          <h4 style="font-size:0.95rem;font-weight:700;color:#0d1b2a;margin:0 0 0.6rem;">Network Driver (NetKVM)</h4>
+          <ol style="padding-left:1.4rem;font-size:0.88rem;line-height:1.8;margin-bottom:1rem;">
+            <li>Right-click the Start button &rarr; select <strong>Device Manager</strong></li>
+            <li>Find <strong>Ethernet Controller</strong> with a yellow warning triangle</li>
+            <li>Right-click it &rarr; <strong>Update driver</strong></li>
+            <li>Choose <strong>"Browse my computer for drivers"</strong></li>
+            <li>Browse to: <span class="inline-code">CD Drive (virtio-win) &rarr; NetKVM &rarr; 2k22 &rarr; amd64</span></li>
+            <li>Click <strong>OK</strong> &rarr; Windows installs the driver</li>
+            <li>The adapter will appear as <strong>"Red Hat VirtIO Ethernet Adapter"</strong></li>
+          </ol>
+
+          <h4 style="font-size:0.95rem;font-weight:700;color:#0d1b2a;margin:0 0 0.6rem;">VirtIO Guest Agent (Proxmox integration)</h4>
+          <ol style="padding-left:1.4rem;font-size:0.88rem;line-height:1.8;margin-bottom:0.75rem;">
+            <li>Open <strong>File Explorer</strong> and navigate to the CD Drive containing <span class="inline-code">virtio-win</span></li>
+            <li>Run <span class="inline-code">virtio-win-guest-tools.exe</span></li>
+            <li>Accept defaults and install all components</li>
+            <li>Reboot if prompted</li>
+          </ol>
+
+          <div class="alert alert-info" role="note">
+            <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <p>The guest agent enables Proxmox to display the VM's IP address in the Summary tab, allows clean shutdowns from the Proxmox UI, and supports file system freeze/thaw for consistent snapshots. Always install it.</p>
+          </div>
+        </section>
+
+        <!-- ── Section 6 ── -->
+        <section class="content-section" id="s6" aria-labelledby="s6-heading">
+          <h3 class="section-heading" id="s6-heading">
+            <span class="section-num" aria-hidden="true">6</span>
+            Initial Windows Configuration
+          </h3>
+
+          <p style="margin-bottom:0.75rem;font-size:0.9rem;">
+            Open <strong>PowerShell as Administrator</strong> (right-click Start &rarr; Windows PowerShell (Admin) or Terminal (Admin)).
+          </p>
+
+          <h4 style="font-size:0.95rem;font-weight:700;color:#0d1b2a;margin:0 0 0.4rem;">Step 1 &mdash; Rename the computer</h4>
+
+          <div class="code-block" aria-label="PowerShell: rename computer">
+            <div class="code-block-header">
+              <span class="code-lang">PowerShell</span>
+              <button class="copy-btn" aria-label="Copy rename computer command" data-target="code-rename">Copy</button>
+            </div>
+            <pre id="code-rename"><code># Set computer name
+Rename-Computer -NewName "dc01" -Restart</code></pre>
+          </div>
+
+          <p style="font-size:0.88rem;margin:0.75rem 0;">The VM will reboot. Log back in as <span class="inline-code">Administrator</span>, then open PowerShell as Administrator again.</p>
+
+          <h4 style="font-size:0.95rem;font-weight:700;color:#0d1b2a;margin:0 0 0.4rem;">Step 2 &mdash; Configure static IP and DNS</h4>
+
+          <div class="code-block" aria-label="PowerShell: configure static IP and DNS">
+            <div class="code-block-header">
+              <span class="code-lang">PowerShell</span>
+              <button class="copy-btn" aria-label="Copy static IP configuration commands" data-target="code-ip">Copy</button>
+            </div>
+            <pre id="code-ip"><code># Set static IP address
+New-NetIPAddress -InterfaceAlias "Ethernet" `
+  -IPAddress 10.0.2.11 `
+  -PrefixLength 24 `
+  -DefaultGateway 10.0.2.1
+
+# Set DNS (point to itself for now; updated after AD DS promotion)
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet" `
+  -ServerAddresses 127.0.0.1, 8.8.8.8
+
+# Verify the configuration
+Get-NetIPAddress -InterfaceAlias "Ethernet"
+ipconfig /all</code></pre>
+          </div>
+
+          <div class="alert alert-info" role="note">
+            <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <p>If your adapter is not named "Ethernet", run <span class="inline-code">Get-NetAdapter</span> first to find the correct alias. Substitute the name you see in the <span class="inline-code">-InterfaceAlias</span> parameter above.</p>
+          </div>
+        </section>
+
+        <!-- ── Section 7 ── -->
+        <section class="content-section" id="s7" aria-labelledby="s7-heading">
+          <h3 class="section-heading" id="s7-heading">
+            <span class="section-num" aria-hidden="true">7</span>
+            Windows Update and Baseline
+          </h3>
+
+          <div class="alert alert-warning" role="note" style="margin-bottom:1rem;">
+            <span class="alert-icon" aria-hidden="true">&#9888;&#65039;</span>
+            <p><strong>Allow Windows to install all available updates before proceeding.</strong> This can take <strong>30&ndash;60 minutes</strong> and may require multiple reboots. Building on a fully updated baseline avoids issues later in the lab &mdash; especially during AD DS promotion and domain joins.</p>
+          </div>
+
+          <p style="margin-bottom:0.5rem;font-size:0.9rem;"><strong>Option A &mdash; GUI (recommended for most students):</strong></p>
+          <p style="margin-bottom:1rem;font-size:0.88rem;">Start &rarr; Settings &rarr; Windows Update &rarr; Check for updates. Install all available updates, reboot when prompted, and repeat until no updates remain.</p>
+
+          <p style="margin-bottom:0.5rem;font-size:0.9rem;"><strong>Option B &mdash; PowerShell (PSWindowsUpdate module):</strong></p>
+
+          <div class="code-block" aria-label="PowerShell: install Windows updates via PSWindowsUpdate module">
+            <div class="code-block-header">
+              <span class="code-lang">PowerShell</span>
+              <button class="copy-btn" aria-label="Copy Windows Update PowerShell commands" data-target="code-update">Copy</button>
+            </div>
+            <pre id="code-update"><code># Install the PSWindowsUpdate module (requires internet access)
+Install-Module PSWindowsUpdate -Force
+
+# Import and run updates
+Import-Module PSWindowsUpdate
+Get-WindowsUpdate
+Install-WindowsUpdate -AcceptAll -AutoReboot</code></pre>
+          </div>
+
+          <div class="alert alert-info" role="note">
+            <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <p>The <span class="inline-code">-AutoReboot</span> flag will reboot the VM without warning when updates are ready. Save any open work first. After reboots, re-run <span class="inline-code">Install-WindowsUpdate -AcceptAll -AutoReboot</span> until no further updates are found.</p>
+          </div>
+        </section>
+
+        <!-- ── Section 8 ── -->
+        <section class="content-section" id="s8" aria-labelledby="s8-heading">
+          <h3 class="section-heading" id="s8-heading">
+            <span class="section-num" aria-hidden="true">8</span>
+            Enable Remote Desktop
+          </h3>
+
+          <p style="margin-bottom:0.75rem;font-size:0.9rem;">
+            Enabling RDP lets you connect to dc01 from the management VM (mgmt-vm) without going through the Proxmox noVNC console every time &mdash; much more comfortable for longer sessions.
+          </p>
+
+          <div class="code-block" aria-label="PowerShell: enable Remote Desktop">
+            <div class="code-block-header">
+              <span class="code-lang">PowerShell</span>
+              <button class="copy-btn" aria-label="Copy Remote Desktop enable commands" data-target="code-rdp">Copy</button>
+            </div>
+            <pre id="code-rdp"><code># Enable RDP connections
+Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
+  -Name "fDenyTSConnections" -Value 0
+
+# Open the Windows Firewall rule for Remote Desktop
+Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+# Verify the setting (should return 0 = connections allowed)
+Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
+  -Name "fDenyTSConnections"</code></pre>
+          </div>
+
+          <div class="alert alert-info" role="note">
+            <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <p>You can now connect with any RDP client using <strong>10.0.2.11</strong> and the Administrator credentials. For lab use this is acceptable; in production you would restrict RDP access further and disable it on Domain Controllers. That hardening is covered in <strong>Build 11 &middot; Windows Server Hardening</strong>.</p>
+          </div>
+        </section>
+
+        <!-- ── Section 9 ── -->
+        <section class="content-section" id="s9" aria-labelledby="s9-heading">
+          <h3 class="section-heading" id="s9-heading">
+            <span class="section-num" aria-hidden="true">9</span>
+            Take a Snapshot Before AD Promotion
+          </h3>
+
+          <p style="margin-bottom:0.75rem;font-size:0.9rem;">
+            Before making any role-specific changes (like installing Active Directory Domain Services), capture a clean snapshot of the fully updated, configured baseline.
+          </p>
+
+          <ol style="padding-left:1.4rem;font-size:0.88rem;line-height:1.9;margin-bottom:0.75rem;">
+            <li>In the Proxmox web UI, select <strong>VM 1003 (dc01)</strong> in the left panel</li>
+            <li>Click the <strong>Snapshots</strong> tab</li>
+            <li>Click <strong>Take Snapshot</strong></li>
+            <li>Name: <span class="inline-code">pre-AD-baseline</span></li>
+            <li>Description: <em>Windows Server 2022 base install, before AD DS &mdash; fully updated, RDP enabled, static IP set</em></li>
+            <li>Click <strong>Take Snapshot</strong> &mdash; this completes in a few seconds</li>
+          </ol>
+
+          <div class="alert alert-info" role="note">
+            <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <p><strong>This snapshot is your safety net.</strong> If the AD DS promotion in Build 09 goes wrong (misconfigured domain name, network issue, etc.), you can roll back to this clean baseline instantly with a single click. Snapshots are fast on Proxmox &mdash; always take one before major configuration changes. Disk space cost is minimal unless you make large data changes after the snapshot.</p>
+          </div>
+
+          <div class="alert alert-info" role="note" style="margin-top:0.75rem;">
+            <span class="alert-icon" aria-hidden="true">&#127381;</span>
+            <p><strong>Build 04 complete!</strong> VM 1003 (dc01) is now a clean, updated Windows Server 2022 base install at 10.0.2.11, ready for later promotion to a Domain Controller. Continue with <strong>Build 05 &middot; Xubuntu Template + mgmt-vm</strong> to build the management workstation.</p>
+          </div>
+        </section>
+
+      </div><!-- /main-inner -->
+    </main><!-- /main -->
+
+  </div><!-- /layout -->
+
+  <!-- SR-only utility class -->
+  <style>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}</style>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── Mobile hamburger ── */
+      var hamburger = document.getElementById('hamburgerBtn');
+      var sidebar   = document.getElementById('sidebar');
+      var overlay   = document.getElementById('sidebarOverlay');
+
+      function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('open');
+        overlay.removeAttribute('aria-hidden');
+        hamburger.setAttribute('aria-expanded', 'true');
+      }
+
+      function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+        hamburger.setAttribute('aria-expanded', 'false');
+      }
+
+      hamburger.addEventListener('click', function () {
+        if (sidebar.classList.contains('open')) {
+          closeSidebar();
+        } else {
+          openSidebar();
+        }
+      });
+
+      overlay.addEventListener('click', closeSidebar);
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+          closeSidebar();
+          hamburger.focus();
+        }
+      });
+
+      /* ── Checklist progress bar ── */
+      var checkboxes   = document.querySelectorAll('#checklist input[type="checkbox"]');
+      var progressFill = document.getElementById('progressFill');
+      var progressText = document.getElementById('progressText');
+      var progressBar  = document.getElementById('progressBar');
+      var total        = checkboxes.length;
+
+      function updateProgress() {
+        var done = 0;
+        checkboxes.forEach(function (cb, i) {
+          var li = document.getElementById('chk-li-' + i);
+          if (cb.checked) {
+            done++;
+            if (li) li.classList.add('checked');
+          } else {
+            if (li) li.classList.remove('checked');
+          }
+        });
+        var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        progressFill.style.width = pct + '%';
+        progressText.textContent = done + ' / ' + total;
+        progressBar.setAttribute('aria-valuenow', pct);
+      }
+
+      checkboxes.forEach(function (cb) {
+        cb.addEventListener('change', updateProgress);
+      });
+
+      updateProgress();
+
+      /* ── Active section highlight in sidebar nav ── */
+      var sectionLinks = document.querySelectorAll('#sectionNav a');
+      var sections     = [];
+
+      sectionLinks.forEach(function (link) {
+        var id = link.getAttribute('href').replace('#', '');
+        var el = document.getElementById(id);
+        if (el) sections.push({ link: link, el: el });
+      });
+
+      function onScroll() {
+        var scrollY    = window.scrollY || window.pageYOffset;
+        var winHeight  = window.innerHeight;
+        var active     = null;
+
+        sections.forEach(function (s) {
+          var top = s.el.getBoundingClientRect().top + scrollY;
+          if (scrollY + winHeight * 0.35 >= top) {
+            active = s;
+          }
+        });
+
+        sectionLinks.forEach(function (link) {
+          link.classList.remove('active');
+          link.removeAttribute('aria-current');
+        });
+
+        if (active) {
+          active.link.classList.add('active');
+          active.link.setAttribute('aria-current', 'true');
+        }
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      /* ── Copy buttons ── */
+      document.querySelectorAll('.copy-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var targetId = btn.getAttribute('data-target');
+          var pre      = document.getElementById(targetId);
+          if (!pre) return;
+          var text = pre.textContent || pre.innerText;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+              showCopied(btn);
+            }).catch(function () {
+              fallbackCopy(text, btn);
+            });
+          } else {
+            fallbackCopy(text, btn);
+          }
+        });
+      });
+
+      function showCopied(btn) {
+        var orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        btn.setAttribute('aria-label', btn.getAttribute('aria-label').replace('Copy', 'Copied'));
+        setTimeout(function () {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      }
+
+      function fallbackCopy(text, btn) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity  = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showCopied(btn);
+        } catch (e) {}
+        document.body.removeChild(ta);
+      }
+
+      /* ── Close sidebar on section link click (mobile) ── */
+      sectionLinks.forEach(function (link) {
+        link.addEventListener('click', function () {
+          if (window.innerWidth <= 768) {
+            closeSidebar();
+          }
+        });
+      });
+
+    }());
+  </script>
+
+</body>
+</html>
