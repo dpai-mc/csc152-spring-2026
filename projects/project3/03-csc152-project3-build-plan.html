@@ -547,6 +547,10 @@
         <input type="checkbox" id="chk3" aria-label="machine-id, SSH host keys, and bash history cleared">
         <label for="chk3">machine-id, SSH keys, and history cleared</label>
       </li>
+      <li id="chk-item-3b">
+        <input type="checkbox" id="chk3b" aria-label="NIC switched from vmbr0 to vmbr2 in Proxmox Hardware before templating">
+        <label for="chk3b">NIC switched vmbr0 &rarr; vmbr2 (before converting to template)</label>
+      </li>
       <li id="chk-item-4">
         <input type="checkbox" id="chk4" aria-label="VM 9001 converted to template in Proxmox">
         <label for="chk4">VM 9001 converted to template in Proxmox</label>
@@ -667,9 +671,18 @@ wget https://releases.ubuntu.com/22.04/ubuntu-22.04.4-live-server-amd64.iso</cod
             <li><strong>Disks:</strong> Bus: <em>VirtIO Block</em> &mdash; Storage: <em>local-lvm</em> &mdash; Size: <em>20 GB</em> &mdash; enable <em>Discard</em></li>
             <li><strong>CPU:</strong> Sockets: <em>1</em> &mdash; Cores: <em>2</em> &mdash; Type: <em>host</em></li>
             <li><strong>Memory:</strong> <em>2048 MB</em></li>
-            <li><strong>Network:</strong> Bridge: <em>vmbr2</em> (Servers network) &mdash; Model: <em>VirtIO</em> &mdash; uncheck <em>Firewall</em></li>
+            <li><strong>Network:</strong> Bridge: <em>vmbr0</em> (WAN &mdash; <strong>temporary for internet access</strong>) &mdash; Model: <em>VirtIO</em> &mdash; uncheck <em>Firewall</em></li>
             <li><strong>Confirm:</strong> <em>Uncheck</em> &ldquo;Start after created&rdquo; &mdash; then click <strong>Finish</strong></li>
           </ul>
+        </div>
+
+        <div class="alert alert-warn" role="note" style="margin:0 0 1rem 0;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Why vmbr0 instead of vmbr2?</strong>
+            At this point in the build sequence, pfSense has been installed but <em>not yet configured</em> (that happens in Integration Plan 08). vmbr2 (Servers network) has no gateway, no DHCP server, and no internet access yet. If we attach the template VM to vmbr2 now, the Ubuntu installer cannot reach a package mirror, and post-install commands like <code>apt update</code> and <code>apt install qemu-guest-agent</code> will fail.<br><br>
+            The solution: build the template on <strong>vmbr0</strong>, which connects to your home router (192.168.50.1) and has full internet access. After all post-install preparation is complete and before converting to a template, we switch the NIC to vmbr2. Every clone then inherits the correct Servers network.
+          </div>
         </div>
 
         <div class="step">
@@ -706,8 +719,8 @@ wget https://releases.ubuntu.com/22.04/ubuntu-22.04.4-live-server-amd64.iso</cod
         </li>
         <li><strong>Keyboard configuration</strong> &rarr; English (US) / English (US)</li>
         <li>
-          <strong>Network configuration</strong> &rarr; Leave as DHCP for now.<br>
-          <span style="font-size:0.88rem;color:#6c757d;">(Static IP is configured after cloning, in Section 8.)</span>
+          <strong>Network configuration</strong> &rarr; Leave as DHCP. Your home router (192.168.50.1) will assign an address automatically because the VM is on vmbr0.<br>
+          <span style="font-size:0.88rem;color:#6c757d;">(The static IP on vmbr2 is configured after cloning, in Section 8. The DHCP address here is only needed during template preparation.)</span>
         </li>
         <li><strong>Proxy</strong> &rarr; Leave blank, press Enter.</li>
         <li>
@@ -791,6 +804,54 @@ sudo poweroff</code></pre>
     </div>
   </section>
 
+  <!-- SECTION 5b — NIC SWITCH -->
+  <section class="content-section" id="sec5b" aria-labelledby="sec5b-heading">
+    <div class="section-heading">
+      <div class="section-num" aria-hidden="true">5b</div>
+      <h3 id="sec5b-heading">Switch NIC from vmbr0 to vmbr2 (Before Templating)</h3>
+    </div>
+    <div class="section-body">
+      <p>
+        VM 9001 is now powered off. Before converting it to a template, switch its network bridge from
+        <strong>vmbr0</strong> (temporary WAN used for internet access during setup) to <strong>vmbr2</strong>
+        (Servers network). Every clone — linux-server and splunk-vm — will then automatically inherit the correct bridge.
+      </p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-title">Step 1 &mdash; Open VM 9001 Hardware settings</div>
+          <p>In the Proxmox web UI, select <strong>VM 9001</strong> in the left panel, then click <strong>Hardware</strong>.</p>
+        </div>
+
+        <div class="step">
+          <div class="step-title">Step 2 &mdash; Edit the Network Device</div>
+          <ol class="step-list">
+            <li>Double-click the <strong>Network Device (net0)</strong> entry in the hardware list.</li>
+            <li>In the <em>Bridge</em> dropdown, change <strong>vmbr0</strong> &rarr; <strong>vmbr2</strong>.</li>
+            <li>Leave all other settings (Model: VirtIO, Firewall: unchecked) unchanged.</li>
+            <li>Click <strong>OK</strong>.</li>
+          </ol>
+        </div>
+
+        <div class="step">
+          <div class="step-title">Step 3 &mdash; Verify the change</div>
+          <p>The Hardware list should now show:</p>
+          <div class="code-label">Proxmox Hardware tab &mdash; expected entry</div>
+          <pre><code>Network Device (net0)    virtio=XX:XX:XX:XX:XX:XX,bridge=vmbr2</code></pre>
+          <p>Confirm <strong>vmbr2</strong> appears before proceeding to Section 6.</p>
+        </div>
+      </div>
+
+      <div class="alert alert-warn" role="note">
+        <span class="alert-icon" aria-hidden="true">&#9888;</span>
+        <div>
+          <strong>Do not start VM 9001 again after this switch.</strong>
+          On vmbr2 there is no gateway yet (pfSense OPT1 is configured in Integration Plan 08), so the VM would have no network. There is no need to boot it — go directly to Section 6 and convert to template.
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- SECTION 6 -->
   <section class="content-section" id="sec6" aria-labelledby="sec6-heading">
     <div class="section-heading">
@@ -799,7 +860,7 @@ sudo poweroff</code></pre>
     </div>
     <div class="section-body">
       <p>
-        Once VM 9001 is fully powered off (confirm <em>Status: stopped</em> in Proxmox), convert it to a template:
+        VM 9001 is powered off and its NIC is now set to vmbr2. Convert it to a template:
       </p>
       <ol class="step-list">
         <li>In the Proxmox left panel, <strong>right-click</strong> on VM 9001.</li>
