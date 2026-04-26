@@ -777,6 +777,9 @@
       <a href="#firewall">Firewall Rules</a>
       <a href="#nat">NAT / Outbound</a>
       <a href="#verify">Connectivity Verification</a>
+      <a href="#dc01-updates">dc01 — Windows Update</a>
+      <a href="#dc01-snapshot">dc01 — Pre-AD Snapshot</a>
+      <a href="#splunk-update">splunk-vm — System Update</a>
     </div>
 
     <!-- Checklist -->
@@ -834,6 +837,18 @@
       <label class="check-item" id="ck-label-12">
         <input type="checkbox" id="ck12" aria-label="linux-client receives DHCP address in 10.0.3.x range" />
         <span>linux-client receives DHCP address (10.0.3.x)</span>
+      </label>
+      <label class="check-item" id="ck-label-13">
+        <input type="checkbox" id="ck13" aria-label="dc01 Windows updates installed" />
+        <span>dc01 Windows updates installed</span>
+      </label>
+      <label class="check-item" id="ck-label-14">
+        <input type="checkbox" id="ck14" aria-label="Proxmox snapshot pre-AD-baseline taken for dc01" />
+        <span>Proxmox snapshot "pre-AD-baseline" taken</span>
+      </label>
+      <label class="check-item" id="ck-label-15">
+        <input type="checkbox" id="ck15" aria-label="splunk-vm system packages updated" />
+        <span>splunk-vm system packages updated</span>
       </label>
     </div>
 
@@ -917,12 +932,87 @@
           </div>
         </div>
 
-        <h3>Access the pfSense Web UI</h3>
+        <h3>Step 1 &mdash; Set LAN IP via pfSense Console</h3>
+
+        <div class="alert alert-warning" role="note" style="margin: 0 0 14px; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Do this before starting mgmt-vm.</strong> After Build 02, pfSense LAN
+            defaults to <code>192.168.1.1/24</code>. mgmt-vm has a static IP of
+            <code>10.0.1.10</code>, so it cannot reach pfSense until you first change the
+            LAN address to <code>10.0.1.1/24</code> from the pfSense VM console.
+          </div>
+        </div>
+
+        <ol class="steps-list" aria-label="Steps to change LAN IP from pfSense console">
+          <li>
+            <div>
+              In Proxmox, open the console for <strong>VM 1001 (pfsense)</strong>.
+              You should see the pfSense main menu.
+            </div>
+          </li>
+          <li>
+            <div>
+              Enter <strong>2</strong> and press <kbd>Enter</kbd> to select
+              <em>Set interface(s) IP address</em>.
+            </div>
+          </li>
+          <li>
+            <div>
+              When asked which interface to configure, enter the number corresponding to
+              <strong>LAN (vtnet1)</strong> and press <kbd>Enter</kbd>.
+            </div>
+          </li>
+          <li>
+            <div>
+              Respond to the prompts as shown below:
+              <span class="sub-note">Press Enter (no input) wherever indicated.</span>
+            </div>
+          </li>
+        </ol>
+
+        <div class="code-block" role="region" aria-label="pfSense console session to set LAN IP">
+          <div class="code-block-label">pfSense Console &mdash; Set LAN IP</div>
+          <pre><code><span class="c">Select the interface to configure (enter the number for LAN / vtnet1):</span>
+&gt; <strong>2</strong>
+
+<span class="c">Configure IPv4 address LAN interface via DHCP? (y/n)</span>
+&gt; <strong>n</strong>
+
+<span class="c">Enter the new LAN IPv4 address. Press &lt;ENTER&gt; for none:</span>
+&gt; <strong>10.0.1.1</strong>
+
+<span class="c">Enter the new LAN IPv4 subnet bit count (1 to 30):</span>
+&gt; <strong>24</strong>
+
+<span class="c">For a LAN, press &lt;ENTER&gt; for none (no upstream gateway on LAN):</span>
+&gt; <strong>[press Enter]</strong>
+
+<span class="c">Do you want to enable the DHCP server on LAN? (y/n)</span>
+&gt; <strong>n</strong>
+
+<span class="c">Do you want to revert to HTTP as the webConfigurator protocol? (y/n)</span>
+&gt; <strong>n</strong></code></pre>
+        </div>
+
+        <p>
+          pfSense confirms the new address and returns to the main menu. The console display
+          will now show <strong>LAN (vtnet1) &rarr; 10.0.1.1/24</strong>.
+        </p>
+
+        <h3>Step 2 &mdash; Access the pfSense Web UI</h3>
         <ol class="steps-list" aria-label="Steps to access pfSense web UI">
           <li>
             <div>
               <strong>Start mgmt-vm</strong> (VM 1004) in Proxmox if it is not already running.
               Open its console or log in from the Proxmox noVNC session.
+              <span class="sub-note">
+                <strong>Tip — adjust display resolution first:</strong> The default console
+                resolution is often too small to comfortably navigate the pfSense web UI.
+                Before opening Firefox, go to <strong>All Applications &rarr; Display</strong>
+                and set a larger resolution (e.g., 1280&times;800 or higher). This makes
+                working in the pfSense interface significantly easier.
+              </span>
             </div>
           </li>
           <li>
@@ -940,7 +1030,7 @@
           </li>
         </ol>
 
-        <h3>Setup Wizard Steps</h3>
+        <h3>Step 3 &mdash; Complete the Setup Wizard</h3>
         <p>Walk through the pfSense Setup Wizard using these values:</p>
 
         <div class="config-block" aria-label="Setup wizard configuration">
@@ -1091,6 +1181,32 @@
           IP addresses automatically. We configure pfSense as the DHCP server for this subnet.
         </p>
 
+        <h3>Switch DHCP Backend to Kea (Required First)</h3>
+
+        <div class="alert alert-warning" role="note" style="margin: 0 0 14px; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>ISC DHCP is deprecated.</strong> pfSense still defaults to ISC DHCP, but it
+            is end-of-life and known to cause issues. Switch to <strong>Kea DHCP</strong> before
+            configuring the DHCP server.
+          </div>
+        </div>
+
+        <div class="ui-path" aria-label="pfSense navigation path">
+          <strong>System</strong> <span class="arrow">&#8594;</span>
+          <strong>Advanced</strong> <span class="arrow">&#8594;</span>
+          <strong>Networking</strong>
+        </div>
+
+        <ul class="prose-list">
+          <li>Scroll down to the <strong>DHCP Backend</strong> section</li>
+          <li>Change the setting from <code>ISC DHCP</code> to <strong>Kea DHCP</strong></li>
+          <li>Click <strong>Save</strong> at the bottom of the page</li>
+          <li>pfSense will apply the change — the DHCP service restarts automatically</li>
+        </ul>
+
+        <h3>Configure the DHCP Server</h3>
+
         <div class="ui-path" aria-label="pfSense navigation path">
           <strong>Services</strong> <span class="arrow">&#8594;</span>
           <strong>DHCP Server</strong> <span class="arrow">&#8594;</span>
@@ -1227,8 +1343,27 @@
         <ul class="prose-list">
           <li>Click <strong>Save</strong> after adding all four overrides</li>
           <li>Click <strong>Apply Changes</strong> in the top banner</li>
-          <li>Test from mgmt-vm: <code>nslookup dc01.techstart.local 10.0.1.1</code></li>
+          <li>Test from mgmt-vm terminal: <code>nslookup dc01.techstart.local 10.0.1.1</code></li>
         </ul>
+
+        <div class="code-block" role="region" aria-label="Expected nslookup output for DNS resolver test">
+          <div class="code-block-label">Expected Output &mdash; mgmt-vm terminal</div>
+          <pre><code>$ nslookup dc01.techstart.local 10.0.1.1
+Server:         10.0.1.1
+Address:        10.0.1.1#53
+
+Name:   dc01.techstart.local
+Address: 10.0.2.11</code></pre>
+        </div>
+
+        <div class="note-box">
+          <strong>Key things to verify:</strong>
+          <ul style="margin: 6px 0 0 16px; font-size: 0.85rem; line-height: 1.7;">
+            <li><strong>Server: 10.0.1.1</strong> — confirms the query reached pfSense's DNS resolver</li>
+            <li><strong>Address: 10.0.2.11</strong> — confirms the host override for dc01 is active</li>
+            <li>If you see <code>NXDOMAIN</code> or no address returned, click <strong>Apply Changes</strong> again in the DNS Resolver page and retry</li>
+          </ul>
+        </div>
       </section>
 
       <!-- ── Section 6: Firewall Rules ── -->
@@ -1248,6 +1383,21 @@
             more specific rules (e.g., block a single IP) <em>above</em> broader rules
             (e.g., allow a whole subnet). A block rule below a matching allow rule will
             never be reached.
+            <ul style="margin: 10px 0 0 18px; line-height: 1.8;">
+              <li>
+                <strong>Add to Top / Add to Bottom:</strong> When adding a new rule, pfSense
+                offers two save buttons — <strong>Save</strong> places the rule at the bottom
+                of the list, while <strong>Add to Top</strong> places it above all existing
+                rules. Use these to get rules into approximately the right position without
+                manual reordering.
+              </li>
+              <li>
+                <strong>Drag-and-drop reordering:</strong> Once rules are created, you can
+                drag them into the correct order using the handle icon on the left side of
+                each row. After reordering, click <strong>Save</strong> and then
+                <strong>Apply Changes</strong> to commit the new order.
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -1260,7 +1410,8 @@
         </div>
         <p>
           The Management network is where the administrator works. It needs unrestricted
-          outbound access to all other networks and the internet.
+          outbound access to all other networks and the internet. pfSense ships with
+          three default rules on the LAN interface — verify all three are present and enabled.
         </p>
 
         <table class="fw-table" aria-label="LAN firewall rules">
@@ -1279,16 +1430,34 @@
               <td>1</td>
               <td><span class="rule-pass">Pass</span></td>
               <td>LAN subnet</td>
+              <td>This firewall (port 80/443)</td>
+              <td>TCP</td>
+              <td>Anti-Lockout Rule — always allows access to the pfSense web UI from LAN so you cannot accidentally lock yourself out</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><span class="rule-pass">Pass</span></td>
+              <td>LAN subnet</td>
               <td>any</td>
+              <td>IPv4 any</td>
+              <td>Allow all IPv4 traffic from management workstations to any destination</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><span class="rule-pass">Pass</span></td>
+              <td>LAN subnet</td>
               <td>any</td>
-              <td>Allow management workstations full access to all networks and internet</td>
+              <td>IPv6 any</td>
+              <td>Allow all IPv6 traffic from management workstations to any destination</td>
             </tr>
           </tbody>
         </table>
 
         <div class="note-box">
-          <strong>Note:</strong> pfSense ships with a default "allow LAN to any" rule.
-          Verify it is present and enabled. If it was removed, add it back using the values above.
+          <strong>No changes needed here.</strong> These three rules are created automatically
+          by pfSense. Verify they are all present and enabled. If any have been removed,
+          re-add them using the values above. Do <strong>not</strong> delete the Anti-Lockout
+          Rule — doing so can prevent you from accessing the web UI entirely.
         </div>
 
         <!-- 6b: SERVERS -->
@@ -1303,6 +1472,36 @@
           but should not initiate connections to the management network. Add rules in this
           order (top to bottom):
         </p>
+
+        <div class="note-box" style="margin-bottom: 16px;">
+          <strong>Create the RFC1918 alias first.</strong> Rule 1 restricts traffic to
+          internet-only destinations by excluding all private address space. There is no
+          built-in <code>!RFC1918</code> option in the destination dropdown — you need to
+          create the alias manually, then use pfSense's <strong>Invert match</strong>
+          checkbox when building the rule.
+
+          <ol style="margin: 10px 0 0 18px; font-size: 0.85rem; line-height: 1.8;">
+            <li>
+              Go to <strong>Firewall &rarr; Aliases &rarr; IP</strong> and click
+              <strong>Add</strong>
+            </li>
+            <li>
+              Name: <code>RFC1918</code> &nbsp; Type: <strong>Network</strong>
+            </li>
+            <li>
+              Add the three private ranges:
+              <code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>, <code>192.168.0.0/16</code>
+            </li>
+            <li>Click <strong>Save</strong>, then <strong>Apply Changes</strong></li>
+            <li>
+              When creating Rule 1 below, set the destination type to <strong>Single host
+              or alias</strong>, type <code>RFC1918</code> in the address field, and check
+              the <strong>Invert match</strong> checkbox next to the destination — this
+              makes the rule match any address that is <em>not</em> in RFC1918 space
+              (i.e., the internet)
+            </li>
+          </ol>
+        </div>
 
         <table class="fw-table" aria-label="SERVERS firewall rules">
           <thead>
@@ -1321,13 +1520,22 @@
               <td>1</td>
               <td><span class="rule-pass">Pass</span></td>
               <td>SERVERS subnet</td>
-              <td>!RFC1918 networks</td>
+              <td>This Firewall</td>
+              <td>TCP/UDP</td>
+              <td>53</td>
+              <td>Allow servers to use pfSense DNS resolver for name resolution</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><span class="rule-pass">Pass</span></td>
+              <td>SERVERS subnet</td>
+              <td>RFC1918 (Invert match)</td>
               <td>any</td>
               <td>any</td>
               <td>Allow servers to reach the internet (for updates, package installs)</td>
             </tr>
             <tr>
-              <td>2</td>
+              <td>3</td>
               <td><span class="rule-pass">Pass</span></td>
               <td>SERVERS subnet</td>
               <td>SERVERS subnet</td>
@@ -1336,7 +1544,7 @@
               <td>Allow inter-server communication (replication, queries, syslog)</td>
             </tr>
             <tr>
-              <td>3</td>
+              <td>4</td>
               <td><span class="rule-pass">Pass</span></td>
               <td>LAN subnet</td>
               <td>10.0.2.20</td>
@@ -1345,7 +1553,7 @@
               <td>Allow admin access to Splunk web UI from management network</td>
             </tr>
             <tr>
-              <td>4</td>
+              <td>5</td>
               <td><span class="rule-block">Block</span></td>
               <td>SERVERS subnet</td>
               <td>LAN subnet</td>
@@ -1356,14 +1564,6 @@
           </tbody>
         </table>
 
-        <div class="note-box">
-          <strong>!RFC1918 alias:</strong> In pfSense, "!RFC1918 networks" means "not
-          private address space." Create a firewall alias called <code>RFC1918</code>
-          containing 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16, then use
-          <code>! RFC1918</code> (invert) as the destination to represent the internet.
-          Alternatively, use the built-in negated alias if available in your pfSense version.
-        </div>
-
         <!-- 6c: CLIENTS -->
         <h3 id="h-fw-clients">6c: CLIENTS Rules (OPT2 — 10.0.3.0/24)</h3>
         <div class="ui-path" aria-label="pfSense navigation path">
@@ -1373,8 +1573,32 @@
         </div>
         <p>
           Client VMs get internet access and limited access to server resources (web and DNS)
-          but must not reach the management network.
+          but must not reach the management network. The <code>RFC1918</code> alias created
+          in 6b is reused here for Rule 1.
         </p>
+
+        <div class="note-box" style="margin-bottom: 16px;">
+          <strong>Create the CLIENT_ALLOWED_PORTS alias first.</strong> pfSense firewall
+          rules do not allow entering multiple individual ports directly in the port field
+          — you must use a port alias. Create it before adding Rule 2.
+
+          <ol style="margin: 10px 0 0 18px; font-size: 0.85rem; line-height: 1.8;">
+            <li>Go to <strong>Firewall &rarr; Aliases &rarr; Ports</strong> and click <strong>Add</strong></li>
+            <li>Name: <code>CLIENT_ALLOWED_PORTS</code> &nbsp; Type: <strong>Port</strong></li>
+            <li>Add three entries: <code>80</code> (HTTP), <code>443</code> (HTTPS), <code>53</code> (DNS)</li>
+            <li>Click <strong>Save</strong>, then <strong>Apply Changes</strong></li>
+            <li>When creating Rule 2 below, select this alias in the <strong>Destination Port Range</strong> field</li>
+          </ol>
+
+          <p style="margin-top: 10px; font-size: 0.85rem;">
+            <strong>Destination port only.</strong> Port restrictions in pfSense firewall
+            rules apply to the <em>destination</em> port — leave the source port as
+            <strong>any</strong>. Clients connect from random ephemeral source ports
+            (typically 1024&ndash;65535), so restricting the source port would block
+            legitimate traffic. When no port restriction is set, pfSense defaults to all
+            ports and displays <strong>*</strong> in the rules table.
+          </p>
+        </div>
 
         <table class="fw-table" aria-label="CLIENTS firewall rules">
           <thead>
@@ -1382,9 +1606,10 @@
               <th scope="col">#</th>
               <th scope="col">Action</th>
               <th scope="col">Source</th>
+              <th scope="col">Src Port</th>
               <th scope="col">Destination</th>
+              <th scope="col">Dest Port</th>
               <th scope="col">Protocol</th>
-              <th scope="col">Port</th>
               <th scope="col">Purpose</th>
             </tr>
           </thead>
@@ -1393,7 +1618,8 @@
               <td>1</td>
               <td><span class="rule-pass">Pass</span></td>
               <td>CLIENTS subnet</td>
-              <td>!RFC1918 networks</td>
+              <td>any</td>
+              <td>RFC1918 (Invert match)</td>
               <td>any</td>
               <td>any</td>
               <td>Allow clients to reach the internet</td>
@@ -1402,15 +1628,17 @@
               <td>2</td>
               <td><span class="rule-pass">Pass</span></td>
               <td>CLIENTS subnet</td>
+              <td>any</td>
               <td>SERVERS subnet</td>
+              <td>CLIENT_ALLOWED_PORTS (80, 443, 53)</td>
               <td>TCP/UDP</td>
-              <td>80, 443, 53</td>
               <td>Allow clients to use web services and DNS on the servers network</td>
             </tr>
             <tr>
               <td>3</td>
               <td><span class="rule-block">Block</span></td>
               <td>CLIENTS subnet</td>
+              <td>any</td>
               <td>LAN subnet</td>
               <td>any</td>
               <td>any</td>
@@ -1418,17 +1646,6 @@
             </tr>
           </tbody>
         </table>
-
-        <div class="alert alert-info" role="note" style="margin: 14px 0 0; padding: 12px 16px; border-radius: 8px;">
-          <span class="alert-icon" aria-hidden="true">&#8505;</span>
-          <div>
-            <strong>Tip — Creating a port alias:</strong> Rather than entering 80, 443, and 53
-            individually in the port field, create a pfSense alias called
-            <code>CLIENT_ALLOWED_PORTS</code> containing those three ports. This makes the
-            rule easier to read and modify later. Aliases are created at
-            <strong>Firewall &rarr; Aliases</strong>.
-          </div>
-        </div>
       </section>
 
       <!-- ── Section 7: NAT ── -->
@@ -1508,6 +1725,22 @@
           configuration. All tests should pass before moving on to Integration 09.
         </p>
 
+        <div class="note-box" style="margin-bottom: 20px;">
+          <strong>Prerequisite — Enable ICMP on dc01.</strong> Windows Server blocks
+          ping by default. Before running the tests below, enable the inbound ICMP rule
+          on dc01 so mgmt-vm can verify connectivity to it.
+          <ol style="margin: 10px 0 0 18px; font-size: 0.85rem; line-height: 1.8;">
+            <li>On dc01, open <strong>Windows Defender Firewall with Advanced Security</strong></li>
+            <li>Click <strong>Inbound Rules</strong> in the left panel</li>
+            <li>Find <strong>File and Printer Sharing (Echo Request - ICMPv4-In)</strong></li>
+            <li>Right-click it and select <strong>Enable Rule</strong></li>
+          </ol>
+          <p style="margin-top: 8px; font-size: 0.85rem;">
+            Alternatively, run this in an elevated PowerShell prompt on dc01:<br>
+            <code>netsh advfirewall firewall add rule name="Allow ICMPv4 Echo" protocol=icmpv4:8,any dir=in action=allow</code>
+          </p>
+        </div>
+
         <!-- From mgmt-vm -->
         <div class="sub-badge">From mgmt-vm (10.0.1.10) &mdash; Firefox terminal or SSH</div>
 
@@ -1543,10 +1776,7 @@ nslookup dc01.techstart.local 10.0.1.1</code></pre>
 
         <div class="code-block" role="region" aria-label="Connectivity tests from linux-server">
           <div class="code-block-label">Bash — linux-server SSH session</div>
-          <pre><code><span class="c"># Verify default gateway is reachable</span>
-ping -c3 10.0.2.1
-
-<span class="c"># Verify internet access (confirms NAT is working for SERVERS network)</span>
+          <pre><code><span class="c"># Verify internet access (confirms NAT is working for SERVERS network)</span>
 ping -c3 8.8.8.8
 
 <span class="c"># Test HTTP connectivity and confirm TLS works</span>
@@ -1563,9 +1793,6 @@ nslookup dc01.techstart.local 10.0.2.1</code></pre>
           <div class="code-block-label">Bash — linux-client console</div>
           <pre><code><span class="c"># Check DHCP lease was received (expect address in 10.0.3.100-200)</span>
 ip addr show
-
-<span class="c"># Confirm gateway is reachable</span>
-ping -c3 10.0.3.1
 
 <span class="c"># Confirm internet access</span>
 ping -c3 8.8.8.8
@@ -1601,7 +1828,7 @@ ping -c3 10.0.1.10</code></pre>
             </tr>
             <tr>
               <td>linux-server ping 8.8.8.8</td>
-              <td>Success — SERVERS NAT and firewall rule 1 are working</td>
+              <td>Success — SERVERS NAT and firewall rules are working</td>
             </tr>
             <tr>
               <td>linux-client ip addr show</td>
@@ -1625,13 +1852,104 @@ ping -c3 10.0.1.10</code></pre>
           </div>
         </div>
 
+      </section>
+
+      <!-- ── Section 9: dc01 Windows Update ── -->
+      <section class="section-card" id="dc01-updates" aria-labelledby="h-dc01-updates">
+        <h2 id="h-dc01-updates"><span class="section-num" aria-hidden="true">9</span> dc01 &mdash; Windows Update</h2>
+
+        <p style="margin-bottom:0.75rem;">
+          Now that pfSense is routing internet traffic, dc01 has outbound access. Install all
+          available Windows updates before taking the pre-AD-baseline snapshot. This can take
+          <strong>30&ndash;60 minutes</strong> and may require multiple reboots.
+        </p>
+
+        <p style="margin-bottom:0.4rem;"><strong>Option A &mdash; GUI (recommended for most students):</strong></p>
+        <p style="margin-bottom:0.9rem;font-size:0.9rem;">
+          Start &rarr; Settings &rarr; Windows Update &rarr; <em>Check for updates</em>. Install all
+          available updates, reboot when prompted, and repeat until no further updates appear.
+        </p>
+
+        <p style="margin-bottom:0.4rem;"><strong>Option B &mdash; PowerShell (PSWindowsUpdate module):</strong></p>
+        <div class="code-block" style="margin-bottom:0.75rem;" aria-label="PowerShell: install Windows updates via PSWindowsUpdate module">
+          <div class="code-header" style="background:#0a1520;padding:6px 12px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#7ec8e3;font-size:0.78rem;font-family:monospace;">PowerShell</span>
+            <button class="copy-btn" aria-label="Copy Windows Update PowerShell commands" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)">Copy</button>
+          </div>
+          <pre style="background:#1e2a3a;color:#e8f4f8;padding:14px 16px;border-radius:0 0 6px 6px;font-size:0.85rem;overflow-x:auto;margin:0;"><code># Install the PSWindowsUpdate module (requires internet access)
+Install-Module PSWindowsUpdate -Force
+
+# Import and run updates
+Import-Module PSWindowsUpdate
+Get-WindowsUpdate
+Install-WindowsUpdate -AcceptAll -AutoReboot</code></pre>
+        </div>
+
+        <div class="note-box">
+          The <code>-AutoReboot</code> flag will reboot dc01 without warning when updates are ready.
+          After each reboot, re-run <code>Install-WindowsUpdate -AcceptAll -AutoReboot</code> until
+          no further updates are found.
+        </div>
+      </section>
+
+      <!-- ── Section 10: dc01 Pre-AD Snapshot ── -->
+      <section class="section-card" id="dc01-snapshot" aria-labelledby="h-dc01-snapshot">
+        <h2 id="h-dc01-snapshot"><span class="section-num" aria-hidden="true">10</span> dc01 &mdash; Pre-AD Baseline Snapshot</h2>
+
+        <p style="margin-bottom:0.75rem;">
+          With dc01 fully updated, capture a clean snapshot before making any role-specific
+          changes. This is your rollback point if the Active Directory promotion in Integration 09
+          goes wrong.
+        </p>
+
+        <ol style="padding-left:1.4rem;line-height:1.9;margin-bottom:0.75rem;">
+          <li>In the Proxmox web UI, select <strong>VM 1003 (dc01)</strong> in the left panel</li>
+          <li>Click the <strong>Snapshots</strong> tab</li>
+          <li>Click <strong>Take Snapshot</strong></li>
+          <li>Name: <code>pre-AD-baseline</code></li>
+          <li>Description: <em>Windows Server 2022 base install, before AD DS &mdash; fully updated, RDP enabled, static IP set</em></li>
+          <li>Click <strong>Take Snapshot</strong> &mdash; completes in a few seconds</li>
+        </ol>
+
+        <div class="note-box" style="margin-bottom:0.75rem;">
+          <strong>This snapshot is your safety net.</strong> If the AD DS promotion in Integration 09
+          goes wrong (misconfigured domain name, network issue, etc.), you can roll back to this
+          clean baseline instantly with a single click. Always snapshot before major configuration
+          changes.
+        </div>
+
+      </section>
+
+      <!-- ── Section 11: splunk-vm System Update ── -->
+      <section class="section-card" id="splunk-update" aria-labelledby="h-splunk-update">
+        <h2 id="h-splunk-update"><span class="section-num" aria-hidden="true">11</span> splunk-vm &mdash; System Update</h2>
+
+        <p style="margin-bottom:0.75rem;">
+          Now that pfSense is routing internet traffic, splunk-vm has outbound access. Update
+          all system packages before installing Splunk Enterprise in a later build.
+        </p>
+
+        <div class="code-block" style="margin-bottom:0.75rem;" aria-label="apt update and upgrade on splunk-vm">
+          <div class="code-header" style="background:#0a1520;padding:6px 12px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#7ec8e3;font-size:0.78rem;font-family:monospace;">bash &mdash; splunk-vm console</span>
+            <button class="copy-btn" aria-label="Copy apt update commands" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)">Copy</button>
+          </div>
+          <pre style="background:#1e2a3a;color:#e8f4f8;padding:14px 16px;border-radius:0 0 6px 6px;font-size:0.85rem;overflow-x:auto;margin:0;"><code>sudo apt update && sudo apt upgrade -y</code></pre>
+        </div>
+
+        <div class="note-box">
+          Reboot if the upgrade includes a kernel update, then verify the VM comes back up and
+          still has its static IP (<code>10.0.2.20</code>) before continuing.
+        </div>
+
         <div class="alert alert-purple" role="note" style="margin: 14px 0 0; padding: 12px 16px; border-radius: 8px;">
           <span class="alert-icon" aria-hidden="true">&#10003;</span>
           <div>
-            <strong>Integration 08 complete.</strong> All networks are now routed through pfSense
-            with appropriate firewall segmentation. The next step, Integration 09, covers
-            Active Directory and DNS on dc01 to bring domain authentication online for
-            all Windows and Linux VMs.
+            <strong>Integration 08 complete.</strong> All networks are routed through pfSense with
+            appropriate firewall segmentation. dc01 is fully updated with a pre-AD-baseline snapshot
+            ready, and splunk-vm packages are current. The next step, Integration 09, covers
+            Active Directory and DNS on dc01 to bring domain authentication online for all
+            Windows and Linux VMs.
           </div>
         </div>
       </section>

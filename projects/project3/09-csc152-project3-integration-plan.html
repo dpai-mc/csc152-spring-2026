@@ -1062,15 +1062,29 @@ sudo nano /etc/netplan/00-installer-config.yaml
 # Apply the change
 sudo netplan apply
 
-# Test DNS resolution against dc01
-nslookup dc01.techstart.local
-nslookup techstart.local</code></pre>
+# Test DNS resolution — specify dc01 explicitly as the server
+nslookup dc01.techstart.local 10.0.2.11
+nslookup linux-server.techstart.local 10.0.2.11</code></pre>
+        </div>
+
+        <div class="note-box" style="margin: 14px 0;">
+          <strong>Why you must specify the DNS server explicitly.</strong> Ubuntu 22.04 uses
+          <strong>systemd-resolved</strong> as a local stub resolver, which always listens on
+          <code>127.0.0.53</code>. Running <code>nslookup</code> without a server argument
+          queries <code>127.0.0.53</code> regardless of what is set in Netplan — and
+          systemd-resolved may not correctly forward <code>.local</code> domain queries to
+          dc01. Always append the DNS server IP when testing:
+          <code>nslookup &lt;hostname&gt; 10.0.2.11</code>.
+          <br><br>
+          <strong>Why <code>nslookup techstart.local</code> returns NXDOMAIN.</strong>
+          Querying for a bare domain name looks for an A record at the domain apex, which
+          AD DNS does not publish. Use specific hostnames (e.g.
+          <code>dc01.techstart.local</code>) when verifying DNS resolution.
         </div>
 
         <p>
-          The <code>nslookup</code> commands should return the correct IP addresses, confirming
-          linux-server is resolving names through dc01. If resolution fails, verify that
-          dc01 is reachable on port 53 from linux-server:
+          If the <code>nslookup</code> commands fail, verify dc01 is reachable on port 53
+          from linux-server:
         </p>
 
         <div class="code-block" role="region" aria-label="Test DNS port connectivity bash command">
