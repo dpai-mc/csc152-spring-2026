@@ -1139,11 +1139,31 @@ Get-NetFirewallProfile | Select Name, Enabled, DefaultInboundAction</code></pre>
             password and lockout settings in a single command.
           </p>
 
+          <div class="note-box" style="margin-bottom: 16px;">
+            <strong>Prerequisite — verify ADWS is running.</strong> The
+            <code>Set-ADDefaultDomainPasswordPolicy</code> cmdlet requires the
+            <strong>Active Directory Web Services (ADWS)</strong> service. Check it
+            before running the policy command:
+            <div class="code-block" style="margin: 10px 0 0;">
+              <div class="code-block-label">PowerShell &mdash; check and start ADWS</div>
+              <pre><code># Check ADWS status
+Get-Service ADWS
+
+# If Status is not Running, start it and set to automatic
+Set-Service ADWS -StartupType Automatic
+Start-Service ADWS</code></pre>
+            </div>
+            If ADWS shows <strong>Running</strong> but the policy command still fails with
+            <em>ADServerDownException</em>, the <code>-Server</code> parameter in the
+            command below resolves this by explicitly targeting dc01.
+          </div>
+
           <div class="code-block">
             <div class="code-block-label">PowerShell &mdash; configure domain password and lockout policy</div>
             <pre><code># Configure domain password policy
 Set-ADDefaultDomainPasswordPolicy `
   -Identity "techstart.local" `
+  -Server "dc01.techstart.local" `
   -MinPasswordLength 14 `
   -PasswordHistoryCount 24 `
   -MaxPasswordAge (New-TimeSpan -Days 60) `
@@ -1155,7 +1175,7 @@ Set-ADDefaultDomainPasswordPolicy `
   -LockoutObservationWindow (New-TimeSpan -Minutes 30)
 
 # Verify
-Get-ADDefaultDomainPasswordPolicy</code></pre>
+Get-ADDefaultDomainPasswordPolicy -Server "dc01.techstart.local"</code></pre>
           </div>
 
           <h3>Policy Settings &mdash; CIS Reference</h3>
@@ -1473,12 +1493,30 @@ Get-SmbServerConfiguration | Select EnableSMB1Protocol</code></pre>
             controller. Increasing log capacity prevents security events from being
             overwritten before Splunk can forward them.
           </p>
+          <div class="note-box" style="margin-bottom: 14px;">
+            <strong>Use <code>wevtutil</code> instead of <code>Limit-EventLog</code>.</strong>
+            <code>Limit-EventLog</code> is deprecated and rejects size values on Windows
+            Server 2022 even when the values are valid. <code>wevtutil sl</code> is the
+            modern replacement and accepts the size in bytes directly.
+            The values below are exact multiples of 64 KB as required:
+            512 MB = 536,870,912 bytes &nbsp;|&nbsp; 128 MB = 134,217,728 bytes.
+          </div>
+
           <div class="code-block">
             <div class="code-block-label">PowerShell &mdash; increase event log sizes</div>
-            <pre><code># Increase security log to hold more events
-Limit-EventLog -LogName Security    -MaximumSize 512MB -OverflowAction OverwriteOlder
-Limit-EventLog -LogName System      -MaximumSize 128MB -OverflowAction OverwriteOlder
-Limit-EventLog -LogName Application -MaximumSize 128MB -OverflowAction OverwriteOlder</code></pre>
+            <pre><code># Security log: 512 MB
+wevtutil sl Security /ms:536870912
+
+# System log: 128 MB
+wevtutil sl System /ms:134217728
+
+# Application log: 128 MB
+wevtutil sl Application /ms:134217728
+
+# Verify all three
+wevtutil gl Security    | Select-String "maxSize"
+wevtutil gl System      | Select-String "maxSize"
+wevtutil gl Application | Select-String "maxSize"</code></pre>
           </div>
 
           <!-- Control 9: Windows Defender -->
@@ -1521,7 +1559,7 @@ Set-MpPreference -DisableRealtimeMonitoring $false</code></pre>
 Get-NetFirewallProfile | Select Name, Enabled, DefaultInboundAction
 
 Write-Host "`n=== Password Policy ===" -ForegroundColor Cyan
-Get-ADDefaultDomainPasswordPolicy | Select MinPasswordLength, PasswordHistoryCount, LockoutThreshold
+Get-ADDefaultDomainPasswordPolicy -Server "dc01.techstart.local" | Select MinPasswordLength, PasswordHistoryCount, LockoutThreshold
 
 Write-Host "`n=== Audit Policies ===" -ForegroundColor Cyan
 auditpol /get /subcategory:"Logon","Account Lockout","Credential Validation"
@@ -1543,7 +1581,7 @@ $outFile = "$env:USERPROFILE\dc01-hardening-verification.txt"
   Get-NetFirewallProfile | Select Name, Enabled, DefaultInboundAction | Out-String
 
   Write-Output "`n=== Password Policy ==="
-  Get-ADDefaultDomainPasswordPolicy |
+  Get-ADDefaultDomainPasswordPolicy -Server "dc01.techstart.local" |
     Select MinPasswordLength, PasswordHistoryCount, LockoutThreshold | Out-String
 
   Write-Output "`n=== Audit Policies ==="
