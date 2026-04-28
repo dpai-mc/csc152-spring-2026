@@ -631,6 +631,7 @@
       <a href="#create-vm">Create Base VM (9002)</a>
       <a href="#install-xubuntu">Install Xubuntu</a>
       <a href="#post-install">Post-Install Prep</a>
+      <a href="#nic-switch">Switch NIC vmbr0 → vmbr1</a>
       <a href="#convert-template">Convert to Template</a>
       <a href="#clone-mgmt">Clone → mgmt-vm (1004)</a>
       <a href="#configure-mgmt">Configure mgmt-vm</a>
@@ -642,8 +643,8 @@
       <div class="sidebar-checks-label">Build Checklist</div>
 
       <label class="check-item" id="ck-label-0">
-        <input type="checkbox" id="ck0" aria-label="Xubuntu 24.04 LTS ISO downloaded and uploaded to Proxmox" />
-        <span>Xubuntu 24.04 LTS ISO downloaded &amp; uploaded to Proxmox</span>
+        <input type="checkbox" id="ck0" aria-label="Xubuntu 25.10 Minimal ISO confirmed in Proxmox ISO Images" />
+        <span>Xubuntu 25.10 Minimal ISO confirmed in Proxmox ISO Images</span>
       </label>
       <label class="check-item" id="ck-label-1">
         <input type="checkbox" id="ck1" aria-label="Base VM 9002 created" />
@@ -660,6 +661,10 @@
       <label class="check-item" id="ck-label-4">
         <input type="checkbox" id="ck4" aria-label="machine-id cleared for unique clone IDs" />
         <span>machine-id cleared for unique clone IDs</span>
+      </label>
+      <label class="check-item" id="ck-label-4b">
+        <input type="checkbox" id="ck4b" aria-label="NIC switched from vmbr0 to vmbr1 before converting to template" />
+        <span>NIC switched vmbr0 &rarr; vmbr1 (before converting to template)</span>
       </label>
       <label class="check-item" id="ck-label-5">
         <input type="checkbox" id="ck5" aria-label="VM 9002 converted to template" />
@@ -741,17 +746,16 @@
 
       <!-- ── Section 2: Download ISO ── -->
       <section class="section-card" id="download-iso" aria-labelledby="h-download-iso">
-        <h2 id="h-download-iso"><span class="section-num" aria-hidden="true">2</span> Download Xubuntu ISO</h2>
-        <ul class="prose-list">
-          <li>Visit <strong>xubuntu.org/download/</strong> and download <strong>Xubuntu 24.04 LTS (Noble Numbat)</strong></li>
-          <li>Select: <strong>24.04 LTS</strong>, architecture <strong>64-bit PC (AMD64)</strong></li>
-          <li>Download the <strong>full desktop ISO</strong> (not netboot) — approximately <strong>2.6 GB</strong></li>
-          <li>In Proxmox: navigate to <strong>local → ISO Images → Upload</strong> and upload the downloaded file</li>
-        </ul>
-        <div class="note-box">
-          <strong>Tip:</strong> You can also use the Proxmox "Download from URL" feature in
-          the ISO Images section to download directly to the Proxmox host, skipping a local download.
-        </div>
+        <h2 id="h-download-iso"><span class="section-num" aria-hidden="true">2</span> Confirm Xubuntu ISO in Proxmox</h2>
+        <p style="margin-bottom: 0.6rem;">
+          The <strong>Xubuntu 25.10 Minimal</strong> ISO has already been downloaded and uploaded
+          to Proxmox in a prior step. Verify it is available before creating the VM:
+        </p>
+        <ol class="steps-list" aria-label="Verify ISO steps">
+          <li><div>In the Proxmox web UI, navigate to <strong>Datacenter &rarr; pve &rarr; local &rarr; ISO Images</strong>.</div></li>
+          <li><div>Confirm <strong>xubuntu-25.10-minimal-amd64.iso</strong> (or similar) appears in the list.</div></li>
+          <li><div>If it is missing, visit <strong>xubuntu.org/download/</strong>, select <strong>25.10</strong>, architecture <strong>64-bit PC (AMD64)</strong>, download the minimal ISO (~2 GB), and upload it via <strong>local &rarr; ISO Images &rarr; Upload</strong>.</div></li>
+        </ol>
       </section>
 
       <!-- ── Section 3: Create Base VM 9002 ── -->
@@ -769,7 +773,7 @@
           <tbody>
             <tr><td>VM ID</td><td>9002</td></tr>
             <tr><td>Name</td><td>xubuntu-minimal-template</td></tr>
-            <tr><td>ISO Image</td><td>Xubuntu 24.04 LTS (from local → ISO Images)</td></tr>
+            <tr><td>ISO Image</td><td>xubuntu-25.10-minimal-amd64.iso (from local → ISO Images)</td></tr>
             <tr><td>Guest OS Type</td><td>Linux</td></tr>
             <tr><td>Guest OS Version</td><td>6.x – 2.6 Kernel</td></tr>
             <tr><td>Machine</td><td>q35</td></tr>
@@ -782,17 +786,33 @@
             <tr><td>CPU Cores</td><td>1</td></tr>
             <tr><td>CPU Type</td><td>host</td></tr>
             <tr><td>RAM</td><td>2048 MB</td></tr>
-            <tr><td>Network Bridge</td><td>vmbr1 (Management)</td></tr>
+            <tr><td>Network Bridge</td><td>vmbr0 (WAN — <strong>temporary for internet access</strong>)</td></tr>
             <tr><td>Network Model</td><td>VirtIO (paravirtualized)</td></tr>
+            <tr><td>Firewall</td><td><strong>Uncheck</strong></td></tr>
             <tr><td>Start after created</td><td><strong>Do NOT check this box</strong></td></tr>
           </tbody>
         </table>
         <p>Click <strong>Finish</strong>. Do not start the VM yet.</p>
+
+        <div class="alert alert-warning" role="note" style="margin-top: 14px; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Why vmbr0 instead of vmbr1?</strong>
+            At this point in the build sequence, pfSense has been installed but <em>not yet configured</em> (that happens in Integration Plan 08). vmbr1 (Management network) has no gateway, no DHCP server, and no internet access yet. If we attach the template VM to vmbr1 now, post-install commands like <code>apt update</code>, <code>apt upgrade</code>, and <code>apt install qemu-guest-agent</code> will fail.<br><br>
+            The solution: build the template on <strong>vmbr0</strong>, which connects to your home router and has full internet access. After all post-install preparation is complete and before converting to a template, we switch the NIC to vmbr1. Every clone — including mgmt-vm — then inherits the correct Management network bridge.
+          </div>
+        </div>
       </section>
 
       <!-- ── Section 4: Install Xubuntu ── -->
       <section class="section-card" id="install-xubuntu" aria-labelledby="h-install-xubuntu">
         <h2 id="h-install-xubuntu"><span class="section-num" aria-hidden="true">4</span> Install Xubuntu with Minimal Selection</h2>
+        <div class="note-box" style="margin-bottom: 0.9rem;">
+          <strong>Network during installation:</strong> Because VM 9002 is on vmbr0, your home
+          router will assign a DHCP address automatically. Internet is available — but we skip
+          downloading updates during the installer to save time. All updates are applied in the
+          post-install step (Section 5) where you can monitor progress.
+        </div>
         <p>Start VM 9002 and open its console in Proxmox. Follow these steps:</p>
 
         <ol class="steps-list" aria-label="Xubuntu installation steps">
@@ -876,10 +896,16 @@ sudo apt update && sudo apt upgrade -y
 
 # Install qemu-guest-agent (critical for Proxmox IP display and snapshots)
 sudo apt install -y qemu-guest-agent
-sudo systemctl enable --now qemu-guest-agent
+# Note: Xubuntu starts qemu-guest-agent automatically after install via udev/socket
+# activation — "systemctl enable" is not needed and will produce a harmless warning.
+# Verify it is running:
+sudo systemctl status qemu-guest-agent
 
 # Install useful administration tools
 sudo apt install -y curl wget vim net-tools
+
+# Install Firefox (not included in minimal Xubuntu — required for pfSense web GUI access)
+sudo apt install -y firefox
 
 # Install Remmina RDP client (for connecting to Windows Server dc01)
 sudo apt install -y remmina
@@ -907,6 +933,82 @@ sudo poweroff</code></pre>
             <code>truncate</code> commands above zero out the machine identity file. Proxmox
             will regenerate a unique machine-id in each clone. If you skip this step, all
             clones share the same DHCP and systemd identity, causing IP and networking conflicts.
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section 5b: NIC Switch ── -->
+      <section class="section-card" id="nic-switch" aria-labelledby="h-nic-switch">
+        <h2 id="h-nic-switch"><span class="section-num" aria-hidden="true">5b</span> Switch NIC from vmbr0 to vmbr1 (Before Templating)</h2>
+        <p>
+          VM 9002 is now powered off. Before converting it to a template, switch its network
+          bridge from <strong>vmbr0</strong> (temporary WAN used for internet access during setup)
+          to <strong>vmbr1</strong> (Management network). Every clone — including mgmt-vm — will
+          then automatically inherit the correct bridge.
+        </p>
+
+        <div class="proxmox-steps" style="margin: 14px 0;">
+          <div class="px-row">
+            <span class="px-field">Step 1</span>
+            <span>In the Proxmox web UI, select <strong>VM 9002</strong> in the left panel.</span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Step 2</span>
+            <span>Click the <strong>Hardware</strong> tab.</span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Step 3</span>
+            <span>Double-click the <strong>Network Device (net0)</strong> entry in the hardware list.</span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Step 4</span>
+            <span>In the <em>Bridge</em> dropdown, change <strong>vmbr0</strong> &rarr; <strong>vmbr1</strong>. Leave all other settings (Model: VirtIO, Firewall: unchecked) unchanged.</span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Step 5</span>
+            <span>Click <strong>OK</strong>.</span>
+          </div>
+        </div>
+
+        <div class="note-box" style="margin-bottom: 0.75rem;">
+          Confirm the Hardware tab now shows:<br>
+          <code>Network Device (net0) &nbsp; virtio=XX:XX:XX:XX:XX:XX,bridge=vmbr1</code><br>
+          Verify <strong>vmbr1</strong> appears before proceeding to Section 6.
+        </div>
+
+        <div class="proxmox-steps" style="margin: 14px 0;">
+          <div class="px-row" style="background: #0f2235; border-left: 3px solid #17a2b8;">
+            <span class="px-field">Also while VM is off — Enable QEMU Guest Agent in Proxmox</span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Step 6</span>
+            <span>With VM 9002 still selected, click the <strong>Options</strong> tab.</span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Step 7</span>
+            <span>Double-click <strong>QEMU Guest Agent</strong> in the options list.</span>
+          </div>
+          <div class="px-row">
+            <span class="px-field">Step 8</span>
+            <span>Check <strong>Enabled</strong> &rarr; click <strong>OK</strong>.</span>
+          </div>
+        </div>
+
+        <div class="note-box" style="margin-bottom: 0.75rem;">
+          Enabling the guest agent in Proxmox Options adds the virtio-serial channel the agent
+          uses to communicate with the hypervisor. Without this, Proxmox cannot display the VM's
+          IP in the Summary tab, perform clean shutdowns, or freeze the filesystem for consistent
+          snapshots — even if <code>qemu-guest-agent</code> is installed inside the VM. Because
+          this setting is stored in the template config, every clone (including mgmt-vm) inherits
+          it automatically.
+        </div>
+
+        <div class="alert alert-warning" role="note" style="padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Do not start VM 9002 again after this switch.</strong>
+            On vmbr1 there is no gateway yet (pfSense LAN is configured in Integration Plan 08),
+            so the VM would have no network. Go directly to Section 6 and convert to template.
           </div>
         </div>
       </section>
@@ -1058,8 +1160,8 @@ ip addr show ens18</code></pre>
       <section class="section-card" id="verify" aria-labelledby="h-verify">
         <h2 id="h-verify"><span class="section-num" aria-hidden="true">9</span> Verify and Set Up Browser</h2>
         <p>
-          Firefox is installed by default in Xubuntu and is available in the applications menu.
-          At this stage, you can verify the VM is working:
+          Firefox was installed during template preparation (Section 5) and is available in the
+          applications menu. At this stage, you can verify the VM is working:
         </p>
 
         <ul class="prose-list">

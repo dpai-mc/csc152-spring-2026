@@ -372,7 +372,7 @@
       color: #3a4a5a;
     }
     .prose-list li::before {
-      content: '&#9658;';
+      content: '\25BA';
       position: absolute;
       left: 0;
       color: #7c3aed;
@@ -518,7 +518,7 @@
       color: #3a4a5a;
     }
     .ui-steps li::before {
-      content: '&#10142;';
+      content: '\279E';
       position: absolute;
       left: 0;
       color: #7c3aed;
@@ -901,14 +901,28 @@ sudo /opt/splunk/bin/splunk start --accept-license --run-as-root
 # Enable Splunk to start on boot (runs as dedicated splunk user going forward)
 sudo /opt/splunk/bin/splunk enable boot-start -user splunk
 
-# Check Splunk status
-sudo /opt/splunk/bin/splunk status</code></pre>
+# Fix ownership of all Splunk files so the splunk user can manage them
+# Required — the initial root start leaves some files owned by root
+sudo chown -R splunk:splunk /opt/splunk/
+
+# Start Splunk via systemd (use this for all future start/stop/restart)
+sudo systemctl start splunk
+
+# Verify it is active and running
+sudo systemctl status splunk</code></pre>
         </div>
 
         <div class="alert alert-info" role="note" style="margin: 14px 0 0 0;">
           <span class="alert-icon" aria-hidden="true">&#8505;</span>
           <div>
-            <strong>Why <code>--run-as-root</code>?</strong> Splunk 10.x deprecates running as root and will refuse to start without this flag when invoked via <code>sudo</code>. The <code>enable boot-start -user splunk</code> command below configures systemd to run Splunk as the dedicated <code>splunk</code> user on all future boots, so root is only used for this initial setup step.
+            <strong>Why <code>--run-as-root</code> and then <code>chown</code>?</strong> Splunk 10.x requires <code>--run-as-root</code> for the initial start, but that leaves files throughout <code>/opt/splunk/</code> owned by root. The <code>enable boot-start -user splunk</code> step switches future runs to the <code>splunk</code> user, and the <code>chown -R</code> fixes ownership of everything root created so the <code>splunk</code> user can manage it going forward. Skipping the <code>chown</code> causes <em>Cannot initialize: permission denied</em> errors on the next start.
+          </div>
+        </div>
+
+        <div class="alert alert-warning" role="note" style="margin: 14px 0 0 0;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Always use <code>systemctl</code> to manage Splunk.</strong> Use <code>sudo systemctl start|stop|restart|status splunk</code> for all service management going forward. Do not use the Web UI <em>Settings &rarr; Server Controls &rarr; Restart Splunk</em> button &mdash; it can leave root-owned files that prevent Splunk from restarting cleanly.
           </div>
         </div>
 
@@ -977,20 +991,10 @@ Look for answers here: http://docs.splunk.com</code></pre>
         <p>Port 9997 is the standard Splunk receiving port. Universal Forwarders installed on linux-server and dc01 (Integration Plans 13 &amp; 14) will send logs to this port.</p>
 
         <div class="method-tabs" role="tablist" aria-label="Configuration method">
-          <button class="method-tab" role="tab" aria-selected="true" aria-controls="tab-recv-cli" id="tab-recv-cli-btn">CLI Method</button>
-          <button class="method-tab" role="tab" aria-selected="false" aria-controls="tab-recv-ui" id="tab-recv-ui-btn">Web UI Method</button>
+          <button class="method-tab" role="tab" aria-selected="true" aria-controls="tab-recv-ui" id="tab-recv-ui-btn">Web UI Method</button>
+          <button class="method-tab" role="tab" aria-selected="false" aria-controls="tab-recv-cli" id="tab-recv-cli-btn">CLI Method</button>
         </div>
-        <div class="method-panel active" id="tab-recv-cli" role="tabpanel" aria-labelledby="tab-recv-cli-btn">
-          <div class="code-block" role="region" aria-label="Configure receiving port via CLI">
-            <div class="code-block-label">bash &mdash; splunk-vm</div>
-            <pre><code># Enable Splunk to receive data from forwarders on port 9997
-sudo /opt/splunk/bin/splunk enable listen 9997 -auth admin:yourpassword
-
-# Verify receiver is configured
-sudo /opt/splunk/bin/splunk list receiver -auth admin:yourpassword</code></pre>
-          </div>
-        </div>
-        <div class="method-panel" id="tab-recv-ui" role="tabpanel" aria-labelledby="tab-recv-ui-btn">
+        <div class="method-panel active" id="tab-recv-ui" role="tabpanel" aria-labelledby="tab-recv-ui-btn">
           <ul class="ui-steps">
             <li>In Splunk Web, click <strong>Settings</strong> in the top navigation bar</li>
             <li>Click <strong>Forwarding and receiving</strong></li>
@@ -998,6 +1002,22 @@ sudo /opt/splunk/bin/splunk list receiver -auth admin:yourpassword</code></pre>
             <li>Click <strong>New Receiving Port</strong></li>
             <li>Enter port <strong>9997</strong> and click <strong>Save</strong></li>
           </ul>
+        </div>
+        <div class="method-panel" id="tab-recv-cli" role="tabpanel" aria-labelledby="tab-recv-cli-btn">
+          <div class="code-block" role="region" aria-label="Configure receiving port via CLI">
+            <div class="code-block-label">bash &mdash; splunk-vm</div>
+            <pre><code># After boot-start is configured, Splunk runs as the splunk user — use sudo -u splunk
+sudo -u splunk /opt/splunk/bin/splunk enable listen 9997 -auth admin:yourpassword
+
+# Verify receiver is configured
+sudo -u splunk /opt/splunk/bin/splunk list receiver -auth admin:yourpassword</code></pre>
+          </div>
+          <div class="alert alert-warning" role="note" style="margin: 10px 0 0 0;">
+            <span class="alert-icon" aria-hidden="true">&#9888;</span>
+            <div>
+              <strong>Use the Web UI method instead.</strong> The CLI method requires passing your password in plain text on the command line and has permission issues after boot-start is configured. The Web UI method is simpler and avoids both problems.
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1034,35 +1054,39 @@ sudo /opt/splunk/bin/splunk list receiver -auth admin:yourpassword</code></pre>
         </table>
 
         <div class="method-tabs" role="tablist" aria-label="Index creation method">
-          <button class="method-tab" role="tab" aria-selected="true" aria-controls="tab-idx-cli" id="tab-idx-cli-btn">CLI Method</button>
-          <button class="method-tab" role="tab" aria-selected="false" aria-controls="tab-idx-ui" id="tab-idx-ui-btn">Web UI Method</button>
+          <button class="method-tab" role="tab" aria-selected="true" aria-controls="tab-idx-ui" id="tab-idx-ui-btn">Web UI Method</button>
+          <button class="method-tab" role="tab" aria-selected="false" aria-controls="tab-idx-cli" id="tab-idx-cli-btn">CLI Method</button>
         </div>
-        <div class="method-panel active" id="tab-idx-cli" role="tabpanel" aria-labelledby="tab-idx-cli-btn">
-          <div class="code-block" role="region" aria-label="Create indexes via CLI">
-            <div class="code-block-label">bash &mdash; splunk-vm</div>
-            <pre><code># Create linux_logs index
-sudo /opt/splunk/bin/splunk add index linux_logs \
-  -maxTotalDataSizeMB 10240 \
-  -auth admin:yourpassword
-
-# Create windows_logs index
-sudo /opt/splunk/bin/splunk add index windows_logs \
-  -maxTotalDataSizeMB 10240 \
-  -auth admin:yourpassword
-
-# Create firewall_logs index
-sudo /opt/splunk/bin/splunk add index firewall_logs \
-  -maxTotalDataSizeMB 5120 \
-  -auth admin:yourpassword</code></pre>
-          </div>
-        </div>
-        <div class="method-panel" id="tab-idx-ui" role="tabpanel" aria-labelledby="tab-idx-ui-btn">
+        <div class="method-panel active" id="tab-idx-ui" role="tabpanel" aria-labelledby="tab-idx-ui-btn">
           <ul class="ui-steps">
             <li>Click <strong>Settings &rarr; Indexes &rarr; New Index</strong></li>
             <li>Index Name: <code>linux_logs</code> &mdash; Max raw data size: <strong>10 GB</strong> &rarr; <strong>Save</strong></li>
             <li>Repeat: Index Name: <code>windows_logs</code> &mdash; Max size: <strong>10 GB</strong> &rarr; <strong>Save</strong></li>
             <li>Repeat: Index Name: <code>firewall_logs</code> &mdash; Max size: <strong>5 GB</strong> &rarr; <strong>Save</strong></li>
           </ul>
+        </div>
+        <div class="method-panel" id="tab-idx-cli" role="tabpanel" aria-labelledby="tab-idx-cli-btn">
+          <div class="code-block" role="region" aria-label="Create indexes via CLI">
+            <div class="code-block-label">bash &mdash; splunk-vm</div>
+            <pre><code># After boot-start is configured, use sudo -u splunk for all Splunk CLI commands
+sudo -u splunk /opt/splunk/bin/splunk add index linux_logs \
+  -maxTotalDataSizeMB 10240 \
+  -auth admin:yourpassword
+
+sudo -u splunk /opt/splunk/bin/splunk add index windows_logs \
+  -maxTotalDataSizeMB 10240 \
+  -auth admin:yourpassword
+
+sudo -u splunk /opt/splunk/bin/splunk add index firewall_logs \
+  -maxTotalDataSizeMB 5120 \
+  -auth admin:yourpassword</code></pre>
+          </div>
+          <div class="alert alert-warning" role="note" style="margin: 10px 0 0 0;">
+            <span class="alert-icon" aria-hidden="true">&#9888;</span>
+            <div>
+              <strong>Use the Web UI method instead.</strong> The CLI method requires passing your password in plain text and has permission issues after boot-start is configured. The Web UI method is simpler and avoids both problems.
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1088,7 +1112,17 @@ sudo /opt/splunk/bin/splunk add index firewall_logs \
             <li>Search for <strong>Splunk Add-on for Unix and Linux</strong> &rarr; click <strong>Install</strong></li>
             <li>Enter your <strong>Splunk.com</strong> account credentials when prompted</li>
             <li>After the Unix add-on installs, search for <strong>Splunk Add-on for Microsoft Windows</strong> &rarr; click <strong>Install</strong></li>
-            <li>Click <strong>Restart Now</strong> when prompted to activate the add-ons</li>
+            <li>If prompted to <strong>Restart Now</strong>, click it &mdash; then immediately SSH into splunk-vm and run <code>sudo chown -R splunk:splunk /opt/splunk/</code> followed by <code>sudo systemctl restart splunk</code> to ensure the service comes back up cleanly. If no restart prompt appears, run those same two commands from the terminal.</li>
+          </ul>
+
+          <h3>Verify Both Add-ons Are Installed</h3>
+          <p style="font-size:0.85rem; color:#3a4a5a; margin-bottom:8px;">
+            The main Splunk dashboard Apps panel only shows add-ons that have their own UI. The <strong>Splunk Add-on for Microsoft Windows</strong> is a silent Technology Add-on (field extractions only) and will <em>not</em> appear there &mdash; this is expected. Verify both are installed via Manage Apps:
+          </p>
+          <ul class="ui-steps">
+            <li>Click <strong>Apps &rarr; Manage Apps</strong></li>
+            <li>Confirm <strong>Splunk Add-on for Unix and Linux</strong> appears in the list with status <em>Enabled</em></li>
+            <li>Confirm <strong>Splunk Add-on for Microsoft Windows</strong> appears in the list with status <em>Enabled</em></li>
           </ul>
         </div>
         <div class="method-panel" id="tab-addon-cli" role="tabpanel" aria-labelledby="tab-addon-cli-btn">
@@ -1100,15 +1134,21 @@ sudo /opt/splunk/bin/splunk add index firewall_logs \
             <pre><code># Copy downloaded .tgz files to splunk-vm, then install:
 
 # Install Unix add-on
-sudo /opt/splunk/bin/splunk install app /tmp/splunk-add-on-for-unix-and-linux.tgz \
+sudo -u splunk /opt/splunk/bin/splunk install app /tmp/splunk-add-on-for-unix-and-linux.tgz \
   -auth admin:yourpassword
 
 # Install Windows add-on
-sudo /opt/splunk/bin/splunk install app /tmp/splunk-add-on-for-microsoft-windows.tgz \
+sudo -u splunk /opt/splunk/bin/splunk install app /tmp/splunk-add-on-for-microsoft-windows.tgz \
   -auth admin:yourpassword
 
 # Restart Splunk to activate add-ons
-sudo /opt/splunk/bin/splunk restart</code></pre>
+sudo -u splunk /opt/splunk/bin/splunk restart</code></pre>
+          </div>
+          <div class="alert alert-warning" role="note" style="margin: 10px 0 0 0;">
+            <span class="alert-icon" aria-hidden="true">&#9888;</span>
+            <div>
+              <strong>Use the Web UI method instead.</strong> The CLI method requires passing your password in plain text and has permission issues after boot-start is configured. Only use this tab if the Splunk web app browser cannot reach Splunkbase.
+            </div>
           </div>
         </div>
       </section>
@@ -1120,7 +1160,8 @@ sudo /opt/splunk/bin/splunk restart</code></pre>
 
         <h3>Create the Dashboard</h3>
         <ul class="ui-steps">
-          <li>In Splunk Web, click <strong>Dashboards</strong> in the left navigation or app bar</li>
+          <li>In the left-hand Apps panel, click <strong>Search &amp; Reporting</strong></li>
+          <li>In the Search &amp; Reporting menu bar (just below the main menu), click <strong>Dashboards</strong></li>
           <li>Click <strong>Create New Dashboard</strong></li>
           <li>Title: <code>Security - Authentication Events</code></li>
           <li>Type: <strong>Classic Dashboard</strong> &rarr; <strong>Create</strong></li>
@@ -1177,7 +1218,9 @@ sudo /opt/splunk/bin/splunk restart</code></pre>
 
         <h3>Create the Dashboard</h3>
         <ul class="ui-steps">
-          <li>Click <strong>Dashboards &rarr; Create New Dashboard</strong></li>
+          <li>In the left-hand Apps panel, click <strong>Search &amp; Reporting</strong></li>
+          <li>In the Search &amp; Reporting menu bar (just below the main menu), click <strong>Dashboards</strong></li>
+          <li>Click <strong>Create New Dashboard</strong></li>
           <li>Title: <code>Security - System Events</code></li>
           <li>Type: <strong>Classic Dashboard</strong> &rarr; <strong>Create</strong></li>
         </ul>
@@ -1266,18 +1309,25 @@ OR
         <h2 id="h-s10"><span class="section-num" aria-hidden="true">10</span> Verify Splunk Setup</h2>
         <p>Run these commands to confirm Splunk is running correctly, indexes exist, and the receiver is active before moving on to Integration Plan 13.</p>
 
+        <div class="alert alert-info" role="note" style="margin: 0 0 14px 0;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>After a restart, wait 30&ndash;60 seconds</strong> before running the commands below. Splunk takes a moment to fully initialize before the CLI becomes responsive.
+          </div>
+        </div>
+
         <div class="code-block" role="region" aria-label="Splunk verification command block">
           <div class="code-block-label">bash &mdash; splunk-vm</div>
-          <pre><code># Check Splunk is running
-sudo /opt/splunk/bin/splunk status
+          <pre><code># Check Splunk is running (use sudo -u splunk after boot-start is configured)
+sudo -u splunk /opt/splunk/bin/splunk status
 
 # List configured indexes (should show linux_logs, windows_logs, firewall_logs)
-sudo /opt/splunk/bin/splunk list index -auth admin:yourpassword
+sudo -u splunk /opt/splunk/bin/splunk list index -auth admin:yourpassword
 
 # List configured receivers (should show port 9997)
-sudo /opt/splunk/bin/splunk list receiver -auth admin:yourpassword
+sudo -u splunk /opt/splunk/bin/splunk list receiver -auth admin:yourpassword
 
-# Check for any errors
+# Check for any errors (reading a log file — plain sudo is fine here)
 sudo tail -100 /opt/splunk/var/log/splunk/splunkd.log | grep ERROR</code></pre>
         </div>
 

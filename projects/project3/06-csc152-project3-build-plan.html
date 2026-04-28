@@ -372,7 +372,7 @@
       color: #3a4a5a;
     }
     .prose-list li::before {
-      content: '&#9658;';
+      content: '\25BA';
       position: absolute;
       left: 0;
       color: #17a2b8;
@@ -697,7 +697,7 @@
             <tr><td>Source template</td><td>9002 (xubuntu-minimal-template)</td></tr>
             <tr><td>vCPU</td><td>1</td></tr>
             <tr><td>RAM</td><td>2 GB (2048 MB)</td></tr>
-            <tr><td>Disk</td><td>20 GB</td></tr>
+            <tr><td>Disk</td><td>15 GB (inherited from template 9002)</td></tr>
             <tr><td>Network bridge</td><td>vmbr3 (Clients &mdash; 10.0.3.0/24)</td></tr>
             <tr><td>IP assignment</td><td>DHCP (will receive 10.0.3.100&ndash;200 from pfSense)</td></tr>
           </tbody>
@@ -743,7 +743,7 @@
         <ul class="prose-list">
           <li><strong>CPU:</strong> keep 1 vCPU (no change needed)</li>
           <li><strong>RAM:</strong> keep 2 GB (no change needed)</li>
-          <li><strong>Disk:</strong> keep 20 GB (no change needed)</li>
+          <li><strong>Disk:</strong> keep 15 GB (no change needed)</li>
           <li><strong>Network:</strong> confirm the bridge is <code>vmbr3</code> (Clients) &mdash;
             <em>not</em> vmbr2 (Servers). If it shows vmbr1 or vmbr2, edit the network device
             and change it to vmbr3 before proceeding.</li>
@@ -770,15 +770,24 @@
 sudo hostnamectl set-hostname linux-client</code></pre>
         </div>
 
+        <div class="code-block" role="region" aria-label="Identify network interface name">
+          <div class="code-block-label">Step 2 &mdash; Identify network interface name</div>
+          <pre><code># List network interfaces to find the correct name
+ip link show
+# Look for an interface starting with 'ens' or 'eth' (commonly ens18)
+# This VM cloned from the same template as mgmt-vm, so the name is likely identical</code></pre>
+        </div>
+
         <div class="code-block" role="region" aria-label="Open Netplan configuration">
-          <div class="code-block-label">Step 2 &mdash; Open Netplan config (verify DHCP is set)</div>
+          <div class="code-block-label">Step 3 &mdash; Open Netplan config (verify DHCP is set)</div>
           <pre><code># Configure DHCP via Netplan (should already be default, but verify)
 sudo nano /etc/netplan/01-netcfg.yaml</code></pre>
         </div>
 
         <p>
           The file should contain the following. If it does not, replace its contents with
-          the DHCP configuration below:
+          the DHCP configuration below. If your interface name differs from <code>ens18</code>,
+          substitute it in the <code>ethernets</code> key:
         </p>
 
         <div class="code-block" role="region" aria-label="Netplan DHCP configuration YAML">
@@ -791,7 +800,7 @@ sudo nano /etc/netplan/01-netcfg.yaml</code></pre>
         </div>
 
         <div class="code-block" role="region" aria-label="Apply Netplan and check IP">
-          <div class="code-block-label">Step 3 &mdash; Apply and verify</div>
+          <div class="code-block-label">Step 4 &mdash; Apply and verify</div>
           <pre><code>sudo netplan apply
 
 # Verify — expect an IP in 10.0.3.100-200 range after pfSense is configured

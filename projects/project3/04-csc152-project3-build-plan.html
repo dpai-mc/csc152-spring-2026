@@ -796,6 +796,7 @@
           <li><a href="#s7">7 &middot; Windows Update</a></li>
           <li><a href="#s8">8 &middot; Remote Desktop</a></li>
           <li><a href="#s9">9 &middot; Snapshot</a></li>
+        <!-- Note: items 7 and 9 are deferred to Integration 08 -->
         </ul>
 
         <!-- Checklist -->
@@ -852,19 +853,7 @@
           <li id="chk-li-8">
             <label>
               <input type="checkbox" id="chk8" aria-describedby="chk8-desc">
-              <span id="chk8-desc">Windows updates installed</span>
-            </label>
-          </li>
-          <li id="chk-li-9">
-            <label>
-              <input type="checkbox" id="chk9" aria-describedby="chk9-desc">
-              <span id="chk9-desc">Remote Desktop enabled</span>
-            </label>
-          </li>
-          <li id="chk-li-10">
-            <label>
-              <input type="checkbox" id="chk10" aria-describedby="chk10-desc">
-              <span id="chk10-desc">Proxmox snapshot "pre-AD-baseline" taken</span>
+              <span id="chk8-desc">Remote Desktop enabled</span>
             </label>
           </li>
         </ul>
@@ -1001,7 +990,9 @@
                   <li>ISO Image: select the Windows Server 2022 ISO you uploaded</li>
                   <li>Guest OS Type: <span class="inline-code">Microsoft Windows</span></li>
                   <li>Version: <span class="inline-code">11/2022</span></li>
+                  <li><strong>Check</strong> "Add additional drive for VirtIO drivers" &rarr; select <span class="inline-code">virtio-win.iso</span> from the dropdown</li>
                 </ul>
+                <p style="font-size:0.82rem;color:#5a6a78;margin-top:0.35rem;">This mounts the VirtIO ISO as a second CD drive automatically &mdash; no need to add it manually after creation.</p>
               </div>
             </li>
             <li>
@@ -1011,8 +1002,8 @@
                 <ul>
                   <li>Machine: <span class="inline-code">q35</span></li>
                   <li>BIOS: <span class="inline-code">OVMF (UEFI)</span></li>
-                  <li>Add EFI Disk: <strong>Yes</strong> (auto-added by Proxmox)</li>
-                  <li>Add TPM: optional &mdash; not required for the Server 2022 Evaluation</li>
+                  <li>Add EFI Disk: <strong>Yes</strong> &mdash; Proxmox will prompt for storage; select the same storage pool your VM disk uses (e.g., <span class="inline-code">local-lvm</span>)</li>
+                  <li>Add TPM: optional &mdash; not required for the Server 2022 Evaluation; if you enable it, select the same storage pool when prompted</li>
                   <li>SCSI Controller: <span class="inline-code">VirtIO SCSI Single</span></li>
                 </ul>
               </div>
@@ -1047,7 +1038,11 @@
               <div class="step-num" aria-label="Step 7">7</div>
               <div class="step-body">
                 <strong>Network</strong>
-                <p>Bridge: <span class="inline-code">vmbr2</span> &nbsp;&middot;&nbsp; Model: <span class="inline-code">VirtIO (paravirt)</span></p>
+                <ul>
+                  <li>Bridge: <span class="inline-code">vmbr2</span></li>
+                  <li>Model: <span class="inline-code">VirtIO (paravirt)</span></li>
+                  <li>Firewall: <strong>uncheck</strong> &mdash; pfSense is the network security boundary for this lab; the Proxmox host-level firewall is not used</li>
+                </ul>
               </div>
             </li>
             <li>
@@ -1055,17 +1050,6 @@
               <div class="step-body">
                 <strong>Confirm &amp; Finish</strong>
                 <p>Review the summary. <strong>Uncheck "Start after created"</strong> before clicking Finish &mdash; you need to attach the VirtIO ISO first.</p>
-              </div>
-            </li>
-            <li>
-              <div class="step-num" aria-label="Step 9">9</div>
-              <div class="step-body">
-                <strong>Add VirtIO ISO as a second CD/DVD drive</strong>
-                <ul>
-                  <li>Select VM 1003 in the left panel &rarr; <strong>Hardware</strong> tab &rarr; <strong>Add &rarr; CD/DVD Drive</strong></li>
-                  <li>Choose <span class="inline-code">virtio-win.iso</span> from local ISO storage</li>
-                  <li>Click Add &mdash; you should now see two CD drives listed</li>
-                </ul>
               </div>
             </li>
           </ol>
@@ -1091,6 +1075,7 @@
               <div class="step-body">
                 <strong>Boot from CD</strong>
                 <p>When the console shows "Press any key to boot from CD or DVD…" press a key <strong>immediately</strong>. You have only a couple of seconds before it times out.</p>
+                <p style="font-size:0.85rem;color:#5a6a78;margin-top:0.4rem;"><strong>Missed the prompt?</strong> In the noVNC toolbar, click <strong>Send Key</strong> (or the keyboard icon) and select <strong>Ctrl+Alt+Del</strong> to reboot the VM and try again.</p>
               </div>
             </li>
             <li>
@@ -1205,6 +1190,22 @@
             <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
             <p>The guest agent enables Proxmox to display the VM's IP address in the Summary tab, allows clean shutdowns from the Proxmox UI, and supports file system freeze/thaw for consistent snapshots. Always install it.</p>
           </div>
+
+          <h4 style="font-size:0.95rem;font-weight:700;color:#0d1b2a;margin:1.25rem 0 0.6rem;">Eject Both ISOs Before Rebooting</h4>
+          <p style="font-size:0.88rem;margin-bottom:0.6rem;">Both CD drives are no longer needed. Eject them from inside Windows first, then confirm in Proxmox so they are gone on every subsequent reboot.</p>
+          <ol style="padding-left:1.4rem;font-size:0.88rem;line-height:1.8;margin-bottom:0.75rem;">
+            <li>Open <strong>File Explorer &rarr; This PC</strong></li>
+            <li>Right-click the <strong>Windows Server 2022</strong> CD drive &rarr; select <strong>Eject</strong></li>
+            <li>Right-click the <strong>virtio-win</strong> CD drive &rarr; select <strong>Eject</strong></li>
+            <li>Switch to Proxmox: select <strong>VM 1003 &rarr; Hardware</strong> tab</li>
+            <li>Double-click the first <strong>CD/DVD Drive</strong> &rarr; select <strong>"Do not use any media"</strong> &rarr; click <strong>OK</strong></li>
+            <li>Repeat for the second <strong>CD/DVD Drive</strong></li>
+            <li>Verify both drives now show <span class="inline-code">none</span> in the Hardware list before proceeding</li>
+          </ol>
+          <div class="alert alert-warning" role="note">
+            <span class="alert-icon" aria-hidden="true">&#9888;&#65039;</span>
+            <p>Ejecting in Windows alone is not enough &mdash; the ISO remains attached in Proxmox and will remount on the next reboot. Always confirm both drives show <strong>"Do not use any media"</strong> in the Proxmox Hardware tab.</p>
+          </div>
         </section>
 
         <!-- ── Section 6 ── -->
@@ -1266,33 +1267,9 @@ ipconfig /all</code></pre>
             Windows Update and Baseline
           </h3>
 
-          <div class="alert alert-warning" role="note" style="margin-bottom:1rem;">
-            <span class="alert-icon" aria-hidden="true">&#9888;&#65039;</span>
-            <p><strong>Allow Windows to install all available updates before proceeding.</strong> This can take <strong>30&ndash;60 minutes</strong> and may require multiple reboots. Building on a fully updated baseline avoids issues later in the lab &mdash; especially during AD DS promotion and domain joins.</p>
-          </div>
-
-          <p style="margin-bottom:0.5rem;font-size:0.9rem;"><strong>Option A &mdash; GUI (recommended for most students):</strong></p>
-          <p style="margin-bottom:1rem;font-size:0.88rem;">Start &rarr; Settings &rarr; Windows Update &rarr; Check for updates. Install all available updates, reboot when prompted, and repeat until no updates remain.</p>
-
-          <p style="margin-bottom:0.5rem;font-size:0.9rem;"><strong>Option B &mdash; PowerShell (PSWindowsUpdate module):</strong></p>
-
-          <div class="code-block" aria-label="PowerShell: install Windows updates via PSWindowsUpdate module">
-            <div class="code-block-header">
-              <span class="code-lang">PowerShell</span>
-              <button class="copy-btn" aria-label="Copy Windows Update PowerShell commands" data-target="code-update">Copy</button>
-            </div>
-            <pre id="code-update"><code># Install the PSWindowsUpdate module (requires internet access)
-Install-Module PSWindowsUpdate -Force
-
-# Import and run updates
-Import-Module PSWindowsUpdate
-Get-WindowsUpdate
-Install-WindowsUpdate -AcceptAll -AutoReboot</code></pre>
-          </div>
-
           <div class="alert alert-info" role="note">
             <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
-            <p>The <span class="inline-code">-AutoReboot</span> flag will reboot the VM without warning when updates are ready. Save any open work first. After reboots, re-run <span class="inline-code">Install-WindowsUpdate -AcceptAll -AutoReboot</span> until no further updates are found.</p>
+            <p><strong>Deferred to Integration 08.</strong> dc01 has no internet access at this stage because pfSense has not been configured yet. Windows Update will be completed in <strong>Integration 08 &middot; pfSense Configuration &amp; Network Integration</strong> once internet routing is in place.</p>
           </div>
         </section>
 
@@ -1337,27 +1314,14 @@ Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' 
             Take a Snapshot Before AD Promotion
           </h3>
 
-          <p style="margin-bottom:0.75rem;font-size:0.9rem;">
-            Before making any role-specific changes (like installing Active Directory Domain Services), capture a clean snapshot of the fully updated, configured baseline.
-          </p>
-
-          <ol style="padding-left:1.4rem;font-size:0.88rem;line-height:1.9;margin-bottom:0.75rem;">
-            <li>In the Proxmox web UI, select <strong>VM 1003 (dc01)</strong> in the left panel</li>
-            <li>Click the <strong>Snapshots</strong> tab</li>
-            <li>Click <strong>Take Snapshot</strong></li>
-            <li>Name: <span class="inline-code">pre-AD-baseline</span></li>
-            <li>Description: <em>Windows Server 2022 base install, before AD DS &mdash; fully updated, RDP enabled, static IP set</em></li>
-            <li>Click <strong>Take Snapshot</strong> &mdash; this completes in a few seconds</li>
-          </ol>
-
           <div class="alert alert-info" role="note">
             <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
-            <p><strong>This snapshot is your safety net.</strong> If the AD DS promotion in Build 09 goes wrong (misconfigured domain name, network issue, etc.), you can roll back to this clean baseline instantly with a single click. Snapshots are fast on Proxmox &mdash; always take one before major configuration changes. Disk space cost is minimal unless you make large data changes after the snapshot.</p>
+            <p><strong>Deferred to Integration 08.</strong> The pre-AD-baseline snapshot should be taken <em>after</em> Windows Updates are installed. Both steps are completed together in <strong>Integration 08 &middot; pfSense Configuration &amp; Network Integration</strong> once dc01 has internet access.</p>
           </div>
 
           <div class="alert alert-info" role="note" style="margin-top:0.75rem;">
             <span class="alert-icon" aria-hidden="true">&#127381;</span>
-            <p><strong>Build 04 complete!</strong> VM 1003 (dc01) is now a clean, updated Windows Server 2022 base install at 10.0.2.11, ready for later promotion to a Domain Controller. Continue with <strong>Build 05 &middot; Xubuntu Template + mgmt-vm</strong> to build the management workstation.</p>
+            <p><strong>Build 04 complete!</strong> VM 1003 (dc01) is a clean Windows Server 2022 base install at <strong>10.0.2.11</strong> with VirtIO drivers, static IP, and Remote Desktop enabled. Windows Update and the pre-AD-baseline snapshot are completed in <strong>Integration 08</strong> once pfSense provides internet access. Continue with <strong>Build 05 &middot; Xubuntu Template + mgmt-vm</strong>.</p>
           </div>
         </section>
 

@@ -856,6 +856,26 @@ sudo poweroff</code></pre>
           <pre><code>Network Device (net0)    virtio=XX:XX:XX:XX:XX:XX,bridge=vmbr2</code></pre>
           <p>Confirm <strong>vmbr2</strong> appears before proceeding to Section 6.</p>
         </div>
+
+        <div class="step">
+          <div class="step-title">Step 4 &mdash; Enable QEMU Guest Agent in Proxmox Options</div>
+          <ol class="step-list">
+            <li>With VM 9001 still selected, click the <strong>Options</strong> tab.</li>
+            <li>Double-click <strong>QEMU Guest Agent</strong> in the options list.</li>
+            <li>Check <strong>Enabled</strong> &rarr; click <strong>OK</strong>.</li>
+          </ol>
+          <div class="alert alert-info" role="note" style="margin-top:0.6rem;">
+            <span class="alert-icon" aria-hidden="true">&#8505;&#65039;</span>
+            <div>
+              This Proxmox-side flag adds the virtio-serial channel the agent uses to communicate
+              with the hypervisor. Without it, Proxmox cannot display the VM's IP in the Summary
+              tab, perform clean shutdowns, or freeze the filesystem for consistent snapshots —
+              even if <code>qemu-guest-agent</code> is installed inside the VM. Because this
+              setting is stored in the template config, every clone (linux-server, splunk-vm)
+              inherits it automatically.
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="alert alert-warn" role="note">
@@ -963,7 +983,7 @@ sudo poweroff</code></pre>
           <p>Interface names vary. Identify yours before editing Netplan:</p>
 <div class="code-label">bash</div>
 <pre><code>ip link show</code></pre>
-          <p>Look for the primary Ethernet interface &mdash; it will be <code>ens18</code>, <code>ens3</code>, or similar. Use that name in the Netplan file below.</p>
+          <p>Look for the primary Ethernet interface &mdash; it will be <code>ens18</code>, <code>ens3</code>, <code>enp6s18</code>, or similar. Use that name in the Netplan file below. The Netplan file uses <code>ens18</code> as the example &mdash; if your interface is named anything else, replace every occurrence of <code>ens18</code> in that file with your actual interface name before saving.</p>
         </div>
 
         <div class="step">
@@ -992,10 +1012,10 @@ sudo poweroff</code></pre>
         </div>
 
         <div class="step">
-          <div class="step-title">Verify connectivity</div>
+          <div class="step-title">Verify IP address assignment</div>
 <div class="code-label">bash</div>
-<pre><code>ip addr show ens18
-ping -c3 10.0.2.1</code></pre>
+<pre><code>ip addr show ens18</code></pre>
+          <p>Confirm that <code>10.0.2.10/24</code> appears on the interface. Gateway connectivity (<code>ping 10.0.2.1</code>) is verified in Integration 08 after pfSense is fully configured.</p>
         </div>
 
         <div class="step">
@@ -1019,13 +1039,6 @@ sudo resize2fs /dev/vda2</code></pre>
 
       </div>
 
-      <div class="alert alert-info" role="note">
-        <span class="alert-icon" aria-hidden="true">&#8505;</span>
-        <div>
-          <strong>Gateway pings may fail at this stage &mdash; that is expected.</strong>
-          The default gateway <code>10.0.2.1</code> is the pfSense OPT1 interface. If pfSense has not yet been fully configured (that happens in Build 08), ICMP will be blocked and pings to the gateway will time out. What matters now is that <code>ip addr show</code> shows <code>10.0.2.10/24</code> on the correct interface.
-        </div>
-      </div>
     </div>
   </section>
 

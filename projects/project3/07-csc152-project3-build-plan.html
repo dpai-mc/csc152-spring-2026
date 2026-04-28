@@ -356,7 +356,7 @@
       color: #3a4a5a;
     }
     .prose-list li::before {
-      content: '&#9658;';
+      content: '\25BA';
       position: absolute;
       left: 0;
       color: #17a2b8;
@@ -933,17 +933,22 @@ ip addr show ens18</code></pre>
         <h2 id="h-system-prep"><span class="section-num" aria-hidden="true">6</span> Pre-Splunk System Preparation</h2>
         <p>
           Splunk Enterprise has specific OS-level requirements for reliable performance. Run
-          the following commands to update the system, tune kernel settings, and create the
-          dedicated <code>splunk</code> OS user that will own the Splunk process:
+          the following commands to tune kernel settings and create the dedicated
+          <code>splunk</code> OS user that will own the Splunk process:
         </p>
 
-        <div class="code-block" role="region" aria-label="System update and Splunk user setup">
-          <div class="code-block-label">Step 1 &mdash; Update system packages</div>
-          <pre><code>sudo apt update && sudo apt upgrade -y</code></pre>
+        <div class="alert alert-info" role="note" style="margin-bottom: 14px; padding: 12px 16px; border-radius: 8px;">
+          <span class="alert-icon" aria-hidden="true">&#8505;</span>
+          <div>
+            <strong>Deferred to Integration 08.</strong> splunk-vm has no internet access at
+            this stage because pfSense has not been configured yet. <code>apt update &amp;&amp;
+            apt upgrade</code> will be run in <strong>Integration 08 &middot; pfSense
+            Configuration &amp; Network Integration</strong> once internet routing is in place.
+          </div>
         </div>
 
         <div class="code-block" role="region" aria-label="Set system open file limits for Splunk">
-          <div class="code-block-label">Step 2 &mdash; Set system limits for Splunk (open file descriptors)</div>
+          <div class="code-block-label">Step 1 &mdash; Set system limits for Splunk (open file descriptors)</div>
           <pre><code># Splunk recommends a high open-file limit for indexing performance
 sudo bash -c 'cat >> /etc/security/limits.conf << EOF
 splunk  soft  nofile  65535
@@ -952,7 +957,7 @@ EOF'</code></pre>
         </div>
 
         <div class="code-block" role="region" aria-label="Disable Transparent Huge Pages for Splunk">
-          <div class="code-block-label">Step 3 &mdash; Disable Transparent Huge Pages (THP)</div>
+          <div class="code-block-label">Step 2 &mdash; Disable Transparent Huge Pages (THP)</div>
           <pre><code># Disable THP immediately (takes effect without reboot)
 echo 'never' | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 echo 'never' | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
@@ -975,7 +980,7 @@ exit 0</code></pre>
         </div>
 
         <div class="code-block" role="region" aria-label="Make rc.local executable and create splunk user">
-          <div class="code-block-label">Step 4 &mdash; Make rc.local executable and create the splunk user</div>
+          <div class="code-block-label">Step 3 &mdash; Make rc.local executable and create the splunk user</div>
           <pre><code># Make rc.local executable
 sudo chmod +x /etc/rc.local
 
