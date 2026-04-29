@@ -834,7 +834,7 @@
       <ul class="checklist" aria-label="Task completion checklist">
         <li>
           <input type="checkbox" id="chk1" />
-          <label for="chk1">Logged into Proxmox at <span style="font-family:monospace;font-size:0.85em;">192.168.50.10:8006</span></label>
+          <label for="chk1">Logged into Proxmox at <span style="font-family:monospace;font-size:0.85em;">10.255.254.XX:8006</span></label>
         </li>
         <li>
           <input type="checkbox" id="chk2" />
@@ -883,6 +883,15 @@
       </div>
     </header>
 
+    <!-- Classroom IP callout -->
+    <div class="alert" role="note" aria-label="Student Proxmox host IP note" style="background:#e0f7fa;border:1px solid #17a2b8;color:#0f5f6d;margin-bottom:1.5rem;">
+      <span class="alert-icon" aria-hidden="true">&#8505;</span>
+      <div>
+        <strong>Your Proxmox Host IP</strong>
+        Each student in this course has their own dedicated Proxmox node. Your node's IP address is in the range <code style="background:#b2ebf2;color:#006064;border:1px solid #80deea;padding:0.1em 0.35em;border-radius:3px;font-family:monospace;">10.255.254.20</code>–<code style="background:#b2ebf2;color:#006064;border:1px solid #80deea;padding:0.1em 0.35em;border-radius:3px;font-family:monospace;">10.255.254.30</code> — check with your instructor if you don't know yours. Substitute your assigned IP wherever you see <code style="background:#b2ebf2;color:#006064;border:1px solid #80deea;padding:0.1em 0.35em;border-radius:3px;font-family:monospace;">10.255.254.XX</code> in this guide.
+      </div>
+    </div>
+
     <!-- ---- SECTION 1: Overview ---- -->
     <section id="section-overview" class="content-section" aria-labelledby="h-overview">
       <div class="card">
@@ -902,7 +911,7 @@
           This build plan configures all four bridges that Project 3 requires:
         </p>
         <ul style="margin: 0.25rem 0 0.85rem 1.25rem; color: var(--text-secondary); font-size:0.9rem;">
-          <li><strong>vmbr0</strong> — WAN bridge (linked to your physical NIC, uplink to home router)</li>
+          <li><strong>vmbr0</strong> — WAN bridge (linked to your physical NIC, uplink to classroom router)</li>
           <li><strong>vmbr1</strong> — Management network (admin access, pfSense LAN side)</li>
           <li><strong>vmbr2</strong> — Servers network (linux-server, dc01, splunk-vm)</li>
           <li><strong>vmbr3</strong> — Clients network (linux-client, DHCP pool)</li>
@@ -913,12 +922,12 @@
         </h3>
         <div class="topology-box" role="figure" aria-label="ASCII network topology diagram showing four Proxmox bridges">
 <pre>
-Internet / Home Router (192.168.50.1)
+Internet / Classroom Router (10.255.254.1)
          |
     [Physical NIC]
          |
     vmbr0 (WAN) ────────────── pfSense WAN interface
-    192.168.50.0/24                DHCP from home router
+    10.255.254.0/24              DHCP from classroom router
 
     vmbr1 (Management) ─────── pfSense LAN ──── mgmt-vm
     10.0.1.0/24                    10.0.1.1        10.0.1.10
@@ -950,13 +959,13 @@ Internet / Home Router (192.168.50.1)
         <p>Confirm the following before starting:</p>
         <ul class="prereq-list" aria-label="Prerequisites checklist">
           <li>Proxmox VE 8.x installed and accessible at
-            <code>https://192.168.50.10:8006</code>
+            <code>https://10.255.254.XX:8006</code>
           </li>
           <li>Logged in as <code>root</code> or a user with the
             <code>System.Modify</code> privilege on the node
           </li>
-          <li>Physical NIC connected to your home network
-            (<code>192.168.50.0/24</code>) and visible in Proxmox
+          <li>Physical NIC connected to the classroom network
+            (<code>10.255.254.0/24</code>) and visible in Proxmox
           </li>
           <li>No VMs have been created yet — bridges should be configured
             before any guest is built
@@ -991,7 +1000,7 @@ Internet / Home Router (192.168.50.1)
             <div class="step-content">
               <h4>Log into the Proxmox web interface</h4>
               <p>Open a browser and navigate to
-                <code>https://192.168.50.10:8006</code>.
+                <code>https://10.255.254.XX:8006</code>.
                 Accept the self-signed certificate warning. Log in as
                 <code>root</code> (PAM authentication).
               </p>
@@ -1017,12 +1026,12 @@ Internet / Home Router (192.168.50.1)
               <p>
                 Confirm that <code>vmbr0</code> appears in the list and is linked to your physical
                 NIC (e.g., <code>eno1</code>, <code>eth0</code>, or similar). It should show
-                the <code>192.168.50.10/24</code> address assigned during Proxmox installation.
+                the <code>10.255.254.XX/24</code> address assigned during Proxmox installation.
               </p>
               <p>
                 If <code>vmbr0</code> does not exist, click <strong>Create → Linux Bridge</strong>,
                 select your physical NIC as the bridge port, and assign
-                <code>192.168.50.10/24</code> with gateway <code>192.168.50.1</code>.
+                <code>10.255.254.XX/24</code> with gateway <code>10.255.254.1</code>.
               </p>
             </div>
           </li>
@@ -1253,9 +1262,9 @@ vmbr3          8000.000000000000       no</code></pre>
               <tr>
                 <td>vmbr0</td>
                 <td>WAN</td>
-                <td>192.168.50.0/24</td>
+                <td>10.255.254.0/24</td>
                 <td>vtnet0</td>
-                <td>Physical NIC; DHCP from home router; Proxmox host IP here</td>
+                <td>Physical NIC; DHCP from classroom router; Proxmox host IP here</td>
               </tr>
               <tr>
                 <td>vmbr1</td>
