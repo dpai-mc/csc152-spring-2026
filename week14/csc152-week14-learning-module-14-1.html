@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 14.1 – Physical Security &amp; Defense in Depth | CSC 152</title>
+<style>
+/* ===== CSS RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.65;color:#1e1e1e;background:#f5f7fa}
+
+/* ===== SKIP LINK ===== */
+.skip-link{position:absolute;top:-100%;left:8px;background:#0d3b66;color:#fff;padding:8px 16px;z-index:10000;border-radius:0 0 4px 4px;font-weight:600;text-decoration:none}
+.skip-link:focus{top:0}
+
+/* ===== NAV BAR ===== */
+.nav-bar{position:sticky;top:0;z-index:1000;background:#0d3b66;padding:0;border-bottom:3px solid#e8c547;display:flex;flex-wrap:wrap;align-items:center}
+.nav-bar .nav-title{color:#e8c547;font-weight:700;font-size:.95rem;padding:10px 16px;white-space:nowrap}
+.nav-bar a{color:#dce6f0;text-decoration:none;padding:10px 13px;font-size:.84rem;transition:background .2s,color .2s;display:inline-block}
+.nav-bar a:hover,.nav-bar a:focus{background:#13507a;color:#fff;outline:2px solid #e8c547;outline-offset:-2px}
+
+/* ===== LAYOUT ===== */
+.page-wrap{max-width:960px;margin:0 auto;padding:16px 20px 60px}
+
+/* ===== HEADER BANNER ===== */
+.mod-banner{background:linear-gradient(135deg,#0d3b66 0%,#1a6fa0 100%);color:#fff;border-radius:8px;padding:28px 28px 22px;margin-bottom:28px}
+.mod-banner .course-tag{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:#e8c547;margin-bottom:4px}
+.mod-banner h1{font-size:1.65rem;font-weight:700;margin-bottom:6px;line-height:1.25}
+.mod-banner .subtitle{font-size:.95rem;opacity:.88}
+
+/* ===== SECTION STYLING ===== */
+.section{background:#fff;border-radius:8px;padding:26px 28px;margin-bottom:22px;border-left:4px solid #0d3b66;box-shadow:0 1px 4px rgba(0,0,0,.06);scroll-margin-top:70px}
+.section h2{font-size:1.3rem;color:#0d3b66;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #e8c547}
+.section h3{font-size:1.05rem;color:#13507a;margin:18px 0 8px}
+.section h4{font-size:.95rem;color:#0d3b66;margin:14px 0 6px;font-weight:600}
+
+/* ===== CALLOUT BOXES ===== */
+.callout{border-radius:6px;padding:16px 18px;margin:16px 0;font-size:.93rem}
+.callout-blue{background:#e7f1fa;border-left:4px solid #1a6fa0}
+.callout-gold{background:#fdf6e3;border-left:4px solid #e8c547}
+.callout-green{background:#e9f5ec;border-left:4px solid #2a9d4e}
+.callout-red{background:#fce8e8;border-left:4px solid #c0392b}
+.callout-title{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+
+/* ===== DIAGRAM: DEFENSE IN DEPTH ===== */
+.did-diagram{display:flex;flex-direction:column;align-items:center;gap:0;margin:20px auto;max-width:520px}
+.did-layer{width:100%;text-align:center;padding:13px 10px;font-weight:600;font-size:.88rem;color:#fff;position:relative;border-radius:6px;cursor:default;transition:transform .15s}
+.did-layer:hover,.did-layer:focus{transform:scale(1.03);outline:2px solid #0d3b66;outline-offset:2px}
+.did-layer[data-layer="physical"]{background:#8e44ad}
+.did-layer[data-layer="network"]{background:#1d5e8a;width:88%;margin:0 auto}
+.did-layer[data-layer="host"]{background:#1a7341;width:76%;margin:0 auto}
+.did-layer[data-layer="application"]{background:#a05418;width:64%;margin:0 auto}
+.did-layer[data-layer="data"]{background:#c0392b;width:52%;margin:0 auto}
+.did-layer .layer-label{display:block}
+.did-layer .layer-detail{display:block;font-weight:400;font-size:.78rem;opacity:.92}
+.did-connector{width:2px;height:10px;background:#666;margin:0 auto}
+.did-caption{text-align:center;font-size:.82rem;color:#555;margin-top:10px;font-style:italic}
+
+/* ===== TOGGLE / EXPAND ===== */
+.toggle-btn{background:#0d3b66;color:#fff;border:none;padding:9px 16px;border-radius:5px;cursor:pointer;font-size:.88rem;font-weight:600;margin:8px 4px 8px 0;transition:background .2s}
+.toggle-btn:hover,.toggle-btn:focus{background:#13507a;outline:2px solid #e8c547;outline-offset:2px}
+.toggle-content{display:none;background:#f0f4f8;border-radius:5px;padding:14px 16px;margin:6px 0 14px;font-size:.92rem;border:1px solid #d0d8e0}
+.toggle-content.open{display:block}
+
+/* ===== TABLES ===== */
+.styled-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.9rem}
+.styled-table th{background:#0d3b66;color:#fff;padding:10px 12px;text-align:left;font-weight:600}
+.styled-table td{padding:9px 12px;border-bottom:1px solid #dde3ea}
+.styled-table tr:nth-child(even){background:#f5f7fa}
+.styled-table tr:hover{background:#e7f1fa}
+
+/* ===== LISTS ===== */
+ul,ol{margin:8px 0 8px 22px}
+li{margin-bottom:5px}
+
+/* ===== KNOWLEDGE CHECK ===== */
+.kc-block{background:#fff;border:2px solid #0d3b66;border-radius:8px;padding:22px 24px;margin:16px 0}
+.kc-block h3{color:#0d3b66;margin-bottom:12px}
+.kc-question{margin-bottom:18px;border:none;padding:0;min-inline-size:0}
+.kc-question legend{display:block;width:100%;font-size:inherit;padding:0;font-weight:600;margin-bottom:8px}
+.kc-question label{display:block;padding:5px 8px;margin:3px 0;border-radius:4px;cursor:pointer;font-size:.91rem;transition:background .15s}
+.kc-question label:hover{background:#e7f1fa}
+.kc-question input[type="radio"]{margin-right:8px;accent-color:#0d3b66}
+.kc-feedback{display:none;padding:10px 14px;border-radius:5px;margin-top:8px;font-size:.89rem}
+.kc-feedback.correct{background:#e9f5ec;border-left:4px solid #2a9d4e;display:block}
+.kc-feedback.incorrect{background:#fce8e8;border-left:4px solid #c0392b;display:block}
+.kc-check-btn{background:#0d3b66;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:.87rem;font-weight:600;margin-top:4px;transition:background .2s}
+.kc-check-btn:hover,.kc-check-btn:focus{background:#13507a;outline:2px solid #e8c547;outline-offset:2px}
+.kc-reset-btn{background:#666;color:#fff;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-size:.87rem;font-weight:600;margin:4px 0 0 8px;transition:background .2s}
+.kc-reset-btn:hover,.kc-reset-btn:focus{background:#444;outline:2px solid #e8c547;outline-offset:2px}
+
+/* ===== SCENARIO BOX ===== */
+.scenario{background:#f8f4ec;border:1px solid #d4c9a8;border-radius:6px;padding:16px 18px;margin:14px 0;font-size:.92rem}
+.scenario .scenario-label{font-weight:700;color:#6b4f10;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+
+/* ===== FOOTER ===== */
+.mod-footer{text-align:center;padding:18px 10px;font-size:.8rem;color:#666;border-top:1px solid #dde3ea;margin-top:30px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:600px){
+  .page-wrap{padding:10px 12px 40px}
+  .mod-banner{padding:20px 16px 16px}
+  .mod-banner h1{font-size:1.3rem}
+  .section{padding:18px 16px}
+  .nav-bar a{padding:8px 9px;font-size:.78rem}
+  .did-layer{font-size:.8rem;padding:10px 6px}
+}
+
+/* ===== PRINT ===== */
+@media print{
+  .nav-bar,.skip-link,.toggle-btn,.kc-check-btn,.kc-reset-btn{display:none}
+  .toggle-content{display:block!important}
+  .section{break-inside:avoid;border:1px solid #ccc}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<!-- Skip Link -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Navigation Bar -->
+<nav class="nav-bar" aria-label="Module sections">
+  <span class="nav-title">Module 14.1</span>
+  <a href="#objectives">Objectives</a>
+  <a href="#defense-in-depth">Defense in Depth</a>
+  <a href="#why-physical">Why It Matters</a>
+  <a href="#data-center">Data Center Controls</a>
+  <a href="#small-office">Small Office</a>
+  <a href="#policies">Policies</a>
+  <a href="#knowledge-check">Knowledge Check</a>
+  <a href="#project3">Project&nbsp;3</a>
+</nav>
+
+<!-- Main Content -->
+<main id="main-content" class="page-wrap">
+
+<!-- Banner -->
+<header class="mod-banner">
+  <div class="course-tag">CSC 152 – Network OS and Administration &bull; Week 14</div>
+  <h1>Module 14.1 – Physical Security &amp; Defense in Depth</h1>
+  <div class="subtitle">The outermost layer of server protection</div>
+</header>
+
+<!-- ============================================================ -->
+<!-- §0 – OBJECTIVES & WEEK 14 CONTEXT -->
+<!-- ============================================================ -->
+<section class="section" id="objectives">
+  <h2>§0 - Objectives &amp; Week 14 Context</h2>
+
+  <h3>Module 14.1 Objective</h3>
+  <ul>
+    <li><strong>W14.1</strong> - Implement physical security controls appropriate for server environments.</li>
+  </ul>
+
+  <h3>Where Week 14 Fits</h3>
+  <p>Over Weeks&nbsp;1–13, you built a comprehensive server infrastructure: hardware fundamentals, Linux and Windows administration, user/group management, file permissions, networking, storage, directory services (Active&nbsp;Directory and OpenLDAP), virtualization, and a Splunk monitoring stack. <strong>Now we secure it.</strong></p>
+  <p>Week&nbsp;14 is the primary week for <strong>CSLO&nbsp;2: Apply physical and network data security techniques.</strong> It brings together every security concept introduced incrementally across the semester into a unified, systematic hardening approach.</p>
+
+  <h3>The Four Week 14 Modules</h3>
+  <table class="styled-table">
+    <thead><tr><th>Module</th><th>Focus</th><th>Defense Layer</th></tr></thead>
+    <tbody>
+      <tr><td><strong>14.1</strong> (this module)</td><td>Physical Security &amp; Defense in Depth</td><td>Physical (outermost)</td></tr>
+      <tr><td><strong>14.2</strong></td><td>Server Hardening: Linux &amp; Windows</td><td>Host</td></tr>
+      <tr><td><strong>14.3</strong></td><td>Secure Authentication, Encryption &amp; Patch Management</td><td>Identity / Data / Maintenance</td></tr>
+      <tr><td><strong>14.4</strong></td><td>Security Validation with Splunk</td><td>Monitoring &amp; Verification</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-gold">
+    <div class="callout-title">&#128204; Project 3 Reminder</div>
+    All Week&nbsp;14 content directly supports <strong>Project&nbsp;3: Security Hardening &amp; Monitoring with Splunk</strong> (75&nbsp;pts), due <strong>Monday, May&nbsp;18,&nbsp;2026</strong>. There are no graded labs, quizzes, or discussions this week. Focus your effort on learning module content and Project&nbsp;3 work.
+  </div>
+
+  <p><strong>Estimated time for this module:</strong> 0.75–1.0&nbsp;hour.</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- §1 – THE DEFENSE-IN-DEPTH MODEL -->
+<!-- ============================================================ -->
+<section class="section" id="defense-in-depth">
+  <h2>§1 - The Defense-in-Depth Model</h2>
+
+  <p><strong>Defense in depth</strong> is a security strategy that deploys <em>multiple, overlapping layers</em> of controls so that if any single layer fails, the layers beneath it continue to protect the organization's resources. The concept originates from military strategy and is now a foundational principle in information security.</p>
+
+  <p>Think of it like a medieval castle: a moat, outer walls, inner walls, a keep, and a vault. An attacker must breach every layer to reach the treasure. In server security, the "treasure" is your <strong>data</strong>.</p>
+
+  <!-- Interactive Diagram -->
+  <h3>Layered Security Architecture</h3>
+  <p>Click or hover over each layer to see its description. This module covers the outermost layer (Physical). Modules 14.2–14.4 address the inner layers.</p>
+
+  <div class="did-diagram" role="img" aria-label="Defense-in-depth diagram showing five concentric layers from Physical (outermost) to Data (innermost)">
+    <div class="did-layer" data-layer="physical" tabindex="0" aria-label="Physical layer: locks, badges, surveillance, environmental controls">
+      <span class="layer-label">&#128274; Physical</span>
+      <span class="layer-detail">Locks, badges, surveillance, environmental controls</span>
+    </div>
+    <div class="did-connector" aria-hidden="true"></div>
+    <div class="did-layer" data-layer="network" tabindex="0" aria-label="Network layer: firewalls, IDS/IPS, segmentation, VPNs">
+      <span class="layer-label">&#127760; Network</span>
+      <span class="layer-detail">Firewalls, IDS/IPS, segmentation, VPNs</span>
+    </div>
+    <div class="did-connector" aria-hidden="true"></div>
+    <div class="did-layer" data-layer="host" tabindex="0" aria-label="Host layer: OS hardening, patching, endpoint protection">
+      <span class="layer-label">&#128421; Host</span>
+      <span class="layer-detail">OS hardening, patching, endpoint protection</span>
+    </div>
+    <div class="did-connector" aria-hidden="true"></div>
+    <div class="did-layer" data-layer="application" tabindex="0" aria-label="Application layer: secure coding, input validation, authentication">
+      <span class="layer-label">&#9881;&#65039; Application</span>
+      <span class="layer-detail">Secure coding, input validation, authentication</span>
+    </div>
+    <div class="did-connector" aria-hidden="true"></div>
+    <div class="did-layer" data-layer="data" tabindex="0" aria-label="Data layer: encryption, access controls, backups">
+      <span class="layer-label">&#128451; Data</span>
+      <span class="layer-detail">Encryption, access controls, backups</span>
+    </div>
+  </div>
+  <p class="did-caption">Each layer provides independent protection. If one layer is compromised, the remaining layers continue to defend the system.</p>
+
+  <h3>How Week 14 Maps to the Layers</h3>
+  <table class="styled-table">
+    <thead><tr><th>Layer</th><th>Week 14 Module</th></tr></thead>
+    <tbody>
+      <tr><td>Physical</td><td><strong>Module 14.1</strong> (this module)</td></tr>
+      <tr><td>Network</td><td>Module 14.2 (firewall hardening review)</td></tr>
+      <tr><td>Host</td><td>Module 14.2 (Linux &amp; Windows hardening)</td></tr>
+      <tr><td>Application / Identity</td><td>Module 14.3 (authentication, encryption, patching)</td></tr>
+      <tr><td>Data</td><td>Module 14.3 (encryption at rest &amp; in transit)</td></tr>
+      <tr><td>Monitoring (cross-cutting)</td><td>Module 14.4 (Splunk security validation)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">&#128161; Key Insight</div>
+    No single layer is sufficient on its own. A strong firewall cannot help if an attacker walks into an unlocked server room and removes a hard drive. Defense in depth ensures that <em>every</em> path to your data passes through multiple controls.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §2 – WHY PHYSICAL SECURITY MATTERS -->
+<!-- ============================================================ -->
+<section class="section" id="why-physical">
+  <h2>§2 - Why Physical Security Matters</h2>
+
+  <p>Physical security is the <strong>foundation</strong> of the defense-in-depth model. Every logical control—firewalls, encryption, access control lists—can be bypassed if an attacker gains unrestricted physical access to server hardware.</p>
+
+  <h3>What Physical Access Enables</h3>
+  <ul>
+    <li><strong>Booting from external media</strong> to bypass OS-level authentication entirely</li>
+    <li><strong>Removing hard drives</strong> and reading data on another system (unless encrypted)</li>
+    <li><strong>Installing hardware keyloggers</strong> or rogue network devices</li>
+    <li><strong>Resetting BIOS/UEFI passwords</strong> by clearing CMOS</li>
+    <li><strong>Disrupting services</strong> by unplugging power or network cables</li>
+  </ul>
+
+  <div class="scenario">
+    <div class="scenario-label">&#128269; Mini-Scenario</div>
+    <p>A small company stores its single server in an unlocked closet near the reception area. One evening, a cleaning contractor enters after hours, plugs a USB drive into the server, and copies the customer database. The company's firewall, antivirus, and complex passwords were all irrelevant—physical access made them meaningless.</p>
+    <p><strong>Lesson:</strong> Physical access is total access unless additional controls (encryption, locked enclosures) are in place.</p>
+  </div>
+
+  <h3>Physical Security in Virtualized &amp; Cloud Environments</h3>
+  <p>You might wonder: "If our servers are virtual machines, does physical security still matter?" <strong>Absolutely.</strong></p>
+  <ul>
+    <li>Virtual machines run on <strong>physical hypervisor hosts</strong>. Compromising the host compromises every VM on it.</li>
+    <li>In your Proxmox lab environment, the physical server that hosts all your VMs is a single point of failure.</li>
+    <li>Cloud providers (AWS, Azure, Google Cloud) invest heavily in physical data center security precisely because their customers' virtual infrastructure depends on it.</li>
+  </ul>
+
+  <button class="toggle-btn" aria-expanded="false" aria-controls="toggle-cloud" onclick="toggleContent(this)">Show: Cloud Provider Physical Security Example</button>
+  <div class="toggle-content" id="toggle-cloud" aria-label="Cloud provider physical security example">
+    <p>Major cloud providers publish details about their physical security programs:</p>
+    <ul>
+      <li><strong>Multi-layer perimeter</strong> with fencing, vehicle barriers, and guard stations</li>
+      <li><strong>Biometric + badge</strong> authentication at every access point</li>
+      <li><strong>24/7 CCTV</strong> with 90-day retention</li>
+      <li><strong>Visitor escort</strong> requirements—no unaccompanied visitors</li>
+      <li><strong>Hard drive destruction</strong> on-site when drives are decommissioned</li>
+    </ul>
+    <p>Even though you interact with cloud services through a web browser, the physical security of the underlying data center is what makes the service trustworthy.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §3 – DATA CENTER & SERVER ROOM CONTROLS -->
+<!-- ============================================================ -->
+<section class="section" id="data-center">
+  <h2>§3 - Data Center &amp; Server Room Controls</h2>
+
+  <p>Enterprise data centers and dedicated server rooms use multiple overlapping physical controls. These controls fall into four categories: <strong>access control</strong>, <strong>surveillance</strong>, <strong>environmental protection</strong>, and <strong>equipment security</strong>.</p>
+
+  <!-- ACCESS CONTROL -->
+  <h3>Access Control Systems</h3>
+  <table class="styled-table">
+    <thead><tr><th>Control</th><th>How It Works</th><th>Strengths</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Badge / Key-Card Readers</strong></td>
+        <td>Proximity (RFID) or smart card grants entry; each swipe is logged with user ID, timestamp, and door</td>
+        <td>Audit trail; easy to revoke; scalable</td>
+      </tr>
+      <tr>
+        <td><strong>Biometric Scanners</strong></td>
+        <td>Fingerprint, retina, or facial recognition verifies identity</td>
+        <td>Cannot be shared or lost like a badge; strong identity assurance</td>
+      </tr>
+      <tr>
+        <td><strong>Mantraps (Airlock Doors)</strong></td>
+        <td>Two interlocking doors—the second opens only after the first closes and identity is verified</td>
+        <td>Prevents tailgating (following an authorized person through a door)</td>
+      </tr>
+      <tr>
+        <td><strong>PIN Pads / Combination Locks</strong></td>
+        <td>Numeric code required for entry</td>
+        <td>Simple; no physical token needed. Weakness: codes can be shared or observed</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button class="toggle-btn" aria-expanded="false" aria-controls="toggle-tailgating" onclick="toggleContent(this)">Show: What is tailgating?</button>
+  <div class="toggle-content" id="toggle-tailgating" aria-label="Tailgating explanation">
+    <p><strong>Tailgating</strong> (also called <em>piggybacking</em>) occurs when an unauthorized person follows an authorized person through a secured door without presenting their own credentials. Mantraps and security awareness training are the primary defenses against tailgating.</p>
+  </div>
+
+  <!-- SURVEILLANCE -->
+  <h3>Surveillance &amp; Monitoring</h3>
+  <ul>
+    <li><strong>CCTV cameras</strong> – Positioned at all entry/exit points and within the server room; footage retained for 30–90&nbsp;days (varies by policy)</li>
+    <li><strong>Motion detection</strong> – Triggers alerts when movement is detected during off-hours</li>
+    <li><strong>Security guards / monitoring stations</strong> – 24/7 human oversight in large facilities</li>
+    <li><strong>Access logs</strong> – Electronic records of every badge swipe, door opening, and alarm event</li>
+  </ul>
+
+  <!-- ENVIRONMENTAL -->
+  <h3>Environmental Controls</h3>
+  <p>Servers are sensitive to temperature, humidity, water, and fire. Environmental controls protect against these threats:</p>
+  <table class="styled-table">
+    <thead><tr><th>Threat</th><th>Control</th><th>Details</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Overheating</td>
+        <td><strong>HVAC / Precision Cooling</strong></td>
+        <td>Maintain 64–80°F (18–27°C) per ASHRAE guidelines; hot-aisle/cold-aisle layout (covered in Week&nbsp;2)</td>
+      </tr>
+      <tr>
+        <td>Fire</td>
+        <td><strong>Fire Suppression</strong></td>
+        <td>Clean-agent systems (FM-200, Novec 1230) that extinguish fire without damaging electronics; smoke detectors with early warning</td>
+      </tr>
+      <tr>
+        <td>Water / Flooding</td>
+        <td><strong>Water Detection Sensors</strong></td>
+        <td>Leak sensors under raised floors and near pipes; automatic alerts to facilities team</td>
+      </tr>
+      <tr>
+        <td>Humidity</td>
+        <td><strong>Humidity Control</strong></td>
+        <td>Target 40–60% relative humidity; too low → static discharge; too high → condensation</td>
+      </tr>
+      <tr>
+        <td>Power Loss</td>
+        <td><strong>UPS &amp; Generators</strong></td>
+        <td>Uninterruptible power supplies for immediate failover; diesel generators for extended outages</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- EQUIPMENT SECURITY -->
+  <h3>Equipment Security</h3>
+  <ul>
+    <li><strong>Rack locks</strong> – Lockable front and rear doors on server racks prevent unauthorized access to hardware</li>
+    <li><strong>Cable locks</strong> – Secure portable equipment (laptops, diagnostic tools) to prevent theft</li>
+    <li><strong>Port blockers</strong> – Physical plugs inserted into unused USB, Ethernet, or console ports to prevent unauthorized device connections</li>
+    <li><strong>Asset tags</strong> – Barcode or RFID tags on every piece of equipment for inventory tracking</li>
+  </ul>
+
+  <div class="callout callout-green">
+    <div class="callout-title">&#9989; Connection to Your Lab</div>
+    Your Proxmox lab server lives in a physical location. Consider: Who has physical access to it? Is it in a locked room? Could someone plug a USB device into it? These are the same questions enterprise administrators ask about their data center servers.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §4 – SMALL OFFICE & REMOTE SERVER SECURITY -->
+<!-- ============================================================ -->
+<section class="section" id="small-office">
+  <h2>§4 - Small Office &amp; Remote Server Security</h2>
+
+  <p>Not every server lives in a purpose-built data center. Many organizations operate servers in office closets, branch offices, retail locations, or even employees' homes (for development and testing). These environments require adapted physical security controls.</p>
+
+  <h3>Locked Cabinets &amp; Enclosures</h3>
+  <ul>
+    <li>A <strong>locking server cabinet</strong> or <strong>wall-mounted enclosure</strong> is the minimum physical control for a small-office server</li>
+    <li>Choose cabinets with <strong>keyed or combination locks</strong> and <strong>ventilation</strong> (servers generate heat)</li>
+    <li>Mount the cabinet to the wall or floor to prevent the entire unit from being carried away</li>
+  </ul>
+
+  <h3>Physical Access Logging</h3>
+  <ul>
+    <li>Even without electronic badge readers, maintain a <strong>sign-in/sign-out log</strong> for anyone who accesses server equipment</li>
+    <li>Record: name, date, time in, time out, reason for access</li>
+    <li>Review logs regularly for anomalies</li>
+  </ul>
+
+  <h3>Secure Media Disposal</h3>
+  <p>When storage media (hard drives, SSDs, USB drives, backup tapes) reach end of life or are being repurposed, the data on them must be securely destroyed. Simply deleting files or formatting a drive is <strong>not sufficient</strong>—data can be recovered with forensic tools.</p>
+
+  <table class="styled-table">
+    <thead><tr><th>Method</th><th>Applies To</th><th>How It Works</th><th>Effectiveness</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Degaussing</strong></td>
+        <td>HDDs, magnetic tapes</td>
+        <td>Exposes media to a powerful magnetic field that destroys the magnetic patterns storing data</td>
+        <td>Highly effective for magnetic media; does <em>not</em> work on SSDs</td>
+      </tr>
+      <tr>
+        <td><strong>Physical Shredding</strong></td>
+        <td>All media types</td>
+        <td>Industrial shredder reduces drives to small fragments</td>
+        <td>Most thorough; required for highest-classification data</td>
+      </tr>
+      <tr>
+        <td><strong>Cryptographic Erase</strong></td>
+        <td>Self-encrypting drives (SEDs)</td>
+        <td>Destroys the encryption key, rendering all data unreadable</td>
+        <td>Fast and effective if the drive supports hardware encryption</td>
+      </tr>
+      <tr>
+        <td><strong>Secure Erase / Overwrite</strong></td>
+        <td>HDDs, some SSDs</td>
+        <td>Overwrites every sector with random data (one or more passes)</td>
+        <td>Effective for HDDs; less reliable for SSDs due to wear-leveling</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">&#128214; Reference: NIST SP 800-88</div>
+    <strong>NIST Special Publication 800-88, Revision 1: Guidelines for Media Sanitization</strong> is the authoritative U.S. government guide for securely disposing of storage media. It defines three levels of sanitization: <strong>Clear</strong> (logical overwrite), <strong>Purge</strong> (renders data infeasible to recover with state-of-the-art techniques), and <strong>Destroy</strong> (physical destruction). Organizations choose the level based on data sensitivity and the media's next use.
+  </div>
+
+  <h3>Equipment Checkout Procedures</h3>
+  <ul>
+    <li>Maintain an <strong>asset inventory</strong> of all server equipment, including serial numbers</li>
+    <li>Require <strong>written authorization</strong> before any equipment leaves the premises</li>
+    <li>Log checkout and return dates; follow up on overdue items</li>
+    <li>Ensure all data is wiped from equipment before disposal or donation</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<!-- §5 – PHYSICAL SECURITY POLICIES -->
+<!-- ============================================================ -->
+<section class="section" id="policies">
+  <h2>§5 - Physical Security Policies</h2>
+
+  <p>Technical controls (locks, cameras, sensors) are only effective when supported by <strong>documented policies</strong> that define who is responsible, what is expected, and how compliance is verified. Physical security policies are part of an organization's broader information security management system.</p>
+
+  <h3>Visitor Policies</h3>
+  <ul>
+    <li>All visitors must <strong>sign in</strong> at reception and receive a <strong>visitor badge</strong></li>
+    <li>Visitors must be <strong>escorted</strong> at all times in restricted areas (server rooms, data centers)</li>
+    <li>Visitor access is logged and retained for a defined period</li>
+    <li>Visitor badges are <strong>visually distinct</strong> from employee badges (different color, "VISITOR" label)</li>
+  </ul>
+
+  <h3>Equipment Handling &amp; Documentation</h3>
+  <ul>
+    <li><strong>Change management</strong> – Any physical changes to server hardware (adding drives, swapping components) must be documented and approved</li>
+    <li><strong>Asset tracking</strong> – Maintain a current inventory of all hardware with location, serial number, and custodian</li>
+    <li><strong>Disposal documentation</strong> – Record the sanitization method used, the date, and the person who performed it; retain certificates of destruction from third-party shredding services</li>
+  </ul>
+
+  <h3>Connection to Organizational Frameworks</h3>
+  <p>Physical security policies don't exist in isolation. They are components of broader security frameworks that organizations adopt:</p>
+
+  <table class="styled-table">
+    <thead><tr><th>Framework</th><th>Physical Security Coverage</th><th>Audience</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>ISO/IEC 27001</strong></td>
+        <td>Annex A.11 – Physical and Environmental Security: secure areas, equipment protection, cabling security, secure disposal</td>
+        <td>International organizations seeking certification</td>
+      </tr>
+      <tr>
+        <td><strong>NIST Cybersecurity Framework (CSF)</strong></td>
+        <td>PR.AC (Access Control), PR.PT (Protective Technology): includes physical access controls as part of the Protect function</td>
+        <td>U.S. organizations, especially government and critical infrastructure</td>
+      </tr>
+      <tr>
+        <td><strong>NIST SP 800-53</strong></td>
+        <td>PE (Physical and Environmental Protection) family: 20+ controls covering physical access, monitoring, environmental protection, and media protection</td>
+        <td>U.S. federal agencies and contractors</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-gold">
+    <div class="callout-title">&#128161; Awareness Level</div>
+    You do not need to memorize these frameworks for this course. The goal is to understand that physical security policies are part of recognized, structured approaches to information security—and that the controls we discuss in this module map to specific requirements in these frameworks.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §6 – CHECK FOR UNDERSTANDING -->
+<!-- ============================================================ -->
+<section class="section" id="knowledge-check">
+  <h2>§6 - Check for Understanding</h2>
+
+  <p>These questions are <strong>ungraded</strong>. Use them to test your understanding of the material. Select an answer and click <strong>Check Answer</strong> to receive immediate feedback.</p>
+
+  <div class="kc-block">
+
+    <!-- Q1 -->
+    <fieldset class="kc-question" id="q1">
+      <legend class="q-stem">1. In the defense-in-depth model, which layer is considered the outermost?</legend>
+      <label><input type="radio" name="q1" value="a"> Network (firewalls, IDS/IPS)</label>
+      <label><input type="radio" name="q1" value="b"> Host (OS hardening, patching)</label>
+      <label><input type="radio" name="q1" value="c"> Physical (locks, badges, environmental controls)</label>
+      <label><input type="radio" name="q1" value="d"> Data (encryption, access controls)</label>
+      <button class="kc-check-btn" onclick="checkAnswer('q1','c')">Check Answer</button>
+      <div class="kc-feedback" id="q1-correct" aria-live="polite">
+        <strong>&#9989; Correct.</strong> The physical layer is the outermost ring of defense in depth. If physical security is compromised, an attacker can bypass all logical controls by directly accessing hardware.
+      </div>
+      <div class="kc-feedback" id="q1-incorrect" aria-live="polite">
+        <strong>&#10060; Not quite.</strong> The correct answer is <strong>Physical</strong>. Physical security forms the outermost layer because it protects the hardware that everything else runs on. Without physical security, an attacker could simply walk up to a server and remove a drive.
+      </div>
+    </fieldset>
+
+    <!-- Q2 -->
+    <fieldset class="kc-question" id="q2">
+      <legend class="q-stem">2. What is the primary purpose of a mantrap (airlock) at a data center entrance?</legend>
+      <label><input type="radio" name="q2" value="a"> Regulate temperature between the outside and the server room</label>
+      <label><input type="radio" name="q2" value="b"> Prevent tailgating by ensuring only one authenticated person enters at a time</label>
+      <label><input type="radio" name="q2" value="c"> Provide a waiting area for visitors before they receive badges</label>
+      <label><input type="radio" name="q2" value="d"> Contain fire by creating an air gap between rooms</label>
+      <button class="kc-check-btn" onclick="checkAnswer('q2','b')">Check Answer</button>
+      <div class="kc-feedback" id="q2-correct" aria-live="polite">
+        <strong>&#9989; Correct.</strong> A mantrap uses two interlocking doors so that the second door opens only after the first closes and identity is verified. This prevents an unauthorized person from following (tailgating) an authorized person through the door.
+      </div>
+      <div class="kc-feedback" id="q2-incorrect" aria-live="polite">
+        <strong>&#10060; Not quite.</strong> The correct answer is <strong>B</strong>. Mantraps are specifically designed to prevent <em>tailgating</em>—an unauthorized person slipping through a secured door behind an authorized person. The two-door design ensures each individual must authenticate independently.
+      </div>
+    </fieldset>
+
+    <!-- Q3 -->
+    <fieldset class="kc-question" id="q3">
+      <legend class="q-stem">3. A company needs to dispose of old SSDs that contained sensitive customer data. Which method is LEAST effective for SSDs specifically?</legend>
+      <label><input type="radio" name="q3" value="a"> Physical shredding</label>
+      <label><input type="radio" name="q3" value="b"> Cryptographic erase (on self-encrypting drives)</label>
+      <label><input type="radio" name="q3" value="c"> Degaussing</label>
+      <label><input type="radio" name="q3" value="d"> Secure erase using manufacturer tools</label>
+      <button class="kc-check-btn" onclick="checkAnswer('q3','c')">Check Answer</button>
+      <div class="kc-feedback" id="q3-correct" aria-live="polite">
+        <strong>&#9989; Correct.</strong> Degaussing uses a powerful magnetic field to destroy data on <em>magnetic</em> media (HDDs, tapes). SSDs store data in flash memory chips using electrical charges, not magnetic patterns, so degaussing has no effect on them. For SSDs, use cryptographic erase, manufacturer secure-erase commands, or physical shredding.
+      </div>
+      <div class="kc-feedback" id="q3-incorrect" aria-live="polite">
+        <strong>&#10060; Not quite.</strong> The correct answer is <strong>C – Degaussing</strong>. Degaussing destroys data by disrupting magnetic patterns, which works for HDDs and tapes. SSDs use flash memory (electrical charges, not magnetism), so degaussing has no effect. Physical shredding, cryptographic erase, and manufacturer secure-erase tools are all valid options for SSDs.
+      </div>
+    </fieldset>
+
+    <!-- Q4 -->
+    <fieldset class="kc-question" id="q4">
+      <legend class="q-stem">4. Why does physical security remain critical even when all servers are virtualized?</legend>
+      <label><input type="radio" name="q4" value="a"> Virtual machines cannot be encrypted</label>
+      <label><input type="radio" name="q4" value="b"> Virtual machines run on physical hypervisor hosts—compromising the host compromises every VM</label>
+      <label><input type="radio" name="q4" value="c"> Virtualization software does not support access controls</label>
+      <label><input type="radio" name="q4" value="d"> Virtual machines are stored on removable USB drives</label>
+      <button class="kc-check-btn" onclick="checkAnswer('q4','b')">Check Answer</button>
+      <div class="kc-feedback" id="q4-correct" aria-live="polite">
+        <strong>&#9989; Correct.</strong> Virtual machines are abstractions running on physical hardware. If an attacker gains physical access to the hypervisor host (e.g., your Proxmox server), they can access, copy, or destroy every VM running on it. Physical security protects the foundation that virtualization depends on.
+      </div>
+      <div class="kc-feedback" id="q4-incorrect" aria-live="polite">
+        <strong>&#10060; Not quite.</strong> The correct answer is <strong>B</strong>. Virtualization does not eliminate the need for physical security—it concentrates risk. A single physical hypervisor host may run dozens of VMs. Physical access to that host gives an attacker control over all of them.
+      </div>
+    </fieldset>
+
+    <!-- Q5 -->
+    <fieldset class="kc-question" id="q5">
+      <legend class="q-stem">5. According to NIST SP 800-88, which level of media sanitization involves physical destruction of the storage device?</legend>
+      <label><input type="radio" name="q5" value="a"> Clear</label>
+      <label><input type="radio" name="q5" value="b"> Purge</label>
+      <label><input type="radio" name="q5" value="c"> Destroy</label>
+      <label><input type="radio" name="q5" value="d"> Sanitize</label>
+      <button class="kc-check-btn" onclick="checkAnswer('q5','c')">Check Answer</button>
+      <div class="kc-feedback" id="q5-correct" aria-live="polite">
+        <strong>&#9989; Correct.</strong> NIST SP 800-88 defines three sanitization levels: <strong>Clear</strong> (logical overwrite—protects against simple recovery), <strong>Purge</strong> (renders data infeasible to recover with state-of-the-art lab techniques), and <strong>Destroy</strong> (physical destruction such as shredding, disintegration, or incineration). Destroy is the most thorough and is used for the most sensitive data.
+      </div>
+      <div class="kc-feedback" id="q5-incorrect" aria-live="polite">
+        <strong>&#10060; Not quite.</strong> The correct answer is <strong>C – Destroy</strong>. NIST SP 800-88 defines three levels: Clear (logical overwrite), Purge (advanced techniques that make recovery infeasible), and Destroy (physical destruction—shredding, disintegration, incineration). "Sanitize" is not one of the three defined levels; it is the general term for the overall process.
+      </div>
+    </fieldset>
+
+    <button class="kc-reset-btn" onclick="resetAllQuestions()">Reset All Questions</button>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §7 – CONNECTION TO PROJECT 3 -->
+<!-- ============================================================ -->
+<section class="section" id="project3">
+  <h2>§7 - Connection to Project 3</h2>
+
+  <p>While Project&nbsp;3 focuses primarily on <em>logical</em> security controls (hardening configurations, Splunk dashboards, authentication setup), your understanding of physical security strengthens your work in several ways:</p>
+
+  <ul>
+    <li><strong>Security documentation context</strong> – When documenting your hardening measures for Project&nbsp;3, you can reference the defense-in-depth model to explain where your logical controls fit within a broader security strategy. This demonstrates professional-level security thinking.</li>
+    <li><strong>Threat awareness</strong> – Understanding physical threats helps you make better decisions about which logical controls to prioritize. For example, encrypting data at rest (covered in Module&nbsp;14.3) is especially critical when physical security is limited.</li>
+    <li><strong>Secure disposal</strong> – If your Project&nbsp;3 documentation includes a security policy section, knowledge of NIST SP 800-88 and media sanitization methods adds depth and credibility.</li>
+  </ul>
+
+  <div class="callout callout-gold">
+    <div class="callout-title">&#128640; Up Next: Module 14.2</div>
+    Module&nbsp;14.2 moves inward through the defense-in-depth model to the <strong>host layer</strong>. You will learn systematic server hardening techniques for both Linux and Windows, including disabling unnecessary services, configuring host-based firewalls, applying file system protections, and using industry-standard benchmarks (CIS, DISA STIGs, NIST SP 800-123). Module&nbsp;14.2 is the most hands-on module of Week&nbsp;14 and directly supports your Project&nbsp;3 hardening deliverables.
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">&#128203; Project 3 Quick Reference</div>
+    <strong>Project 3: Security Hardening &amp; Monitoring with Splunk</strong><br>
+    Points: 75 &nbsp;|&nbsp; Due: Monday, May 18, 2026, 11:59 PM<br>
+    Key deliverables: security hardening applied to Linux &amp; Windows servers, SSH key-based authentication, SSL/TLS configuration, patch management strategy, ≥3 Splunk dashboards, ≥1 Splunk alert, comprehensive documentation with evidence.
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="mod-footer">
+  CSC 152 – Network Operating Systems and Administration &bull; Mendocino College &bull; Instructor: David Pai<br>
+  Module 14.1 – Physical Security &amp; Defense in Depth &bull; Week 14: Server Security &amp; Hardening<br>
+  CSLO 2: Apply physical and network data security techniques.
+</footer>
+
+</main>
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT -->
+<!-- ============================================================ -->
+<script>
+/* Toggle expandable content */
+function toggleContent(btn){
+  var content=btn.nextElementSibling;
+  var isOpen=content.classList.contains('open');
+  content.classList.toggle('open');
+  btn.setAttribute('aria-expanded',!isOpen);
+}
+
+/* Knowledge check: check answer */
+function checkAnswer(qId,correctVal){
+  var radios=document.querySelectorAll('input[name="'+qId+'"]');
+  var selected=null;
+  radios.forEach(function(r){if(r.checked)selected=r.value;});
+  if(!selected){alert('Please select an answer before checking.');return;}
+  /* hide both first */
+  document.getElementById(qId+'-correct').style.display='none';
+  document.getElementById(qId+'-incorrect').style.display='none';
+  if(selected===correctVal){
+    document.getElementById(qId+'-correct').style.display='block';
+    document.getElementById(qId+'-correct').className='kc-feedback correct';
+  }else{
+    document.getElementById(qId+'-incorrect').style.display='block';
+    document.getElementById(qId+'-incorrect').className='kc-feedback incorrect';
+  }
+  /* disable radios after answering */
+  radios.forEach(function(r){r.disabled=true;});
+}
+
+/* Reset all questions */
+function resetAllQuestions(){
+  var allRadios=document.querySelectorAll('.kc-question input[type="radio"]');
+  allRadios.forEach(function(r){r.checked=false;r.disabled=false;});
+  var allFeedback=document.querySelectorAll('.kc-feedback');
+  allFeedback.forEach(function(f){f.style.display='none';});
+}
+</script>
+</body>
+</html>

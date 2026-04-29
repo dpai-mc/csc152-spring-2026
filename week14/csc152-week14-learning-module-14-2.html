@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 14.2 – Server Hardening: Linux &amp; Windows | CSC 152</title>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f5f5f5;color:#1e1e1e;line-height:1.65;font-size:16px}
+a{color:#0055a2;text-decoration:underline}
+a:focus-visible{outline:3px solid #d4a843;outline-offset:2px;border-radius:2px}
+img{max-width:100%;height:auto}
+
+/* ── Navigation Bar ── */
+.top-nav{position:sticky;top:0;z-index:1000;background:#1a1a2e;padding:0;border-bottom:3px solid #d4a843}
+.top-nav ul{list-style:none;display:flex;flex-wrap:wrap;max-width:1100px;margin:0 auto;padding:0}
+.top-nav li{margin:0}
+.top-nav a{display:block;color:#f0f0f0;text-decoration:none;padding:10px 13px;font-size:.84rem;font-weight:500;transition:background .2s,color .2s}
+.top-nav a:hover,.top-nav a:focus-visible{background:#d4a843;color:#1a1a2e;outline-offset:-2px}
+
+/* ── Page Wrap ── */
+.page-wrap{max-width:1060px;margin:0 auto;padding:0 18px 60px}
+
+/* ── Banner ── */
+.mod-banner{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);color:#fff;padding:38px 32px 30px;border-radius:0 0 10px 10px;margin-bottom:32px}
+.mod-banner .course-tag{font-size:.82rem;letter-spacing:.5px;color:#d4a843;text-transform:uppercase;margin-bottom:6px;font-weight:600}
+.mod-banner h1{font-size:1.75rem;margin-bottom:6px;line-height:1.25}
+.mod-banner .subtitle{font-size:1.05rem;color:#ccc;font-weight:400}
+
+/* ── Sections ── */
+.section{background:#fff;border-radius:8px;padding:28px 30px;margin-bottom:26px;border:1px solid #ddd;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.section h2{font-size:1.35rem;color:#1a1a2e;border-bottom:3px solid #d4a843;padding-bottom:8px;margin-bottom:18px}
+.section h3{font-size:1.1rem;color:#16213e;margin:20px 0 8px}
+.section h4{font-size:1rem;color:#333;margin:16px 0 6px}
+.section ul,.section ol{margin:8px 0 12px 22px}
+.section li{margin-bottom:5px}
+.section p{margin-bottom:12px}
+
+/* ── Callout Boxes ── */
+.callout{border-left:5px solid;border-radius:6px;padding:16px 18px;margin:18px 0}
+.callout-title{font-weight:700;margin-bottom:6px;font-size:.97rem}
+.callout-blue{background:#e8f0fe;border-color:#0055a2;color:#003d7a}
+.callout-gold{background:#fdf6e3;border-color:#d4a843;color:#5c4813}
+.callout-green{background:#e6f4ea;border-color:#2e7d32;color:#1b5e20}
+.callout-red{background:#fce8e8;border-color:#c62828;color:#8e0000}
+.callout-gray{background:#f0f0f0;border-color:#757575;color:#333}
+
+/* ── Tables ── */
+.info-table{width:100%;border-collapse:collapse;margin:14px 0 18px;font-size:.93rem}
+.info-table th,.info-table td{border:1px solid #ccc;padding:9px 11px;text-align:left;vertical-align:top}
+.info-table th{background:#1a1a2e;color:#fff;font-weight:600}
+.info-table tr:nth-child(even){background:#f9f9f9}
+
+/* ── Code Blocks ── */
+pre{background:#1e1e1e;color:#d4d4d4;border-radius:6px;padding:16px 18px;overflow-x:auto;margin:12px 0 16px;font-size:.88rem;line-height:1.55;white-space:pre}
+pre code{background:none;color:inherit;font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:inherit}
+code{background:#eee;padding:2px 5px;border-radius:3px;font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.9em}
+
+/* ── Tabs ── */
+.tab-group{margin:16px 0 20px}
+.tab-buttons{display:flex;flex-wrap:wrap;gap:0;border-bottom:2px solid #d4a843}
+.tab-btn{background:#eee;border:1px solid #ccc;border-bottom:none;padding:10px 20px;cursor:pointer;font-size:.93rem;font-weight:600;color:#555;border-radius:6px 6px 0 0;transition:background .2s,color .2s}
+.tab-btn:hover{background:#fdf6e3;color:#1a1a2e}
+.tab-btn:focus-visible{outline:3px solid #d4a843;outline-offset:-2px}
+.tab-btn[aria-selected="true"]{background:#fff;color:#1a1a2e;border-color:#d4a843;border-bottom:2px solid #fff;margin-bottom:-2px}
+.tab-panel{display:none;background:#fff;padding:20px 18px;border:1px solid #ccc;border-top:none;border-radius:0 0 6px 6px}
+.tab-panel.active{display:block}
+
+/* ── Accordion ── */
+.accordion-item{border:1px solid #ccc;border-radius:6px;margin:10px 0;overflow:hidden}
+.accordion-btn{width:100%;text-align:left;background:#f7f7f7;border:none;padding:13px 18px;font-size:.97rem;font-weight:600;color:#1a1a2e;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .2s}
+.accordion-btn:hover{background:#fdf6e3}
+.accordion-btn:focus-visible{outline:3px solid #d4a843;outline-offset:-2px}
+.accordion-btn::after{content:'+';font-size:1.3rem;font-weight:700;color:#d4a843;transition:transform .2s}
+.accordion-btn[aria-expanded="true"]::after{content:'−'}
+.accordion-body{display:none;padding:14px 18px;background:#fff;border-top:1px solid #eee}
+.accordion-body.open{display:block}
+
+/* ── Knowledge Check ── */
+.kc-question{background:#f9f9f9;border:1px solid #ddd;border-radius:6px;padding:18px;margin:14px 0}
+.kc-question p.q-stem{font-weight:600;margin-bottom:10px}
+.kc-option{display:block;margin:5px 0;padding:8px 12px;border:1px solid #ccc;border-radius:4px;cursor:pointer;transition:background .15s}
+.kc-option:hover{background:#fdf6e3}
+.kc-option:focus-visible{outline:3px solid #d4a843;outline-offset:1px}
+.kc-feedback{margin-top:10px;padding:10px 14px;border-radius:5px;display:none;font-size:.93rem}
+.kc-feedback.correct{background:#e6f4ea;border:1px solid #2e7d32;color:#1b5e20;display:block}
+.kc-feedback.incorrect{background:#fce8e8;border:1px solid #c62828;color:#8e0000;display:block}
+
+/* ── Before/After ── */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.compare-col{border:1px solid #ccc;border-radius:6px;padding:16px;background:#fff}
+.compare-col h4{margin-top:0}
+.compare-col.before{border-left:4px solid #c62828}
+.compare-col.after{border-left:4px solid #2e7d32}
+@media(max-width:680px){.compare-grid{grid-template-columns:1fr}}
+
+/* ── Utility ── */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.text-center{text-align:center}
+.mt-0{margin-top:0}
+.mb-sm{margin-bottom:8px}
+strong{color:#1a1a2e}
+.highlight-cmd{color:#569cd6}
+.highlight-flag{color:#ce9178}
+.highlight-comment{color:#6a9955}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- TOP NAVIGATION -->
+<!-- ============================================================ -->
+<nav class="top-nav" aria-label="Module section navigation">
+<ul role="menubar">
+<li role="none"><a role="menuitem" href="#objectives">§0 Objectives</a></li>
+<li role="none"><a role="menuitem" href="#what-is-hardening">§1 What Is Hardening?</a></li>
+<li role="none"><a role="menuitem" href="#frameworks">§2 Frameworks</a></li>
+<li role="none"><a role="menuitem" href="#linux-hardening">§3 Linux</a></li>
+<li role="none"><a role="menuitem" href="#windows-hardening">§4 Windows</a></li>
+<li role="none"><a role="menuitem" href="#verification">§5 Verification</a></li>
+<li role="none"><a role="menuitem" href="#mini-case">§6 Mini-Case</a></li>
+<li role="none"><a role="menuitem" href="#knowledge-check">§7 Check</a></li>
+<li role="none"><a role="menuitem" href="#project3">§8 Project&nbsp;3</a></li>
+</ul>
+</nav>
+
+<!-- ============================================================ -->
+<!-- MAIN CONTENT -->
+<!-- ============================================================ -->
+<main id="main-content" class="page-wrap">
+
+<!-- Banner -->
+<header class="mod-banner">
+<div class="course-tag">CSC 152 - Network OS and Administration &bull; Week 14</div>
+<h1>Module 14.2 - Server Hardening: Linux &amp; Windows</h1>
+<div class="subtitle">Systematically reducing the attack surface at the host layer</div>
+</header>
+
+<!-- ============================================================ -->
+<!-- §0 – OBJECTIVES -->
+<!-- ============================================================ -->
+<section class="section" id="objectives">
+<h2>§0 - Objectives &amp; Context</h2>
+
+<h3>Module 14.2 Objectives</h3>
+<ul>
+<li><strong>W14.2</strong> - Apply server hardening best practices to both Linux and Windows servers using industry-standard checklists and benchmarks.</li>
+<li><strong>W14.7</strong> - Connect server hardening techniques to Project&nbsp;3 deliverables, applying hardening controls to the lab infrastructure and documenting results.</li>
+</ul>
+
+<h3>Where This Module Fits</h3>
+<p>Module&nbsp;14.1 introduced the <strong>defense-in-depth</strong> model and addressed the outermost ring&mdash;physical security. Module&nbsp;14.2 moves one layer inward to the <strong>host layer</strong>. Here you will learn how to take a default-installed server and systematically harden it so that only the services, ports, and capabilities your organization actually needs remain active.</p>
+
+<div class="callout callout-gold">
+<div class="callout-title">&#128295; Most Hands-On Module of Week&nbsp;14</div>
+This module contains the most command-line and configuration content of any Week&nbsp;14 module. You are expected to follow along in your own lab VMs and apply these techniques to your Project&nbsp;3 infrastructure.
+</div>
+
+<div class="callout callout-blue">
+<div class="callout-title">&#128203; Graded Work Reminder</div>
+Week&nbsp;14 has <strong>no graded lab, quiz, or discussion</strong>. The only active graded deliverable is <strong>Project&nbsp;3</strong> (75&nbsp;pts), due <strong>Monday, May&nbsp;18,&nbsp;2026</strong>. Everything you learn and practice in this module directly feeds into Project&nbsp;3&rsquo;s security hardening deliverables.
+</div>
+
+<h3>Prior-Week Dependencies</h3>
+<table class="info-table">
+<thead><tr><th>Week</th><th>Dependency</th></tr></thead>
+<tbody>
+<tr><td>3-4</td><td>Linux &amp; Windows Server installation and basic administration</td></tr>
+<tr><td>5</td><td>CLI skills (Bash, PowerShell) for executing hardening commands</td></tr>
+<tr><td>6</td><td>User/group management and password policies</td></tr>
+<tr><td>7</td><td>File permissions and ACLs</td></tr>
+<tr><td>9</td><td>Firewall fundamentals (iptables/UFW, Windows Firewall)</td></tr>
+<tr><td>11</td><td>Active Directory and Group Policy Objects</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ============================================================ -->
+<!-- §1 – WHAT IS SERVER HARDENING? -->
+<!-- ============================================================ -->
+<section class="section" id="what-is-hardening">
+<h2>§1 - What Is Server Hardening?</h2>
+
+<h3>Definition</h3>
+<p><strong>Server hardening</strong> is the process of reducing a server&rsquo;s <em>attack surface</em>&mdash;the total number of points where an unauthorized user could try to enter or extract data&mdash;by removing unnecessary software, disabling unneeded services, tightening configurations, and applying security best practices.</p>
+
+<h3>The Principle of Least Functionality</h3>
+<p>Every running service, open port, and installed package is a potential entry point for an attacker. The <strong>principle of least functionality</strong> states that a system should be configured to provide <em>only</em> the capabilities required for its designated role&mdash;nothing more. A web server does not need a print spooler; a database server does not need a GUI desktop environment.</p>
+
+<h3>Default Installation vs.&nbsp;Hardened Installation</h3>
+<p>Operating systems ship with default settings designed for broad compatibility, not security. The table below highlights the contrast:</p>
+
+<div class="compare-grid">
+<div class="compare-col before">
+<h4 style="color:#c62828;">&#9888;&#65039; Default Installation</h4>
+<ul>
+<li>Many services enabled &ldquo;just in case&rdquo;</li>
+<li>Root/Administrator remote login allowed</li>
+<li>Firewall permissive or disabled</li>
+<li>Audit logging minimal or off</li>
+<li>Legacy protocols enabled (e.g., SMBv1)</li>
+<li>Default banners reveal OS version</li>
+<li>Unnecessary packages installed</li>
+</ul>
+</div>
+<div class="compare-col after">
+<h4 style="color:#2e7d32;">&#9989; Hardened Installation</h4>
+<ul>
+<li>Only role-required services running</li>
+<li>Root/Administrator remote login disabled</li>
+<li>Firewall default-deny; explicit allow rules</li>
+<li>Comprehensive audit logging enabled</li>
+<li>Legacy protocols removed or disabled</li>
+<li>Legal warning banner displayed</li>
+<li>Minimal package footprint</li>
+</ul>
+</div>
+</div>
+
+<div class="callout callout-green">
+<div class="callout-title">&#128161; Key Takeaway</div>
+Hardening is not a one-time event. It is a <strong>process</strong> that begins at installation, follows a checklist, and is verified and maintained throughout the server&rsquo;s lifecycle.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §2 – HARDENING FRAMEWORKS & BENCHMARKS -->
+<!-- ============================================================ -->
+<section class="section" id="frameworks">
+<h2>§2 - Hardening Frameworks &amp; Benchmarks</h2>
+
+<p>Rather than inventing your own checklist, security professionals rely on established frameworks. Three of the most widely used are described below.</p>
+
+<h3>CIS Benchmarks (Center for Internet Security)</h3>
+<p>CIS publishes free, consensus-based configuration guides for over 100 technologies. Each benchmark document is organized into <strong>numbered recommendations</strong> with a <em>Profile Level</em>:</p>
+<ul>
+<li><strong>Level&nbsp;1</strong> - Practical settings that can be applied broadly with minimal impact on functionality.</li>
+<li><strong>Level&nbsp;2</strong> - Defense-in-depth settings that may reduce functionality; intended for high-security environments.</li>
+</ul>
+<p>Each recommendation includes a <em>description</em>, <em>rationale</em>, <em>audit procedure</em> (how to check), and <em>remediation</em> (how to fix). Learning to read a CIS Benchmark document is a transferable skill you will use throughout your career.</p>
+
+<h3>DISA STIGs (Security Technical Implementation Guides)</h3>
+<p>Published by the U.S. Defense Information Systems Agency, STIGs are mandatory for Department of Defense systems and widely adopted in government. Each finding is rated by severity: <strong>CAT&nbsp;I</strong> (high), <strong>CAT&nbsp;II</strong> (medium), or <strong>CAT&nbsp;III</strong> (low).</p>
+
+<h3>NIST SP 800-123 - Guide to General Server Security</h3>
+<p>This NIST Special Publication provides a high-level framework for securing servers throughout their lifecycle: planning, installation, configuration, maintenance, and disposal. It is less prescriptive than CIS or DISA but excellent for understanding <em>why</em> hardening steps matter.</p>
+
+<h3>Comparison Table</h3>
+<table class="info-table">
+<thead><tr><th>Attribute</th><th>CIS Benchmarks</th><th>DISA STIGs</th><th>NIST SP 800-123</th></tr></thead>
+<tbody>
+<tr><td>Primary Audience</td><td>All industries</td><td>U.S. DoD &amp; government</td><td>All organizations</td></tr>
+<tr><td>Format</td><td>PDF with numbered controls</td><td>XML/XCCDF + viewer tool</td><td>Narrative PDF</td></tr>
+<tr><td>Depth</td><td>Very specific (command-level)</td><td>Very specific (finding-level)</td><td>High-level guidance</td></tr>
+<tr><td>Cost</td><td>Free (registration required)</td><td>Free (public.cyber.mil)</td><td>Free (nist.gov)</td></tr>
+<tr><td>Severity Ratings</td><td>Level 1 / Level 2</td><td>CAT I / II / III</td><td>N/A (guidance only)</td></tr>
+<tr><td>Best For</td><td>Practical step-by-step hardening</td><td>Government compliance</td><td>Understanding the &ldquo;why&rdquo;</td></tr>
+</tbody>
+</table>
+
+<h3>How to Select and Apply a Checklist</h3>
+<ol>
+<li><strong>Identify the OS and version</strong> of the server you are hardening.</li>
+<li><strong>Download the matching benchmark</strong> (e.g., &ldquo;CIS Ubuntu Linux 22.04 LTS Benchmark&rdquo;).</li>
+<li><strong>Choose a profile level</strong> appropriate for your environment (Level&nbsp;1 for most lab work).</li>
+<li><strong>Work through each recommendation</strong>: audit the current state, apply the remediation if needed, and document the change.</li>
+<li><strong>Verify</strong> using automated tools (covered in §5).</li>
+</ol>
+
+<div class="callout callout-gold">
+<div class="callout-title">&#128214; Project&nbsp;3 Tip</div>
+You do not need to implement every CIS recommendation for Project&nbsp;3. Focus on the high-impact items covered in §3 and §4 below, document what you changed and why, and capture before/after evidence.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §3 – LINUX SERVER HARDENING -->
+<!-- ============================================================ -->
+<section class="section" id="linux-hardening">
+<h2>§3 - Linux Server Hardening</h2>
+
+<p>This section walks through key hardening steps for an Ubuntu Server (commands also apply to Rocky Linux with minor package-manager differences noted). Use the accordion items below to explore each hardening category in detail.</p>
+
+<!-- Accordion: Disable Unnecessary Services -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-linux-svc">3.1 - Disable Unnecessary Services</button>
+<div class="accordion-body" id="acc-linux-svc">
+<p>List all active services, then disable those not required by the server&rsquo;s role:</p>
+<pre><code># List all enabled services
+systemctl list-unit-files --type=service --state=enabled
+
+# Example: disable the cups (printing) service
+sudo systemctl stop cups
+sudo systemctl disable cups
+
+# Mask a service to prevent it from being started even manually
+sudo systemctl mask cups</code></pre>
+<p><strong>disable</strong> prevents a service from starting at boot. <strong>mask</strong> goes further by linking the unit file to <code>/dev/null</code>, preventing any start attempt. Use <code>mask</code> for services you are certain are never needed.</p>
+<p><em>Common candidates for disabling on a server:</em> <code>cups</code> (printing), <code>avahi-daemon</code> (mDNS), <code>bluetooth</code>, <code>ModemManager</code>.</p>
+</div>
+</div>
+
+<!-- Accordion: Remove Unnecessary Packages -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-linux-pkg">3.2 - Remove Unnecessary Packages</button>
+<div class="accordion-body" id="acc-linux-pkg">
+<p>Every installed package increases the attack surface. Remove packages that are not needed:</p>
+<pre><code># Ubuntu: list installed packages
+dpkg --list | less
+
+# Remove an unnecessary package (example: telnet client)
+sudo apt purge telnet
+sudo apt autoremove</code></pre>
+<pre><code># Rocky Linux equivalent
+rpm -qa | less
+sudo dnf remove telnet
+sudo dnf autoremove</code></pre>
+<p><code>purge</code> removes both the package and its configuration files. <code>autoremove</code> cleans up orphaned dependencies.</p>
+</div>
+</div>
+
+<!-- Accordion: SSH Hardening -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-linux-ssh">3.3 - SSH Hardening (<code>/etc/ssh/sshd_config</code>)</button>
+<div class="accordion-body" id="acc-linux-ssh">
+<p>SSH is the primary remote-access method for Linux servers. Hardening it is critical:</p>
+<pre><code># Back up the original configuration first
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+
+# Edit the SSH daemon configuration
+sudo nano /etc/ssh/sshd_config</code></pre>
+<p>Apply these key settings:</p>
+<pre><code># Disable root login over SSH
+PermitRootLogin no
+
+# Restrict SSH to specific users or groups
+AllowUsers sysadmin deployer
+# OR restrict by group:
+# AllowGroups ssh-users
+
+# Disable password authentication (after deploying SSH keys - see Module 14.3)
+# PasswordAuthentication no
+
+# Use SSH Protocol 2 only (default on modern systems)
+Protocol 2
+
+# Set idle timeout (disconnect after 5 minutes of inactivity)
+ClientAliveInterval 300
+ClientAliveCountMax 0
+
+# Limit maximum authentication attempts
+MaxAuthTries 3
+
+# Disable X11 forwarding (not needed on servers)
+X11Forwarding no</code></pre>
+<pre><code># Validate the configuration before restarting
+sudo sshd -t
+
+# Restart the SSH service to apply changes
+sudo systemctl restart sshd</code></pre>
+<div class="callout callout-red">
+<div class="callout-title">&#9888;&#65039; Warning</div>
+Do <strong>not</strong> disable <code>PasswordAuthentication</code> until you have confirmed SSH key-based login works. Otherwise you may lock yourself out. Module&nbsp;14.3 covers SSH key setup.
+</div>
+</div>
+</div>
+
+<!-- Accordion: Host Firewall -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-linux-fw">3.4 - Host Firewall Rules (UFW / iptables)</button>
+<div class="accordion-body" id="acc-linux-fw">
+<p>This extends the firewall fundamentals from Week&nbsp;9. The goal is a <strong>default-deny</strong> posture with explicit allow rules:</p>
+<pre><code># UFW (Uncomplicated Firewall) — Ubuntu
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# Allow SSH (required for remote management)
+sudo ufw allow 22/tcp
+
+# Allow HTTPS if this is a web server
+sudo ufw allow 443/tcp
+
+# Enable the firewall
+sudo ufw enable
+
+# Verify rules
+sudo ufw status verbose</code></pre>
+<pre><code># iptables equivalent (works on any distro)
+sudo iptables -P INPUT DROP
+sudo iptables -P FORWARD DROP
+sudo iptables -P OUTPUT ACCEPT
+
+# Allow established connections
+sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# Allow loopback
+sudo iptables -A INPUT -i lo -j ACCEPT
+
+# Allow SSH
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Save rules (Ubuntu)
+sudo apt install iptables-persistent
+sudo netfilter-persistent save</code></pre>
+<p><strong>Principle:</strong> Only open the ports your server&rsquo;s role requires. Document every allowed port and its justification.</p>
+</div>
+</div>
+
+<!-- Accordion: File System Hardening -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-linux-fs">3.5 - File System Hardening (Mount Options)</button>
+<div class="accordion-body" id="acc-linux-fs">
+<p>Restrict what can happen on certain mount points by adding security options in <code>/etc/fstab</code>:</p>
+<pre><code># Example /etc/fstab entry for /tmp with hardening options
+tmpfs  /tmp  tmpfs  defaults,noexec,nosuid,nodev  0  0</code></pre>
+<table class="info-table">
+<thead><tr><th>Option</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>noexec</code></td><td>Prevents execution of binaries on this partition</td></tr>
+<tr><td><code>nosuid</code></td><td>Ignores SetUID/SetGID bits (prevents privilege escalation)</td></tr>
+<tr><td><code>nodev</code></td><td>Prevents interpretation of device files on this partition</td></tr>
+</tbody>
+</table>
+<p>Common targets: <code>/tmp</code>, <code>/var/tmp</code>, <code>/dev/shm</code>. After editing <code>/etc/fstab</code>, remount:</p>
+<pre><code>sudo mount -o remount /tmp</code></pre>
+</div>
+</div>
+
+<!-- Accordion: Kernel Hardening -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-linux-sysctl">3.6 - Kernel Hardening via <code>sysctl</code></button>
+<div class="accordion-body" id="acc-linux-sysctl">
+<p>The kernel exposes tunable parameters through <code>/proc/sys/</code>. Persist changes in <code>/etc/sysctl.d/</code>:</p>
+<pre><code># Create a hardening configuration file
+sudo nano /etc/sysctl.d/99-hardening.conf</code></pre>
+<pre><code># Disable IP forwarding (unless this is a router)
+net.ipv4.ip_forward = 0
+
+# Enable SYN cookies (protects against SYN flood attacks)
+net.ipv4.tcp_syncookies = 1
+
+# Ignore ICMP broadcast requests
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+# Disable source routing
+net.ipv4.conf.all.accept_source_route = 0
+
+# Enable reverse-path filtering (anti-spoofing)
+net.ipv4.conf.all.rp_filter = 1
+
+# Log suspicious packets (martians)
+net.ipv4.conf.all.log_martians = 1</code></pre>
+<pre><code># Apply changes immediately
+sudo sysctl --system</code></pre>
+</div>
+</div>
+
+<!-- Accordion: Auditd -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-linux-audit">3.7 - Audit Logging with <code>auditd</code></button>
+<div class="accordion-body" id="acc-linux-audit">
+<p>The Linux Audit Daemon records security-relevant events. Install and enable it:</p>
+<pre><code># Install auditd (Ubuntu)
+sudo apt install auditd audispd-plugins
+
+# Enable and start
+sudo systemctl enable auditd
+sudo systemctl start auditd</code></pre>
+<p>Add rules to monitor critical files and events:</p>
+<pre><code># Watch for changes to user/group files
+sudo auditctl -w /etc/passwd -p wa -k user-modify
+sudo auditctl -w /etc/shadow -p wa -k shadow-modify
+sudo auditctl -w /etc/group  -p wa -k group-modify
+
+# Watch for changes to SSH configuration
+sudo auditctl -w /etc/ssh/sshd_config -p wa -k sshd-config
+
+# Make rules persistent: add them to /etc/audit/rules.d/hardening.rules</code></pre>
+<pre><code># Search audit logs
+sudo ausearch -k user-modify</code></pre>
+</div>
+</div>
+
+<!-- Accordion: Cron/At and Banners -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-linux-misc">3.8 - Restrict Cron/At &amp; Set Legal Banners</button>
+<div class="accordion-body" id="acc-linux-misc">
+<p><strong>Restrict cron and at</strong> to authorized users:</p>
+<pre><code># Only allow specific users to use cron
+sudo bash -c 'echo "sysadmin" > /etc/cron.allow'
+
+# Only allow specific users to use at
+sudo bash -c 'echo "sysadmin" > /etc/at.allow'</code></pre>
+<p>If <code>/etc/cron.allow</code> exists, only users listed in it may use <code>crontab</code>. All others are denied.</p>
+
+<p><strong>Legal warning banners</strong> display a notice before login, establishing legal standing for monitoring:</p>
+<pre><code># Set the pre-login banner
+sudo nano /etc/issue.net</code></pre>
+<pre><code>*********************************************************************
+WARNING: This system is for authorized use only. All activity may be
+monitored and recorded. Unauthorized access is prohibited and will
+be prosecuted to the fullest extent of the law.
+*********************************************************************</code></pre>
+<pre><code># Enable the banner in SSH
+# In /etc/ssh/sshd_config, set:
+Banner /etc/issue.net
+
+# Restart SSH
+sudo systemctl restart sshd</code></pre>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §4 – WINDOWS SERVER HARDENING -->
+<!-- ============================================================ -->
+<section class="section" id="windows-hardening">
+<h2>§4 - Windows Server Hardening</h2>
+
+<p>This section covers key hardening steps for Windows Server. Where possible, both GUI and PowerShell methods are shown. Use the accordion items to explore each category.</p>
+
+<!-- Accordion: Disable Services/Roles -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-win-svc">4.1 - Disable Unnecessary Services and Roles</button>
+<div class="accordion-body" id="acc-win-svc">
+<p><strong>GUI:</strong> Open <em>Server Manager &rarr; Manage &rarr; Remove Roles and Features</em>. Uncheck any role or feature not required by the server&rsquo;s function.</p>
+<p><strong>PowerShell - list and disable services:</strong></p>
+<pre><code># List all running services
+Get-Service | Where-Object {$_.Status -eq 'Running'} | Sort-Object DisplayName
+
+# Example: disable the Print Spooler on a non-print server
+Stop-Service -Name Spooler -Force
+Set-Service -Name Spooler -StartupType Disabled
+
+# Remove an unnecessary Windows feature
+Uninstall-WindowsFeature -Name Windows-Defender-GUI   # example</code></pre>
+<p>Common services to evaluate: <code>Print Spooler</code>, <code>Xbox services</code> (if present), <code>Fax</code>, <code>Bluetooth Support</code>.</p>
+</div>
+</div>
+
+<!-- Accordion: Windows Firewall -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-win-fw">4.2 - Windows Firewall with Advanced Security</button>
+<div class="accordion-body" id="acc-win-fw">
+<p><strong>GUI:</strong> Open <em>Windows Defender Firewall with Advanced Security</em> (<code>wf.msc</code>). Set all profiles (Domain, Private, Public) to <strong>Block</strong> inbound by default.</p>
+<p><strong>PowerShell:</strong></p>
+<pre><code># Set default inbound to block on all profiles
+Set-NetFirewallProfile -Profile Domain,Public,Private -DefaultInboundAction Block
+
+# Allow RDP only from a management subnet (example)
+New-NetFirewallRule -DisplayName "Allow RDP - Mgmt Subnet" `
+    -Direction Inbound -Protocol TCP -LocalPort 3389 `
+    -RemoteAddress 192.168.10.0/24 -Action Allow
+
+# View current firewall rules
+Get-NetFirewallRule | Where-Object {$_.Enabled -eq 'True'} |
+    Select-Object DisplayName, Direction, Action |
+    Sort-Object DisplayName</code></pre>
+</div>
+</div>
+
+<!-- Accordion: Local Security Policy / GPO -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-win-gpo">4.3 - Local Security Policy &amp; GPO Hardening</button>
+<div class="accordion-body" id="acc-win-gpo">
+<p>This extends the Group Policy content from Week&nbsp;11. Open <code>secpol.msc</code> (Local Security Policy) or use Group Policy for domain-joined servers.</p>
+
+<h4>Account Lockout Policies</h4>
+<p><em>Security Settings &rarr; Account Policies &rarr; Account Lockout Policy</em></p>
+<table class="info-table">
+<thead><tr><th>Setting</th><th>CIS Recommended Value</th></tr></thead>
+<tbody>
+<tr><td>Account lockout threshold</td><td>5 invalid logon attempts</td></tr>
+<tr><td>Account lockout duration</td><td>15 minutes or greater</td></tr>
+<tr><td>Reset account lockout counter after</td><td>15 minutes or greater</td></tr>
+</tbody>
+</table>
+
+<h4>Audit Policies</h4>
+<p><em>Security Settings &rarr; Local Policies &rarr; Audit Policy</em> (or use Advanced Audit Policy Configuration):</p>
+<table class="info-table">
+<thead><tr><th>Category</th><th>Recommended Setting</th></tr></thead>
+<tbody>
+<tr><td>Audit logon events</td><td>Success and Failure</td></tr>
+<tr><td>Audit account logon events</td><td>Success and Failure</td></tr>
+<tr><td>Audit account management</td><td>Success and Failure</td></tr>
+<tr><td>Audit policy change</td><td>Success and Failure</td></tr>
+<tr><td>Audit privilege use</td><td>Failure</td></tr>
+</tbody>
+</table>
+
+<h4>User Rights Assignment</h4>
+<p>Restrict powerful rights (e.g., &ldquo;Log on locally,&rdquo; &ldquo;Allow log on through Remote Desktop Services&rdquo;) to only the accounts and groups that need them.</p>
+
+<p><strong>PowerShell - export current security policy for documentation:</strong></p>
+<pre><code># Export local security policy to a file (useful for before/after comparison)
+secedit /export /cfg C:\Hardening\before-policy.inf</code></pre>
+</div>
+</div>
+
+<!-- Accordion: Disable SMBv1 -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-win-smb">4.4 - Disable SMBv1 and Legacy Protocols</button>
+<div class="accordion-body" id="acc-win-smb">
+<p>SMBv1 is vulnerable to exploits such as EternalBlue (used in the WannaCry ransomware attack). It should be disabled on all modern servers:</p>
+<pre><code># Check if SMBv1 is enabled
+Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol
+
+# Disable SMBv1
+Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart
+
+# Also disable via server configuration
+Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force</code></pre>
+<p>Other legacy protocols to evaluate: LLMNR, NetBIOS over TCP/IP, NTLMv1.</p>
+</div>
+</div>
+
+<!-- Accordion: Event Log Auditing -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-win-audit">4.5 - Windows Event Log Audit Configuration</button>
+<div class="accordion-body" id="acc-win-audit">
+<p>Ensure the Security event log is large enough to capture meaningful history and that key events are being recorded:</p>
+<pre><code># Increase Security log maximum size to 1 GB
+wevtutil sl Security /ms:1073741824
+
+# Verify the setting
+wevtutil gl Security</code></pre>
+<p>Key Event IDs to monitor (these feed into your Splunk dashboards in Module&nbsp;14.4):</p>
+<table class="info-table">
+<thead><tr><th>Event ID</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>4624</td><td>Successful logon</td></tr>
+<tr><td>4625</td><td>Failed logon attempt</td></tr>
+<tr><td>4740</td><td>Account lockout</td></tr>
+<tr><td>4720</td><td>User account created</td></tr>
+<tr><td>4726</td><td>User account deleted</td></tr>
+<tr><td>7045</td><td>New service installed</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Accordion: RDP Restriction -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-win-rdp">4.6 - Restrict Remote Desktop Access</button>
+<div class="accordion-body" id="acc-win-rdp">
+<p>Limit who can connect via RDP and from where:</p>
+<pre><code># Restrict RDP to members of a specific group
+# In Local Security Policy → User Rights Assignment:
+#   "Allow log on through Remote Desktop Services" → only "Remote Desktop Users" group
+
+# Enable Network Level Authentication (NLA)
+Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
+    -Name UserAuthentication -Value 1
+
+# Use Windows Firewall to limit RDP source IPs (see §4.2)</code></pre>
+</div>
+</div>
+
+<!-- Accordion: Windows Defender & Feature Removal -->
+<div class="accordion-item">
+<button class="accordion-btn" aria-expanded="false" aria-controls="acc-win-defender">4.7 - Windows Defender &amp; Remove Unnecessary Features</button>
+<div class="accordion-body" id="acc-win-defender">
+<p><strong>Windows Defender:</strong></p>
+<pre><code># Verify Windows Defender is enabled and up to date
+Get-MpComputerStatus | Select-Object AntivirusEnabled, RealTimeProtectionEnabled,
+    AntivirusSignatureLastUpdated
+
+# Run a quick scan
+Start-MpScan -ScanType QuickScan
+
+# Update definitions
+Update-MpSignature</code></pre>
+<p><strong>Remove unnecessary features:</strong></p>
+<pre><code># List installed features
+Get-WindowsFeature | Where-Object {$_.Installed -eq $true}
+
+# Remove an unnecessary feature (example: PowerShell v2 — legacy, potential bypass)
+Uninstall-WindowsFeature -Name PowerShell-V2</code></pre>
+</div>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §5 – HARDENING VERIFICATION -->
+<!-- ============================================================ -->
+<section class="section" id="verification">
+<h2>§5 - Hardening Verification</h2>
+
+<p>After applying hardening steps, you must <strong>verify</strong> that they are in effect. Manual checklists work, but automated tools save time and catch items you may have missed.</p>
+
+<!-- Tabs: Lynis vs MSCT -->
+<div class="tab-group" role="tablist" aria-label="Verification tools">
+<div class="tab-buttons">
+<button class="tab-btn" role="tab" aria-selected="true" aria-controls="tab-lynis" id="btn-lynis">Lynis (Linux)</button>
+<button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-msct" id="btn-msct">MS Security Compliance Toolkit (Windows)</button>
+</div>
+
+<div class="tab-panel active" role="tabpanel" id="tab-lynis" aria-labelledby="btn-lynis">
+<h3>Lynis - Security Auditing Tool for Linux</h3>
+<p><strong>Lynis</strong> is an open-source security auditing tool that scans a Linux system and produces a hardening index along with specific recommendations.</p>
+<pre><code># Install Lynis (Ubuntu)
+sudo apt install lynis
+
+# Rocky Linux
+sudo dnf install lynis
+
+# Run a full system audit
+sudo lynis audit system</code></pre>
+<p>Lynis produces output organized into sections (Boot &amp; Services, Kernel, Networking, SSH, File Systems, etc.). At the end, you will see:</p>
+<pre><code>  Hardening index : 67 [#############       ]
+  Tests performed : 256
+  Suggestions     : 42
+  Warnings        : 3</code></pre>
+<p><strong>Interpreting the output:</strong></p>
+<ul>
+<li><strong>Hardening index</strong>: A score out of 100. Higher is better. A freshly installed server typically scores 55-65; a well-hardened server scores 80+.</li>
+<li><strong>Suggestions</strong>: Specific recommendations with CIS/NIST references. Each includes a test ID you can look up.</li>
+<li><strong>Warnings</strong>: High-priority items that should be addressed immediately.</li>
+</ul>
+<pre><code># View the detailed log
+sudo cat /var/log/lynis.log
+
+# View only suggestions
+sudo grep "suggestion" /var/log/lynis-report.dat</code></pre>
+<div class="callout callout-green">
+<div class="callout-title">&#128203; Project&nbsp;3 Tip</div>
+Run Lynis <strong>before</strong> hardening (capture the score), apply your hardening steps, then run it <strong>again</strong>. The before/after comparison is excellent evidence for your Project&nbsp;3 documentation.
+</div>
+</div>
+
+<div class="tab-panel" role="tabpanel" id="tab-msct" aria-labelledby="btn-msct">
+<h3>Microsoft Security Compliance Toolkit (Awareness Level)</h3>
+<p>The <strong>Microsoft Security Compliance Toolkit (SCT)</strong> includes tools and GPO baselines for hardening Windows Server. Key components:</p>
+<ul>
+<li><strong>Policy Analyzer</strong> - compares your current GPO settings against Microsoft&rsquo;s recommended baselines.</li>
+<li><strong>LGPO</strong> - command-line tool for applying Local Group Policy settings from a baseline.</li>
+<li><strong>Security Baselines</strong> - pre-built GPO packages for each Windows Server version.</li>
+</ul>
+<p>For this course, awareness of SCT is sufficient. For Project&nbsp;3, you can document Windows hardening using the <code>secedit /export</code> method shown in §4.3 and manual verification of each setting.</p>
+<pre><code># Alternative: use PowerShell to verify specific settings
+# Check account lockout threshold
+net accounts
+
+# Check SMBv1 status
+Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol
+
+# Check Windows Defender status
+Get-MpComputerStatus</code></pre>
+</div>
+</div>
+
+<h3>Documenting Hardening Changes</h3>
+<p>For every hardening step, record:</p>
+<table class="info-table">
+<thead><tr><th>Field</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>What was changed</td><td>Disabled root SSH login</td></tr>
+<tr><td>Configuration file / setting</td><td><code>/etc/ssh/sshd_config</code> &rarr; <code>PermitRootLogin no</code></td></tr>
+<tr><td>Why (rationale)</td><td>CIS Benchmark 5.2.10 - prevents brute-force attacks against the root account</td></tr>
+<tr><td>Before state</td><td><code>PermitRootLogin yes</code> (default)</td></tr>
+<tr><td>After state</td><td><code>PermitRootLogin no</code></td></tr>
+<tr><td>Verification method</td><td><code>sudo sshd -t</code> (no errors); attempted root SSH login &rarr; denied</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ============================================================ -->
+<!-- §6 – MINI-CASE: HARDENING A LAB SERVER -->
+<!-- ============================================================ -->
+<section class="section" id="mini-case">
+<h2>§6 - Mini-Case: Hardening a Lab Server</h2>
+
+<p>Read the scenario below, then review the identified hardening steps and the before/after comparison.</p>
+
+<div class="callout callout-gray">
+<div class="callout-title">&#128196; Scenario</div>
+<p>You have been given a <strong>freshly installed Ubuntu Server 22.04</strong> VM that will serve as a <strong>web server</strong> (Apache/Nginx) in your Project&nbsp;3 lab environment. A quick audit reveals the following default state:</p>
+<ol>
+<li>Root SSH login is permitted.</li>
+<li>The <code>cups</code> (printing) and <code>avahi-daemon</code> (mDNS) services are running.</li>
+<li>UFW firewall is inactive.</li>
+<li><code>/tmp</code> has no <code>noexec</code> mount option.</li>
+<li>IP forwarding is enabled in the kernel (<code>net.ipv4.ip_forward = 1</code>).</li>
+<li>No audit logging is configured (<code>auditd</code> not installed).</li>
+<li>No legal warning banner is displayed before login.</li>
+</ol>
+<p>Your task: identify and apply hardening steps to address each finding.</p>
+</div>
+
+<h3>Hardening Steps Identified</h3>
+
+<table class="info-table">
+<thead><tr><th>#</th><th>Finding</th><th>Hardening Action</th><th>Reference</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Root SSH login permitted</td><td>Set <code>PermitRootLogin no</code> in <code>sshd_config</code></td><td>CIS 5.2.10</td></tr>
+<tr><td>2</td><td>Unnecessary services running</td><td><code>systemctl disable --now cups avahi-daemon</code></td><td>CIS 2.1.x</td></tr>
+<tr><td>3</td><td>Firewall inactive</td><td>Enable UFW; default deny inbound; allow 22, 80, 443</td><td>CIS 3.5.1</td></tr>
+<tr><td>4</td><td><code>/tmp</code> missing noexec</td><td>Add <code>noexec,nosuid,nodev</code> to <code>/tmp</code> in <code>/etc/fstab</code></td><td>CIS 1.1.x</td></tr>
+<tr><td>5</td><td>IP forwarding enabled</td><td>Set <code>net.ipv4.ip_forward = 0</code> in sysctl</td><td>CIS 3.2.1</td></tr>
+<tr><td>6</td><td>No audit logging</td><td>Install &amp; enable <code>auditd</code>; add rules for critical files</td><td>CIS 4.1.x</td></tr>
+<tr><td>7</td><td>No legal banner</td><td>Create <code>/etc/issue.net</code>; set <code>Banner</code> in <code>sshd_config</code></td><td>CIS 1.7.x</td></tr>
+</tbody>
+</table>
+
+<h3>Before / After Comparison</h3>
+<div class="compare-grid">
+<div class="compare-col before">
+<h4 style="color:#c62828;">Before Hardening</h4>
+<pre><code>$ sudo lynis audit system
+  Hardening index : 58 [###########         ]
+  Suggestions     : 51
+  Warnings        : 5
+
+$ sudo ufw status
+  Status: inactive
+
+$ grep PermitRootLogin /etc/ssh/sshd_config
+  PermitRootLogin yes
+
+$ systemctl is-active cups avahi-daemon
+  active
+  active
+
+$ sysctl net.ipv4.ip_forward
+  net.ipv4.ip_forward = 1</code></pre>
+</div>
+<div class="compare-col after">
+<h4 style="color:#2e7d32;">After Hardening</h4>
+<pre><code>$ sudo lynis audit system
+  Hardening index : 79 [###############     ]
+  Suggestions     : 28
+  Warnings        : 1
+
+$ sudo ufw status
+  Status: active  (default deny incoming)
+
+$ grep PermitRootLogin /etc/ssh/sshd_config
+  PermitRootLogin no
+
+$ systemctl is-active cups avahi-daemon
+  inactive
+  inactive
+
+$ sysctl net.ipv4.ip_forward
+  net.ipv4.ip_forward = 0</code></pre>
+</div>
+</div>
+
+<div class="callout callout-green">
+<div class="callout-title">&#128161; Reflection</div>
+The Lynis hardening index improved from <strong>58 to 79</strong> with seven targeted changes. Notice that the number of suggestions dropped from 51 to 28 and warnings from 5 to 1. This kind of before/after evidence is exactly what you should capture for Project&nbsp;3.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §7 – CHECK FOR UNDERSTANDING -->
+<!-- ============================================================ -->
+<section class="section" id="knowledge-check">
+<h2>§7 - Check for Understanding</h2>
+<p>Answer the following ungraded questions to test your comprehension. Click an option to see immediate feedback.</p>
+
+<!-- Q1 -->
+<div class="kc-question" id="kc-q1">
+<p class="q-stem">1. A default Linux server installation has the <code>cups</code> (print) service running, but the server will only be used as a database server. Which hardening principle does disabling <code>cups</code> follow?</p>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q1">a) Defense in depth</div>
+<div class="kc-option" tabindex="0" role="button" data-correct="true" data-qid="kc-q1">b) Principle of least functionality</div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q1">c) Separation of duties</div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q1">d) Principle of least privilege</div>
+<div class="kc-feedback" id="fb-kc-q1"></div>
+</div>
+
+<!-- Q2 -->
+<div class="kc-question" id="kc-q2">
+<p class="q-stem">2. Which command would you use to prevent the <code>bluetooth</code> service from being started even manually on a Linux server?</p>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q2">a) <code>sudo systemctl stop bluetooth</code></div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q2">b) <code>sudo systemctl disable bluetooth</code></div>
+<div class="kc-option" tabindex="0" role="button" data-correct="true" data-qid="kc-q2">c) <code>sudo systemctl mask bluetooth</code></div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q2">d) <code>sudo apt remove bluetooth</code></div>
+<div class="kc-feedback" id="fb-kc-q2"></div>
+</div>
+
+<!-- Q3 -->
+<div class="kc-question" id="kc-q3">
+<p class="q-stem">3. You want to disable SMBv1 on a Windows Server because of its association with the WannaCry ransomware exploit. Which PowerShell command accomplishes this?</p>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q3">a) <code>Set-SmbServerConfiguration -EnableSMB2Protocol $false</code></div>
+<div class="kc-option" tabindex="0" role="button" data-correct="true" data-qid="kc-q3">b) <code>Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol</code></div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q3">c) <code>Uninstall-WindowsFeature -Name SMB1</code></div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q3">d) <code>Remove-NetFirewallRule -DisplayName "SMBv1"</code></div>
+<div class="kc-feedback" id="fb-kc-q3"></div>
+</div>
+
+<!-- Q4 -->
+<div class="kc-question" id="kc-q4">
+<p class="q-stem">4. Match the hardening framework to its primary audience:</p>
+<p><strong>Framework:</strong> CIS Benchmarks &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Audience:</strong></p>
+<div class="kc-option" tabindex="0" role="button" data-correct="true" data-qid="kc-q4">a) All industries - consensus-based, practical checklists</div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q4">b) U.S. Department of Defense systems only</div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q4">c) Cloud-native applications exclusively</div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q4">d) Home and small-office users</div>
+<div class="kc-feedback" id="fb-kc-q4"></div>
+</div>
+
+<!-- Q5 -->
+<div class="kc-question" id="kc-q5">
+<p class="q-stem">5. After hardening a Linux server, you run <code>sudo lynis audit system</code> and the hardening index is 62. Before hardening, it was 58. What is the most likely explanation?</p>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q5">a) Lynis is broken and needs reinstallation</div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q5">b) The server is fully hardened</div>
+<div class="kc-option" tabindex="0" role="button" data-correct="true" data-qid="kc-q5">c) Some hardening steps were applied but many Lynis suggestions remain unaddressed</div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q5">d) The score can only increase by 1 point per reboot</div>
+<div class="kc-feedback" id="fb-kc-q5"></div>
+</div>
+
+<!-- Q6 -->
+<div class="kc-question" id="kc-q6">
+<p class="q-stem">6. Which <code>sshd_config</code> directive prevents the root account from logging in over SSH?</p>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q6">a) <code>DenyUsers root</code></div>
+<div class="kc-option" tabindex="0" role="button" data-correct="true" data-qid="kc-q6">b) <code>PermitRootLogin no</code></div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q6">c) <code>AllowUsers !root</code></div>
+<div class="kc-option" tabindex="0" role="button" data-correct="false" data-qid="kc-q6">d) <code>RootLogin disabled</code></div>
+<div class="kc-feedback" id="fb-kc-q6"></div>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §8 – CONNECTION TO PROJECT 3 -->
+<!-- ============================================================ -->
+<section class="section" id="project3">
+<h2>§8 - Connection to Project&nbsp;3</h2>
+
+<h3>Which Project&nbsp;3 Deliverables Require Hardening?</h3>
+<p>Project&nbsp;3 (75&nbsp;pts, due Monday, May&nbsp;18,&nbsp;2026) requires you to apply and document security hardening measures on both your Linux and Windows lab servers. Specifically:</p>
+<ul>
+<li><strong>Security hardening measures</strong> applied to Linux and Windows servers, with documentation of what was changed, why, and evidence of the before/after state.</li>
+<li><strong>Splunk dashboards</strong> (&ge;3) and <strong>alerts</strong> (&ge;1) that validate your hardening is working (covered in Module&nbsp;14.4).</li>
+</ul>
+
+<h3>What Evidence to Capture</h3>
+<table class="info-table">
+<thead><tr><th>Evidence Type</th><th>How to Capture</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Before/after screenshots</td><td>Screenshot terminal or GUI before and after each change</td><td>Lynis score before &amp; after; <code>ufw status</code> before &amp; after</td></tr>
+<tr><td>Configuration file diffs</td><td><code>diff sshd_config.bak sshd_config</code></td><td>Shows exactly which lines changed in SSH config</td></tr>
+<tr><td>Lynis reports</td><td>Save full output: <code>sudo lynis audit system | tee lynis-report.txt</code></td><td>Attach the before and after report files</td></tr>
+<tr><td>Security policy exports</td><td><code>secedit /export /cfg before-policy.inf</code> (Windows)</td><td>Compare exported .inf files before and after GPO changes</td></tr>
+<tr><td>Command output</td><td>Copy/paste terminal output into your documentation</td><td><code>systemctl is-active cups</code> &rarr; <code>inactive</code></td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-gold">
+<div class="callout-title">&#128640; Up Next: Module 14.3</div>
+Module&nbsp;14.3 moves deeper into the defense-in-depth model to cover <strong>secure authentication</strong> (SSH key-based auth, MFA concepts), <strong>encryption</strong> (SSL/TLS certificates, LUKS, BitLocker), and <strong>patch management strategy</strong>. These topics complement the hardening steps you learned here and address additional Project&nbsp;3 deliverables.
+</div>
+
+<div class="callout callout-blue">
+<div class="callout-title">&#128203; Project&nbsp;3 Quick Reference</div>
+<ul>
+<li><strong>Assignment:</strong> Project&nbsp;3 - Security Hardening &amp; Monitoring with Splunk</li>
+<li><strong>Points:</strong> 75</li>
+<li><strong>Due:</strong> Monday, May&nbsp;18,&nbsp;2026, 11:59&nbsp;PM</li>
+<li><strong>Key Module&nbsp;14.2 Deliverables:</strong> Linux hardening documentation, Windows hardening documentation, before/after evidence, Lynis reports</li>
+</ul>
+</div>
+</section>
+
+</main>
+
+<!-- ============================================================ -->
+<!-- FOOTER -->
+<!-- ============================================================ -->
+<footer style="text-align:center;padding:18px;font-size:.82rem;color:#777;border-top:1px solid #ddd;margin-top:10px;">
+CSC 152 - Network Operating Systems and Administration &bull; Mendocino College &bull; Week 14 of 17 &bull; Spring 2026
+</footer>
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT -->
+<!-- ============================================================ -->
+<script>
+/* ── Accordion ── */
+document.querySelectorAll('.accordion-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var expanded=this.getAttribute('aria-expanded')==='true';
+    this.setAttribute('aria-expanded',String(!expanded));
+    var body=this.nextElementSibling;
+    if(!expanded){body.classList.add('open')}else{body.classList.remove('open')}
+  });
+  btn.addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click();}
+  });
+});
+
+/* ── Tabs ── */
+document.querySelectorAll('.tab-group').forEach(function(group){
+  var btns=group.querySelectorAll('.tab-btn');
+  var panels=group.querySelectorAll('.tab-panel');
+  btns.forEach(function(btn,i){
+    btn.addEventListener('click',function(){
+      btns.forEach(function(b){b.setAttribute('aria-selected','false')});
+      panels.forEach(function(p){p.classList.remove('active')});
+      btn.setAttribute('aria-selected','true');
+      panels[i].classList.add('active');
+    });
+    btn.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();this.click();}
+    });
+  });
+});
+
+/* ── Knowledge Check ── */
+var kcFeedback={
+  'kc-q1':{
+    correct:'<strong>Correct!</strong> The principle of least functionality states that a system should provide only the capabilities required for its role. A database server has no need for a print service.',
+    incorrect:'<strong>Not quite.</strong> While defense in depth is important, disabling an unnecessary service specifically follows the <strong>principle of least functionality</strong>&mdash;providing only the capabilities required for the server\'s role.'
+  },
+  'kc-q2':{
+    correct:'<strong>Correct!</strong> <code>systemctl mask</code> links the unit file to <code>/dev/null</code>, preventing the service from being started even manually. <code>disable</code> only prevents automatic startup at boot.',
+    incorrect:'<strong>Not quite.</strong> <code>stop</code> only halts the service temporarily, and <code>disable</code> prevents auto-start but still allows manual start. <code>mask</code> is the strongest option, linking the unit to <code>/dev/null</code>.'
+  },
+  'kc-q3':{
+    correct:'<strong>Correct!</strong> <code>Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol</code> removes the SMBv1 feature from Windows. You can also use <code>Set-SmbServerConfiguration -EnableSMB1Protocol $false</code> as a complementary step.',
+    incorrect:'<strong>Not quite.</strong> The correct command is <code>Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol</code>. This removes the SMBv1 feature entirely from the Windows installation.'
+  },
+  'kc-q4':{
+    correct:'<strong>Correct!</strong> CIS Benchmarks are consensus-based, industry-agnostic configuration guides used across all sectors. DISA STIGs are the framework primarily targeting U.S. DoD systems.',
+    incorrect:'<strong>Not quite.</strong> CIS Benchmarks are designed for <strong>all industries</strong> as consensus-based, practical checklists. DISA STIGs are the framework primarily targeting U.S. Department of Defense systems.'
+  },
+  'kc-q5':{
+    correct:'<strong>Correct!</strong> A small improvement (58 → 62) indicates that some hardening steps took effect, but many of Lynis\'s suggestions remain unaddressed. Review the suggestions list and continue hardening.',
+    incorrect:'<strong>Not quite.</strong> A modest score increase means some steps were effective but many recommendations remain. The server is not fully hardened&mdash;review the Lynis suggestions output for next steps.'
+  },
+  'kc-q6':{
+    correct:'<strong>Correct!</strong> <code>PermitRootLogin no</code> is the standard <code>sshd_config</code> directive that prevents the root account from authenticating over SSH. This is one of the most important SSH hardening steps.',
+    incorrect:'<strong>Not quite.</strong> The correct directive is <code>PermitRootLogin no</code>. While <code>DenyUsers root</code> can also work, <code>PermitRootLogin no</code> is the standard and recommended approach referenced by CIS Benchmarks.'
+  }
+};
+
+document.querySelectorAll('.kc-option').forEach(function(opt){
+  opt.addEventListener('click',function(){handleKC(this)});
+  opt.addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();handleKC(this);}
+  });
+});
+
+function handleKC(el){
+  var qid=el.getAttribute('data-qid');
+  var isCorrect=el.getAttribute('data-correct')==='true';
+  var fbEl=document.getElementById('fb-'+qid);
+  /* Reset siblings */
+  var siblings=document.querySelectorAll('[data-qid="'+qid+'"]');
+  siblings.forEach(function(s){s.style.border='1px solid #ccc';s.style.background='';});
+  /* Highlight selected */
+  if(isCorrect){
+    el.style.border='2px solid #2e7d32';el.style.background='#e6f4ea';
+    fbEl.className='kc-feedback correct';
+    fbEl.innerHTML=kcFeedback[qid].correct;
+  }else{
+    el.style.border='2px solid #c62828';el.style.background='#fce8e8';
+    fbEl.className='kc-feedback incorrect';
+    fbEl.innerHTML=kcFeedback[qid].incorrect;
+  }
+}
+
+/* ── Smooth scroll for nav links ── */
+document.querySelectorAll('.top-nav a[href^="#"]').forEach(function(a){
+  a.addEventListener('click',function(e){
+    e.preventDefault();
+    var target=document.querySelector(this.getAttribute('href'));
+    if(target){target.scrollIntoView({behavior:'smooth',block:'start'});}
+  });
+});
+</script>
+</body>
+</html>

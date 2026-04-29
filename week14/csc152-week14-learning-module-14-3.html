@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 14.3 – Secure Authentication, Encryption &amp; Patch Management</title>
+<style>
+/* ── Reset & Base ──────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:1rem;line-height:1.6;color:#1e1e1e;background:#f5f5f5}
+a{color:#0055a2;text-decoration:none}
+a:hover,a:focus{text-decoration:underline}
+a:focus-visible{outline:3px solid #0055a2;outline-offset:2px;border-radius:2px}
+
+/* ── Skip Link ─────────────────────────────────── */
+.skip-link{position:absolute;top:-100%;left:0;background:#0055a2;color:#fff;padding:.5rem 1rem;z-index:1000;font-weight:600;border-radius:0 0 4px 0}
+.skip-link:focus{top:0}
+
+/* ── Navigation Bar ────────────────────────────── */
+.topnav{background:#0b1a2e;padding:.55rem 1rem;position:sticky;top:0;z-index:500;display:flex;flex-wrap:wrap;gap:.35rem .75rem;align-items:center}
+.topnav a{color:#c8d6e5;font-size:.82rem;padding:.25rem .45rem;border-radius:3px;white-space:nowrap}
+.topnav a:hover,.topnav a:focus{background:#1a3a5c;color:#fff;text-decoration:none}
+.topnav a:focus-visible{outline:2px solid #f0c040;outline-offset:1px}
+
+/* ── Page Wrap ─────────────────────────────────── */
+.page-wrap{max-width:960px;margin:0 auto;padding:1.25rem 1rem 3rem}
+
+/* ── Banner ────────────────────────────────────── */
+.mod-banner{background:linear-gradient(135deg,#0b1a2e 0%,#163a5f 100%);color:#fff;padding:2rem 1.75rem;border-radius:8px;margin-bottom:1.75rem}
+.mod-banner .course-tag{font-size:.8rem;letter-spacing:.5px;text-transform:uppercase;opacity:.85;margin-bottom:.35rem}
+.mod-banner h1{font-size:1.65rem;margin-bottom:.3rem;line-height:1.25}
+.mod-banner .subtitle{font-size:1rem;opacity:.88;font-style:italic}
+
+/* ── Section ───────────────────────────────────── */
+.section{background:#fff;border-radius:8px;padding:1.5rem 1.5rem 1.25rem;margin-bottom:1.5rem;border:1px solid #dde2e8}
+.section h2{font-size:1.3rem;color:#0b1a2e;margin-bottom:.85rem;padding-bottom:.4rem;border-bottom:3px solid #0055a2}
+.section h3{font-size:1.08rem;color:#0b1a2e;margin:1.1rem 0 .45rem}
+.section h4{font-size:.97rem;color:#163a5f;margin:1rem 0 .35rem}
+.section ul,.section ol{margin:.4rem 0 .75rem 1.4rem}
+.section li{margin-bottom:.3rem}
+.section p{margin-bottom:.65rem}
+
+/* ── Callout Boxes ─────────────────────────────── */
+.callout{border-left:4px solid #0055a2;background:#eaf1fb;padding:.85rem 1rem;border-radius:0 6px 6px 0;margin:.85rem 0}
+.callout.green{border-color:#1a7f37;background:#eaf6ec}
+.callout.gold{border-color:#b8860b;background:#fdf6e3}
+.callout.red{border-color:#c0392b;background:#fdeaea}
+.callout.purple{border-color:#6f42c1;background:#f3eefa}
+.callout-title{font-weight:700;margin-bottom:.25rem}
+
+/* ── Tables ────────────────────────────────────── */
+.info-table{width:100%;border-collapse:collapse;margin:.75rem 0;font-size:.92rem}
+.info-table th,.info-table td{border:1px solid #cdd4db;padding:.5rem .65rem;text-align:left;vertical-align:top}
+.info-table th{background:#0b1a2e;color:#fff;font-weight:600}
+.info-table tr:nth-child(even){background:#f7f9fb}
+.info-table caption{font-weight:700;margin-bottom:.35rem;text-align:left;font-size:.95rem}
+
+/* ── Code Blocks ───────────────────────────────── */
+pre{background:#0b1a2e;color:#e4e4e4;padding:1rem 1.15rem;border-radius:6px;overflow-x:auto;margin:.75rem 0;font-size:.88rem;line-height:1.55;white-space:pre}
+pre code{color:#e4e4e4;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace}
+code.inline{background:#e8ecf0;color:#0b1a2e;padding:.1rem .35rem;border-radius:3px;font-size:.88em;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace}
+
+/* ── Diagram Boxes ─────────────────────────────── */
+.diagram-box{background:#f7f9fb;border:2px solid #0055a2;border-radius:8px;padding:1.1rem 1.25rem;margin:.85rem 0;text-align:center;overflow-x:auto}
+.diagram-box .diagram-title{font-weight:700;font-size:.95rem;color:#0055a2;margin-bottom:.65rem}
+.flow-row{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.35rem .15rem}
+.flow-step{background:#0b1a2e;color:#fff;padding:.45rem .85rem;border-radius:5px;font-size:.84rem;font-weight:600;text-align:center}
+.flow-arrow{font-size:1.1rem;color:#0055a2;font-weight:700;padding:0 .1rem}
+
+/* ── Interactive / Knowledge Check ─────────────── */
+.kc-block{background:#fff;border:2px solid #0055a2;border-radius:8px;padding:1.25rem;margin:.85rem 0}
+.kc-block h3{margin-top:0}
+.question-block{background:#f7f9fb;border:1px solid #dde2e8;border-radius:6px;padding:.85rem 1rem;margin-bottom:1rem}
+.question-block p.q-stem{font-weight:600;margin-bottom:.5rem}
+.question-block label{display:block;padding:.25rem 0;cursor:pointer}
+.question-block input[type="radio"]{margin-right:.4rem;cursor:pointer}
+.feedback{display:none;margin-top:.5rem;padding:.55rem .75rem;border-radius:4px;font-size:.9rem}
+.feedback.correct{background:#eaf6ec;border:1px solid #1a7f37;color:#155724}
+.feedback.incorrect{background:#fdeaea;border:1px solid #c0392b;color:#6e1b1b}
+.btn-check{background:#0055a2;color:#fff;border:none;padding:.45rem 1.1rem;border-radius:4px;cursor:pointer;font-size:.88rem;font-weight:600;margin-top:.25rem}
+.btn-check:hover,.btn-check:focus{background:#003d7a}
+.btn-check:focus-visible{outline:3px solid #f0c040;outline-offset:2px}
+.btn-reset{background:#555;color:#fff;border:none;padding:.35rem .85rem;border-radius:4px;cursor:pointer;font-size:.82rem;margin-left:.5rem}
+.btn-reset:hover,.btn-reset:focus{background:#333}
+
+/* ── Interactive Ordering Activity ─────────────── */
+.order-list{list-style:none;margin:0;padding:0;counter-reset:orderitem}
+.order-list li{background:#f7f9fb;border:1px solid #cdd4db;padding:.5rem .75rem;margin-bottom:.35rem;border-radius:4px;cursor:grab;display:flex;align-items:center;gap:.5rem;font-size:.92rem}
+.order-list li .handle{color:#0055a2;font-weight:700;min-width:1.5rem}
+.order-list li.drag-over{border-color:#0055a2;background:#eaf1fb}
+
+/* ── Accordion ─────────────────────────────────── */
+details{margin:.5rem 0}
+details summary{cursor:pointer;font-weight:600;color:#0055a2;padding:.35rem 0;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸ ";font-weight:700}
+details[open] summary::before{content:"▾ "}
+details summary:focus-visible{outline:3px solid #0055a2;outline-offset:2px;border-radius:2px}
+
+/* ── Responsive ────────────────────────────────── */
+@media(max-width:600px){.mod-banner{padding:1.25rem 1rem}.mod-banner h1{font-size:1.3rem}.section{padding:1rem}.flow-row{flex-direction:column;gap:.35rem}.flow-arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+
+<!-- Skip Link -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Navigation Bar -->
+<nav class="topnav" aria-label="Module sections">
+  <a href="#objectives">§0 Objectives</a>
+  <a href="#auth-fundamentals">§1 Auth Fundamentals</a>
+  <a href="#ssh-key-auth">§2 SSH Key Auth</a>
+  <a href="#centralized-auth">§3 Centralized Auth</a>
+  <a href="#encryption-transit">§4 Data in Transit</a>
+  <a href="#encryption-rest">§5 Data at Rest</a>
+  <a href="#patch-management">§6 Patch Management</a>
+  <a href="#knowledge-check">§7 Knowledge Check</a>
+  <a href="#project3">§8 Project 3</a>
+</nav>
+
+<!-- Main Content -->
+<main id="main-content" class="page-wrap">
+
+<!-- Banner -->
+<header class="mod-banner">
+  <div class="course-tag">CSC 152 - Network OS and Administration &bull; Week 14</div>
+  <h1>Module 14.3 - Secure Authentication, Encryption &amp; Patch Management</h1>
+  <div class="subtitle">Identity, data protection, and ongoing maintenance in a hardened environment</div>
+</header>
+
+<!-- ============================================================ -->
+<!-- §0 – OBJECTIVES & CONTEXT                                    -->
+<!-- ============================================================ -->
+<section class="section" id="objectives">
+  <h2>§0 - Objectives &amp; Module Context</h2>
+
+  <h3>Module 14.3 Objectives</h3>
+  <ul>
+    <li><strong>W14.3</strong> - Configure secure authentication methods, including SSH key-based authentication and multi-factor authentication concepts.</li>
+    <li><strong>W14.4</strong> - Implement encryption for data at rest and data in transit using SSL/TLS certificates and encrypted file systems.</li>
+    <li><strong>W14.5</strong> - Develop a patch management strategy that balances security with operational stability.</li>
+  </ul>
+
+  <h3>Where This Module Fits</h3>
+  <p>Module 14.1 established the <em>outermost</em> layer of defense&mdash;physical security. Module 14.2 moved inward to the <em>host</em> layer, hardening Linux and Windows servers by reducing their attack surface. This module continues deeper through three more defense-in-depth layers:</p>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Defense-in-Depth: Module 14.3 Layers</div>
+    <div class="flow-row">
+      <span class="flow-step" style="opacity:.55">Physical<br>(14.1)</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="opacity:.55">Host Hardening<br>(14.2)</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#0055a2">Identity Layer<br>Authentication</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#0055a2">Data Layer<br>Encryption</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#0055a2">Maintenance Layer<br>Patching</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="opacity:.55">Monitoring<br>(14.4)</span>
+    </div>
+  </div>
+
+  <p><strong>Authentication</strong> answers <em>"Who are you?"</em> &mdash; the identity layer. <strong>Encryption</strong> answers <em>"Is the data protected?"</em> &mdash; the data layer. <strong>Patch management</strong> answers <em>"Is the system current?"</em> &mdash; the ongoing maintenance layer that keeps every other layer effective over time.</p>
+
+  <div class="callout gold">
+    <div class="callout-title">&#128204; Reminder - No Graded Assignments This Week</div>
+    <p>Week 14 has no graded lab, quiz, or discussion. The only active graded deliverable is <strong>Project 3: Security Hardening &amp; Monitoring with Splunk</strong> (75 pts, due Monday, May 18, 2026). Everything you learn in this module directly supports Project 3.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §1 – AUTHENTICATION FUNDAMENTALS                             -->
+<!-- ============================================================ -->
+<section class="section" id="auth-fundamentals">
+  <h2>§1 - Authentication Fundamentals</h2>
+
+  <h3>The AAA Model</h3>
+  <p>Network and system security is organized around three interrelated functions known as <strong>AAA</strong>:</p>
+
+  <table class="info-table" aria-label="AAA Model">
+    <thead><tr><th>Function</th><th>Question It Answers</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Authentication</strong></td><td>Who are you?</td><td>Entering a username and password; presenting an SSH key</td></tr>
+      <tr><td><strong>Authorization</strong></td><td>What are you allowed to do?</td><td>File permissions (Week 7); sudo rules (Week 6); AD group membership (Week 11)</td></tr>
+      <tr><td><strong>Accounting</strong></td><td>What did you do?</td><td>Audit logs (<code class="inline">auditd</code>, Windows Security Event Log); Splunk dashboards (Module 14.4)</td></tr>
+    </tbody>
+  </table>
+
+  <p>Authentication is the <em>first gate</em>. If authentication is weak, authorization and accounting cannot protect the system because an attacker is already operating under a legitimate identity.</p>
+
+  <h3>Authentication Factors</h3>
+  <p>Authentication credentials fall into three categories, often called <strong>factors</strong>:</p>
+  <table class="info-table" aria-label="Authentication factors">
+    <thead><tr><th>Factor</th><th>Description</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Something you know</strong></td><td>A secret stored in your memory</td><td>Password, PIN, security question</td></tr>
+      <tr><td><strong>Something you have</strong></td><td>A physical or digital object you possess</td><td>SSH private key, hardware token (YubiKey), authenticator app (TOTP code), smart card</td></tr>
+      <tr><td><strong>Something you are</strong></td><td>A biometric characteristic</td><td>Fingerprint, retina scan, facial recognition</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Multi-Factor Authentication (MFA)</h3>
+  <p><strong>MFA</strong> requires credentials from <em>two or more different factor categories</em>. Using two passwords (both &ldquo;something you know&rdquo;) is <em>not</em> MFA&mdash;the factors must be from different categories.</p>
+
+  <div class="callout">
+    <div class="callout-title">Why Passwords Alone Are Insufficient</div>
+    <ul>
+      <li><strong>Brute-force &amp; dictionary attacks</strong> - automated tools can test millions of combinations.</li>
+      <li><strong>Credential stuffing</strong> - reused passwords leaked from one breach are tried on other services.</li>
+      <li><strong>Phishing</strong> - users can be tricked into revealing passwords.</li>
+      <li><strong>Keyloggers</strong> - malware can capture keystrokes.</li>
+    </ul>
+    <p>SSH key-based authentication (§2) replaces passwords with a cryptographic &ldquo;something you have&rdquo; factor, dramatically raising the bar for attackers.</p>
+  </div>
+
+  <div class="callout green">
+    <div class="callout-title">&#128279; Connection to Prior Weeks</div>
+    <p>In Week 6 you configured <strong>password policies</strong> (minimum length, complexity, expiration). Those policies strengthen the &ldquo;something you know&rdquo; factor but cannot eliminate its inherent weaknesses. The techniques in this module go further by adding or replacing that factor entirely.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §2 – SSH KEY-BASED AUTHENTICATION                            -->
+<!-- ============================================================ -->
+<section class="section" id="ssh-key-auth">
+  <h2>§2 - SSH Key-Based Authentication</h2>
+
+  <h3>How Public/Private Key Pairs Work</h3>
+  <p>SSH key-based authentication uses <strong>asymmetric cryptography</strong>. A mathematically linked pair of keys is generated:</p>
+
+  <table class="info-table" aria-label="SSH key pair roles">
+    <thead><tr><th>Key</th><th>Location</th><th>Purpose</th><th>Secrecy</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Private key</strong></td><td>Client machine (your workstation)</td><td>Proves your identity by signing a challenge</td><td>Must <em>never</em> be shared</td></tr>
+      <tr><td><strong>Public key</strong></td><td>Server (<code class="inline">~/.ssh/authorized_keys</code>)</td><td>Verifies the signature created by the private key</td><td>Safe to share freely</td></tr>
+    </tbody>
+  </table>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Simplified SSH Key Authentication Handshake</div>
+    <div class="flow-row">
+      <span class="flow-step">Client sends<br>connection request</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Server sends<br>random challenge</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Client signs challenge<br>with private key</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Server verifies<br>with public key</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#1a7f37">Access<br>Granted &#10003;</span>
+    </div>
+  </div>
+
+  <p>The private key never leaves your machine and is never transmitted over the network. Even if an attacker captures the entire network conversation, they cannot reconstruct the private key.</p>
+
+  <h3>Step-by-Step: Generating and Deploying SSH Keys</h3>
+
+  <h4>Step 1 - Generate a Key Pair</h4>
+  <p>Run this on the <strong>client</strong> (your workstation):</p>
+<pre><code># Generate an Ed25519 key pair (recommended, modern, fast)
+ssh-keygen -t ed25519 -C "yourname@yourhost"
+
+# You will be prompted:
+#   Enter file in which to save the key (/home/you/.ssh/id_ed25519): [Enter]
+#   Enter passphrase (empty for no passphrase): [type a strong passphrase]
+#   Enter same passphrase again: [confirm]
+
+# Result: two files created
+#   ~/.ssh/id_ed25519       (private key - KEEP SECRET)
+#   ~/.ssh/id_ed25519.pub   (public key  - safe to share)</code></pre>
+
+  <div class="callout">
+    <div class="callout-title">&#128274; Always Use a Passphrase</div>
+    <p>A passphrase encrypts the private key file on disk. If your workstation is compromised, the attacker still cannot use the key without the passphrase. This effectively creates two-factor authentication: <em>something you have</em> (the key file) + <em>something you know</em> (the passphrase).</p>
+  </div>
+
+  <h4>Step 2 - Deploy the Public Key to the Server</h4>
+  <p>The easiest method is <code class="inline">ssh-copy-id</code>:</p>
+<pre><code># Copy your public key to the remote server
+ssh-copy-id -i ~/.ssh/id_ed25519.pub username@server-ip
+
+# This appends your public key to the server's
+#   ~/.ssh/authorized_keys  file
+# You will be prompted for your PASSWORD one last time</code></pre>
+
+  <p>If <code class="inline">ssh-copy-id</code> is not available, you can do it manually:</p>
+<pre><code># Manual method: copy the public key content
+cat ~/.ssh/id_ed25519.pub
+
+# On the server, append it to authorized_keys
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+echo "paste-your-public-key-here" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys</code></pre>
+
+  <h4>Step 3 - Test Key-Based Login</h4>
+<pre><code># Connect using your key (no password prompt should appear)
+ssh -i ~/.ssh/id_ed25519 username@server-ip
+
+# If you set a passphrase, you will be prompted for it
+# (this is the KEY passphrase, not the server password)</code></pre>
+
+  <h4>Step 4 - Disable Password Authentication</h4>
+  <p>Once key-based login is confirmed working, disable password authentication on the server to eliminate password-based attacks entirely. Edit <code class="inline">/etc/ssh/sshd_config</code>:</p>
+<pre><code># Edit the SSH daemon configuration
+sudo nano /etc/ssh/sshd_config
+
+# Find and set these directives:
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+UsePAM no
+
+# Save the file, then restart the SSH service
+sudo systemctl restart sshd</code></pre>
+
+  <div class="callout red">
+    <div class="callout-title">&#9888;&#65039; Critical Warning</div>
+    <p><strong>Always verify key-based login works before disabling password authentication.</strong> If you disable password auth and your key is not properly deployed, you will be locked out of the server. Keep an existing SSH session open while testing.</p>
+  </div>
+
+  <h4>Step 5 - SSH Agent (Optional but Recommended)</h4>
+  <p>The SSH agent caches your decrypted private key in memory so you do not have to re-enter the passphrase for every connection during a session:</p>
+<pre><code># Start the SSH agent
+eval "$(ssh-agent -s)"
+
+# Add your key to the agent
+ssh-add ~/.ssh/id_ed25519
+# Enter your passphrase once; subsequent connections
+# in this session will not prompt again</code></pre>
+
+  <div class="callout green">
+    <div class="callout-title">&#128279; Connection to Module 14.2</div>
+    <p>In Module 14.2 you hardened SSH by disabling root login and restricting access to specific users via <code class="inline">/etc/ssh/sshd_config</code>. Disabling password authentication here is the natural next step&mdash;together these settings ensure that only authorized users with valid key pairs can access the server.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §3 – CENTRALIZED AUTHENTICATION REVIEW                       -->
+<!-- ============================================================ -->
+<section class="section" id="centralized-auth">
+  <h2>§3 - Centralized Authentication Review</h2>
+
+  <p>In a production environment with many servers, managing local accounts on each machine is impractical and error-prone. Centralized authentication solves this by providing a <strong>single point of identity management and policy enforcement</strong>. You studied two major systems earlier in the course:</p>
+
+  <table class="info-table" aria-label="Centralized authentication comparison">
+    <thead><tr><th>Feature</th><th>Active Directory / Kerberos (Week 11)</th><th>OpenLDAP (Week 12)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Protocol</strong></td><td>Kerberos (ticket-based)</td><td>LDAP (directory query)</td></tr>
+      <tr><td><strong>Platform focus</strong></td><td>Windows-centric (cross-platform possible)</td><td>Linux/cross-platform</td></tr>
+      <tr><td><strong>Authentication flow</strong></td><td>User &rarr; KDC &rarr; TGT &rarr; service ticket</td><td>User &rarr; LDAP bind (simple or SASL)</td></tr>
+      <tr><td><strong>Policy enforcement</strong></td><td>Group Policy Objects (GPOs)</td><td>LDAP attributes + PAM/sudo rules</td></tr>
+      <tr><td><strong>Authorization model</strong></td><td>AD groups &rarr; permissions/GPOs</td><td>Groups &rarr; sudo rules / PAM</td></tr>
+    </tbody>
+  </table>
+
+  <h3>How Centralized Auth Supports Hardening</h3>
+  <ul>
+    <li><strong>Single point of policy enforcement</strong> - Password complexity, account lockout, and expiration policies are set once and applied to all systems.</li>
+    <li><strong>Rapid account revocation</strong> - Disabling one account in AD or LDAP immediately blocks access across every connected server.</li>
+    <li><strong>Role-Based Access Control (RBAC)</strong> - AD groups or LDAP groups map to specific permissions and sudo rules, enforcing least privilege consistently.</li>
+    <li><strong>Audit trail</strong> - Centralized authentication events are logged in one place, making them easier to monitor with Splunk (Module 14.4).</li>
+  </ul>
+
+  <div class="callout">
+    <div class="callout-title">&#128161; Key Takeaway</div>
+    <p>Local accounts should be reserved for emergency &ldquo;break-glass&rdquo; access. Day-to-day authentication should flow through a centralized directory service so that policies are uniform and auditable.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §4 – ENCRYPTION: DATA IN TRANSIT                             -->
+<!-- ============================================================ -->
+<section class="section" id="encryption-transit">
+  <h2>§4 - Encryption: Data in Transit</h2>
+
+  <p>Data in transit is any data moving across a network&mdash;between a client and server, between two servers, or across the internet. Without encryption, this data can be intercepted and read by anyone with access to the network path.</p>
+
+  <h3>Quick Review: Symmetric vs. Asymmetric Encryption</h3>
+  <table class="info-table" aria-label="Encryption type comparison">
+    <thead><tr><th>Type</th><th>Keys</th><th>Speed</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Symmetric</strong></td><td>One shared secret key</td><td>Fast</td><td>Bulk data encryption (AES)</td></tr>
+      <tr><td><strong>Asymmetric</strong></td><td>Public + private key pair</td><td>Slow</td><td>Key exchange, digital signatures (RSA, Ed25519)</td></tr>
+    </tbody>
+  </table>
+  <p>In practice, most protocols use <strong>both</strong>: asymmetric encryption to securely exchange a symmetric session key, then symmetric encryption for the actual data transfer. This is exactly how TLS works.</p>
+
+  <h3>SSL/TLS Fundamentals</h3>
+  <p><strong>TLS</strong> (Transport Layer Security) is the successor to SSL (Secure Sockets Layer). While &ldquo;SSL&rdquo; is still used colloquially, modern systems use TLS 1.2 or TLS 1.3. SSL versions are deprecated and insecure.</p>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Simplified TLS Handshake</div>
+    <div class="flow-row">
+      <span class="flow-step">1. Client Hello<br><span style="font-weight:400;font-size:.78rem">supported TLS versions<br>&amp; cipher suites</span></span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">2. Server Hello<br><span style="font-weight:400;font-size:.78rem">chosen cipher suite<br>&amp; server certificate</span></span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">3. Key Exchange<br><span style="font-weight:400;font-size:.78rem">asymmetric crypto<br>to agree on session key</span></span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#1a7f37">4. Encrypted Session<br><span style="font-weight:400;font-size:.78rem">symmetric encryption<br>with session key</span></span>
+    </div>
+  </div>
+
+  <h4>Certificate Types</h4>
+  <table class="info-table" aria-label="TLS certificate types">
+    <thead><tr><th>Type</th><th>Issued By</th><th>Trust Level</th><th>Cost</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Self-signed</strong></td><td>You (the server admin)</td><td>Not trusted by browsers by default</td><td>Free</td><td>Internal/lab/dev environments</td></tr>
+      <tr><td><strong>CA-signed</strong></td><td>Commercial Certificate Authority (DigiCert, Sectigo, etc.)</td><td>Trusted by all major browsers</td><td>Paid (varies)</td><td>Public-facing production servers</td></tr>
+      <tr><td><strong>Let&rsquo;s Encrypt</strong></td><td>Free, automated CA</td><td>Trusted by all major browsers</td><td>Free</td><td>Public-facing servers; auto-renewal</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Secure Protocol Variants</h3>
+  <p>Many common protocols have encrypted counterparts that layer TLS or SSH underneath:</p>
+  <table class="info-table" aria-label="Secure protocol variants">
+    <thead><tr><th>Insecure Protocol</th><th>Port</th><th>Secure Variant</th><th>Port</th><th>Encryption</th></tr></thead>
+    <tbody>
+      <tr><td>HTTP</td><td>80</td><td>HTTPS</td><td>443</td><td>TLS</td></tr>
+      <tr><td>FTP</td><td>21</td><td>SFTP</td><td>22</td><td>SSH</td></tr>
+      <tr><td>LDAP</td><td>389</td><td>LDAPS</td><td>636</td><td>TLS</td></tr>
+      <tr><td>Telnet</td><td>23</td><td>SSH</td><td>22</td><td>SSH</td></tr>
+    </tbody>
+  </table>
+
+  <h3>IPSec Overview (Awareness Level)</h3>
+  <p><strong>IPSec</strong> (Internet Protocol Security) operates at the <em>network layer</em> (Layer 3), encrypting IP packets themselves rather than individual application connections. It is the foundation of most <strong>VPN</strong> (Virtual Private Network) tunnels. Unlike TLS, which protects a single application session, IPSec can protect <em>all</em> traffic between two endpoints.</p>
+  <ul>
+    <li><strong>Transport mode</strong> - encrypts only the payload; used for host-to-host communication.</li>
+    <li><strong>Tunnel mode</strong> - encrypts the entire original IP packet; used for site-to-site VPNs.</li>
+  </ul>
+
+  <div class="callout green">
+    <div class="callout-title">&#128279; Connection to Prior Weeks</div>
+    <p>In Week 5 you used SSH to connect to remote servers&mdash;that was TLS-like encryption at the application layer. In Week 9 you configured firewalls that control <em>which</em> traffic flows; encryption controls <em>whether that traffic can be read</em>. In Week 12, you could have configured LDAPS to encrypt directory queries. These are all applications of the same principle: encrypt data in transit.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §5 – ENCRYPTION: DATA AT REST                                -->
+<!-- ============================================================ -->
+<section class="section" id="encryption-rest">
+  <h2>§5 - Encryption: Data at Rest</h2>
+
+  <p>Data at rest is any data stored on disk&mdash;files, databases, logs, backups. If an attacker gains physical access to a drive (or steals a backup), encryption at rest ensures the data remains unreadable without the decryption key.</p>
+
+  <h3>Linux: LUKS / dm-crypt</h3>
+  <p><strong>LUKS</strong> (Linux Unified Key Setup) is the standard for Linux full-disk and partition encryption. It uses the <code class="inline">dm-crypt</code> kernel subsystem.</p>
+
+  <h4>Key Concepts</h4>
+  <ul>
+    <li>Encrypts an entire block device (partition or disk).</li>
+    <li>Supports multiple key slots (up to 8 passphrases or key files per device).</li>
+    <li>Transparent to applications&mdash;once unlocked, the filesystem operates normally.</li>
+  </ul>
+
+  <h4>Basic LUKS Setup Commands (Reference)</h4>
+<pre><code># 1. Initialize LUKS on a partition (DESTROYS existing data)
+sudo cryptsetup luksFormat /dev/sdb1
+
+# 2. Open (unlock) the encrypted partition
+sudo cryptsetup luksOpen /dev/sdb1 secure_data
+# Creates /dev/mapper/secure_data
+
+# 3. Create a filesystem on the unlocked device
+sudo mkfs.ext4 /dev/mapper/secure_data
+
+# 4. Mount and use
+sudo mkdir /mnt/secure
+sudo mount /dev/mapper/secure_data /mnt/secure
+
+# 5. When finished, unmount and close
+sudo umount /mnt/secure
+sudo cryptsetup luksClose secure_data</code></pre>
+
+  <div class="callout">
+    <div class="callout-title">&#128161; Connection to Week 10 (Storage)</div>
+    <p>In Week 10 you learned about partitioning, LVM, and RAID. LUKS can be layered <em>on top of</em> LVM logical volumes or RAID arrays, adding encryption to any storage architecture you already know how to build.</p>
+  </div>
+
+  <h3>Windows: BitLocker and EFS</h3>
+  <table class="info-table" aria-label="Windows encryption comparison">
+    <thead><tr><th>Feature</th><th>BitLocker</th><th>EFS (Encrypting File System)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Scope</strong></td><td>Full-volume encryption</td><td>Individual files and folders</td></tr>
+      <tr><td><strong>Key storage</strong></td><td>TPM chip, USB key, or password</td><td>User certificate in AD or local store</td></tr>
+      <tr><td><strong>Transparent?</strong></td><td>Yes, after boot unlock</td><td>Yes, for the encrypting user</td></tr>
+      <tr><td><strong>Best for</strong></td><td>Protecting entire drives (laptops, servers)</td><td>Protecting specific sensitive files</td></tr>
+      <tr><td><strong>Editions</strong></td><td>Pro, Enterprise, Server</td><td>Pro, Enterprise, Server</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Encrypted Backups</h3>
+  <p>Backups are a copy of your data&mdash;if the original data is sensitive, the backup is equally sensitive. Encryption at rest should extend to backup media:</p>
+  <ul>
+    <li>Use encrypted backup tools (e.g., <code class="inline">gpg</code>-encrypted tar archives, BitLocker-encrypted backup drives).</li>
+    <li>Encrypt backup data <em>before</em> transferring it off-site.</li>
+    <li>This topic connects directly to <strong>Week 15 (Disaster Recovery &amp; Backup Solutions)</strong>.</li>
+  </ul>
+
+  <h3>Secure Storage Disposal (Brief Review)</h3>
+  <p>From Module 14.1, recall that decommissioned drives must be securely erased to prevent data recovery. <strong>NIST SP 800-88</strong> defines three levels:</p>
+  <table class="info-table" aria-label="NIST SP 800-88 sanitization levels">
+    <thead><tr><th>Level</th><th>Method</th><th>When to Use</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Clear</strong></td><td>Overwrite with zeros/patterns</td><td>Reuse within organization</td></tr>
+      <tr><td><strong>Purge</strong></td><td>Cryptographic erase, degaussing</td><td>Reuse outside organization</td></tr>
+      <tr><td><strong>Destroy</strong></td><td>Shredding, incineration, disintegration</td><td>Highest-sensitivity data</td></tr>
+    </tbody>
+  </table>
+  <p>If a drive was LUKS- or BitLocker-encrypted, securely destroying the encryption key effectively renders the data unrecoverable (cryptographic erase).</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- §6 – PATCH MANAGEMENT STRATEGY                               -->
+<!-- ============================================================ -->
+<section class="section" id="patch-management">
+  <h2>§6 - Patch Management Strategy</h2>
+
+  <h3>Why Patching Matters</h3>
+  <p>Every piece of software has vulnerabilities. When a vulnerability is discovered, it is assigned a <strong>CVE</strong> (Common Vulnerabilities and Exposures) identifier&mdash;a standardized, public reference number (e.g., <code class="inline">CVE-2024-3094</code>).</p>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Vulnerability Lifecycle</div>
+    <div class="flow-row">
+      <span class="flow-step">Vulnerability<br>Discovered</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">CVE<br>Assigned</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Vendor<br>Releases Patch</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">Admin<br>Tests Patch</span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step" style="background:#1a7f37">Patch<br>Deployed &#10003;</span>
+    </div>
+  </div>
+
+  <div class="callout red">
+    <div class="callout-title">&#9888;&#65039; Real-World Impact</div>
+    <p>The <strong>WannaCry</strong> ransomware attack (2017) exploited a Windows SMB vulnerability (CVE-2017-0144) for which Microsoft had released a patch <em>two months earlier</em>. Organizations that had not applied the patch were devastated. The <strong>Equifax</strong> breach (2017) exploited an Apache Struts vulnerability (CVE-2017-5638) that had been patched <em>months</em> before the breach. Patching is not optional&mdash;it is a core operational discipline.</p>
+  </div>
+
+  <h3>Linux Patch Management</h3>
+
+  <h4>Debian/Ubuntu (APT)</h4>
+<pre><code># Update the package index (list of available updates)
+sudo apt update
+
+# Upgrade all installed packages
+sudo apt upgrade -y
+
+# Apply only security updates
+sudo apt-get install --only-upgrade $(apt list --upgradable 2>/dev/null | grep -i security | cut -d/ -f1)
+
+# Full distribution upgrade (includes kernel, may remove obsolete packages)
+sudo apt full-upgrade -y
+
+# Configure unattended security upgrades
+sudo apt install unattended-upgrades
+sudo dpkg-reconfigure -plow unattended-upgrades</code></pre>
+
+  <h4>RHEL/Rocky/CentOS (DNF)</h4>
+<pre><code># Check for available updates
+sudo dnf check-update
+
+# Apply all updates
+sudo dnf update -y
+
+# Apply security-only updates
+sudo dnf update --security -y
+
+# Configure automatic updates
+sudo dnf install dnf-automatic
+sudo systemctl enable --now dnf-automatic-install.timer</code></pre>
+
+  <h4>Kernel Updates and Reboots</h4>
+  <p>Kernel updates require a <strong>reboot</strong> to take effect. Plan kernel updates during maintenance windows. Check if a reboot is needed:</p>
+<pre><code># Debian/Ubuntu: check if reboot is required
+cat /var/run/reboot-required 2>/dev/null && echo "Reboot needed" || echo "No reboot needed"
+
+# RHEL/Rocky: check running vs. installed kernel
+uname -r                          # running kernel
+rpm -q kernel | tail -1           # latest installed kernel</code></pre>
+
+  <h3>Windows Patch Management</h3>
+
+  <h4>Windows Update (Standalone)</h4>
+  <p>Individual servers can be updated through <strong>Settings &rarr; Update &amp; Security &rarr; Windows Update</strong> or via PowerShell:</p>
+<pre><code># PowerShell: check for and install updates
+Install-Module PSWindowsUpdate -Force
+Get-WindowsUpdate
+Install-WindowsUpdate -AcceptAll -AutoReboot</code></pre>
+
+  <h4>WSUS (Windows Server Update Services) - Overview</h4>
+  <p>In enterprise environments, <strong>WSUS</strong> provides centralized update management:</p>
+  <ul>
+    <li>Downloads updates from Microsoft once; distributes to internal servers.</li>
+    <li>Administrators <strong>approve</strong> updates before deployment.</li>
+    <li>Supports <strong>computer groups</strong> for staged rollouts (test &rarr; staging &rarr; production).</li>
+    <li>Integrates with <strong>Group Policy</strong> (Week 11) to assign servers to WSUS and control update behavior.</li>
+  </ul>
+
+  <h3>Patch Management Strategy</h3>
+  <p>Applying patches without a process risks breaking production services. A structured strategy balances security urgency with operational stability:</p>
+
+  <div class="diagram-box">
+    <div class="diagram-title">Patch Management Workflow</div>
+    <div class="flow-row">
+      <span class="flow-step">1. Identify<br><span style="font-weight:400;font-size:.78rem">CVE alerts,<br>vendor advisories</span></span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">2. Test<br><span style="font-weight:400;font-size:.78rem">apply to non-prod<br>environment</span></span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">3. Staged Rollout<br><span style="font-weight:400;font-size:.78rem">deploy to limited<br>production group</span></span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">4. Full Production<br><span style="font-weight:400;font-size:.78rem">deploy to all<br>remaining servers</span></span>
+      <span class="flow-arrow">&rarr;</span>
+      <span class="flow-step">5. Verify &amp; Document<br><span style="font-weight:400;font-size:.78rem">confirm success,<br>update records</span></span>
+    </div>
+  </div>
+
+  <table class="info-table" aria-label="Patch management strategy details">
+    <thead><tr><th>Phase</th><th>Actions</th><th>Key Considerations</th></tr></thead>
+    <tbody>
+      <tr><td><strong>1. Identify</strong></td><td>Monitor CVE databases, vendor security bulletins, mailing lists</td><td>Prioritize by CVSS score and relevance to your environment</td></tr>
+      <tr><td><strong>2. Test</strong></td><td>Apply patches in a non-production/lab environment; run application tests</td><td>Look for regressions, service failures, compatibility issues</td></tr>
+      <tr><td><strong>3. Staged Rollout</strong></td><td>Deploy to a small group of production servers; monitor for issues</td><td>WSUS computer groups or Ansible/Chef groups for automation</td></tr>
+      <tr><td><strong>4. Full Production</strong></td><td>Deploy to all remaining servers during a scheduled maintenance window</td><td>Communicate downtime; have rollback plan ready</td></tr>
+      <tr><td><strong>5. Verify &amp; Document</strong></td><td>Confirm patch installed; test services; update change management log</td><td>Use Splunk to verify no new errors post-patch</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Rollback Procedures</h4>
+  <p>Not every patch goes smoothly. Always have a rollback plan:</p>
+  <ul>
+    <li><strong>VM snapshots</strong> (Week 13) - Take a snapshot before patching; revert if problems occur.</li>
+    <li><strong>Package manager rollback</strong> - <code class="inline">sudo apt install package=previous-version</code> or <code class="inline">sudo dnf history undo last</code>.</li>
+    <li><strong>Windows</strong> - Uninstall updates via <strong>Settings &rarr; Update History &rarr; Uninstall Updates</strong> or <code class="inline">wusa /uninstall /kb:KBNUMBER</code>.</li>
+    <li><strong>Backups</strong> - Full system backup before major patch cycles (connects to Week 15).</li>
+  </ul>
+
+  <h4>Maintenance Windows and Change Management</h4>
+  <ul>
+    <li>Schedule patching during <strong>low-usage periods</strong> (e.g., weekends, overnight).</li>
+    <li>Document every change: what was patched, when, by whom, and the outcome.</li>
+    <li>Change management ensures accountability and provides an audit trail.</li>
+  </ul>
+
+  <h3>Vulnerability Scanning (Awareness Level)</h3>
+  <p>Vulnerability scanners automatically check systems for known vulnerabilities and missing patches:</p>
+  <ul>
+    <li><strong>Nessus</strong> - Commercial scanner widely used in enterprise environments.</li>
+    <li><strong>OpenVAS</strong> - Open-source alternative with a large vulnerability database.</li>
+  </ul>
+  <p>Scan results produce a prioritized list of vulnerabilities, helping administrators decide which patches to apply first. You are not expected to install or operate these tools in this course, but you should understand their role in a patch management strategy.</p>
+
+  <div class="callout green">
+    <div class="callout-title">&#128279; Connection to Prior Weeks</div>
+    <p>In Week 3 you used <code class="inline">apt</code> and in Week 4 you used Windows Update for basic package management. Those were one-time setup tasks. Patch management elevates this to an <em>ongoing operational discipline</em> with testing, staging, rollback planning, and documentation. In Week 11, you learned about GPOs&mdash;GPO-based update policies are how enterprises enforce Windows patching at scale.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §7 – CHECK FOR UNDERSTANDING                                 -->
+<!-- ============================================================ -->
+<section class="section" id="knowledge-check">
+  <h2>§7 - Check for Understanding</h2>
+  <p>These questions are <strong>ungraded</strong>&mdash;use them to test your understanding before moving to Module 14.4. Click <strong>Check Answer</strong> for immediate feedback.</p>
+
+  <div class="kc-block" id="kc-area">
+
+    <!-- Q1 – SSH Key Steps Ordering -->
+    <div class="question-block" id="q1-block">
+      <p class="q-stem">1. Which is the correct order of steps for deploying SSH key-based authentication?</p>
+      <label><input type="radio" name="q1" value="a"> A. Disable password auth &rarr; Generate key pair &rarr; Copy public key to server &rarr; Test login</label>
+      <label><input type="radio" name="q1" value="b"> B. Generate key pair &rarr; Copy public key to server &rarr; Test key-based login &rarr; Disable password auth</label>
+      <label><input type="radio" name="q1" value="c"> C. Copy public key to server &rarr; Generate key pair &rarr; Disable password auth &rarr; Test login</label>
+      <label><input type="radio" name="q1" value="d"> D. Generate key pair &rarr; Disable password auth &rarr; Copy public key to server &rarr; Test login</label>
+      <button class="btn-check" onclick="checkAnswer('q1','b','q1-fb-correct','q1-fb-wrong')">Check Answer</button>
+      <div class="feedback correct" id="q1-fb-correct">&#10003; <strong>Correct!</strong> You must generate the key pair first, deploy the public key, verify it works, and <em>only then</em> disable password authentication. Disabling password auth before confirming key access would lock you out.</div>
+      <div class="feedback incorrect" id="q1-fb-wrong">&#10007; <strong>Not quite.</strong> The correct order is: Generate key pair &rarr; Copy public key to server &rarr; Test key-based login &rarr; Disable password auth. You must always verify key access works <em>before</em> disabling password authentication.</div>
+    </div>
+
+    <!-- Q2 – Encryption Type Identification -->
+    <div class="question-block" id="q2-block">
+      <p class="q-stem">2. A company uses LUKS to encrypt its database server&rsquo;s data partition. What type of encryption is this?</p>
+      <label><input type="radio" name="q2" value="a"> A. Encryption in transit</label>
+      <label><input type="radio" name="q2" value="b"> B. Encryption at rest</label>
+      <label><input type="radio" name="q2" value="c"> C. Hashing</label>
+      <label><input type="radio" name="q2" value="d"> D. Asymmetric key exchange</label>
+      <button class="btn-check" onclick="checkAnswer('q2','b','q2-fb-correct','q2-fb-wrong')">Check Answer</button>
+      <div class="feedback correct" id="q2-fb-correct">&#10003; <strong>Correct!</strong> LUKS encrypts data stored on disk (at rest). The data is decrypted only when the partition is unlocked and mounted. If the physical drive is stolen, the data remains unreadable.</div>
+      <div class="feedback incorrect" id="q2-fb-wrong">&#10007; <strong>Not quite.</strong> LUKS is <strong>encryption at rest</strong>&mdash;it protects data stored on disk. Encryption in transit (like TLS) protects data moving across a network. Hashing is a one-way function, not encryption.</div>
+    </div>
+
+    <!-- Q3 – Scenario: In Transit -->
+    <div class="question-block" id="q3-block">
+      <p class="q-stem">3. An administrator configures Apache to use a Let&rsquo;s Encrypt certificate so that all web traffic uses HTTPS. What type of protection does this provide?</p>
+      <label><input type="radio" name="q3" value="a"> A. Encryption at rest</label>
+      <label><input type="radio" name="q3" value="b"> B. Encryption in transit</label>
+      <label><input type="radio" name="q3" value="c"> C. Physical security</label>
+      <label><input type="radio" name="q3" value="d"> D. Patch management</label>
+      <button class="btn-check" onclick="checkAnswer('q3','b','q3-fb-correct','q3-fb-wrong')">Check Answer</button>
+      <div class="feedback correct" id="q3-fb-correct">&#10003; <strong>Correct!</strong> HTTPS uses TLS to encrypt data traveling between the client&rsquo;s browser and the web server&mdash;this is encryption in transit. The Let&rsquo;s Encrypt certificate enables the server to prove its identity and establish the TLS session.</div>
+      <div class="feedback incorrect" id="q3-fb-wrong">&#10007; <strong>Not quite.</strong> HTTPS protects <strong>data in transit</strong> between the browser and server using TLS. The certificate from Let&rsquo;s Encrypt enables the TLS handshake.</div>
+    </div>
+
+    <!-- Q4 – MFA -->
+    <div class="question-block" id="q4-block">
+      <p class="q-stem">4. A user logs in with a password and then enters a six-digit code from a phone authenticator app. Which statement is true?</p>
+      <label><input type="radio" name="q4" value="a"> A. This is single-factor authentication because both are typed on a keyboard</label>
+      <label><input type="radio" name="q4" value="b"> B. This is multi-factor authentication: something you know (password) + something you have (phone/app)</label>
+      <label><input type="radio" name="q4" value="c"> C. This is multi-factor authentication: something you know (password) + something you are (phone biometric)</label>
+      <label><input type="radio" name="q4" value="d"> D. This is two-password authentication, not true MFA</label>
+      <button class="btn-check" onclick="checkAnswer('q4','b','q4-fb-correct','q4-fb-wrong')">Check Answer</button>
+      <div class="feedback correct" id="q4-fb-correct">&#10003; <strong>Correct!</strong> The password is &ldquo;something you know&rdquo; and the authenticator app code is &ldquo;something you have&rdquo; (you must possess the phone with the enrolled app). Two different factor categories = MFA.</div>
+      <div class="feedback incorrect" id="q4-fb-wrong">&#10007; <strong>Not quite.</strong> The password is &ldquo;something you know&rdquo; and the TOTP code from the authenticator app is &ldquo;something you have&rdquo; (the phone). These are two <em>different</em> factor categories, making this true MFA.</div>
+    </div>
+
+    <!-- Q5 – Patch Management Sequencing -->
+    <div class="question-block" id="q5-block">
+      <p class="q-stem">5. A critical CVE is published affecting your web server software. What is the correct patch management sequence?</p>
+      <label><input type="radio" name="q5" value="a"> A. Apply patch immediately to all production servers &rarr; Test afterward &rarr; Document</label>
+      <label><input type="radio" name="q5" value="b"> B. Test patch in lab &rarr; Staged rollout to limited production &rarr; Full production deployment &rarr; Verify &amp; document</label>
+      <label><input type="radio" name="q5" value="c"> C. Document the CVE &rarr; Wait for the next maintenance window (even if months away) &rarr; Apply to all servers at once</label>
+      <label><input type="radio" name="q5" value="d"> D. Run a vulnerability scan &rarr; Disable the affected service permanently &rarr; No patch needed</label>
+      <button class="btn-check" onclick="checkAnswer('q5','b','q5-fb-correct','q5-fb-wrong')">Check Answer</button>
+      <div class="feedback correct" id="q5-fb-correct">&#10003; <strong>Correct!</strong> Even for critical patches, the disciplined approach is: test first, then staged rollout, then full production, then verify and document. For critical CVEs the timeline is compressed (hours/days, not weeks), but the steps remain the same.</div>
+      <div class="feedback incorrect" id="q5-fb-wrong">&#10007; <strong>Not quite.</strong> The correct sequence is: <strong>Test &rarr; Staged rollout &rarr; Full production &rarr; Verify &amp; document.</strong> Applying untested patches to all production servers risks outages. Waiting months for a critical CVE leaves you exposed. Disabling the service may not be feasible.</div>
+    </div>
+
+    <!-- Q6 – AAA Model -->
+    <div class="question-block" id="q6-block">
+      <p class="q-stem">6. In the AAA model, which function is responsible for tracking what actions a user performs after they have been granted access?</p>
+      <label><input type="radio" name="q6" value="a"> A. Authentication</label>
+      <label><input type="radio" name="q6" value="b"> B. Authorization</label>
+      <label><input type="radio" name="q6" value="c"> C. Accounting</label>
+      <label><input type="radio" name="q6" value="d"> D. Access Control</label>
+      <button class="btn-check" onclick="checkAnswer('q6','c','q6-fb-correct','q6-fb-wrong')">Check Answer</button>
+      <div class="feedback correct" id="q6-fb-correct">&#10003; <strong>Correct!</strong> <strong>Accounting</strong> (the third &ldquo;A&rdquo;) is responsible for logging and tracking user actions&mdash;what they accessed, when, and what changes they made. This is what tools like <code class="inline">auditd</code> and Splunk support.</div>
+      <div class="feedback incorrect" id="q6-fb-wrong">&#10007; <strong>Not quite.</strong> <strong>Accounting</strong> tracks user actions after access is granted. Authentication verifies identity; Authorization determines permissions. Accounting provides the audit trail.</div>
+    </div>
+
+    <button class="btn-reset" onclick="resetAll()" style="margin-top:.5rem">Reset All Answers</button>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- §8 – CONNECTION TO PROJECT 3                                 -->
+<!-- ============================================================ -->
+<section class="section" id="project3">
+  <h2>§8 - Connection to Project 3</h2>
+
+  <p><strong>Project 3: Security Hardening &amp; Monitoring with Splunk</strong> (75 pts) is the only active graded deliverable and is due <strong>Monday, May 18, 2026, 11:59 PM</strong>. The topics in this module map directly to several Project 3 deliverables:</p>
+
+  <table class="info-table" aria-label="Module 14.3 to Project 3 mapping">
+    <thead><tr><th>Module 14.3 Topic</th><th>Project 3 Deliverable</th><th>What to Capture</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>SSH Key-Based Authentication (§2)</td>
+        <td>Access control configurations</td>
+        <td>Screenshots of <code class="inline">ssh-keygen</code> output, <code class="inline">authorized_keys</code> file, <code class="inline">sshd_config</code> changes (PasswordAuthentication no), successful key-based login</td>
+      </tr>
+      <tr>
+        <td>SSL/TLS Configuration (§4)</td>
+        <td>SSL/TLS certificate deployment</td>
+        <td>Certificate generation/installation steps, browser or <code class="inline">curl</code> verification of HTTPS, configuration file excerpts</td>
+      </tr>
+      <tr>
+        <td>Encryption at Rest (§5)</td>
+        <td>Encrypted file systems</td>
+        <td>LUKS setup commands and verification (<code class="inline">cryptsetup status</code>), or BitLocker status screenshot</td>
+      </tr>
+      <tr>
+        <td>Patch Management (§6)</td>
+        <td>Patch management strategy documentation</td>
+        <td>Written strategy (test &rarr; staged &rarr; production &rarr; verify); evidence of updates applied (<code class="inline">apt upgrade</code> output or Windows Update history); maintenance window plan</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout gold">
+    <div class="callout-title">&#128204; Documentation Tip</div>
+    <p>For each hardening action, document the <strong>before state</strong>, the <strong>change made</strong>, and the <strong>after state</strong>. Include commands, configuration file excerpts, and screenshots. This before/after evidence is what demonstrates that you actively hardened your servers, not just described the theory.</p>
+  </div>
+
+  <div class="callout purple">
+    <div class="callout-title">&#128301; Up Next: Module 14.4 - Security Validation with Splunk</div>
+    <p>Module 14.4 closes the loop by showing you how to use Splunk to <em>verify</em> that the hardening measures from Modules 14.2 and 14.3 are working. You will write SPL searches to detect failed logins, firewall blocks, and privilege escalation events, build security dashboards, and configure alerts&mdash;all of which are required Project 3 deliverables (at least 3 dashboards and at least 1 alert).</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+function checkAnswer(name,correctVal,correctId,wrongId){
+  var radios=document.getElementsByName(name);
+  var selected=null;
+  for(var i=0;i<radios.length;i++){if(radios[i].checked){selected=radios[i].value;break;}}
+  if(selected===null)return;
+  document.getElementById(correctId).style.display='none';
+  document.getElementById(wrongId).style.display='none';
+  if(selected===correctVal){document.getElementById(correctId).style.display='block';}
+  else{document.getElementById(wrongId).style.display='block';}
+}
+function resetAll(){
+  var radios=document.querySelectorAll('#kc-area input[type="radio"]');
+  for(var i=0;i<radios.length;i++){radios[i].checked=false;}
+  var fbs=document.querySelectorAll('#kc-area .feedback');
+  for(var j=0;j<fbs.length;j++){fbs[j].style.display='none';}
+}
+</script>
+</body>
+</html>

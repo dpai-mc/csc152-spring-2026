@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 14.4 – Security Validation with Splunk | CSC 152</title>
+<style>
+:root{
+--navy:#1a2238;--blue:#2e4a7a;--light-blue:#3a6db5;--accent:#4a90d9;
+--bg:#f5f7fa;--white:#ffffff;--text:#1a2238;--text-light:#4a5568;
+--border:#d1d9e6;--success:#2d7d46;--success-bg:#e6f4ea;
+--warn:#b8860b;--warn-bg:#fef9e7;--info-bg:#e8f0fe;
+--red:#c0392b;--red-bg:#fdecea;--orange:#e67e22;--orange-bg:#fef5e7;
+--code-bg:#1e1e1e;--code-text:#d4d4d4;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:16px;}
+/* NAV */
+.top-nav{background:var(--navy);padding:0;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--accent);}
+.top-nav ul{list-style:none;display:flex;flex-wrap:wrap;max-width:1100px;margin:0 auto;padding:0;}
+.top-nav li{margin:0;}
+.top-nav a{display:block;color:#fff;text-decoration:none;padding:12px 16px;font-size:.88rem;transition:background .2s;}
+.top-nav a:hover,.top-nav a:focus{background:var(--blue);outline:2px solid var(--accent);outline-offset:-2px;}
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:24px 20px 60px;}
+/* HEADER */
+.mod-header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:32px 28px;border-radius:10px;margin-bottom:32px;}
+.mod-header .label{font-size:.82rem;text-transform:uppercase;letter-spacing:1.5px;opacity:.85;margin-bottom:4px;}
+.mod-header h1{font-size:1.75rem;margin:6px 0 10px;line-height:1.25;}
+.mod-header .meta{font-size:.88rem;opacity:.85;}
+/* SECTIONS */
+.section{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:28px 26px;margin-bottom:28px;}
+.section h2{font-size:1.35rem;color:var(--navy);border-bottom:3px solid var(--accent);padding-bottom:8px;margin-bottom:18px;}
+.section h3{font-size:1.1rem;color:var(--blue);margin:20px 0 10px;}
+.section h4{font-size:1rem;color:var(--blue);margin:16px 0 8px;}
+p{margin-bottom:14px;}
+ul,ol{margin:0 0 14px 24px;}
+li{margin-bottom:6px;}
+/* CALLOUTS */
+.callout{border-left:4px solid var(--accent);border-radius:6px;padding:16px 18px;margin:18px 0;}
+.callout-blue{background:var(--info-bg);border-left-color:var(--accent);}
+.callout-green{background:var(--success-bg);border-left-color:var(--success);}
+.callout-yellow{background:var(--warn-bg);border-left-color:var(--warn);}
+.callout-red{background:var(--red-bg);border-left-color:var(--red);}
+.callout-orange{background:var(--orange-bg);border-left-color:var(--orange);}
+.callout-title{font-weight:700;margin-bottom:6px;}
+/* TABLES */
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.93rem;}
+th,td{border:1px solid var(--border);padding:10px 12px;text-align:left;}
+th{background:var(--navy);color:#fff;font-weight:600;}
+tr:nth-child(even){background:#f0f4f8;}
+/* CODE */
+pre{background:var(--code-bg);color:var(--code-text);border-radius:6px;padding:16px 18px;overflow-x:auto;margin:14px 0;font-size:.88rem;line-height:1.55;white-space:pre;}
+code{font-family:'Cascadia Code','Fira Code',Consolas,'Courier New',monospace;}
+p code,li code,td code{background:#e8ecf1;color:var(--navy);padding:2px 6px;border-radius:3px;font-size:.9em;}
+/* DIAGRAM BOX */
+.diagram-box{background:#f0f4f8;border:2px solid var(--border);border-radius:8px;padding:20px;margin:18px 0;text-align:center;font-size:.92rem;line-height:1.8;}
+.diagram-box .arrow{color:var(--accent);font-weight:700;font-size:1.1rem;}
+/* INTERACTIVE */
+.activity-block{background:var(--info-bg);border:2px solid var(--accent);border-radius:8px;padding:22px 20px;margin:20px 0;}
+.activity-block h3{color:var(--blue);margin-top:0;}
+.quiz-block{background:#f8f9fb;border:2px solid var(--border);border-radius:8px;padding:22px 20px;margin:20px 0;}
+.question{margin-bottom:22px;}
+.question p.q-stem{font-weight:600;margin-bottom:8px;}
+.question label{display:block;padding:6px 10px;margin:3px 0;border-radius:4px;cursor:pointer;transition:background .15s;}
+.question label:hover{background:#e8ecf1;}
+.question input[type="radio"]{margin-right:8px;}
+.q-feedback{display:none;padding:10px 14px;border-radius:5px;margin-top:8px;font-size:.92rem;}
+.q-feedback.correct{background:var(--success-bg);border-left:4px solid var(--success);}
+.q-feedback.incorrect{background:var(--red-bg);border-left:4px solid var(--red);}
+.btn{display:inline-block;background:var(--accent);color:#fff;border:none;padding:10px 22px;border-radius:5px;font-size:.95rem;cursor:pointer;margin-top:6px;transition:background .2s;}
+.btn:hover,.btn:focus{background:var(--blue);outline:2px solid var(--accent);outline-offset:2px;}
+/* STEP */
+.step{display:flex;gap:14px;margin:14px 0;align-items:flex-start;}
+.step-num{background:var(--accent);color:#fff;min-width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;}
+.step-content{flex:1;}
+/* FOOTER */
+.mod-footer{text-align:center;font-size:.82rem;color:var(--text-light);padding:24px 16px;border-top:2px solid var(--border);margin-top:40px;}
+/* FOCUS */
+a:focus,button:focus,.btn:focus,input:focus{outline:2px solid var(--accent);outline-offset:2px;}
+/* RESPONSIVE */
+@media(max-width:640px){
+ .top-nav ul{flex-direction:column;}
+ .top-nav a{padding:10px 14px;font-size:.84rem;}
+ main{padding:16px 12px 40px;}
+ .section{padding:20px 16px;}
+ .mod-header{padding:24px 18px;}
+ .mod-header h1{font-size:1.35rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NAVIGATION ===== -->
+<nav class="top-nav" aria-label="Module sections">
+<ul role="menubar">
+ <li role="none"><a role="menuitem" href="#objectives">§0 Objectives</a></li>
+ <li role="none"><a role="menuitem" href="#feedback-loop">§1 Feedback Loop</a></li>
+ <li role="none"><a role="menuitem" href="#spl-searches">§2 SPL Searches</a></li>
+ <li role="none"><a role="menuitem" href="#dashboards">§3 Dashboards</a></li>
+ <li role="none"><a role="menuitem" href="#alerts">§4 Alerts</a></li>
+ <li role="none"><a role="menuitem" href="#documentation">§5 Documentation</a></li>
+ <li role="none"><a role="menuitem" href="#knowledge-check">§6 Knowledge Check</a></li>
+ <li role="none"><a role="menuitem" href="#splunk-learning">§7 Splunk Learning</a></li>
+</ul>
+</nav>
+
+<main>
+
+<!-- ===== HEADER ===== -->
+<header class="mod-header">
+<div class="label">Week 14 &bull; Module 14.4</div>
+<h1>Security Validation with Splunk</h1>
+<div class="meta">CSC 152 - Network Operating Systems and Administration &bull; Mendocino College &bull; Instructor: David Pai<br>
+Estimated time: 1.0 - 1.5 hours &bull; No graded lab, quiz, or discussion this week &mdash; focus on Project&nbsp;3</div>
+</header>
+
+<!-- ===== §0 OBJECTIVES ===== -->
+<section id="objectives" class="section" aria-labelledby="h-objectives">
+<h2 id="h-objectives">&#167;0 - Module Objectives &amp; Context</h2>
+
+<h3>Module Learning Objectives</h3>
+<table>
+<thead><tr><th>ID</th><th>Objective</th><th>CSLO</th></tr></thead>
+<tbody>
+<tr><td>W14.6</td><td>Use Splunk searches and dashboards to validate that security hardening measures are generating expected log events and to identify suspicious activity</td><td>CSLO&nbsp;1, CSLO&nbsp;2</td></tr>
+<tr><td>W14.7</td><td>Connect server hardening techniques to Project&nbsp;3 deliverables, applying hardening controls to the lab infrastructure and documenting results</td><td>CSLO&nbsp;1, CSLO&nbsp;2</td></tr>
+</tbody>
+</table>
+
+<h3>Where This Module Fits</h3>
+<p>Module&nbsp;14.4 is the <strong>validation layer</strong> of Week&nbsp;14. Across the first three modules you studied physical security and defense in depth (14.1), applied Linux and Windows hardening techniques (14.2), and configured secure authentication, encryption, and patch management (14.3). Those actions changed server configurations&mdash;but how do you <em>prove</em> the changes are working?</p>
+<p>This module answers that question by closing the <strong>hardening &rarr; monitoring &rarr; evidence</strong> cycle. You will use the Splunk Enterprise instance you installed in Week&nbsp;12 and the Universal Forwarders you deployed in Week&nbsp;13 as a <strong>Security Information and Event Management (SIEM)</strong> platform to verify that your hardening measures generate the expected log events and to surface suspicious activity.</p>
+
+<div class="callout callout-blue">
+<div class="callout-title">&#128203; Splunk Learning Connection</div>
+The skills in this module build directly on the <strong>Splunk Learning: Intro to Splunk</strong> assignment (due end of Week&nbsp;13) and the <strong>Splunk Learning: Splunk Enterprise Installation and Configuration</strong> assignment (in progress, due date TBD). If you have not yet completed the Intro to Splunk course, do so before working through this module.
+</div>
+
+<div class="callout callout-blue">
+<div class="callout-title">&#128203; Project 3 Quick Reference</div>
+<strong>Project 3: Security Hardening &amp; Monitoring with Splunk</strong><br>
+Points: 75 &nbsp;|&nbsp; Due: Monday, May 18, 2026, 11:59 PM<br>
+Key deliverables: security hardening applied to Linux &amp; Windows servers, SSH key-based authentication, SSL/TLS configuration, patch management strategy, &ge;3 Splunk dashboards, &ge;1 Splunk alert, comprehensive documentation with evidence.
+</div>
+</section>
+
+<!-- ===== §1 FEEDBACK LOOP ===== -->
+<section id="feedback-loop" class="section" aria-labelledby="h-loop">
+<h2 id="h-loop">&#167;1 - The Hardening-Monitoring Feedback Loop</h2>
+
+<h3>Why Hardening Without Monitoring Is Incomplete</h3>
+<p>Imagine locking every door and window in a building but never installing an alarm system or checking whether the locks still work. That is what server hardening looks like without monitoring. You may have:</p>
+<ul>
+<li>Disabled root SSH login&mdash;but how do you know an attacker is not still trying?</li>
+<li>Configured firewall rules to block unauthorized ports&mdash;but are those rules actually dropping traffic?</li>
+<li>Enabled account lockout policies&mdash;but has any account actually been locked out?</li>
+</ul>
+<p><strong>Monitoring answers these questions.</strong> Log data generated by hardened systems provides evidence that controls are functioning. When you collect and analyze those logs in a centralized platform, you gain visibility across your entire infrastructure.</p>
+
+<h3>Splunk as a SIEM Tool</h3>
+<p>A <strong>SIEM (Security Information and Event Management)</strong> system collects, normalizes, and correlates log data from multiple sources to provide a unified security view. In your lab environment, Splunk Enterprise serves as your SIEM:</p>
+<ul>
+<li><strong>Week&nbsp;12:</strong> You installed Splunk Enterprise on a Linux server and enabled the receiving port (9997).</li>
+<li><strong>Week&nbsp;13:</strong> You deployed Universal Forwarders on Linux and Windows servers, configured <code>inputs.conf</code> and <code>outputs.conf</code>, and verified data ingestion.</li>
+<li><strong>This week:</strong> You use Splunk to <em>validate hardening</em> and <em>detect suspicious activity</em>.</li>
+</ul>
+
+<h3>The Feedback Loop</h3>
+<p>The hardening-monitoring feedback loop is a continuous cycle. Each step informs the next:</p>
+
+<div class="diagram-box" role="img" aria-label="Diagram showing the hardening-monitoring feedback loop as a five-step cycle: Apply Hardening, Log Event Generated, Splunk Search and Dashboard, Evidence and Insight, Adjust and Improve, then back to Apply Hardening.">
+<strong>The Hardening-Monitoring Feedback Loop</strong><br><br>
+&#9312; <strong>Apply Hardening</strong><br>
+<em>(e.g., disable password-based SSH, enable firewall rule)</em><br>
+<span class="arrow">&darr;</span><br>
+&#9313; <strong>Log Event Generated</strong><br>
+<em>(auth.log records rejected password attempts; iptables logs blocked packets)</em><br>
+<span class="arrow">&darr;</span><br>
+&#9314; <strong>Splunk Search &amp; Dashboard</strong><br>
+<em>(SPL query surfaces the events; dashboard visualizes trends)</em><br>
+<span class="arrow">&darr;</span><br>
+&#9315; <strong>Evidence &amp; Insight</strong><br>
+<em>(0 failed SSH password logins confirms key-only auth works; spike in firewall blocks reveals scanning activity)</em><br>
+<span class="arrow">&darr;</span><br>
+&#9316; <strong>Adjust &amp; Improve</strong><br>
+<em>(Add new firewall rule for scanning source; tighten alert thresholds)</em><br>
+<span class="arrow">&darr;</span><br>
+&#128260; <em>Return to Step&nbsp;&#9312; &mdash; the cycle continues</em>
+</div>
+
+<div class="callout callout-green">
+<div class="callout-title">&#9989; Key Takeaway</div>
+Hardening and monitoring are two halves of the same security strategy. Hardening reduces the attack surface; monitoring proves it and catches what slips through. Your Project&nbsp;3 submission must demonstrate <strong>both</strong>.
+</div>
+</section>
+
+<!-- ===== §2 SPL SEARCHES ===== -->
+<section id="spl-searches" class="section" aria-labelledby="h-spl">
+<h2 id="h-spl">&#167;2 - SPL Searches for Security Events</h2>
+
+<p>This section provides guided SPL (Search Processing Language) examples targeting the most important security events. Each example includes the search, an explanation of what it detects, and why it matters for security validation. You will adapt these searches to your own lab environment for Project&nbsp;3.</p>
+
+<div class="callout callout-yellow">
+<div class="callout-title">&#9888;&#65039; Adapt to Your Environment</div>
+The examples below use common default index names, source paths, and host values. Replace <code>index=main</code>, <code>host=linux-srv</code>, <code>host=win-srv</code>, and source paths with the actual values from your lab. Use <code>index=* host=&lt;your-hostname&gt;</code> to discover your data first.
+</div>
+
+<!-- 2.1 Failed Logins Linux -->
+<h3>2.1 - Failed Login Attempts (Linux)</h3>
+<p><strong>What it detects:</strong> Failed SSH or console login attempts recorded in <code>/var/log/auth.log</code> (Ubuntu) or <code>/var/log/secure</code> (Rocky/CentOS).</p>
+<p><strong>Why it matters:</strong> After hardening SSH (disabling password auth, restricting users), you should see these events drop to zero for password-based failures. Any remaining failures may indicate brute-force attempts or misconfiguration.</p>
+<pre><code>index=main source="/var/log/auth.log" "Failed password"
+| stats count by host, src_ip, user
+| sort -count</code></pre>
+<p><strong>Explanation:</strong> Searches for the literal string <code>"Failed password"</code> in auth.log, then counts occurrences grouped by host, source IP, and target user. Results are sorted in descending order so the most-targeted accounts appear first.</p>
+
+<!-- 2.2 Failed Logins Windows -->
+<h3>2.2 - Failed Logon Attempts (Windows)</h3>
+<p><strong>What it detects:</strong> Failed logon events in the Windows Security Event Log (Event ID&nbsp;4625).</p>
+<p><strong>Why it matters:</strong> After configuring account lockout policies and restricting Remote Desktop access, monitoring Event ID&nbsp;4625 confirms those controls are blocking unauthorized attempts.</p>
+<pre><code>index=main source="WinEventLog:Security" EventCode=4625
+| stats count by host, Account_Name, Source_Network_Address
+| sort -count</code></pre>
+<p><strong>Explanation:</strong> Filters Windows Security events to Event Code 4625 (failed logon), then groups by host, the account targeted, and the source network address. This reveals which accounts are being targeted and from where.</p>
+
+<!-- 2.3 Firewall Blocks -->
+<h3>2.3 - Firewall Blocks (Linux iptables / UFW)</h3>
+<p><strong>What it detects:</strong> Packets blocked by iptables or UFW firewall rules.</p>
+<p><strong>Why it matters:</strong> Validates that firewall hardening rules are actively dropping unauthorized traffic. A high volume of blocks from a single IP may indicate scanning or attack activity.</p>
+<pre><code>index=main source="/var/log/syslog" "UFW BLOCK"
+| rex field=_raw "SRC=(?&lt;src_ip&gt;\d+\.\d+\.\d+\.\d+).*DPT=(?&lt;dest_port&gt;\d+)"
+| stats count by src_ip, dest_port
+| sort -count</code></pre>
+<p><strong>Explanation:</strong> Searches syslog for UFW block entries, uses regex to extract the source IP and destination port, then counts blocks by source and port. Replace <code>"UFW BLOCK"</code> with <code>"iptables DENY"</code> or your custom log prefix if you are using raw iptables rules.</p>
+
+<!-- 2.4 Windows Firewall -->
+<h3>2.4 - Firewall Blocks (Windows Firewall)</h3>
+<p><strong>What it detects:</strong> Connections dropped by Windows Firewall with Advanced Security.</p>
+<p><strong>Why it matters:</strong> Confirms that Windows Firewall rules configured during hardening (Module&nbsp;14.2) are actively blocking unauthorized inbound connections.</p>
+<pre><code>index=main source="WinEventLog:Security" EventCode=5157 Action="Block"
+| stats count by host, src_ip, dest_port
+| sort -count</code></pre>
+<p><strong>Explanation:</strong> Event ID&nbsp;5157 logs Windows Filtering Platform connection blocks. If your Windows Firewall logging writes to a text-based log file instead, adjust the source to that file path and search for the <code>DROP</code> action keyword.</p>
+
+<!-- 2.5 Sudo / Privilege Escalation -->
+<h3>2.5 - Sudo / Privilege Escalation Events (Linux)</h3>
+<p><strong>What it detects:</strong> Successful and failed <code>sudo</code> commands, indicating privilege escalation activity.</p>
+<p><strong>Why it matters:</strong> After restricting sudo access (Module&nbsp;14.2), monitoring these events confirms that only authorized users are escalating privileges. Failed sudo attempts may indicate an attacker testing compromised credentials.</p>
+<pre><code>index=main source="/var/log/auth.log" "sudo"
+| rex field=_raw "(?&lt;sudo_user&gt;\w+)\s+:\s+.*COMMAND=(?&lt;command&gt;.+)"
+| stats count by sudo_user, command
+| sort -count</code></pre>
+<p><strong>Explanation:</strong> Searches auth.log for sudo entries, extracts the user who ran the command and the command itself, then counts by user and command. Look for unexpected users or commands.</p>
+
+<!-- 2.6 Account Lockouts -->
+<h3>2.6 - Account Lockouts (Windows)</h3>
+<p><strong>What it detects:</strong> Account lockout events in Active Directory or local security policy (Event ID&nbsp;4740).</p>
+<p><strong>Why it matters:</strong> Account lockout policies are a key hardening control (Module&nbsp;14.2). Monitoring lockout events shows the policy is working and helps identify accounts under attack.</p>
+<pre><code>index=main source="WinEventLog:Security" EventCode=4740
+| table _time, Account_Name, ComputerName, Source_Network_Address
+| sort -_time</code></pre>
+<p><strong>Explanation:</strong> Filters for Event ID&nbsp;4740 (account lockout) and displays the time, locked account, the computer where the lockout was recorded, and the source address that triggered it.</p>
+
+<!-- 2.7 Service State Changes -->
+<h3>2.7 - Service State Changes</h3>
+<p><strong>What it detects:</strong> Services starting or stopping unexpectedly on Linux or Windows.</p>
+<p><strong>Why it matters:</strong> After disabling unnecessary services during hardening, a service restarting unexpectedly could indicate tampering, misconfiguration, or a persistence mechanism.</p>
+
+<h4>Linux (systemd via syslog)</h4>
+<pre><code>index=main source="/var/log/syslog" ("Started" OR "Stopped" OR "Failed")
+| rex field=_raw "(?&lt;action&gt;Started|Stopped|Failed)\s+(?&lt;service_name&gt;.+)\."
+| stats count by host, action, service_name
+| sort -count</code></pre>
+
+<h4>Windows (Event IDs 7036 / 7040)</h4>
+<pre><code>index=main source="WinEventLog:System" (EventCode=7036 OR EventCode=7040)
+| table _time, host, EventCode, Message
+| sort -_time</code></pre>
+<p><strong>Explanation:</strong> Event ID&nbsp;7036 logs service state changes (started/stopped); Event ID&nbsp;7040 logs service start-type changes (e.g., from automatic to disabled). Both are relevant to verifying that hardening-disabled services remain off.</p>
+
+<h3>Filtering Tips</h3>
+<table>
+<thead><tr><th>Filter</th><th>SPL Example</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>By host</td><td><code>host="linux-srv"</code></td><td>Narrow results to a specific server</td></tr>
+<tr><td>By time range</td><td><code>earliest=-24h latest=now</code></td><td>Limit search to last 24 hours</td></tr>
+<tr><td>By index</td><td><code>index=main</code></td><td>Search only the main index</td></tr>
+<tr><td>By source type</td><td><code>sourcetype="syslog"</code></td><td>Filter by data type</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-green">
+<div class="callout-title">&#9989; Pro Tip</div>
+Start broad, then narrow. Begin with <code>index=* host=&lt;hostname&gt;</code> to see all data from a host, then add keywords and filters to isolate specific security events. This is especially useful when you are not sure which source or sourcetype contains the events you need.
+</div>
+
+<!-- Interactive: SPL Matching -->
+<div class="activity-block">
+<h3>&#128736;&#65039; Try It - Match the SPL Search to the Security Event</h3>
+<p>For each security event below, identify which SPL search fragment would detect it. Think about which log source and keywords are relevant.</p>
+<table>
+<thead><tr><th>#</th><th>Security Event</th><th>Key SPL Fragment</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>A user attempts to SSH with a password after key-only auth is enforced</td><td><code>source="/var/log/auth.log" "Failed password"</code></td></tr>
+<tr><td>2</td><td>Windows account gets locked out after too many bad passwords</td><td><code>source="WinEventLog:Security" EventCode=4740</code></td></tr>
+<tr><td>3</td><td>Firewall drops an incoming connection on a blocked port</td><td><code>source="/var/log/syslog" "UFW BLOCK"</code></td></tr>
+<tr><td>4</td><td>An unauthorized user tries to run a command with sudo</td><td><code>source="/var/log/auth.log" "sudo" "NOT permitted"</code></td></tr>
+<tr><td>5</td><td>A disabled Windows service unexpectedly restarts</td><td><code>source="WinEventLog:System" EventCode=7036</code></td></tr>
+</tbody>
+</table>
+<p><em>Use this table as a quick reference when building your Project&nbsp;3 dashboards.</em></p>
+</div>
+</section>
+
+<!-- ===== §3 DASHBOARDS ===== -->
+<section id="dashboards" class="section" aria-labelledby="h-dash">
+<h2 id="h-dash">&#167;3 - Building Security Dashboards</h2>
+
+<div class="callout callout-red">
+<div class="callout-title">&#127919; Project 3 Requirement</div>
+Project&nbsp;3 requires <strong>at least three meaningful dashboards</strong>. Each dashboard should surface security-relevant information and include a written explanation of what it reveals. The walk-through below builds one complete dashboard; you will create at least two more for your submission.
+</div>
+
+<h3>Dashboard Design Principles</h3>
+<ul>
+<li><strong>Purpose-driven:</strong> Every panel should answer a specific security question (e.g., &ldquo;Are there failed login attempts?&rdquo; &ldquo;Which ports are being blocked?&rdquo;).</li>
+<li><strong>Appropriate visualization:</strong> Choose panel types that match the data:
+  <ul>
+  <li><strong>Timechart</strong> - trends over time (e.g., failed logins per hour)</li>
+  <li><strong>Table</strong> - detailed event data (e.g., lockout events with timestamps)</li>
+  <li><strong>Single Value</strong> - key performance indicators (e.g., total blocked connections today)</li>
+  <li><strong>Column/Bar Chart</strong> - comparisons (e.g., top 10 blocked source IPs)</li>
+  </ul>
+</li>
+<li><strong>Readable:</strong> Use clear panel titles, appropriate time ranges, and avoid clutter.</li>
+<li><strong>Actionable:</strong> A viewer should be able to look at the dashboard and decide whether action is needed.</li>
+</ul>
+
+<!-- Interactive: Panel Type Selection -->
+<div class="activity-block">
+<h3>&#128736;&#65039; Try It - Choose the Right Panel Type</h3>
+<p>For each use case, select the most appropriate Splunk dashboard panel type.</p>
+<table>
+<thead><tr><th>Use Case</th><th>Best Panel Type</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Show failed logins trending over the past 7 days</td><td><strong>Timechart</strong></td><td>Reveals patterns and spikes over time</td></tr>
+<tr><td>Display total firewall blocks in the last 24 hours</td><td><strong>Single Value</strong></td><td>Quick at-a-glance KPI</td></tr>
+<tr><td>List the 10 most recent account lockout events with details</td><td><strong>Table</strong></td><td>Shows individual event details</td></tr>
+<tr><td>Compare blocked connections by destination port</td><td><strong>Bar/Column Chart</strong></td><td>Compares categories side by side</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Walk-Through: Building a &ldquo;Security Overview&rdquo; Dashboard</h3>
+<p>Follow these steps to create a multi-panel dashboard in Splunk Web. This dashboard will contain four panels covering different security event categories.</p>
+
+<!-- Step 1 -->
+<div class="step">
+<div class="step-num">1</div>
+<div class="step-content">
+<h4>Create a New Dashboard</h4>
+<p>In Splunk Web, navigate to <strong>Dashboards</strong> (from the top menu bar) and click <strong>Create New Dashboard</strong>. Enter the following:</p>
+<ul>
+<li><strong>Title:</strong> Security Overview</li>
+<li><strong>Description:</strong> Multi-panel dashboard for security event monitoring and hardening validation</li>
+<li><strong>Permissions:</strong> Private (you can share later)</li>
+<li><strong>Dashboard Type:</strong> Classic Dashboard</li>
+</ul>
+<p>Click <strong>Create</strong>. You will be taken to the dashboard editor.</p>
+</div>
+</div>
+
+<!-- Step 2 -->
+<div class="step">
+<div class="step-num">2</div>
+<div class="step-content">
+<h4>Panel 1 - Failed Logins Over Time (Timechart)</h4>
+<p>Click <strong>Add Panel &rarr; New &rarr; Timechart</strong>. Enter the following search:</p>
+<pre><code>index=main (source="/var/log/auth.log" "Failed password")
+    OR (source="WinEventLog:Security" EventCode=4625)
+| timechart span=1h count by host</code></pre>
+<p><strong>Panel title:</strong> Failed Login Attempts Over Time</p>
+<p><strong>Time range:</strong> Last 7 days</p>
+<p><strong>What it shows:</strong> A line chart with one series per host, showing failed login frequency per hour. Spikes indicate brute-force attempts or misconfiguration. A flat zero line after disabling password-based SSH confirms key-only authentication is working.</p>
+<p>Click <strong>Add to Dashboard</strong>.</p>
+</div>
+</div>
+
+<!-- Step 3 -->
+<div class="step">
+<div class="step-num">3</div>
+<div class="step-content">
+<h4>Panel 2 - Total Firewall Blocks (Single Value)</h4>
+<p>Click <strong>Add Panel &rarr; New &rarr; Single Value</strong>. Enter the following search:</p>
+<pre><code>index=main ("UFW BLOCK" OR "iptables" OR (source="WinEventLog:Security" EventCode=5157 Action="Block"))
+| stats count as total_blocks</code></pre>
+<p><strong>Panel title:</strong> Total Firewall Blocks (Last 24h)</p>
+<p><strong>Time range:</strong> Last 24 hours</p>
+<p><strong>What it shows:</strong> A single number representing all firewall-blocked connections across Linux and Windows hosts. A non-zero number confirms firewall rules are actively enforcing policy.</p>
+<p>Click <strong>Add to Dashboard</strong>.</p>
+</div>
+</div>
+
+<!-- Step 4 -->
+<div class="step">
+<div class="step-num">4</div>
+<div class="step-content">
+<h4>Panel 3 - Privilege Escalation Events (Table)</h4>
+<p>Click <strong>Add Panel &rarr; New &rarr; Statistics Table</strong>. Enter the following search:</p>
+<pre><code>index=main source="/var/log/auth.log" "sudo"
+| rex field=_raw "(?&lt;sudo_user&gt;\w+)\s+:\s+.*COMMAND=(?&lt;command&gt;.+)"
+| table _time, host, sudo_user, command
+| sort -_time
+| head 50</code></pre>
+<p><strong>Panel title:</strong> Recent Sudo / Privilege Escalation Events</p>
+<p><strong>Time range:</strong> Last 7 days</p>
+<p><strong>What it shows:</strong> A table listing the 50 most recent sudo commands with timestamps, hosts, users, and commands. Review for unexpected users or suspicious commands.</p>
+<p>Click <strong>Add to Dashboard</strong>.</p>
+</div>
+</div>
+
+<!-- Step 5 -->
+<div class="step">
+<div class="step-num">5</div>
+<div class="step-content">
+<h4>Panel 4 - Account Lockouts (Table)</h4>
+<p>Click <strong>Add Panel &rarr; New &rarr; Statistics Table</strong>. Enter the following search:</p>
+<pre><code>index=main source="WinEventLog:Security" EventCode=4740
+| table _time, Account_Name, ComputerName, Source_Network_Address
+| sort -_time</code></pre>
+<p><strong>Panel title:</strong> Windows Account Lockout Events</p>
+<p><strong>Time range:</strong> Last 7 days</p>
+<p><strong>What it shows:</strong> A table of all account lockout events. If your lockout policy is working, this panel will populate when an account exceeds the failed login threshold. An empty table after hardening may mean no lockouts have been triggered&mdash;which is also useful evidence.</p>
+<p>Click <strong>Add to Dashboard</strong>.</p>
+</div>
+</div>
+
+<!-- Step 6 -->
+<div class="step">
+<div class="step-num">6</div>
+<div class="step-content">
+<h4>Save the Dashboard</h4>
+<p>Click <strong>Save</strong> in the dashboard editor. Your &ldquo;Security Overview&rdquo; dashboard now has four panels covering failed logins, firewall activity, privilege escalation, and account lockouts.</p>
+</div>
+</div>
+
+<div class="callout callout-blue">
+<div class="callout-title">&#128203; Project 3 - Dashboard Ideas for Your Other Two Dashboards</div>
+You need at least three dashboards total. Here are ideas for your remaining two:
+<ul style="margin-top:8px;">
+<li><strong>Network Security Dashboard:</strong> Top blocked source IPs (bar chart), blocked traffic by port (timechart), geographic distribution if available</li>
+<li><strong>Service Health Dashboard:</strong> Service start/stop events over time (timechart), unexpected service state changes (table), host-level service status counts (single value per host)</li>
+<li><strong>Authentication Dashboard:</strong> Successful vs. failed logins by host (stacked timechart), top targeted accounts (bar chart), login activity by source IP (table)</li>
+</ul>
+</div>
+</section>
+
+<!-- ===== §4 ALERTS ===== -->
+<section id="alerts" class="section" aria-labelledby="h-alerts">
+<h2 id="h-alerts">&#167;4 - Configuring Splunk Alerts</h2>
+
+<div class="callout callout-red">
+<div class="callout-title">&#127919; Project 3 Requirement</div>
+Project&nbsp;3 requires <strong>at least one alert configuration</strong>. This section walks you through creating a meaningful security alert.
+</div>
+
+<h3>What Are Splunk Alerts?</h3>
+<p>A Splunk <strong>alert</strong> is a saved search that runs on a schedule (or in real time) and triggers one or more <strong>actions</strong> when specified conditions are met. Alerts automate the detection of security events so you do not have to watch dashboards constantly.</p>
+
+<h3>When to Use Alerts</h3>
+<ul>
+<li><strong>Threshold-based detection:</strong> Alert when a count exceeds a limit (e.g., &gt;5 failed logins in 10 minutes)</li>
+<li><strong>Anomaly detection:</strong> Alert when an unexpected event occurs (e.g., a disabled service starts)</li>
+<li><strong>Compliance monitoring:</strong> Alert when a required condition is not met (e.g., no log data received from a host in 1 hour)</li>
+</ul>
+
+<h3>Alert Actions (Conceptual)</h3>
+<table>
+<thead><tr><th>Action</th><th>Description</th><th>Lab Applicability</th></tr></thead>
+<tbody>
+<tr><td>Log Event</td><td>Writes an entry to Splunk&rsquo;s internal index</td><td>&#9989; Works in all environments</td></tr>
+<tr><td>Email Notification</td><td>Sends an email to specified recipients</td><td>Requires mail server configuration</td></tr>
+<tr><td>Webhook</td><td>Sends an HTTP POST to an external service (e.g., Slack, PagerDuty)</td><td>Conceptual awareness</td></tr>
+<tr><td>Run a Script</td><td>Executes a custom script on the Splunk server</td><td>Advanced; conceptual awareness</td></tr>
+</tbody>
+</table>
+
+<h3>Walk-Through: Creating a Failed Login Alert</h3>
+<p>This example creates a scheduled alert that triggers when more than 5 failed login attempts from a single source IP occur within a 10-minute window.</p>
+
+<div class="step">
+<div class="step-num">1</div>
+<div class="step-content">
+<h4>Write and Test the Search</h4>
+<p>First, run this search in the Splunk search bar to verify it returns results:</p>
+<pre><code>index=main (source="/var/log/auth.log" "Failed password")
+    OR (source="WinEventLog:Security" EventCode=4625)
+| stats count by src_ip
+| where count > 5</code></pre>
+<p>This search counts failed logins by source IP and filters to only those with more than 5 failures. Adjust the threshold as appropriate for your lab environment.</p>
+</div>
+</div>
+
+<div class="step">
+<div class="step-num">2</div>
+<div class="step-content">
+<h4>Save As Alert</h4>
+<p>Click <strong>Save As &rarr; Alert</strong>. Configure the following settings:</p>
+<ul>
+<li><strong>Title:</strong> High Failed Login Rate from Single IP</li>
+<li><strong>Description:</strong> Triggers when a single source IP generates more than 5 failed login attempts in 10 minutes</li>
+<li><strong>Alert Type:</strong> Scheduled</li>
+<li><strong>Schedule:</strong> Every 10 minutes (Cron: <code>*/10 * * * *</code>)</li>
+<li><strong>Time Range:</strong> Last 10 minutes (<code>earliest=-10m latest=now</code>)</li>
+</ul>
+</div>
+</div>
+
+<div class="step">
+<div class="step-num">3</div>
+<div class="step-content">
+<h4>Set Trigger Conditions</h4>
+<ul>
+<li><strong>Trigger condition:</strong> Number of results is greater than 0</li>
+<li><strong>Throttle:</strong> Suppress triggering for 30 minutes (prevents alert fatigue from the same event)</li>
+</ul>
+</div>
+</div>
+
+<div class="step">
+<div class="step-num">4</div>
+<div class="step-content">
+<h4>Configure Alert Action</h4>
+<ul>
+<li>Select <strong>Log Event</strong> as the alert action (this works in all lab environments without mail server setup).</li>
+<li>Optionally add <strong>Email</strong> if your lab has a mail relay configured.</li>
+</ul>
+<p>Click <strong>Save</strong>.</p>
+</div>
+</div>
+
+<div class="step">
+<div class="step-num">5</div>
+<div class="step-content">
+<h4>Test and Verify</h4>
+<p>To test your alert:</p>
+<ol>
+<li>Generate failed login attempts from a test machine (e.g., use <code>ssh baduser@target</code> repeatedly).</li>
+<li>Wait for the alert schedule to run (up to 10 minutes).</li>
+<li>Check <strong>Activity &rarr; Triggered Alerts</strong> in Splunk Web to confirm the alert fired.</li>
+<li>Take a screenshot of the triggered alert for your Project&nbsp;3 documentation.</li>
+</ol>
+</div>
+</div>
+
+<div class="callout callout-blue">
+<div class="callout-title">&#128203; Other Alert Ideas for Project 3</div>
+You only need one alert, but consider these alternatives or additions:
+<ul style="margin-top:8px;">
+<li><strong>Account lockout alert:</strong> Trigger on any Event ID 4740</li>
+<li><strong>Service state change alert:</strong> Trigger when a hardening-disabled service restarts</li>
+<li><strong>No data received alert:</strong> Trigger when a host stops sending logs for &gt;1 hour (indicates forwarder failure)</li>
+<li><strong>Firewall block spike:</strong> Trigger when firewall blocks exceed a threshold in a time window</li>
+</ul>
+</div>
+
+<!-- Interactive: Alert Scenario -->
+<div class="activity-block">
+<h3>&#128736;&#65039; Try It - Alert Configuration Scenario</h3>
+<p>Read the scenario and determine the appropriate alert configuration:</p>
+<p><strong>Scenario:</strong> Your organization&rsquo;s security policy requires notification when any Windows account is locked out, because lockouts may indicate a brute-force attack against Active Directory. The security team wants to be notified within 15 minutes of a lockout event.</p>
+<table>
+<thead><tr><th>Setting</th><th>Recommended Value</th></tr></thead>
+<tbody>
+<tr><td>Search</td><td><code>index=main source="WinEventLog:Security" EventCode=4740</code></td></tr>
+<tr><td>Alert Type</td><td>Scheduled</td></tr>
+<tr><td>Schedule</td><td>Every 15 minutes</td></tr>
+<tr><td>Time Range</td><td>Last 15 minutes</td></tr>
+<tr><td>Trigger Condition</td><td>Number of results &gt; 0</td></tr>
+<tr><td>Action</td><td>Log Event (and/or Email if configured)</td></tr>
+</tbody>
+</table>
+<p><em>Notice how the schedule interval matches the notification requirement. In production, you might use real-time alerts for critical events, but scheduled alerts are more resource-efficient for lab environments.</em></p>
+</div>
+</section>
+
+<!-- ===== §5 DOCUMENTATION ===== -->
+<section id="documentation" class="section" aria-labelledby="h-docs">
+<h2 id="h-docs">&#167;5 - Documenting Security Monitoring for Project&nbsp;3</h2>
+
+<p>Your Project&nbsp;3 submission must include comprehensive documentation of your Splunk monitoring setup. This section provides a checklist and guidance for capturing the evidence you need.</p>
+
+<h3>Capturing Dashboard Screenshots</h3>
+<ul>
+<li>Open each dashboard in Splunk Web and set the time range to show meaningful data (e.g., last 7 days or last 24 hours).</li>
+<li>Take a <strong>full-page screenshot</strong> that shows all panels, the dashboard title, and the time range selector.</li>
+<li>If a dashboard has more panels than fit on one screen, take multiple screenshots or scroll-capture.</li>
+<li>Save screenshots with descriptive filenames (e.g., <code>dashboard-security-overview.png</code>).</li>
+</ul>
+
+<h3>Writing Dashboard Explanations</h3>
+<p>For each dashboard, write a brief explanation that covers:</p>
+<ol>
+<li><strong>Purpose:</strong> What security question does this dashboard answer?</li>
+<li><strong>Panels:</strong> What does each panel show? What SPL search powers it?</li>
+<li><strong>Findings:</strong> What does the data reveal? Are hardening controls working?</li>
+<li><strong>Action:</strong> What would you do if the data showed something unexpected?</li>
+</ol>
+
+<h3>Connecting Monitoring to Hardening Decisions</h3>
+<p>The strongest Project&nbsp;3 submissions explicitly connect Splunk outputs to hardening actions. Here are examples of effective documentation statements:</p>
+
+<div class="callout callout-green">
+<div class="callout-title">&#9989; Example Documentation Statements</div>
+<ul>
+<li>&ldquo;The Failed Login Attempts timechart shows zero password-based SSH failures after disabling password authentication in <code>/etc/ssh/sshd_config</code>&mdash;this confirms key-only authentication is enforced.&rdquo;</li>
+<li>&ldquo;The Firewall Blocks panel shows 47 blocked connections on port 23 (Telnet) in the last 24 hours, confirming that the UFW rule blocking Telnet is active and that external systems are still attempting to connect on this insecure port.&rdquo;</li>
+<li>&ldquo;The Account Lockout table is empty, indicating no accounts have been locked out since enabling the lockout policy. This is expected in a lab environment with controlled access, but the policy is ready to trigger if brute-force attempts occur.&rdquo;</li>
+<li>&ldquo;The alert &lsquo;High Failed Login Rate from Single IP&rsquo; triggered during testing when I attempted 6 failed SSH logins from my workstation within 10 minutes, confirming the alert threshold and schedule are working correctly.&rdquo;</li>
+</ul>
+</div>
+
+<h3>Project&nbsp;3 Splunk Documentation Checklist</h3>
+<table>
+<thead><tr><th>&#9744;</th><th>Deliverable</th><th>Details</th></tr></thead>
+<tbody>
+<tr><td>&#9744;</td><td>Dashboard 1</td><td>Screenshot + written explanation (purpose, panels, findings, actions)</td></tr>
+<tr><td>&#9744;</td><td>Dashboard 2</td><td>Screenshot + written explanation</td></tr>
+<tr><td>&#9744;</td><td>Dashboard 3</td><td>Screenshot + written explanation</td></tr>
+<tr><td>&#9744;</td><td>Alert Configuration</td><td>Screenshot of alert settings + screenshot of triggered alert + written explanation of what the alert detects and why it matters</td></tr>
+<tr><td>&#9744;</td><td>SPL Searches</td><td>Include the actual SPL searches used in dashboards and alerts (copy-paste into your document)</td></tr>
+<tr><td>&#9744;</td><td>Hardening Connection</td><td>For each dashboard/alert, explain how it validates a specific hardening action from Modules 14.2 or 14.3</td></tr>
+<tr><td>&#9744;</td><td>Data Ingestion Verification</td><td>Evidence that forwarders are sending data (e.g., screenshot of <code>index=* | stats count by host</code>)</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-yellow">
+<div class="callout-title">&#9888;&#65039; Common Pitfalls</div>
+<ul>
+<li><strong>Empty dashboards:</strong> If your dashboards show no data, verify your forwarders are running and data is being indexed. Run <code>index=* host=&lt;hostname&gt; | head 10</code> to check.</li>
+<li><strong>Generic searches:</strong> Avoid dashboards that just show &ldquo;all events.&rdquo; Each panel should target a specific security event type.</li>
+<li><strong>Missing explanations:</strong> Screenshots alone are not sufficient. Always include a written explanation of what the dashboard shows and how it connects to your hardening work.</li>
+<li><strong>Untested alerts:</strong> Always test your alert by generating the triggering condition and capturing evidence that it fired.</li>
+</ul>
+</div>
+</section>
+
+<!-- ===== §6 KNOWLEDGE CHECK ===== -->
+<section id="knowledge-check" class="section quiz-block" aria-labelledby="h-quiz">
+<h2 id="h-quiz">&#167;6 - Check for Understanding</h2>
+<p>Answer the following questions to test your understanding of Splunk security validation concepts. This is <strong>ungraded</strong>&mdash;use it to identify areas to review before working on Project&nbsp;3.</p>
+
+<form id="quizForm" onsubmit="return false;">
+
+<!-- Q1 -->
+<div class="question" id="q1">
+<p class="q-stem">1. Which SPL search would detect failed SSH login attempts on a Linux server?</p>
+<label><input type="radio" name="q1" value="a"> <code>index=main source="WinEventLog:Security" EventCode=4625</code></label>
+<label><input type="radio" name="q1" value="b"> <code>index=main source="/var/log/auth.log" "Failed password"</code></label>
+<label><input type="radio" name="q1" value="c"> <code>index=main source="/var/log/syslog" "UFW BLOCK"</code></label>
+<label><input type="radio" name="q1" value="d"> <code>index=main source="WinEventLog:System" EventCode=7036</code></label>
+<div class="q-feedback correct" id="q1-correct">&#9989; <strong>Correct!</strong> Failed SSH login attempts on Linux are recorded in <code>/var/log/auth.log</code> with the string &ldquo;Failed password.&rdquo; Option A targets Windows Event Log, C targets firewall blocks, and D targets Windows service state changes.</div>
+<div class="q-feedback incorrect" id="q1-incorrect">&#10060; <strong>Not quite.</strong> The correct answer is <strong>B</strong>. Failed SSH login attempts on Linux are recorded in <code>/var/log/auth.log</code> with the string &ldquo;Failed password.&rdquo; Option A targets Windows failed logons (Event ID 4625), C targets UFW firewall blocks, and D targets Windows service state changes.</div>
+</div>
+
+<!-- Q2 -->
+<div class="question" id="q2">
+<p class="q-stem">2. You want to display the total number of firewall-blocked connections in the last 24 hours as a single prominent number on a dashboard. Which panel type is most appropriate?</p>
+<label><input type="radio" name="q2" value="a"> Timechart</label>
+<label><input type="radio" name="q2" value="b"> Table</label>
+<label><input type="radio" name="q2" value="c"> Single Value</label>
+<label><input type="radio" name="q2" value="d"> Bar Chart</label>
+<div class="q-feedback correct" id="q2-correct">&#9989; <strong>Correct!</strong> A Single Value panel displays one prominent number, making it ideal for KPIs like &ldquo;total blocked connections.&rdquo; A timechart would show trends over time, a table would show individual events, and a bar chart would compare categories.</div>
+<div class="q-feedback incorrect" id="q2-incorrect">&#10060; <strong>Not quite.</strong> The correct answer is <strong>C - Single Value</strong>. This panel type displays one prominent number, perfect for at-a-glance KPIs. A timechart shows trends, a table shows event details, and a bar chart compares categories.</div>
+</div>
+
+<!-- Q3 -->
+<div class="question" id="q3">
+<p class="q-stem">3. You configure a Splunk alert to trigger when more than 5 failed logins from a single IP occur in 10 minutes. Which trigger condition is correct?</p>
+<label><input type="radio" name="q3" value="a"> Number of results is greater than 5</label>
+<label><input type="radio" name="q3" value="b"> Number of results is greater than 0</label>
+<label><input type="radio" name="q3" value="c"> Number of results equals 5</label>
+<label><input type="radio" name="q3" value="d"> Number of events is greater than 5</label>
+<div class="q-feedback correct" id="q3-correct">&#9989; <strong>Correct!</strong> The SPL search itself filters to IPs with count &gt; 5 using a <code>where</code> clause. The alert trigger condition only needs to check whether the search returned <em>any</em> results (number of results &gt; 0), because any result that appears has already exceeded the threshold.</div>
+<div class="q-feedback incorrect" id="q3-incorrect">&#10060; <strong>Not quite.</strong> The correct answer is <strong>B</strong>. The threshold logic (<code>| where count &gt; 5</code>) is built into the SPL search itself. The alert trigger only needs to check whether the filtered search returned any results at all. If it returns &gt; 0 results, at least one IP exceeded the threshold.</div>
+</div>
+
+<!-- Q4 -->
+<div class="question" id="q4">
+<p class="q-stem">4. After disabling password-based SSH authentication and enforcing key-only login, your Splunk dashboard shows zero &ldquo;Failed password&rdquo; events over the past week. What does this indicate?</p>
+<label><input type="radio" name="q4" value="a"> The Splunk forwarder is not working correctly</label>
+<label><input type="radio" name="q4" value="b"> No one has attempted to log in to the server</label>
+<label><input type="radio" name="q4" value="c"> Key-only authentication is working&mdash;password attempts are rejected before reaching the &ldquo;Failed password&rdquo; stage</label>
+<label><input type="radio" name="q4" value="d"> The SSH service is not running</label>
+<div class="q-feedback correct" id="q4-correct">&#9989; <strong>Correct!</strong> When password authentication is disabled in <code>sshd_config</code>, the SSH server rejects password attempts at the protocol level, so &ldquo;Failed password&rdquo; entries are no longer generated. This is evidence that the hardening control is working as intended. You should verify the forwarder is working by checking that other log events (like successful key-based logins) are appearing.</div>
+<div class="q-feedback incorrect" id="q4-incorrect">&#10060; <strong>Not quite.</strong> The correct answer is <strong>C</strong>. When password authentication is disabled, SSH rejects password attempts at the protocol level before generating a &ldquo;Failed password&rdquo; log entry. Zero events is the expected result and confirms the hardening is working. To rule out forwarder issues, verify that other events from the same host are appearing in Splunk.</div>
+</div>
+
+<!-- Q5 -->
+<div class="question" id="q5">
+<p class="q-stem">5. Which Windows Security Event ID would you search for to detect account lockout events?</p>
+<label><input type="radio" name="q5" value="a"> 4625</label>
+<label><input type="radio" name="q5" value="b"> 4740</label>
+<label><input type="radio" name="q5" value="c"> 7036</label>
+<label><input type="radio" name="q5" value="d"> 5157</label>
+<div class="q-feedback correct" id="q5-correct">&#9989; <strong>Correct!</strong> Event ID 4740 is logged when a user account is locked out. Event ID 4625 is a failed logon, 7036 is a service state change (System log, not Security), and 5157 is a Windows Filtering Platform connection block.</div>
+<div class="q-feedback incorrect" id="q5-incorrect">&#10060; <strong>Not quite.</strong> The correct answer is <strong>B - Event ID 4740</strong>. This event is logged when an account lockout occurs. Event ID 4625 = failed logon, 7036 = service state change, 5157 = firewall connection block.</div>
+</div>
+
+</form>
+
+<br>
+<button class="btn" onclick="gradeQuiz()" aria-label="Check your answers">Check Answers</button>
+<button class="btn" onclick="resetQuiz()" style="background:var(--text-light);margin-left:8px;" aria-label="Reset quiz">Reset</button>
+<p id="quizResult" style="margin-top:12px;font-weight:600;" aria-live="polite"></p>
+</section>
+
+<!-- ===== §7 SPLUNK LEARNING REMINDER ===== -->
+<section id="splunk-learning" class="section" aria-labelledby="h-splunk-learn">
+<h2 id="h-splunk-learn">&#167;7 - Splunk Learning Assignment Reminder</h2>
+
+<p>Two Splunk Learning assignments from <strong>education.splunk.com</strong> support the hands-on Splunk work in this module and Project&nbsp;3. Check your status below:</p>
+
+<table>
+<thead><tr><th>Assignment</th><th>Status</th><th>Due</th><th>Connection to This Module</th></tr></thead>
+<tbody>
+<tr>
+<td><strong>Splunk Learning: Intro to Splunk</strong></td>
+<td>Should be completed</td>
+<td>April 28, 2026 (end of Week&nbsp;13)</td>
+<td>Provides foundational Splunk navigation and search skills used throughout &sect;2-&sect;4 of this module. If you have not completed it, do so immediately.</td>
+</tr>
+<tr>
+<td><strong>Splunk Learning: Splunk Enterprise Installation and Configuration</strong></td>
+<td>In progress</td>
+<td>TBD (instructor to announce)</td>
+<td>Reinforces Splunk Enterprise deployment knowledge from Week&nbsp;12 and the security monitoring configuration covered in this module. Directly supports Project&nbsp;3&rsquo;s SIEM component.</td>
+</tr>
+</tbody>
+</table>
+
+<div class="callout callout-orange">
+<div class="callout-title">&#128276; Action Items</div>
+<ul>
+<li>If you have <strong>not completed</strong> Splunk Learning: Intro to Splunk, prioritize it now. The skills from that course are assumed knowledge for this module and Project&nbsp;3.</li>
+<li>Continue working on <strong>Splunk Learning: Splunk Enterprise Installation and Configuration</strong>. Watch for the instructor&rsquo;s announcement of the due date.</li>
+<li>Submit completion certificates/screenshots to Canvas as directed by the instructor.</li>
+</ul>
+</div>
+
+<h3>How These Assignments Reinforce This Module</h3>
+<ul>
+<li><strong>Intro to Splunk</strong> covers SPL search fundamentals, field extraction, and basic visualization&mdash;exactly the skills you use when writing security searches (&sect;2) and building dashboards (&sect;3).</li>
+<li><strong>Splunk Enterprise Installation and Configuration</strong> covers deployment architecture, data inputs, and index management&mdash;the infrastructure foundation that makes your security monitoring possible.</li>
+<li>Together with the hands-on work in Weeks 12-14, these courses give you both the <strong>conceptual understanding</strong> and <strong>practical experience</strong> needed for Project&nbsp;3&rsquo;s Splunk deliverables.</li>
+</ul>
+
+<div class="callout callout-blue">
+<div class="callout-title">&#128203; Project 3 Quick Reference</div>
+<strong>Project 3: Security Hardening &amp; Monitoring with Splunk</strong><br>
+Points: 75 &nbsp;|&nbsp; Due: Monday, May 18, 2026, 11:59 PM<br>
+Key deliverables: security hardening applied to Linux &amp; Windows servers, SSH key-based authentication, SSL/TLS configuration, patch management strategy, &ge;3 Splunk dashboards, &ge;1 Splunk alert, comprehensive documentation with evidence.
+</div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="mod-footer">
+CSC 152 - Network Operating Systems and Administration &bull; Mendocino College &bull; Instructor: David Pai<br>
+Module 14.4 - Security Validation with Splunk &bull; Week 14: Server Security &amp; Hardening<br>
+CSLO 2: Apply physical and network data security techniques.
+</footer>
+
+</main>
+
+<script>
+/* Quiz logic */
+const answers = {q1:'b', q2:'c', q3:'b', q4:'c', q5:'b'};
+
+function gradeQuiz(){
+ let score = 0;
+ const total = Object.keys(answers).length;
+ for(const [q, correct] of Object.entries(answers)){
+  const selected = document.querySelector(`input[name="${q}"]:checked`);
+  const cFb = document.getElementById(q + '-correct');
+  const iFb = document.getElementById(q + '-incorrect');
+  cFb.style.display = 'none';
+  iFb.style.display = 'none';
+  if(selected){
+   if(selected.value === correct){
+    score++;
+    cFb.style.display = 'block';
+   } else {
+    iFb.style.display = 'block';
+   }
+  } else {
+   iFb.style.display = 'block';
+  }
+ }
+ const res = document.getElementById('quizResult');
+ res.textContent = `You got ${score} out of ${total} correct.` +
+  (score === total ? ' Excellent work!' : ' Review the feedback above and revisit the relevant sections.');
+}
+
+function resetQuiz(){
+ const radios = document.querySelectorAll('#quizForm input[type="radio"]');
+ radios.forEach(r => r.checked = false);
+ document.querySelectorAll('.q-feedback').forEach(f => f.style.display = 'none');
+ document.getElementById('quizResult').textContent = '';
+}
+
+/* Smooth scroll for nav */
+document.querySelectorAll('.top-nav a[href^="#"]').forEach(a => {
+ a.addEventListener('click', function(e){
+  e.preventDefault();
+  const target = document.querySelector(this.getAttribute('href'));
+  if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+ });
+});
+</script>
+</body>
+</html>

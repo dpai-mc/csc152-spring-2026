@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Week 14 Overview – Server Security &amp; Hardening | CSC 152</title>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.6;color:#1e1e1e;background:#f5f5f5}
+a{color:#0055a2;text-decoration:none}
+a:hover,a:focus{text-decoration:underline}
+a:focus-visible{outline:3px solid #0055a2;outline-offset:2px;border-radius:2px}
+
+/* ── Navigation Bar ── */
+.top-nav{background:#1a1a2e;position:sticky;top:0;z-index:100;border-bottom:3px solid #e94560}
+.top-nav ul{list-style:none;display:flex;flex-wrap:wrap;max-width:1120px;margin:0 auto;padding:0}
+.top-nav li{margin:0}
+.top-nav a{display:block;color:#f5f5f5;padding:.75rem 1rem;font-size:.88rem;font-weight:500;transition:background .2s}
+.top-nav a:hover,.top-nav a:focus{background:#16213e;text-decoration:none}
+.top-nav a:focus-visible{outline:2px solid #e94560;outline-offset:-2px}
+
+/* ── Page Wrapper ── */
+.page-wrap{max-width:1020px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+
+/* ── Banner ── */
+.overview-banner{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);color:#fff;border-radius:10px;padding:2.25rem 2rem 1.75rem;margin-bottom:2rem;border-left:6px solid #e94560}
+.overview-banner .course-tag{font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;color:#a8b2d1;margin-bottom:.35rem}
+.overview-banner h1{font-size:1.85rem;font-weight:700;margin-bottom:.3rem;line-height:1.25}
+.overview-banner .subtitle{font-size:1.05rem;color:#ccd6f6;font-weight:400}
+
+/* ── Sections ── */
+.section{background:#fff;border-radius:8px;padding:1.75rem 1.5rem;margin-bottom:1.5rem;border:1px solid #ddd;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.section h2{font-size:1.3rem;color:#1a1a2e;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #e94560}
+.section h3{font-size:1.05rem;color:#16213e;margin:1.25rem 0 .5rem}
+
+/* ── Callout Boxes ── */
+.callout{border-radius:8px;padding:1.15rem 1.25rem;margin:1.25rem 0;font-size:.95rem}
+.callout-welcome{background:#eef3ff;border-left:5px solid #0055a2;color:#1a1a2e}
+.callout-project{background:#fff8e1;border-left:5px solid #f9a825;color:#4a3800}
+.callout-info{background:#e8f5e9;border-left:5px solid #388e3c;color:#1b5e20}
+.callout-ahead{background:#f3e5f5;border-left:5px solid #7b1fa2;color:#3a0e52}
+.callout strong{font-weight:600}
+
+/* ── Ordered / Unordered Lists ── */
+.section ul,.section ol{margin:.6rem 0 .6rem 1.4rem}
+.section li{margin-bottom:.4rem;font-size:.95rem}
+
+/* ── Activity List ── */
+.activity-list{list-style:none;margin:0;padding:0}
+.activity-list li{padding:.7rem 1rem;margin-bottom:.45rem;border-radius:6px;font-size:.95rem;display:flex;align-items:flex-start;gap:.55rem}
+.activity-list li::before{flex-shrink:0;font-size:1.05rem}
+.act-module{background:#eef3ff;border:1px solid #c5d5f0}
+.act-module::before{content:"📖"}
+.act-project{background:#fff8e1;border:1px solid #f0dfa0}
+.act-project::before{content:"🔨"}
+.act-splunk{background:#e8f5e9;border:1px solid #b6d8b8}
+.act-splunk::before{content:"📊"}
+
+/* ── Key Concepts Grid ── */
+.concepts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1rem}
+.concept-card{background:#f8f9fc;border:1px solid #dde2ee;border-radius:8px;padding:1rem 1.1rem}
+.concept-card h4{font-size:.95rem;color:#1a1a2e;margin-bottom:.35rem;display:flex;align-items:center;gap:.4rem}
+.concept-card p{font-size:.88rem;color:#444;line-height:1.55}
+
+/* ── Objective Tracker ── */
+.obj-list{list-style:none;margin:0;padding:0;counter-reset:obj}
+.obj-list li{counter-increment:obj;display:flex;align-items:flex-start;gap:.65rem;padding:.55rem .3rem;border-bottom:1px solid #eee;font-size:.93rem;cursor:pointer;transition:background .15s;border-radius:4px}
+.obj-list li:last-child{border-bottom:none}
+.obj-list li:hover{background:#f0f4ff}
+.obj-list li .check-box{flex-shrink:0;width:22px;height:22px;border:2px solid #0055a2;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:transparent;transition:all .2s;margin-top:2px}
+.obj-list li.done .check-box{background:#0055a2;color:#fff;border-color:#0055a2}
+.obj-list li.done{color:#555;text-decoration:line-through;text-decoration-color:#aaa}
+.obj-progress{font-size:.88rem;color:#555;margin-top:.75rem}
+.obj-progress strong{color:#1a1a2e}
+
+/* ── Footer ── */
+.page-footer{text-align:center;font-size:.8rem;color:#777;padding:1.5rem 0 1rem;border-top:1px solid #ddd;margin-top:1rem}
+
+/* ── Print ── */
+.print-btn{display:inline-flex;align-items:center;gap:.35rem;background:#16213e;color:#fff;border:none;padding:.5rem 1rem;border-radius:5px;font-size:.85rem;cursor:pointer;margin-top:.5rem;transition:background .2s}
+.print-btn:hover,.print-btn:focus-visible{background:#0f3460}
+.print-btn:focus-visible{outline:3px solid #e94560;outline-offset:2px}
+
+@media print{.top-nav,.print-btn{display:none}.page-wrap{padding:0}.section{break-inside:avoid;box-shadow:none;border:1px solid #ccc}}
+@media(max-width:600px){.overview-banner h1{font-size:1.4rem}.top-nav a{padding:.6rem .7rem;font-size:.82rem}.concepts-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- TOP NAVIGATION                                                -->
+<!-- ============================================================ -->
+<nav class="top-nav" aria-label="Page navigation">
+<ul>
+<li><a href="#welcome">Welcome</a></li>
+<li><a href="#objectives">Objectives</a></li>
+<li><a href="#activities">Activities</a></li>
+<li><a href="#concepts">Key Concepts</a></li>
+<li><a href="#project3">Project 3</a></li>
+<li><a href="#ahead">Looking Ahead</a></li>
+</ul>
+</nav>
+
+<!-- ============================================================ -->
+<!-- MAIN CONTENT                                                  -->
+<!-- ============================================================ -->
+<main id="main-content" class="page-wrap">
+
+<!-- Banner -->
+<header class="overview-banner">
+<div class="course-tag">CSC 152 – Network OS and Administration &bull; Week 14 of 17</div>
+<h1>Server Security &amp; Hardening</h1>
+<div class="subtitle">Protecting the infrastructure you built</div>
+</header>
+
+<!-- ============================================================ -->
+<!-- WELCOME                                                       -->
+<!-- ============================================================ -->
+<section class="section" id="welcome">
+<h2>Welcome to Week 14</h2>
+
+<div class="callout callout-welcome">
+<strong>The shift from building to defending.</strong> Over Weeks&nbsp;1–13 you assembled a comprehensive server infrastructure — hardware fundamentals, Linux and Windows administration, user and group management, file permissions, networking, storage, directory services (Active&nbsp;Directory and OpenLDAP), virtualization, and a Splunk monitoring stack. <strong>Now we secure it.</strong>
+</div>
+
+<p>Week&nbsp;14 is the primary week for <strong>CSLO&nbsp;2: Apply physical and network data security techniques.</strong> It brings together every security concept introduced incrementally across the semester — password policies, file permissions, firewalls, Group Policy — into a unified, systematic hardening approach.</p>
+
+<p>You will work through four learning modules that move from the outermost layer of defense (physical security) inward through host-level hardening, authentication and encryption, and finally to security validation with Splunk. Everything you learn this week directly supports <strong>Project&nbsp;3</strong>, which is your primary graded deliverable for the rest of the semester.</p>
+
+<div class="callout callout-info">
+<strong>Course structure reminder (Weeks 14–17):</strong> There is no graded lab, quiz, or discussion this week. Project&nbsp;4 has been removed from the course. Your effort should focus on the learning modules below and on making steady progress on Project&nbsp;3.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- LEARNING OBJECTIVES                                           -->
+<!-- ============================================================ -->
+<section class="section" id="objectives">
+<h2>Week 14 Learning Objectives</h2>
+<p>By the end of this week you will be able to:</p>
+
+<ul class="obj-list" id="objList">
+<li data-obj="1"><span class="check-box" aria-hidden="true">✓</span><span><strong>W14.1</strong> – Implement physical security controls appropriate for server environments</span></li>
+<li data-obj="2"><span class="check-box" aria-hidden="true">✓</span><span><strong>W14.2</strong> – Apply server hardening best practices to both Linux and Windows servers using industry-standard checklists and benchmarks</span></li>
+<li data-obj="3"><span class="check-box" aria-hidden="true">✓</span><span><strong>W14.3</strong> – Configure secure authentication methods, including SSH key-based authentication and multi-factor authentication concepts</span></li>
+<li data-obj="4"><span class="check-box" aria-hidden="true">✓</span><span><strong>W14.4</strong> – Implement encryption for data at rest and data in transit using SSL/TLS certificates and encrypted file systems</span></li>
+<li data-obj="5"><span class="check-box" aria-hidden="true">✓</span><span><strong>W14.5</strong> – Develop a patch management strategy that balances security with operational stability</span></li>
+<li data-obj="6"><span class="check-box" aria-hidden="true">✓</span><span><strong>W14.6</strong> – Use Splunk searches and dashboards to validate that security hardening measures are generating expected log events and to identify suspicious activity</span></li>
+<li data-obj="7"><span class="check-box" aria-hidden="true">✓</span><span><strong>W14.7</strong> – Connect server hardening techniques to Project&nbsp;3 deliverables, applying hardening controls to the lab infrastructure and documenting results</span></li>
+</ul>
+
+<p class="obj-progress">Your progress: <strong><span id="objDone">0</span> / 7</strong> objectives checked</p>
+<p style="font-size:.82rem;color:#777;margin-top:.2rem;">Click an objective to mark it complete. Progress resets when you close the page.</p>
+
+<p style="margin-top:.75rem;font-size:.93rem;"><strong>CSLO Alignment:</strong> CSLO&nbsp;2 <em>(primary)</em> &bull; CSLO&nbsp;1 <em>(supporting — hardening configuration, Splunk)</em> &bull; CSLO&nbsp;3 <em>(supporting — firewall hardening, network security protocols)</em></p>
+</section>
+
+<!-- ============================================================ -->
+<!-- REQUIRED ACTIVITIES                                           -->
+<!-- ============================================================ -->
+<section class="section" id="activities">
+<h2>Required Activities This Week</h2>
+<p>Complete the following learning modules and continue your project work:</p>
+
+<ul class="activity-list">
+<li class="act-module"><span><strong>Module 14.1</strong> – Physical Security &amp; Defense in Depth <br><span style="font-size:.84rem;color:#555;">Estimated time: 0.75–1.0 hr</span></span></li>
+<li class="act-module"><span><strong>Module 14.2</strong> – Server Hardening: Linux &amp; Windows <br><span style="font-size:.84rem;color:#555;">Estimated time: 1.5–2.0 hrs</span></span></li>
+<li class="act-module"><span><strong>Module 14.3</strong> – Secure Authentication, Encryption &amp; Patch Management <br><span style="font-size:.84rem;color:#555;">Estimated time: 1.0–1.5 hrs</span></span></li>
+<li class="act-module"><span><strong>Module 14.4</strong> – Security Validation with Splunk <br><span style="font-size:.84rem;color:#555;">Estimated time: 1.0–1.5 hrs</span></span></li>
+<li class="act-project"><span><strong>Project 3:</strong> Security Hardening &amp; Monitoring with Splunk <em>(in progress)</em></span></li>
+<li class="act-splunk"><span><strong>Splunk Learning:</strong> Splunk Enterprise Installation and Configuration <em>(if in progress)</em></span></li>
+</ul>
+
+<div class="callout callout-project">
+<strong>Note:</strong> There is no graded lab, quiz, or discussion this week. All labs, quizzes, and discussions for Weeks&nbsp;14–17 have been removed. Your primary graded work is <strong>Project&nbsp;3</strong>. The content in this week's modules directly supports your Project&nbsp;3 deliverables.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- KEY CONCEPTS                                                  -->
+<!-- ============================================================ -->
+<section class="section" id="concepts">
+<h2>Key Concepts &amp; Themes</h2>
+<p>As you work through the modules, pay special attention to these ideas and terms:</p>
+
+<div class="concepts-grid">
+
+<div class="concept-card">
+<h4>🛡️ Defense in Depth</h4>
+<p>A layered security model — physical, network, host, application, data — where each layer provides protection even if another layer fails. This framework organizes the entire week.</p>
+</div>
+
+<div class="concept-card">
+<h4>🔧 Server Hardening &amp; Attack Surface</h4>
+<p>Systematically reducing the attack surface by disabling unnecessary services, applying CIS Benchmarks or DISA STIGs, and following the principle of <em>least functionality</em>.</p>
+</div>
+
+<div class="concept-card">
+<h4>🐧 Linux Hardening</h4>
+<p>Key techniques: <code>systemctl disable/mask</code>, SSH hardening in <code>sshd_config</code>, UFW/iptables rules, <code>sysctl</code> kernel parameters, <code>auditd</code> logging, and file-system mount options (<code>noexec</code>, <code>nosuid</code>).</p>
+</div>
+
+<div class="concept-card">
+<h4>🪟 Windows Hardening</h4>
+<p>Key techniques: disabling SMBv1, Windows Firewall with Advanced Security, Local Security Policy / GPO hardening, audit policies, restricting Remote Desktop, and Windows Defender configuration.</p>
+</div>
+
+<div class="concept-card">
+<h4>🔑 Secure Authentication</h4>
+<p>SSH key-based authentication (public/private key pairs), multi-factor authentication concepts, and centralized authentication review (Active&nbsp;Directory Kerberos, LDAP).</p>
+</div>
+
+<div class="concept-card">
+<h4>🔒 Encryption</h4>
+<p><strong>Data in transit:</strong> SSL/TLS certificates, HTTPS, SFTP, LDAPS, IPSec. <strong>Data at rest:</strong> LUKS/dm-crypt (Linux), BitLocker (Windows). Secure storage disposal (NIST SP 800-88).</p>
+</div>
+
+<div class="concept-card">
+<h4>📦 Patch Management</h4>
+<p>The CVE system, Linux and Windows update workflows, staged rollouts, maintenance windows, rollback procedures, and balancing security urgency with operational stability.</p>
+</div>
+
+<div class="concept-card">
+<h4>📊 Splunk as a SIEM</h4>
+<p>The hardening → monitoring → evidence cycle. Writing SPL searches for failed logins (Event ID 4625), firewall blocks, privilege escalation, and service changes. Building dashboards and configuring alerts.</p>
+</div>
+
+</div><!-- /concepts-grid -->
+
+<h3 style="margin-top:1.5rem;">Key Terms to Know</h3>
+<ul style="columns:2;column-gap:2rem;">
+<li>Attack Surface</li>
+<li>CIS Benchmark</li>
+<li>DISA STIG</li>
+<li>Least Functionality</li>
+<li>SSH Key-Based Auth</li>
+<li>SSL / TLS</li>
+<li>IPSec</li>
+<li>LUKS / BitLocker</li>
+<li>Patch Management</li>
+<li>CVE</li>
+<li>SIEM</li>
+<li>Splunk Alert</li>
+<li><code>auditd</code></li>
+<li>Event ID 4625 / 4740</li>
+<li>Defense in Depth</li>
+</ul>
+</section>
+
+<!-- ============================================================ -->
+<!-- PROJECT 3 CONNECTION                                          -->
+<!-- ============================================================ -->
+<section class="section" id="project3">
+<h2>Connection to Project 3</h2>
+
+<p>Week&nbsp;14's content is <strong>central</strong> to Project&nbsp;3: Security Hardening &amp; Monitoring with Splunk. The table below shows how each module maps to specific Project&nbsp;3 deliverables:</p>
+
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:.9rem;margin-top:.75rem;">
+<thead>
+<tr style="background:#1a1a2e;color:#fff;text-align:left;">
+<th style="padding:.6rem .75rem;border-radius:6px 0 0 0;">Module</th>
+<th style="padding:.6rem .75rem;border-radius:0 6px 0 0;">Project 3 Deliverable Supported</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8f9fc;"><td style="padding:.55rem .75rem;border-bottom:1px solid #ddd;"><strong>14.1</strong> – Physical Security</td><td style="padding:.55rem .75rem;border-bottom:1px solid #ddd;">Background knowledge; informs security documentation narrative</td></tr>
+<tr><td style="padding:.55rem .75rem;border-bottom:1px solid #ddd;"><strong>14.2</strong> – Server Hardening</td><td style="padding:.55rem .75rem;border-bottom:1px solid #ddd;">Security hardening measures applied to Linux &amp; Windows servers; hardening documentation with evidence</td></tr>
+<tr style="background:#f8f9fc;"><td style="padding:.55rem .75rem;border-bottom:1px solid #ddd;"><strong>14.3</strong> – Auth, Encryption &amp; Patching</td><td style="padding:.55rem .75rem;border-bottom:1px solid #ddd;">SSH key-based auth; SSL/TLS certificates; encrypted file systems; patch management strategy</td></tr>
+<tr><td style="padding:.55rem .75rem;"><strong>14.4</strong> – Splunk Validation</td><td style="padding:.55rem .75rem;">≥&thinsp;3 Splunk dashboards; ≥&thinsp;1 Splunk alert; security monitoring documentation</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout callout-project" style="margin-top:1.25rem;">
+<strong>Project 3 tip:</strong> As you study each module, think about which hardening steps you will apply to your own lab servers. Capture screenshots and configuration changes as you go — they become direct evidence for your Project&nbsp;3 submission.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- LOOKING AHEAD                                                 -->
+<!-- ============================================================ -->
+<section class="section" id="ahead">
+<h2>Looking Ahead: Week 15</h2>
+
+<div class="callout callout-ahead">
+<strong>Week 15 – Disaster Recovery &amp; Backup Solutions</strong>
+</div>
+
+<p>Next week shifts focus from <em>securing</em> your infrastructure to <em>protecting it against loss</em>. You will explore:</p>
+<ul>
+<li>Disaster recovery principles — RTO, RPO, and Business Impact Analysis</li>
+<li>Backup types: full, incremental, and differential</li>
+<li>Automated backup strategies and scheduling</li>
+<li>Backup verification, testing, and restoration</li>
+<li>High availability and fault tolerance concepts</li>
+<li>Backing up and recovering log/monitoring data (including Splunk)</li>
+</ul>
+
+<p style="margin-top:.75rem;">The encrypted backup concepts introduced in Module&nbsp;14.3 bridge directly into Week&nbsp;15's content. Your hardened, monitored infrastructure from this week is exactly what Week&nbsp;15's backup strategies will protect. Project&nbsp;3 work continues — the backup strategy deliverable connects to Week&nbsp;15's material.</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- TIME ESTIMATE                                                 -->
+<!-- ============================================================ -->
+<section class="section" id="time">
+<h2>Estimated Time Budget</h2>
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+<thead>
+<tr style="background:#1a1a2e;color:#fff;text-align:left;">
+<th style="padding:.55rem .75rem;">Activity</th>
+<th style="padding:.55rem .75rem;text-align:center;">Est. Time</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#f8f9fc;"><td style="padding:.5rem .75rem;border-bottom:1px solid #ddd;">Learning Modules 14.1 – 14.4</td><td style="padding:.5rem .75rem;border-bottom:1px solid #ddd;text-align:center;">4.25 – 6.0 hrs</td></tr>
+<tr><td style="padding:.5rem .75rem;border-bottom:1px solid #ddd;">Zoom class session (lecture + guided lab)</td><td style="padding:.5rem .75rem;border-bottom:1px solid #ddd;text-align:center;">1.5 hrs</td></tr>
+<tr style="background:#f8f9fc;"><td style="padding:.5rem .75rem;border-bottom:1px solid #ddd;">Project 3 work (hardening, Splunk dashboards/alerts, documentation)</td><td style="padding:.5rem .75rem;border-bottom:1px solid #ddd;text-align:center;">3.0 – 4.0 hrs</td></tr>
+<tr><td style="padding:.5rem .75rem;border-bottom:1px solid #ddd;">Splunk Learning: Enterprise Installation &amp; Configuration (if in progress)</td><td style="padding:.5rem .75rem;border-bottom:1px solid #ddd;text-align:center;">0.5 – 1.0 hr</td></tr>
+<tr style="background:#eef3ff;font-weight:600;"><td style="padding:.55rem .75rem;">Total</td><td style="padding:.55rem .75rem;text-align:center;">~9 – 12.5 hrs</td></tr>
+</tbody>
+</table>
+</div>
+<p style="font-size:.84rem;color:#666;margin-top:.5rem;">Target is approximately 9&nbsp;hours per week. Students who have already made progress on Project&nbsp;3 or completed the Splunk Learning assignment will be at the lower end of the range.</p>
+</section>
+
+<!-- Footer -->
+<footer class="page-footer">
+<button class="print-btn" onclick="window.print()" aria-label="Print this page">🖨 Print This Page</button>
+<p style="margin-top:.75rem;">CSC 152 – Network Operating Systems and Administration<br>Mendocino College &bull; Spring 2026 &bull; Instructor: David Pai<br>Week 14: Server Security &amp; Hardening</p>
+</footer>
+
+</main>
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT – Objective Tracker                                -->
+<!-- ============================================================ -->
+<script>
+(function(){
+  var items=document.querySelectorAll('#objList li');
+  var counter=document.getElementById('objDone');
+  function update(){
+    var n=0;
+    items.forEach(function(li){if(li.classList.contains('done'))n++;});
+    counter.textContent=n;
+  }
+  items.forEach(function(li){
+    li.setAttribute('tabindex','0');
+    li.setAttribute('role','checkbox');
+    li.setAttribute('aria-checked','false');
+    function toggle(){
+      li.classList.toggle('done');
+      li.setAttribute('aria-checked',li.classList.contains('done'));
+      update();
+    }
+    li.addEventListener('click',toggle);
+    li.addEventListener('keydown',function(e){
+      if(e.key===' '||e.key==='Enter'){e.preventDefault();toggle();}
+    });
+  });
+})();
+</script>
+</body>
+</html>
