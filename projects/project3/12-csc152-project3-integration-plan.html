@@ -1274,8 +1274,12 @@ OR
         <h3>Alert 1 Settings</h3>
         <ul class="prose-list">
           <li><strong>Title:</strong> Multiple Failed Logins - Possible Brute Force</li>
-          <li><strong>Schedule:</strong> Run every <strong>5 minutes</strong>, looking back <strong>5 minutes</strong></li>
+          <li><strong>Permissions:</strong> Private</li>
+          <li><strong>Schedule:</strong> Select <strong>Run on Cron Schedule</strong> and enter: <code>*/5 * * * *</code></li>
+          <li><strong>Time Range:</strong> Click the <strong>Advanced</strong> tab &mdash; set Earliest to <code>-5m</code>, leave Latest as <code>now</code></li>
+          <li><strong>Expires:</strong> 24 hours</li>
           <li><strong>Trigger condition:</strong> Number of Results &gt; 0</li>
+          <li><strong>Trigger:</strong> Once</li>
           <li><strong>Actions:</strong> Add to Triggered Alerts</li>
         </ul>
 
@@ -1294,8 +1298,12 @@ OR
         <h3>Alert 2 Settings</h3>
         <ul class="prose-list">
           <li><strong>Title:</strong> After-Hours Successful Login</li>
-          <li><strong>Schedule:</strong> Run every <strong>30 minutes</strong>, looking back <strong>30 minutes</strong></li>
+          <li><strong>Permissions:</strong> Private</li>
+          <li><strong>Schedule:</strong> Select <strong>Run on Cron Schedule</strong> and enter: <code>*/30 * * * *</code></li>
+          <li><strong>Time Range:</strong> Click the <strong>Advanced</strong> tab &mdash; set Earliest to <code>-30m</code>, leave Latest as <code>now</code></li>
+          <li><strong>Expires:</strong> 24 hours</li>
           <li><strong>Trigger condition:</strong> Number of Results &gt; 0</li>
+          <li><strong>Trigger:</strong> Once</li>
           <li><strong>Actions:</strong> Add to Triggered Alerts</li>
         </ul>
 
@@ -1307,14 +1315,25 @@ OR
       <!-- ══ Section 10: Verify ══ -->
       <section class="section-card" id="s10-verify" aria-labelledby="h-s10">
         <h2 id="h-s10"><span class="section-num" aria-hidden="true">10</span> Verify Splunk Setup</h2>
-        <p>Run these commands to confirm Splunk is running correctly, indexes exist, and the receiver is active before moving on to Integration Plan 13.</p>
+        <p>You are done with Splunk Web for this integration plan. Close or minimize the browser and log in directly to <strong>splunk-vm</strong> (via the Proxmox console or SSH) to run the CLI verification commands below.</p>
 
-        <div class="alert alert-info" role="note" style="margin: 0 0 14px 0;">
+        <h3>Step 1 &mdash; Restart Splunk</h3>
+        <p>Restart Splunk to ensure all configuration changes made in Splunk Web (indexes, inputs, dashboards, alerts) are fully applied before you verify.</p>
+
+        <div class="code-block" role="region" aria-label="Splunk restart command">
+          <div class="code-block-label">bash &mdash; splunk-vm</div>
+          <pre><code>sudo -u splunk /opt/splunk/bin/splunk restart</code></pre>
+        </div>
+
+        <div class="alert alert-info" role="note" style="margin: 14px 0 14px 0;">
           <span class="alert-icon" aria-hidden="true">&#8505;</span>
           <div>
-            <strong>After a restart, wait 30&ndash;60 seconds</strong> before running the commands below. Splunk takes a moment to fully initialize before the CLI becomes responsive.
+            <strong>After the restart, wait 30&ndash;60 seconds</strong> before running the commands below. Splunk takes a moment to fully initialize before the CLI becomes responsive.
           </div>
         </div>
+
+        <h3>Step 2 &mdash; Run Verification Commands</h3>
+        <p>Confirm Splunk is running correctly, indexes exist, and the receiver is active before moving on to Integration Plan 13.</p>
 
         <div class="code-block" role="region" aria-label="Splunk verification command block">
           <div class="code-block-label">bash &mdash; splunk-vm</div>
@@ -1324,11 +1343,12 @@ sudo -u splunk /opt/splunk/bin/splunk status
 # List configured indexes (should show linux_logs, windows_logs, firewall_logs)
 sudo -u splunk /opt/splunk/bin/splunk list index -auth admin:yourpassword
 
-# List configured receivers (should show port 9997)
-sudo -u splunk /opt/splunk/bin/splunk list receiver -auth admin:yourpassword
+# Confirm Splunk is listening on the forwarder receive port (should show port 9997)
+sudo ss -tlnp | grep 9997
 
-# Check for any errors (reading a log file — plain sudo is fine here)
-sudo tail -100 /opt/splunk/var/log/splunk/splunkd.log | grep ERROR</code></pre>
+# Check for errors — no output means no errors found (that is the good result)
+# If errors exist they will be printed; otherwise you will see the confirmation message
+sudo tail -100 /opt/splunk/var/log/splunk/splunkd.log | grep ERROR || echo "No ERROR lines found — Splunk looks healthy"</code></pre>
         </div>
 
         <div class="alert alert-info" role="note" style="margin: 14px 0 0 0;">
@@ -1343,8 +1363,8 @@ sudo tail -100 /opt/splunk/var/log/splunk/splunkd.log | grep ERROR</code></pre>
         <ul class="prose-list">
           <li><code>splunk status</code> shows <strong>splunkd is running</strong></li>
           <li><code>list index</code> output includes <strong>linux_logs</strong>, <strong>windows_logs</strong>, and <strong>firewall_logs</strong></li>
-          <li><code>list receiver</code> shows <strong>port 9997</strong></li>
-          <li>No <code>FATAL</code> or <code>ERROR</code> lines in the most recent splunkd.log entries</li>
+          <li><code>ss -tlnp | grep 9997</code> shows a listening socket on <strong>port 9997</strong></li>
+          <li>Error check prints <strong>"No ERROR lines found &mdash; Splunk looks healthy"</strong> (no output or error lines printed means no problems)</li>
           <li>Both dashboards visible in Splunk Web under <strong>Dashboards</strong></li>
           <li>Both alerts visible under <strong>Settings &rarr; Searches, reports, and alerts</strong></li>
         </ul>
