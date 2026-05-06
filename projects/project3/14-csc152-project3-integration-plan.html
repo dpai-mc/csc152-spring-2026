@@ -833,23 +833,24 @@
       <section class="section-card" id="download" aria-labelledby="h-download">
         <h2 id="h-download"><span class="section-num" aria-hidden="true">2</span> Download the Windows Universal Forwarder</h2>
 
-        <p>On <strong>dc01</strong>, open a browser or PowerShell as Administrator and download the Windows MSI installer. The version must match the Splunk Enterprise version running on splunk-vm.</p>
+        <p>On <strong>dc01</strong>, open a browser and download the Windows MSI installer from the Splunk website. A free Splunk account login is required to access the download page and generate a valid download link.</p>
 
-        <div class="code-block" aria-label="Download Splunk Universal Forwarder for Windows via PowerShell">
-          <div class="code-block-label">PowerShell — dc01 (run as Administrator)</div>
-          <pre><code># Download from Splunk (Windows MSI installer)
-# Visit: splunk.com/en_us/download/universal-forwarder.html
-# Select: Windows, 64-bit MSI
-# Or use PowerShell to download (update URL with current version):
-$downloadUrl = "https://download.splunk.com/products/universalforwarder/releases/9.x.x/windows/splunkforwarder-9.x.x-x64-release.msi"
-Invoke-WebRequest -Uri $downloadUrl -OutFile "$env:USERPROFILE\Downloads\splunkforwarder.msi"</code></pre>
+        <div class="alert alert-warning" role="note" style="margin: 0 0 14px;">
+          <span class="alert-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <strong>Version note:</strong> Version 10.2.2 does not exist — Splunk skipped from 10.2.1 directly to 10.2.3. Download version <strong>10.2.3</strong>, which matches the Linux Universal Forwarder installed in Integration 13. The download page provides a wget command, but a direct browser download works equally well.
+          </div>
         </div>
 
-        <div class="alert alert-info" role="note" style="margin: 14px 0 0;">
-          <span class="alert-icon" aria-hidden="true">&#8505;</span>
-          <div>
-            <strong>Version matching:</strong> The forwarder version must match the Splunk Enterprise version on splunk-vm. A version mismatch can cause connection or protocol errors. Check the Splunk Enterprise version at <code>http://10.0.2.20:8000</code> &rarr; Settings &rarr; About before downloading.
-          </div>
+        <div class="note-box">
+          <strong>How to download:</strong>
+          <ol class="steps-list" style="margin-top: 8px;">
+            <li>Log in to your Splunk account at <code>splunk.com</code></li>
+            <li>Navigate to Downloads &rarr; Universal Forwarder</li>
+            <li>Select version <strong>10.2.3</strong>, then choose <strong>64-bit — Windows 10, 11, Server 2019, 2022, 2025</strong> (not the 32-bit Windows 10 option)</li>
+            <li>Click the download button or copy and use the wget command shown</li>
+          </ol>
+          The file downloaded is: <code>splunkforwarder-10.2.3-4d61cf8a5c0c-windows-x64.msi</code>
         </div>
       </section>
 
@@ -878,7 +879,7 @@ Invoke-WebRequest -Uri $downloadUrl -OutFile "$env:USERPROFILE\Downloads\splunkf
           <div class="wizard-step">
             <span class="wizard-step-num">4</span>
             <strong>Create credentials</strong><br>
-            Username: <code>admin</code> &nbsp; Password: (strong password)
+            Username: <code>admin</code> &nbsp; Password: <code>ForwarderPass1!</code> — use this exact password so it matches the rest of this guide
           </div>
           <div class="wizard-step">
             <span class="wizard-step-num">5</span>
@@ -898,7 +899,7 @@ Invoke-WebRequest -Uri $downloadUrl -OutFile "$env:USERPROFILE\Downloads\splunkf
         <div class="code-block" aria-label="Silent MSI installation via PowerShell">
           <div class="code-block-label">PowerShell — silent install (Administrator)</div>
           <pre><code># Silent install with predefined receiving indexer
-msiexec.exe /i splunkforwarder.msi SPLUNKUSERNAME=admin `
+msiexec.exe /i splunkforwarder-10.2.3-4d61cf8a5c0c-windows-x64.msi SPLUNKUSERNAME=admin `
   SPLUNKPASSWORD="ForwarderPass1!" `
   RECEIVING_INDEXER="10.0.2.20:9997" `
   WINEVENTLOG_SEC_ENABLE=1 `
@@ -919,13 +920,21 @@ Get-Service SplunkForwarder</code></pre>
       <section class="section-card" id="inputs" aria-labelledby="h-inputs">
         <h2 id="h-inputs"><span class="section-num" aria-hidden="true">4</span> Configure inputs.conf</h2>
 
-        <p>After installation, create or update <code>inputs.conf</code> to specify which Windows Event Log channels to monitor. The PowerShell here-string below writes the file to the correct location.</p>
+        <p>After installation, create or update <code>inputs.conf</code> to specify which Windows Event Log channels to monitor. Two methods are provided — use whichever fits your workflow.</p>
 
-        <div class="code-block" aria-label="Write inputs.conf for Windows Event Logs">
+        <h3>Method 1 — Notepad (easiest when typing manually)</h3>
+        <p>Open Notepad directly to the target path. Notepad will create the file if it does not already exist.</p>
+
+        <div class="code-block" aria-label="Open inputs.conf in Notepad">
           <div class="code-block-label">PowerShell — dc01 (Administrator)</div>
-          <pre><code># Create inputs.conf for Windows Event Logs
-$inputsConf = @"
-[WinEventLog://Security]
+          <pre><code>notepad "C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf"</code></pre>
+        </div>
+
+        <p>In Notepad, type the following content exactly, then save (<strong>File &rarr; Save</strong>) and close:</p>
+
+        <div class="code-block" aria-label="inputs.conf content to type in Notepad">
+          <div class="code-block-label">inputs.conf — type this in Notepad</div>
+          <pre><code>[WinEventLog://Security]
 disabled = 0
 index = windows_logs
 evt_resolve_ad_obj = 1
@@ -941,14 +950,41 @@ index = windows_logs
 [WinEventLog://Microsoft-Windows-Sysmon/Operational]
 disabled = 0
 index = windows_logs
-renderXml = true
-"@
+renderXml = true</code></pre>
+        </div>
 
-$confPath = "C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf"
-$inputsConf | Out-File -FilePath $confPath -Encoding utf8 -Force
+        <h3>Method 2 — PowerShell (when copy-paste is available)</h3>
 
-Write-Host "inputs.conf written to: $confPath"
-Get-Content $confPath</code></pre>
+        <div class="code-block" aria-label="Write inputs.conf via PowerShell Set-Content">
+          <div class="code-block-label">PowerShell — dc01 (Administrator)</div>
+          <pre><code>$confPath = "C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf"
+
+@(
+  "[WinEventLog://Security]",
+  "disabled = 0",
+  "index = windows_logs",
+  "evt_resolve_ad_obj = 1",
+  "",
+  "[WinEventLog://System]",
+  "disabled = 0",
+  "index = windows_logs",
+  "",
+  "[WinEventLog://Application]",
+  "disabled = 0",
+  "index = windows_logs",
+  "",
+  "[WinEventLog://Microsoft-Windows-Sysmon/Operational]",
+  "disabled = 0",
+  "index = windows_logs",
+  "renderXml = true"
+) | Set-Content -Path $confPath -Encoding UTF8</code></pre>
+        </div>
+
+        <h3>Verify the file was written</h3>
+        <div class="code-block" aria-label="Verify inputs.conf content">
+          <div class="code-block-label">PowerShell — dc01 (Administrator)</div>
+          <pre><code>Test-Path "C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf"
+Get-Content "C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf"</code></pre>
         </div>
 
         <table class="spec-table" aria-label="inputs.conf channel descriptions">
@@ -992,30 +1028,35 @@ Get-Content $confPath</code></pre>
       <section class="section-card" id="outputs" aria-labelledby="h-outputs">
         <h2 id="h-outputs"><span class="section-num" aria-hidden="true">5</span> Verify outputs.conf</h2>
 
-        <p>If the receiving indexer was set correctly during installation (GUI or silent install), <code>outputs.conf</code> will already exist. The script below checks for the file and creates it manually if it is missing.</p>
+        <p>If the receiving indexer was set correctly during installation, <code>outputs.conf</code> will already exist in the <code>local\</code> directory. Navigate there and check.</p>
 
-        <div class="code-block" aria-label="Verify or create outputs.conf">
+        <div class="code-block" aria-label="Navigate to local directory and verify outputs.conf">
           <div class="code-block-label">PowerShell — dc01 (Administrator)</div>
-          <pre><code># Check outputs.conf (set during installation)
-$outputsPath = "C:\Program Files\SplunkUniversalForwarder\etc\system\local\outputs.conf"
-if (Test-Path $outputsPath) {
-  Get-Content $outputsPath
-} else {
-  # Create manually if not set by installer
-  $outputsConf = @"
-[tcpout]
-defaultGroup = splunk-indexers
+          <pre><code># Navigate to the forwarder local config directory
+cd "C:\Program Files\SplunkUniversalForwarder\etc\system\local"
 
-[tcpout:splunk-indexers]
-server = 10.0.2.20:9997
-"@
-  $outputsConf | Out-File -FilePath $outputsPath -Encoding utf8 -Force
-  Write-Host "outputs.conf created manually"
-}</code></pre>
+# List files — confirm outputs.conf is present and non-zero size
+ls
+
+# Open outputs.conf to view and verify the contents
+notepad outputs.conf</code></pre>
         </div>
 
         <div class="note-box">
-          <strong>Verify the server line:</strong> Open the file in Notepad and confirm the line reads <code>server = 10.0.2.20:9997</code> exactly. A typo in the IP address is a common cause of a forwarder that installs correctly but never sends data.
+          <strong>Verify the server line:</strong> In Notepad, confirm the file contains <code>server = 10.0.2.20:9997</code>. A typo in the IP address is a common cause of a forwarder that installs correctly but never sends data.
+        </div>
+
+        <div class="note-box" style="margin-top: 12px;">
+          <strong>If outputs.conf is missing:</strong> The installer did not set a receiving indexer. Create the file in Notepad with the following content, save it to the <code>local\</code> directory, and proceed to Section 6.
+        </div>
+
+        <div class="code-block" aria-label="outputs.conf content if file is missing">
+          <div class="code-block-label">outputs.conf — type this in Notepad if file is missing</div>
+          <pre><code>[tcpout]
+defaultGroup = splunk-indexers
+
+[tcpout:splunk-indexers]
+server = 10.0.2.20:9997</code></pre>
         </div>
       </section>
 
@@ -1031,20 +1072,31 @@ Restart-Service SplunkForwarder
 # Check service status
 Get-Service SplunkForwarder | Select Name, Status, StartType
 
-# Verify connection to Splunk indexer
+# Verify connection to Splunk indexer via CLI (requires forwarder admin password)
 & "C:\Program Files\SplunkUniversalForwarder\bin\splunk.exe" list forward-server `
   -auth admin:ForwarderPass1!</code></pre>
         </div>
 
-        <div class="expected-box" role="note">
-          <strong>Expected output from <code>list forward-server</code>:</strong>
-          <div class="code-block" style="margin-top:8px;">
-            <pre><code>Active forwards:
+        <div class="code-block" aria-label="Expected list forward-server output">
+          <div class="code-block-label">Expected output</div>
+          <pre><code>Active forwards:
     10.0.2.20:9997
 Configured but inactive forwards:
     (none)</code></pre>
+        </div>
+
+        <div class="expected-box" role="note">
+          If <code>10.0.2.20:9997</code> appears under "Configured but inactive forwards," the forwarder cannot reach splunk-vm on port 9997. Check the Windows Firewall on dc01 (ensure outbound TCP 9997 is allowed) and verify that Splunk Enterprise on splunk-vm is running.
+        </div>
+
+        <div class="note-box" style="margin-top: 12px;">
+          <strong>CLI login fails?</strong> The <code>list forward-server</code> command requires the forwarder's management password, but the actual log forwarding does not — it runs entirely from <code>outputs.conf</code>. If the service shows <strong>Running</strong>, skip the CLI check and verify by running <code>index=windows_logs | head 20</code> in Splunk web (Section 7). If that returns events, forwarding is confirmed working and the CLI password issue can be ignored. You can also confirm the connection via the forwarder log without any password:
+          <div class="code-block" style="margin-top: 8px;">
+            <pre><code>Get-Content "C:\Program Files\SplunkUniversalForwarder\var\log\splunk\splunkd.log" |
+  Select-String "tcpout|connect|forward" |
+  Select-Object -Last 20</code></pre>
           </div>
-          If 10.0.2.20:9997 appears under "Configured but inactive forwards," the forwarder cannot reach splunk-vm on port 9997. Check the Windows Firewall on dc01 (ensure outbound TCP 9997 is allowed) and verify that Splunk Enterprise on splunk-vm is running.
+          Look for lines containing <code>Connected to idx</code> or <code>Forwarding to</code> as confirmation the connection is established.
         </div>
 
         <div class="alert alert-warning" role="note" style="margin: 14px 0 0;">
@@ -1052,6 +1104,23 @@ Configured but inactive forwards:
           <div>
             <strong>Start type:</strong> Confirm the <code>StartType</code> column shows <strong>Automatic</strong>. If it shows Manual, the forwarder will not start after a reboot. Fix with: <code>Set-Service SplunkForwarder -StartupType Automatic</code>
           </div>
+        </div>
+
+        <div class="note-box" style="margin-top: 12px;">
+          <strong>Login failed on list forward-server?</strong> If the GUI wizard was used and a different password was set in Step 4, the <code>-auth admin:ForwarderPass1!</code> flag will fail. Reset the password using <code>user-seed.conf</code>:
+          <ol class="steps-list" style="margin-top: 8px;">
+            <li>Run <code>Stop-Service SplunkForwarder</code> in Administrator PowerShell</li>
+            <li>Run <code>notepad "C:\Program Files\SplunkUniversalForwarder\etc\system\local\user-seed.conf"</code></li>
+            <li>Type the following, then save and close Notepad:
+              <div class="code-block" style="margin-top: 8px;">
+                <pre><code>[user_info]
+USERNAME = admin
+PASSWORD = ForwarderPass1!</code></pre>
+              </div>
+            </li>
+            <li>Run <code>Start-Service SplunkForwarder</code> — Splunk reads the file on startup, resets the password, and deletes it automatically</li>
+            <li>Retry: <code>& "C:\Program Files\SplunkUniversalForwarder\bin\splunk.exe" list forward-server -auth admin:ForwarderPass1!</code></li>
+          </ol>
         </div>
       </section>
 
@@ -1079,7 +1148,7 @@ index=windows_logs EventCode=4624 | head 5</code></pre>
 
         <div class="code-block" aria-label="Generate a test Security event on dc01">
           <div class="code-block-label">PowerShell — dc01 — generate a 4625 event</div>
-          <pre><code"># Generate a test security event (failed login attempt)
+          <pre><code># Generate a test security event (failed login attempt)
 $cred = New-Object System.Management.Automation.PSCredential(
   "nonexistentuser",
   (ConvertTo-SecureString "wrongpassword" -AsPlainText -Force)
