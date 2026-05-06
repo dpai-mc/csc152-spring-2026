@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 15.1 – Disaster Recovery Principles &amp; Planning | CSC 152</title>
+<style>
+:root {
+--primary: #1a5276;
+--primary-light: #2980b9;
+--accent: #e67e22;
+--accent-light: #f39c12;
+--success: #27ae60;
+--danger: #c0392b;
+--bg: #ffffff;
+--bg-alt: #f8f9fa;
+--bg-dark: #2c3e50;
+--text: #2c3e50;
+--text-light: #5d6d7e;
+--border: #d5dbdb;
+--radius: 8px;
+--shadow: 0 2px 8px rgba(0,0,0,0.08);
+--nav-height: 56px;
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{
+margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+color:var(--text);line-height:1.7;background:var(--bg);
+}
+/* NAV */
+nav.topnav{
+position:sticky;top:0;z-index:1000;
+background:var(--bg-dark);
+height:var(--nav-height);display:flex;align-items:center;
+padding:0 1rem;gap:0.25rem;overflow-x:auto;
+box-shadow:0 2px 6px rgba(0,0,0,0.15);
+}
+nav.topnav a{
+color:#ecf0f1;text-decoration:none;font-size:0.82rem;
+padding:0.4rem 0.7rem;border-radius:4px;white-space:nowrap;
+transition:background 0.2s;
+}
+nav.topnav a:hover,nav.topnav a:focus-visible{
+background:var(--primary-light);outline:none;
+}
+nav.topnav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+/* MAIN */
+main{max-width:960px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+section{scroll-margin-top:calc(var(--nav-height) + 16px);margin-bottom:3rem;}
+h1{font-size:1.9rem;color:var(--primary);margin-bottom:0.25rem;}
+h2{font-size:1.45rem;color:var(--primary);border-bottom:3px solid var(--accent);padding-bottom:0.3rem;margin-top:0;}
+h2.section-intro{border-bottom:none;font-size:1.15rem;color:var(--primary-light);margin-bottom:0.5rem;}
+h3{font-size:1.15rem;color:var(--primary-light);margin-bottom:0.5rem;}
+p,li{font-size:1rem;}
+ul,ol{padding-left:1.4rem;}
+
+/* CARD */
+.card{
+background:var(--bg-alt);border:1px solid var(--border);
+border-radius:var(--radius);padding:1.25rem 1.5rem;margin:1rem 0;
+box-shadow:var(--shadow);
+}
+.card.highlight{border-left:5px solid var(--accent);}
+.card.info{border-left:5px solid var(--primary-light);}
+.card.project{border-left:5px solid var(--success);background:#eafaf1;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.92rem;}
+th,td{border:1px solid var(--border);padding:0.6rem 0.8rem;text-align:left;}
+th{background:var(--primary);color:#fff;font-weight:600;}
+tr:nth-child(even){background:var(--bg-alt);}
+
+/* COLLAPSIBLE */
+details{margin:0.75rem 0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+summary{
+cursor:pointer;padding:0.8rem 1rem;font-weight:600;
+background:var(--bg-alt);list-style:none;position:relative;
+}
+summary::-webkit-details-marker{display:none;}
+summary::after{
+content:'▸';position:absolute;right:1rem;top:50%;transform:translateY(-50%);
+transition:transform 0.2s;
+}
+details[open] summary::after{transform:translateY(-50%) rotate(90deg);}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+details .details-body{padding:1rem 1.25rem;}
+
+/* DIAGRAM */
+.diagram-container{
+overflow-x:auto;margin:1.25rem 0;padding:0.5rem 0;
+}
+.timeline-svg{display:block;margin:0 auto;max-width:100%;height:auto;}
+
+/* INTERACTIVE */
+.quiz-block{margin:1.5rem 0;}
+.quiz-question{
+background:var(--bg-alt);border:1px solid var(--border);
+border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;
+}
+.quiz-question h4{margin:0 0 0.75rem;color:var(--primary);}
+.quiz-options{list-style:none;padding:0;margin:0;}
+.quiz-options li{margin:0.4rem 0;}
+.quiz-options label{
+display:flex;align-items:flex-start;gap:0.5rem;
+cursor:pointer;padding:0.5rem 0.75rem;border-radius:4px;
+border:1px solid transparent;transition:background 0.2s;
+}
+.quiz-options label:hover{background:#eaf2f8;}
+.quiz-options input[type="radio"]{margin-top:0.25rem;accent-color:var(--primary);}
+.feedback{
+display:none;margin-top:0.75rem;padding:0.75rem 1rem;
+border-radius:4px;font-size:0.92rem;line-height:1.5;
+}
+.feedback.correct{display:block;background:#d5f5e3;border:1px solid var(--success);color:#1e8449;}
+.feedback.incorrect{display:block;background:#fadbd8;border:1px solid var(--danger);color:#922b21;}
+.btn-check{
+background:var(--primary);color:#fff;border:none;
+padding:0.5rem 1.25rem;border-radius:4px;cursor:pointer;
+font-size:0.9rem;margin-top:0.5rem;transition:background 0.2s;
+}
+.btn-check:hover,.btn-check:focus-visible{background:var(--primary-light);}
+.btn-check:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.btn-check:disabled{opacity:0.6;cursor:default;}
+
+/* MINI CASE */
+.case-scenario{
+background:#fef9e7;border:1px solid #f9e79f;
+border-radius:var(--radius);padding:1.25rem;margin:1rem 0;
+}
+.case-scenario h4{margin-top:0;color:#7d6608;}
+
+/* PROGRESS */
+.module-badge{
+display:inline-block;background:var(--accent);color:#000;
+font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;
+border-radius:12px;vertical-align:middle;margin-left:0.5rem;
+}
+.week-context{
+display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+margin:1rem 0;
+}
+.week-context .step{
+text-align:center;padding:0.5rem 0.8rem;border-radius:4px;
+font-size:0.8rem;font-weight:600;min-width:80px;
+}
+.step.done{background:#d5f5e3;color:#1e8449;}
+.step.current{background:#fdebd0;color:#6b3a0d;border:2px solid var(--accent);}
+.step.future{background:var(--bg-alt);color:var(--text-light);}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+main{padding:1.5rem 1rem 3rem;}
+nav.topnav{padding:0 0.5rem;}
+nav.topnav a{font-size:0.75rem;padding:0.3rem 0.5rem;}
+h1{font-size:1.5rem;}
+h2{font-size:1.25rem;}
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav" aria-label="Module sections">
+<a href="#objectives">Objectives</a>
+<a href="#what-is-dr">What Is DR?</a>
+<a href="#disaster-types">Disaster Types</a>
+<a href="#rto-rpo">RTO &amp; RPO</a>
+<a href="#bia">BIA</a>
+<a href="#dr-plan">DR Plan</a>
+<a href="#mini-case">Mini-Case</a>
+<a href="#project3">Project 3</a>
+</nav>
+
+<main>
+
+<!-- ===== SECTION 0: OBJECTIVES & CONTEXT ===== -->
+<section id="objectives">
+<h1>Module 15.1 – Disaster Recovery Principles &amp; Planning<span class="module-badge">Week 15 of 17</span></h1>
+
+<div class="card info">
+<strong>Estimated Time:</strong> 1.0–1.25 hours &nbsp;|&nbsp;
+<strong>CSLO 4:</strong> Describe disaster recovery and implement backup techniques &nbsp;|&nbsp;
+<strong>Objectives:</strong> W15.1, W15.8
+</div>
+
+<h2 class="section-intro">Where This Week Fits</h2>
+<p>Over Weeks 1–14 you built, connected, managed, and secured a multi-server infrastructure. Week 15 asks the essential question: <em>"How do we protect all of this work against loss?"</em></p>
+
+<div class="week-context" role="img" aria-label="Course progression showing Build (Weeks 1-5), Manage (Weeks 6-9), Store (Week 10), Integrate (Weeks 11-13), Secure (Week 14), Protect (Week 15 current), and Monitor (Week 16) phases">
+<div class="step done">Build<br><span style="font-weight:400;font-size:0.7rem">Wk 1–5</span></div>
+<div class="step done">Manage<br><span style="font-weight:400;font-size:0.7rem">Wk 6–9</span></div>
+<div class="step done">Store<br><span style="font-weight:400;font-size:0.7rem">Wk 10</span></div>
+<div class="step done">Integrate<br><span style="font-weight:400;font-size:0.7rem">Wk 11–13</span></div>
+<div class="step done">Secure<br><span style="font-weight:400;font-size:0.7rem">Wk 14</span></div>
+<div class="step current">Protect<br><span style="font-weight:400;font-size:0.7rem">Wk 15</span></div>
+<div class="step future">Monitor<br><span style="font-weight:400;font-size:0.7rem">Wk 16</span></div>
+</div>
+
+<h2 class="section-intro">Week 15 Modules</h2>
+<ol>
+<li><strong>Module 15.1</strong> – Disaster Recovery Principles &amp; Planning <em>(this module)</em></li>
+<li><strong>Module 15.2</strong> – Backup Types, Strategies &amp; Scheduling</li>
+<li><strong>Module 15.3</strong> – Implementing Automated Backup Solutions</li>
+<li><strong>Module 15.4</strong> – Backup Verification, Recovery &amp; High Availability</li>
+</ol>
+
+<h2 class="section-intro">Learning Objectives for This Module</h2>
+<ul>
+<li>Define disaster recovery and distinguish it from business continuity.</li>
+<li>Categorize types of disasters that threaten IT infrastructure.</li>
+<li>Explain Recovery Time Objective (RTO) and Recovery Point Objective (RPO).</li>
+<li>Describe the purpose and process of a Business Impact Analysis (BIA).</li>
+<li>Identify the components of a disaster recovery plan.</li>
+<li>Apply RTO/RPO concepts to a realistic organizational scenario.</li>
+</ul>
+</section>
+
+<!-- ===== SECTION 1: WHAT IS DISASTER RECOVERY? ===== -->
+<section id="what-is-dr">
+<h2>1. What Is Disaster Recovery?</h2>
+
+<p><strong>Disaster Recovery (DR)</strong> is the set of policies, tools, and procedures designed to enable the recovery or continuation of vital technology infrastructure and systems following a natural or human-caused disaster.</p>
+
+<p>DR focuses specifically on restoring IT systems and data after an outage. It is a subset of a broader discipline called <strong>Business Continuity (BC)</strong>, which addresses keeping <em>all</em> business functions operational—not just technology.</p>
+
+<h3>Business Continuity vs. Disaster Recovery</h3>
+<table>
+<caption>Comparison of Business Continuity and Disaster Recovery</caption>
+<thead>
+<tr><th>Dimension</th><th>Business Continuity (BC)</th><th>Disaster Recovery (DR)</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Scope</strong></td><td>Entire organization (people, facilities, supply chain, IT)</td><td>IT infrastructure and data</td></tr>
+<tr><td><strong>Focus</strong></td><td>Maintaining critical business functions during and after disruption</td><td>Restoring IT systems and data to operational state</td></tr>
+<tr><td><strong>Timeframe</strong></td><td>Before, during, and after an event</td><td>Primarily after an event (response &amp; recovery)</td></tr>
+<tr><td><strong>Key Question</strong></td><td>"How does the business keep operating?"</td><td>"How do we get our systems back?"</td></tr>
+<tr><td><strong>Examples</strong></td><td>Alternate work sites, communication plans, manual workarounds</td><td>Backup restoration, failover to secondary site, system rebuild</td></tr>
+<tr><td><strong>Relationship</strong></td><td colspan="2" style="text-align:center;">DR is a <em>component</em> of BC. Every BC plan includes a DR plan, but DR alone does not cover all BC needs.</td></tr>
+</tbody>
+</table>
+
+<div class="card highlight">
+<strong>Key Takeaway:</strong> Every organization—regardless of size—needs a disaster recovery plan. The question is never <em>if</em> a disaster will occur, but <em>when</em>. The infrastructure you built in this course (servers, directory services, firewalls, monitoring) represents significant investment. DR planning protects that investment.
+</div>
+</section>
+
+<!-- ===== SECTION 2: TYPES OF DISASTERS ===== -->
+<section id="disaster-types">
+<h2>2. Types of Disasters</h2>
+
+<p>Disasters that threaten IT infrastructure fall into three broad categories. Effective DR planning requires considering threats from <em>all</em> categories, not just the most dramatic ones.</p>
+
+<div class="diagram-container">
+<svg class="timeline-svg" viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing three disaster categories: Natural, Human-Caused, and Technical, each with examples">
+<defs>
+<filter id="ds" x="-2%" y="-2%" width="104%" height="104%"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.1"/></filter>
+</defs>
+<!-- Natural -->
+<rect x="20" y="20" width="200" height="280" rx="10" fill="#eaf2f8" stroke="#2980b9" stroke-width="2" filter="url(#ds)"/>
+<text x="120" y="52" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a5276">Natural Disasters</text>
+<text x="40" y="82" font-size="12" fill="#2c3e50">• Earthquake</text>
+<text x="40" y="104" font-size="12" fill="#2c3e50">• Flood</text>
+<text x="40" y="126" font-size="12" fill="#2c3e50">• Fire (wildfire)</text>
+<text x="40" y="148" font-size="12" fill="#2c3e50">• Severe weather</text>
+<text x="40" y="170" font-size="12" fill="#2c3e50">• Hurricane / tornado</text>
+<text x="40" y="192" font-size="12" fill="#2c3e50">• Pandemic</text>
+<text x="40" y="224" font-size="11" fill="#5d6d7e" font-style="italic">Often regional;</text>
+<text x="40" y="240" font-size="11" fill="#5d6d7e" font-style="italic">low frequency but</text>
+<text x="40" y="256" font-size="11" fill="#5d6d7e" font-style="italic">high impact.</text>
+<!-- Human -->
+<rect x="250" y="20" width="200" height="280" rx="10" fill="#fef9e7" stroke="#f39c12" stroke-width="2" filter="url(#ds)"/>
+<text x="350" y="52" text-anchor="middle" font-size="14" font-weight="bold" fill="#7d6608">Human-Caused</text>
+<text x="270" y="82" font-size="12" fill="#2c3e50">• Accidental deletion</text>
+<text x="270" y="104" font-size="12" fill="#2c3e50">• Misconfiguration</text>
+<text x="270" y="126" font-size="12" fill="#2c3e50">• Insider threat</text>
+<text x="270" y="148" font-size="12" fill="#2c3e50">• Cyberattack / ransomware</text>
+<text x="270" y="170" font-size="12" fill="#2c3e50">• Social engineering</text>
+<text x="270" y="192" font-size="12" fill="#2c3e50">• Sabotage</text>
+<text x="270" y="224" font-size="11" fill="#5d6d7e" font-style="italic">Most common cause</text>
+<text x="270" y="240" font-size="11" fill="#5d6d7e" font-style="italic">of data loss; ranges</text>
+<text x="270" y="256" font-size="11" fill="#5d6d7e" font-style="italic">from accidental to</text>
+<text x="270" y="272" font-size="11" fill="#5d6d7e" font-style="italic">malicious.</text>
+<!-- Technical -->
+<rect x="480" y="20" width="200" height="280" rx="10" fill="#fdedec" stroke="#c0392b" stroke-width="2" filter="url(#ds)"/>
+<text x="580" y="52" text-anchor="middle" font-size="14" font-weight="bold" fill="#922b21">Technical Failures</text>
+<text x="500" y="82" font-size="12" fill="#2c3e50">• Hardware failure (disk,</text>
+<text x="510" y="98" font-size="12" fill="#2c3e50">PSU, motherboard)</text>
+<text x="500" y="122" font-size="12" fill="#2c3e50">• Software corruption</text>
+<text x="500" y="144" font-size="12" fill="#2c3e50">• Power outage / surge</text>
+<text x="500" y="166" font-size="12" fill="#2c3e50">• Network failure</text>
+<text x="500" y="188" font-size="12" fill="#2c3e50">• Firmware bug</text>
+<text x="500" y="210" font-size="12" fill="#2c3e50">• Cooling failure</text>
+<text x="500" y="242" font-size="11" fill="#5d6d7e" font-style="italic">High frequency;</text>
+<text x="500" y="258" font-size="11" fill="#5d6d7e" font-style="italic">often mitigated by</text>
+<text x="500" y="274" font-size="11" fill="#5d6d7e" font-style="italic">redundancy (RAID,</text>
+<text x="500" y="290" font-size="11" fill="#5d6d7e" font-style="italic">UPS, etc.).</text>
+</svg>
+</div>
+
+<div class="card highlight">
+<strong>Important distinction from Week 10:</strong> RAID protects against a single disk failure (fault tolerance), but it is <strong>not</strong> a backup. RAID cannot protect against accidental deletion, ransomware, fire, or multi-disk failure. Disaster recovery requires actual backups stored separately from the production system.
+</div>
+</section>
+
+<!-- ===== SECTION 3: RTO & RPO ===== -->
+<section id="rto-rpo">
+<h2>3. Recovery Time Objective (RTO) &amp; Recovery Point Objective (RPO)</h2>
+
+<p>RTO and RPO are the two most critical metrics in disaster recovery planning. Together they define how quickly you must recover and how much data loss is acceptable.</p>
+
+<h3>Recovery Time Objective (RTO)</h3>
+<div class="card">
+<strong>Definition:</strong> The <em>maximum tolerable duration of time</em> that a system can be down after a failure or disaster before the impact becomes unacceptable to the organization.
+<br><br>
+<strong>In plain terms:</strong> "How long can we be without this system before it's a serious problem?"
+</div>
+
+<h3>Recovery Point Objective (RPO)</h3>
+<div class="card">
+<strong>Definition:</strong> The <em>maximum tolerable period of time</em> in which data might be lost due to a disaster, measured backward from the moment of the disaster to the last usable backup.
+<br><br>
+<strong>In plain terms:</strong> "How much data (measured in time) can we afford to lose?"
+</div>
+
+<h3>RTO &amp; RPO Timeline</h3>
+<div class="diagram-container">
+<svg class="timeline-svg" viewBox="0 0 750 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Timeline diagram showing the relationship between last backup, disaster event, RPO (data loss window), and RTO (maximum downtime)">
+<!-- Timeline base -->
+<line x1="50" y1="120" x2="700" y2="120" stroke="#2c3e50" stroke-width="2"/>
+<!-- Last backup marker -->
+<line x1="150" y1="100" x2="150" y2="140" stroke="#27ae60" stroke-width="3"/>
+<text x="150" y="88" text-anchor="middle" font-size="11" font-weight="bold" fill="#27ae60">Last Backup</text>
+<text x="150" y="160" text-anchor="middle" font-size="10" fill="#5d6d7e">e.g., 11:00 PM</text>
+<!-- Disaster marker -->
+<line x1="400" y1="100" x2="400" y2="140" stroke="#c0392b" stroke-width="3"/>
+<text x="400" y="88" text-anchor="middle" font-size="11" font-weight="bold" fill="#c0392b">DISASTER</text>
+<text x="400" y="160" text-anchor="middle" font-size="10" fill="#5d6d7e">e.g., 3:00 PM next day</text>
+<!-- Recovery complete -->
+<line x1="600" y1="100" x2="600" y2="140" stroke="#2980b9" stroke-width="3"/>
+<text x="600" y="88" text-anchor="middle" font-size="11" font-weight="bold" fill="#2980b9">Recovery Complete</text>
+<text x="600" y="160" text-anchor="middle" font-size="10" fill="#5d6d7e">e.g., 7:00 PM</text>
+<!-- RPO bracket -->
+<line x1="150" y1="50" x2="400" y2="50" stroke="#e67e22" stroke-width="2"/>
+<line x1="150" y1="44" x2="150" y2="56" stroke="#e67e22" stroke-width="2"/>
+<line x1="400" y1="44" x2="400" y2="56" stroke="#e67e22" stroke-width="2"/>
+<text x="275" y="42" text-anchor="middle" font-size="12" font-weight="bold" fill="#e67e22">RPO – Data Loss Window</text>
+<text x="275" y="68" text-anchor="middle" font-size="10" fill="#5d6d7e">(16 hours of data at risk)</text>
+<!-- RTO bracket -->
+<line x1="400" y1="180" x2="600" y2="180" stroke="#8e44ad" stroke-width="2"/>
+<line x1="400" y1="174" x2="400" y2="186" stroke="#8e44ad" stroke-width="2"/>
+<line x1="600" y1="174" x2="600" y2="186" stroke="#8e44ad" stroke-width="2"/>
+<text x="500" y="200" text-anchor="middle" font-size="12" font-weight="bold" fill="#8e44ad">RTO – Maximum Downtime</text>
+<text x="500" y="216" text-anchor="middle" font-size="10" fill="#5d6d7e">(4 hours to restore)</text>
+<!-- Arrow tips -->
+<polygon points="146,50 154,47 154,53" fill="#e67e22"/>
+<polygon points="404,50 396,47 396,53" fill="#e67e22"/>
+<polygon points="396,180 404,177 404,183" fill="#8e44ad"/>
+<polygon points="604,180 596,177 596,183" fill="#8e44ad"/>
+</svg>
+</div>
+
+<h3>RTO &amp; RPO at Different Scales</h3>
+<table>
+<caption>Example RTO and RPO values for different system types</caption>
+<thead>
+<tr><th>System Type</th><th>Typical RTO</th><th>Typical RPO</th><th>Rationale</th></tr>
+</thead>
+<tbody>
+<tr><td>E-commerce website</td><td>Minutes</td><td>Near-zero</td><td>Revenue loss per minute of downtime; transactions cannot be lost</td></tr>
+<tr><td>Email server</td><td>1–4 hours</td><td>1–4 hours</td><td>Important but users can wait briefly; some message loss tolerable</td></tr>
+<tr><td>Internal file server</td><td>4–8 hours</td><td>24 hours</td><td>Daily backup acceptable; users can work around short outages</td></tr>
+<tr><td>Development/test server</td><td>1–3 days</td><td>1 week</td><td>Non-production; can be rebuilt from code repositories</td></tr>
+<tr><td>Archive/compliance system</td><td>1–7 days</td><td>24 hours</td><td>Rarely accessed but data must be preserved</td></tr>
+</tbody>
+</table>
+
+<div class="card highlight">
+<strong>The Cost Relationship:</strong> Tighter RTO and RPO requirements cost more to achieve. A near-zero RPO may require real-time replication (expensive). A 24-hour RPO only requires daily backups (inexpensive). DR planning always involves balancing protection against budget.
+</div>
+</section>
+
+<!-- ===== SECTION 4: BIA ===== -->
+<section id="bia">
+<h2>4. Business Impact Analysis (BIA)</h2>
+
+<p>A <strong>Business Impact Analysis</strong> is the process of identifying an organization's critical systems and determining the impact of their unavailability. The BIA drives RTO and RPO decisions by answering: <em>"What happens to the business if this system goes down, and for how long?"</em></p>
+
+<h3>BIA Process</h3>
+<ol>
+<li><strong>Inventory systems</strong> – List all IT systems and services.</li>
+<li><strong>Assess impact</strong> – For each system, determine the business impact of downtime (financial loss, productivity loss, legal/compliance risk, reputation damage).</li>
+<li><strong>Assign criticality</strong> – Rate each system (Critical, High, Medium, Low).</li>
+<li><strong>Determine RTO/RPO</strong> – Based on criticality and impact, assign recovery targets.</li>
+<li><strong>Prioritize recovery order</strong> – Systems with the lowest RTO are recovered first.</li>
+</ol>
+
+<h3>Sample BIA Table – Small Organization</h3>
+<table>
+<caption>Business Impact Analysis for a small organization with six systems</caption>
+<thead>
+<tr><th>System</th><th>Function</th><th>Criticality</th><th>RTO</th><th>RPO</th><th>Recovery Priority</th></tr>
+</thead>
+<tbody>
+<tr><td>Firewall (pfSense)</td><td>Network connectivity, security</td><td>Critical</td><td>1 hour</td><td>1 week</td><td>1</td></tr>
+<tr><td>Domain Controller (AD)</td><td>Authentication, group policy</td><td>Critical</td><td>4 hours</td><td>24 hours</td><td>2</td></tr>
+<tr><td>File Server (Linux)</td><td>Shared files, DNS</td><td>High</td><td>4 hours</td><td>24 hours</td><td>3</td></tr>
+<tr><td>Email Server</td><td>Internal/external communication</td><td>High</td><td>4 hours</td><td>4 hours</td><td>4</td></tr>
+<tr><td>Monitoring (Splunk)</td><td>Log analysis, security alerts</td><td>Medium</td><td>8 hours</td><td>24 hours</td><td>5</td></tr>
+<tr><td>Development Server</td><td>Testing, staging</td><td>Low</td><td>3 days</td><td>1 week</td><td>6</td></tr>
+</tbody>
+</table>
+
+<div class="card info">
+<strong>Notice the pattern:</strong> The pfSense firewall has a very tight RTO (1 hour) because without network connectivity, <em>nothing</em> else works—but its RPO is relaxed (1 week) because its configuration rarely changes. Conversely, an email server might have a tight RPO (4 hours) because messages are constantly arriving, even if its RTO is more relaxed.
+</div>
+
+<details>
+<summary>Deeper Dive: Quantifying Business Impact</summary>
+<div class="details-body">
+<p>Organizations often quantify impact in dollar terms to justify DR spending:</p>
+<ul>
+<li><strong>Revenue impact:</strong> Lost sales per hour of downtime (e.g., an e-commerce site generating $10,000/hour).</li>
+<li><strong>Productivity impact:</strong> Number of employees idle × average hourly cost.</li>
+<li><strong>Contractual impact:</strong> SLA penalties, late delivery fees.</li>
+<li><strong>Regulatory impact:</strong> Fines for non-compliance (HIPAA, PCI-DSS).</li>
+<li><strong>Reputation impact:</strong> Customer trust erosion (hardest to quantify).</li>
+</ul>
+<p>For your Project 3 lab environment, think of criticality in terms of <em>dependency chains</em>: if pfSense is down, no other system can communicate externally. If AD is down, no one can authenticate. These dependencies determine recovery priority.</p>
+</div>
+</details>
+</section>
+
+<!-- ===== SECTION 5: DR PLAN COMPONENTS ===== -->
+<section id="dr-plan">
+<h2>5. DR Plan Components &amp; Testing</h2>
+
+<p>A complete disaster recovery plan addresses three pillars: <strong>People</strong>, <strong>Processes</strong>, and <strong>Technology</strong>. The plan must be documented, accessible, and regularly tested.</p>
+
+<details>
+<summary>People – Roles &amp; Communication</summary>
+<div class="details-body">
+<ul>
+<li><strong>DR team roles:</strong> DR coordinator, system administrators (by platform), network administrator, management liaison.</li>
+<li><strong>Contact lists:</strong> Primary and secondary contacts with phone, email, and alternate communication methods.</li>
+<li><strong>Escalation procedures:</strong> Who to contact if the primary person is unavailable; when to escalate to management or vendors.</li>
+<li><strong>Communication plan:</strong> How to notify stakeholders (employees, customers, partners) during an incident.</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>Processes – Recovery Procedures</summary>
+<div class="details-body">
+<ul>
+<li><strong>Recovery procedures (runbooks):</strong> Step-by-step instructions for restoring each system, written so that someone other than the original administrator can follow them.</li>
+<li><strong>Recovery priority order:</strong> Which systems to restore first (based on BIA).</li>
+<li><strong>Decision trees:</strong> Criteria for declaring a disaster; when to fail over vs. repair in place.</li>
+<li><strong>Communication procedures:</strong> Status update cadence, stakeholder notification templates.</li>
+<li><strong>Post-incident review:</strong> After-action report template, lessons learned process.</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>Technology – Backup &amp; Recovery Infrastructure</summary>
+<div class="details-body">
+<ul>
+<li><strong>Backup systems:</strong> Automated backup solutions (covered in Module 15.3), backup storage hardware/services.</li>
+<li><strong>Recovery sites:</strong> Hot site (ready to go), warm site (partially configured), cold site (space and power only)—awareness level.</li>
+<li><strong>Redundant infrastructure:</strong> Redundant network paths, UPS/generator, spare hardware.</li>
+<li><strong>Recovery tools:</strong> Boot media, installation media, recovery keys, license keys—all stored securely offsite.</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>Documentation Requirements</summary>
+<div class="details-body">
+<p>A DR plan is only useful if it is:</p>
+<ul>
+<li><strong>Written down</strong> – Not just in someone's head.</li>
+<li><strong>Accessible during a disaster</strong> – Stored offsite/cloud, not only on the servers it's meant to recover.</li>
+<li><strong>Current</strong> – Updated whenever infrastructure changes.</li>
+<li><strong>Clear</strong> – Written for the audience who will use it under stress.</li>
+</ul>
+<p>Minimum documentation includes: system inventory, BIA table, contact list, recovery priority matrix, step-by-step runbooks, backup schedule and locations, and verification/testing logs.</p>
+</div>
+</details>
+
+<details>
+<summary>Testing Cadence – Validating the Plan</summary>
+<div class="details-body">
+<p>An untested plan is only slightly better than no plan. Testing levels (from least to most disruptive):</p>
+<table>
+<thead>
+<tr><th>Test Type</th><th>Description</th><th>Frequency</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Documentation review</strong></td><td>Walk through the plan on paper; verify contacts, procedures, and assumptions are current.</td><td>Quarterly</td></tr>
+<tr><td><strong>Tabletop exercise</strong></td><td>Team discusses a hypothetical scenario step-by-step; identifies gaps without touching systems.</td><td>Semi-annually</td></tr>
+<tr><td><strong>Partial test</strong></td><td>Restore a single system or subset from backup; verify data integrity and measure recovery time.</td><td>Monthly–Quarterly</td></tr>
+<tr><td><strong>Full DR drill</strong></td><td>Simulate complete failure; recover all critical systems; measure actual RTO against targets.</td><td>Annually</td></tr>
+</tbody>
+</table>
+<p><strong>Key principle:</strong> Every test should produce a written report documenting what worked, what failed, and what changes are needed. The DR plan is a living document.</p>
+</div>
+</details>
+</section>
+
+<!-- ===== SECTION 6: MINI-CASE ===== -->
+<section id="mini-case">
+<h2>6. Mini-Case: Assigning RTO &amp; RPO</h2>
+
+<div class="case-scenario">
+<h4>Scenario: Riverside Community Library</h4>
+<p>Riverside Community Library serves 5,000 patrons and has a small IT team of two people. They operate the following systems:</p>
+<ul>
+<li><strong>Catalog Server</strong> – Hosts the online catalog that patrons and staff use to search and check out books. Used constantly during operating hours (9 AM–8 PM).</li>
+<li><strong>Public Wi-Fi Gateway</strong> – Provides internet access to ~200 daily visitors. Patrons expect it to be available whenever the library is open.</li>
+<li><strong>Staff File Server</strong> – Stores administrative documents, grant applications, and financial records. Staff access it throughout the day.</li>
+<li><strong>Digital Archive Server</strong> – Hosts a digitized collection of local historical documents. Accessed occasionally by researchers; content changes rarely (new items added monthly).</li>
+</ul>
+<p>The library's annual IT budget is modest. They cannot afford real-time replication or hot-site solutions. Consider what RTO and RPO would be <em>reasonable</em> for each system given the library's size, budget, and usage patterns.</p>
+</div>
+
+<div class="quiz-block" id="case-quiz">
+
+<!-- Question 1 -->
+<div class="quiz-question" id="q1">
+<h4 id="q1-label">Question 1: Catalog Server – RTO</h4>
+<p>What is the most appropriate RTO for the Catalog Server?</p>
+<ul class="quiz-options" role="radiogroup" aria-labelledby="q1-label">
+<li><label><input type="radio" name="q1" value="a"> 15 minutes</label></li>
+<li><label><input type="radio" name="q1" value="b"> 2–4 hours</label></li>
+<li><label><input type="radio" name="q1" value="c"> 24 hours</label></li>
+<li><label><input type="radio" name="q1" value="d"> 1 week</label></li>
+</ul>
+<button class="btn-check" onclick="checkAnswer('q1','b')">Check Answer</button>
+<div class="feedback" id="q1-correct" aria-live="polite">
+<strong>Correct!</strong> 2–4 hours is appropriate. The catalog is critical during operating hours (staff cannot check out books without it), so extended downtime is unacceptable. However, 15 minutes would require expensive high-availability solutions beyond the library's budget. A few hours allows the team to restore from backup or troubleshoot while staff use manual workarounds temporarily.
+</div>
+<div class="feedback" id="q1-incorrect" aria-live="polite"></div>
+</div>
+
+<!-- Question 2 -->
+<div class="quiz-question" id="q2">
+<h4 id="q2-label">Question 2: Catalog Server – RPO</h4>
+<p>What is the most appropriate RPO for the Catalog Server?</p>
+<ul class="quiz-options" role="radiogroup" aria-labelledby="q2-label">
+<li><label><input type="radio" name="q2" value="a"> Near-zero (real-time replication)</label></li>
+<li><label><input type="radio" name="q2" value="b"> 4 hours</label></li>
+<li><label><input type="radio" name="q2" value="c"> 24 hours</label></li>
+<li><label><input type="radio" name="q2" value="d"> 1 week</label></li>
+</ul>
+<button class="btn-check" onclick="checkAnswer('q2','c')">Check Answer</button>
+<div class="feedback" id="q2-correct" aria-live="polite">
+<strong>Correct!</strong> 24 hours (daily backup) is reasonable. The catalog changes throughout the day as books are checked in/out, but these transactions can be re-entered from physical records if needed. A daily backup balances data protection against the library's limited budget. Real-time replication would be overkill for this use case.
+</div>
+<div class="feedback" id="q2-incorrect" aria-live="polite"></div>
+</div>
+
+<!-- Question 3 -->
+<div class="quiz-question" id="q3">
+<h4 id="q3-label">Question 3: Digital Archive Server – RTO</h4>
+<p>What is the most appropriate RTO for the Digital Archive Server?</p>
+<ul class="quiz-options" role="radiogroup" aria-labelledby="q3-label">
+<li><label><input type="radio" name="q3" value="a"> 1 hour</label></li>
+<li><label><input type="radio" name="q3" value="b"> 4 hours</label></li>
+<li><label><input type="radio" name="q3" value="c"> 1–3 days</label></li>
+<li><label><input type="radio" name="q3" value="d"> 1 week</label></li>
+</ul>
+<button class="btn-check" onclick="checkAnswer('q3','c')">Check Answer</button>
+<div class="feedback" id="q3-correct" aria-live="polite">
+<strong>Correct!</strong> 1–3 days is appropriate. The archive is accessed occasionally by researchers—not daily by all staff. Its unavailability is an inconvenience, not a crisis. The small IT team can prioritize more critical systems first and restore the archive when time permits.
+</div>
+<div class="feedback" id="q3-incorrect" aria-live="polite"></div>
+</div>
+
+<!-- Question 4 -->
+<div class="quiz-question" id="q4">
+<h4 id="q4-label">Question 4: Digital Archive Server – RPO</h4>
+<p>What is the most appropriate RPO for the Digital Archive Server?</p>
+<ul class="quiz-options" role="radiogroup" aria-labelledby="q4-label">
+<li><label><input type="radio" name="q4" value="a"> 4 hours</label></li>
+<li><label><input type="radio" name="q4" value="b"> 24 hours</label></li>
+<li><label><input type="radio" name="q4" value="c"> 1 week</label></li>
+<li><label><input type="radio" name="q4" value="d"> 1 month</label></li>
+</ul>
+<button class="btn-check" onclick="checkAnswer('q4','d')">Check Answer</button>
+<div class="feedback" id="q4-correct" aria-live="polite">
+<strong>Correct!</strong> A monthly RPO (or even weekly) is reasonable here. New items are only added monthly, so the data changes very infrequently. A monthly full backup captures all changes with minimal risk of significant data loss. This also minimizes storage costs for what is likely a large collection of image files.
+</div>
+<div class="feedback" id="q4-incorrect" aria-live="polite"></div>
+</div>
+
+<!-- Question 5 -->
+<div class="quiz-question" id="q5">
+<h4 id="q5-label">Question 5: Recovery Priority Order</h4>
+<p>Based on the scenario, which system should be restored <strong>first</strong> after a disaster that takes down all four systems simultaneously?</p>
+<ul class="quiz-options" role="radiogroup" aria-labelledby="q5-label">
+<li><label><input type="radio" name="q5" value="a"> Catalog Server</label></li>
+<li><label><input type="radio" name="q5" value="b"> Public Wi-Fi Gateway</label></li>
+<li><label><input type="radio" name="q5" value="c"> Staff File Server</label></li>
+<li><label><input type="radio" name="q5" value="d"> Digital Archive Server</label></li>
+</ul>
+<button class="btn-check" onclick="checkAnswer('q5','b')">Check Answer</button>
+<div class="feedback" id="q5-correct" aria-live="polite">
+<strong>Correct!</strong> The Public Wi-Fi Gateway should be restored first. Like a firewall, the gateway provides fundamental network connectivity. Without it, patrons have no internet access and other network-dependent systems (including the catalog) may not function properly. Restoring network infrastructure first enables everything else to come back online. This mirrors the pattern in enterprise environments where network/firewall devices have the tightest RTO.
+</div>
+<div class="feedback" id="q5-incorrect" aria-live="polite"></div>
+</div>
+
+</div>
+</section>
+
+<!-- ===== SECTION 7: PROJECT 3 CONNECTION ===== -->
+<section id="project3">
+<h2>7. Connection to Project 3</h2>
+
+<div class="card project">
+<h3 style="margin-top:0;color:#1e8449;">How This Module Connects to Your Project 3 Deliverable</h3>
+<p><strong>Project 3, Part D.1: Backup Strategy Documentation</strong> requires you to document a comprehensive backup strategy for your lab infrastructure. The DR concepts you learned in this module directly inform that deliverable:</p>
+
+<table>
+<caption>Mapping Module 15.1 concepts to Project 3 requirements</caption>
+<thead>
+<tr><th>Concept from This Module</th><th>Project 3 Application</th></tr>
+</thead>
+<tbody>
+<tr><td>System criticality (BIA)</td><td>Identify which of your lab systems (pfSense, Windows Server, Linux Server, Splunk) are most critical and why</td></tr>
+<tr><td>Recovery Time Objective (RTO)</td><td>Document an RTO for each system with justification (e.g., pfSense = 1 hour because it provides network connectivity)</td></tr>
+<tr><td>Recovery Point Objective (RPO)</td><td>Document an RPO for each system that drives your backup frequency (e.g., 24-hour RPO → daily backups)</td></tr>
+<tr><td>Recovery priority order</td><td>Specify the order in which you would restore your systems after a complete failure</td></tr>
+<tr><td>DR plan documentation</td><td>Your backup strategy document serves as the foundation of a DR plan for your lab environment</td></tr>
+</tbody>
+</table>
+
+<h4>What to Do Next</h4>
+<ul>
+<li>Begin thinking about your four lab systems (pfSense, Windows Server, Linux Server, Splunk) in terms of criticality and dependencies.</li>
+<li>Draft preliminary RTO and RPO values for each system—you will refine these as you work through Modules 15.2–15.4.</li>
+<li>In <strong>Module 15.2</strong>, you will learn about backup types and strategies that allow you to <em>achieve</em> the RPO targets you set here.</li>
+</ul>
+
+<p style="margin-bottom:0;"><strong>Reminder:</strong> Project 3 is due <strong>Monday, May 18, 2026, 11:59 PM</strong>. The backup strategy is one component of the larger project. Use the remaining weeks to implement, test, and document your approach.</p>
+</div>
+</section>
+
+</main>
+
+<script>
+function checkAnswer(qId, correctValue) {
+const question = document.getElementById(qId);
+const selected = question.querySelector('input[name="'+qId+'"]:checked');
+const correctDiv = document.getElementById(qId+'-correct');
+const incorrectDiv = document.getElementById(qId+'-incorrect');
+const btn = question.querySelector('.btn-check');
+
+// Reset
+correctDiv.style.display = 'none';
+incorrectDiv.style.display = 'none';
+correctDiv.className = 'feedback';
+incorrectDiv.className = 'feedback';
+
+if (!selected) {
+incorrectDiv.innerHTML = '<strong>Please select an answer before checking.</strong>';
+incorrectDiv.className = 'feedback incorrect';
+incorrectDiv.style.display = 'block';
+return;
+}
+
+if (selected.value === correctValue) {
+correctDiv.className = 'feedback correct';
+correctDiv.style.display = 'block';
+} else {
+// Build incorrect feedback
+const explanations = {
+'q1': {
+'a': 'A 15-minute RTO would require high-availability clustering or hot-standby solutions—expensive and beyond this library\'s budget. Think about what\'s achievable for a small team.',
+'c': '24 hours means the library could go an entire day without being able to check out books. Staff and patrons would be significantly impacted during operating hours.',
+'d': 'A week without the catalog would be severely disruptive to daily operations. The catalog is used constantly during operating hours.'
+},
+'q2': {
+'a': 'Real-time replication is the most expensive RPO to achieve and is typically reserved for financial transactions or life-safety systems. A library catalog doesn\'t warrant this level of investment.',
+'b': '4-hour RPO would require backups every 4 hours. While achievable, it\'s more aggressive (and costly in storage/complexity) than needed for catalog data that can be reconstructed from physical records.',
+'d': 'A 1-week RPO means up to a week of checkouts/returns could be lost. While physical records exist, re-entering a week of transactions would be very labor-intensive.'
+},
+'q3': {
+'a': '1 hour is extremely aggressive for a system that researchers use occasionally. This would require hot-standby infrastructure that isn\'t justified by the usage pattern.',
+'b': '4 hours is tighter than needed. The archive isn\'t used daily by most people, and a researcher can be asked to return later.',
+'d': 'While the archive is low-priority, a full week of downtime might be excessive if a researcher has traveled specifically to use it. 1–3 days balances priority against reasonable service.'
+},
+'q4': {
+'a': '4-hour RPO would require backing up large image files multiple times per day—expensive in storage and unnecessary when new content is only added monthly.',
+'b': '24-hour RPO (daily backups) of a large archive collection would consume significant storage space for data that barely changes. It\'s more protection than the change rate warrants.',
+'c': 'Weekly is acceptable but slightly more aggressive than needed given that content only changes monthly. Monthly aligns backup frequency with the actual data change rate.'
+},
+'q5': {
+'a': 'The Catalog Server is critical, but it likely depends on network connectivity provided by the Wi-Fi Gateway. Restore the network infrastructure first so other systems can function when they come back online.',
+'c': 'The Staff File Server is important but not the highest priority. Staff can work on other tasks briefly while network infrastructure and the catalog are restored.',
+'d': 'The Digital Archive is the lowest priority—it\'s accessed occasionally and researchers can wait. Critical infrastructure and daily-use systems come first.'
+}
+};
+const explanation = explanations[qId][selected.value] || 'That\'s not quite right. Review the scenario details and consider the system\'s usage patterns, criticality, and the organization\'s budget constraints.';
+incorrectDiv.innerHTML = '<strong>Not quite.</strong> ' + explanation + ' Try again!';
+incorrectDiv.className = 'feedback incorrect';
+incorrectDiv.style.display = 'block';
+}
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 15.2 – Backup Types, Strategies &amp; Scheduling | CSC 152</title>
+<style>
+:root {
+--primary: #1a5276;
+--primary-light: #2980b9;
+--accent: #148f77;
+--accent-light: #1abc9c;
+--warning: #d4ac0d;
+--warning-bg: #fef9e7;
+--info-bg: #eaf2f8;
+--info-border: #2980b9;
+--success-bg: #eafaf1;
+--success-border: #1e8449;
+--project-bg: #f4ecf7;
+--project-border: #7d3c98;
+--card-bg: #fafafa;
+--text: #212529;
+--text-muted: #555;
+--border: #ddd;
+--nav-bg: #1a5276;
+--nav-text: #fff;
+--code-bg: #f4f4f4;
+--correct: #1e8449;
+--incorrect: #c0392b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+font-size: 1rem;
+line-height: 1.7;
+color: var(--text);
+background: #fff;
+padding-top: 56px;
+}
+
+/* ===== NAV BAR ===== */
+nav.topnav {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+z-index: 1000;
+background: var(--nav-bg);
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+padding: 0.4rem 1rem;
+gap: 0.25rem 0.75rem;
+}
+nav.topnav a {
+color: var(--nav-text);
+text-decoration: none;
+font-size: 0.82rem;
+padding: 0.3rem 0.5rem;
+border-radius: 4px;
+white-space: nowrap;
+}
+nav.topnav a:hover,
+nav.topnav a:focus {
+background: rgba(255,255,255,0.2);
+outline: 2px solid #fff;
+outline-offset: 1px;
+}
+
+/* ===== MAIN CONTENT ===== */
+main {
+max-width: 900px;
+margin: 0 auto;
+padding: 2rem 1.25rem 4rem;
+}
+
+h1 {
+font-size: 1.75rem;
+color: var(--primary);
+margin-bottom: 0.25rem;
+}
+h1 .subtitle {
+display: block;
+font-size: 1rem;
+font-weight: 400;
+color: var(--text-muted);
+margin-top: 0.25rem;
+}
+h2 {
+font-size: 1.35rem;
+color: var(--primary);
+margin: 2.5rem 0 0.75rem;
+padding-bottom: 0.3rem;
+border-bottom: 2px solid var(--primary-light);
+scroll-margin-top: 64px;
+}
+h3 {
+font-size: 1.1rem;
+color: var(--primary);
+margin: 1.5rem 0 0.5rem;
+}
+h4 {
+font-size: 1rem;
+margin: 1rem 0 0.4rem;
+color: var(--text);
+}
+
+p { margin-bottom: 1rem; }
+ul, ol { margin: 0 0 1rem 1.5rem; }
+li { margin-bottom: 0.35rem; }
+
+/* ===== CARDS ===== */
+.card {
+border-left: 4px solid var(--info-border);
+background: var(--info-bg);
+padding: 1rem 1.25rem;
+border-radius: 6px;
+margin: 1.25rem 0;
+}
+.card.success {
+border-left-color: var(--success-border);
+background: var(--success-bg);
+}
+.card.project {
+border-left-color: var(--project-border);
+background: var(--project-bg);
+}
+.card.warning {
+border-left-color: var(--warning);
+background: var(--warning-bg);
+}
+
+/* ===== TABLES ===== */
+table {
+width: 100%;
+border-collapse: collapse;
+margin: 1rem 0 1.5rem;
+font-size: 0.92rem;
+}
+caption {
+font-weight: 600;
+text-align: left;
+margin-bottom: 0.4rem;
+color: var(--primary);
+}
+th, td {
+border: 1px solid var(--border);
+padding: 0.55rem 0.75rem;
+text-align: left;
+vertical-align: top;
+}
+th {
+background: var(--primary);
+color: #fff;
+font-weight: 600;
+}
+tr:nth-child(even) { background: #f9f9f9; }
+
+/* ===== DIAGRAMS (CSS-based) ===== */
+.backup-timeline {
+display: flex;
+align-items: flex-end;
+gap: 4px;
+margin: 1.25rem 0;
+padding: 1rem;
+background: var(--card-bg);
+border: 1px solid var(--border);
+border-radius: 6px;
+overflow-x: auto;
+}
+.backup-timeline .day {
+display: flex;
+flex-direction: column;
+align-items: center;
+min-width: 70px;
+}
+.backup-timeline .bar {
+width: 40px;
+border-radius: 4px 4px 0 0;
+margin-bottom: 4px;
+}
+.backup-timeline .bar.full { background: var(--primary); }
+.backup-timeline .bar.inc { background: var(--accent-light); }
+.backup-timeline .bar.diff { background: #f39c12; }
+.backup-timeline .label {
+font-size: 0.72rem;
+text-align: center;
+color: var(--text-muted);
+}
+
+/* ===== COLLAPSIBLE DETAILS ===== */
+details {
+margin: 1rem 0;
+border: 1px solid var(--border);
+border-radius: 6px;
+overflow: hidden;
+}
+details summary {
+cursor: pointer;
+padding: 0.75rem 1rem;
+background: var(--card-bg);
+font-weight: 600;
+list-style: none;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+details summary::before {
+content: "▶";
+font-size: 0.7rem;
+transition: transform 0.2s;
+}
+details[open] summary::before {
+transform: rotate(90deg);
+}
+details summary:focus {
+outline: 2px solid var(--primary-light);
+outline-offset: -2px;
+}
+details .details-body {
+padding: 1rem 1.25rem;
+}
+
+/* ===== KNOWLEDGE CHECK ===== */
+.kc-question {
+background: var(--card-bg);
+border: 1px solid var(--border);
+border-radius: 6px;
+padding: 1.25rem;
+margin: 1.25rem 0;
+}
+.kc-question p.q-stem {
+font-weight: 600;
+margin-bottom: 0.75rem;
+}
+.kc-question label {
+display: block;
+padding: 0.4rem 0.6rem;
+margin: 0.25rem 0;
+border-radius: 4px;
+cursor: pointer;
+}
+.kc-question label:hover { background: #eee; }
+.kc-question input[type="radio"] { margin-right: 0.5rem; }
+.kc-feedback {
+margin-top: 0.75rem;
+padding: 0.75rem 1rem;
+border-radius: 4px;
+display: none;
+font-size: 0.92rem;
+}
+.kc-feedback.correct {
+background: var(--success-bg);
+border: 1px solid var(--success-border);
+color: var(--correct);
+}
+.kc-feedback.incorrect {
+background: #fdedec;
+border: 1px solid var(--incorrect);
+color: var(--incorrect);
+}
+.kc-btn {
+margin-top: 0.75rem;
+padding: 0.5rem 1.25rem;
+background: var(--primary);
+color: #fff;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+font-size: 0.9rem;
+}
+.kc-btn:hover { background: var(--primary-light); }
+.kc-btn:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ===== UTILITY ===== */
+.sr-only {
+position: absolute;
+width: 1px; height: 1px;
+padding: 0; margin: -1px;
+overflow: hidden;
+clip: rect(0,0,0,0);
+border: 0;
+}
+code {
+background: var(--code-bg);
+padding: 0.15rem 0.4rem;
+border-radius: 3px;
+font-size: 0.88rem;
+}
+.text-muted { color: var(--text-muted); }
+.mt-0 { margin-top: 0; }
+
+@media (max-width: 600px) {
+nav.topnav { padding: 0.3rem 0.5rem; }
+nav.topnav a { font-size: 0.72rem; padding: 0.25rem 0.35rem; }
+main { padding: 1.5rem 0.75rem 3rem; }
+h1 { font-size: 1.4rem; }
+h2 { font-size: 1.15rem; }
+table { font-size: 0.82rem; }
+th, td { padding: 0.4rem 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NAVIGATION ===== -->
+<nav class="topnav" aria-label="Module sections">
+<a href="#objectives">Objectives</a>
+<a href="#backup-types">Backup Types</a>
+<a href="#comparison">Comparison</a>
+<a href="#rotation-schemes">Rotation Schemes</a>
+<a href="#destinations">Destinations</a>
+<a href="#retention">Retention</a>
+<a href="#schedule-design">Schedule Design</a>
+<a href="#knowledge-check">Knowledge Check</a>
+<a href="#project3">Project 3</a>
+</nav>
+
+<main>
+
+<!-- ===== HEADER ===== -->
+<h1>Module 15.2 – Backup Types, Strategies &amp; Scheduling
+<span class="subtitle">CSC 152 – Week 15: Disaster Recovery &amp; Backup Solutions</span>
+</h1>
+
+<div class="card">
+<strong>Estimated Time:</strong> 1.0–1.5 hours &nbsp;|&nbsp;
+<strong>CSLO 4:</strong> Describe disaster recovery and implement backup techniques &nbsp;|&nbsp;
+<strong>Objectives:</strong> W15.2, W15.3, W15.8
+</div>
+
+<!-- ===== SECTION 0: OBJECTIVES ===== -->
+<section id="objectives">
+<h2>Objectives &amp; Context</h2>
+
+<p>In Module 15.1 you learned <em>why</em> disaster recovery matters and how Recovery Time Objective (RTO) and Recovery Point Objective (RPO) quantify an organization's tolerance for downtime and data loss. This module answers the next logical questions: <strong>what</strong> types of backups exist, and <strong>when</strong> should they run?</p>
+
+<p>By the end of this module you will be able to:</p>
+<ul>
+<li>Define and distinguish full, incremental, and differential backups.</li>
+<li>Evaluate the tradeoffs of each backup type in terms of backup time, storage consumption, restore time, and restore complexity.</li>
+<li>Explain industry-standard rotation schemes: Grandfather-Father-Son (GFS) and the 3-2-1 rule.</li>
+<li>Identify appropriate backup destinations and media for different scenarios.</li>
+<li>Design a backup schedule that balances RPO requirements against storage and bandwidth constraints.</li>
+</ul>
+
+<div class="card warning">
+<strong>Key Insight:</strong> Your backup strategy is the primary mechanism for achieving your RPO targets. A 24-hour RPO means you need <em>at least</em> daily backups. A 1-hour RPO demands near-continuous data protection. The backup type and schedule you choose directly determine whether you can meet your recovery goals.
+</div>
+</section>
+
+<!-- ===== SECTION 1: FULL BACKUP ===== -->
+<section id="backup-types">
+<h2>2. Full, Incremental, and Differential Backups</h2>
+
+<h3>2.1 Full Backup</h3>
+<p>A <strong>full backup</strong> creates a complete copy of all selected data every time it runs. It is the foundation upon which the other backup types depend.</p>
+
+<h4>How It Works</h4>
+<p>Every file and directory in the backup set is copied to the backup destination regardless of whether it has changed since the last backup. After completion, the archive bit (or equivalent marker) on each file is cleared, indicating it has been backed up.</p>
+
+<div class="backup-timeline" role="img" aria-label="Full backup diagram showing equal-sized backups each day of the week">
+<div class="day"><div class="bar full" style="height:100px;"></div><div class="label">Sun<br>Full</div></div>
+<div class="day"><div class="bar full" style="height:100px;"></div><div class="label">Mon<br>Full</div></div>
+<div class="day"><div class="bar full" style="height:100px;"></div><div class="label">Tue<br>Full</div></div>
+<div class="day"><div class="bar full" style="height:100px;"></div><div class="label">Wed<br>Full</div></div>
+<div class="day"><div class="bar full" style="height:100px;"></div><div class="label">Thu<br>Full</div></div>
+<div class="day"><div class="bar full" style="height:100px;"></div><div class="label">Fri<br>Full</div></div>
+<div class="day"><div class="bar full" style="height:100px;"></div><div class="label">Sat<br>Full</div></div>
+</div>
+
+<h4>Advantages</h4>
+<ul>
+<li><strong>Simplest restore:</strong> Only a single backup set is needed to recover all data.</li>
+<li><strong>Self-contained:</strong> Each backup is independent — no dependency chain.</li>
+<li><strong>Fastest restore time:</strong> One media set to read.</li>
+</ul>
+
+<h4>Disadvantages</h4>
+<ul>
+<li><strong>Longest backup time:</strong> Every file is copied every run, even if unchanged.</li>
+<li><strong>Most storage consumed:</strong> Requires the most space per backup cycle.</li>
+<li><strong>Largest backup window:</strong> May not fit within maintenance windows for large datasets.</li>
+</ul>
+
+<h4>When to Use</h4>
+<p>Full backups are ideal for small datasets, critical systems requiring the fastest possible recovery, or as the periodic "baseline" in a combined strategy (e.g., weekly full + daily incremental).</p>
+
+<!-- ===== INCREMENTAL ===== -->
+<h3>2.2 Incremental Backup</h3>
+<p>An <strong>incremental backup</strong> copies only the data that has changed since the <em>last backup of any type</em> (full or incremental). Each incremental captures a small "slice" of changes.</p>
+
+<h4>How It Works</h4>
+<p>After a full backup on Sunday, Monday's incremental backs up only Monday's changes. Tuesday's incremental backs up only Tuesday's changes (not Monday's). Each backup is small and fast, but restoration requires assembling the full chain.</p>
+
+<div class="backup-timeline" role="img" aria-label="Incremental backup diagram showing a large full backup on Sunday followed by small incremental backups Monday through Saturday">
+<div class="day"><div class="bar full" style="height:100px;"></div><div class="label">Sun<br>Full</div></div>
+<div class="day"><div class="bar inc" style="height:20px;"></div><div class="label">Mon<br>Inc</div></div>
+<div class="day"><div class="bar inc" style="height:22px;"></div><div class="label">Tue<br>Inc</div></div>
+<div class="day"><div class="bar inc" style="height:18px;"></div><div class="label">Wed<br>Inc</div></div>
+<div class="day"><div class="bar inc" style="height:25px;"></div><div class="label">Thu<br>Inc</div></div>
+<div class="day"><div class="bar inc" style="height:20px;"></div><div class="label">Fri<br>Inc</div></div>
+<div class="day"><div class="bar inc" style="height:23px;"></div><div class="label">Sat<br>Inc</div></div>
+</div>
+
+<h4>Restore Process</h4>
+<p>To restore to Saturday's state, you need: <strong>Sunday's full + Monday's incremental + Tuesday's incremental + … + Saturday's incremental</strong>. All pieces in the chain must be intact and applied in order.</p>
+
+<h4>Advantages</h4>
+<ul>
+<li><strong>Fastest backup time:</strong> Only changed data is copied each run.</li>
+<li><strong>Least storage per run:</strong> Each incremental is small.</li>
+<li><strong>Smallest backup window:</strong> Ideal for environments with limited maintenance time.</li>
+</ul>
+
+<h4>Disadvantages</h4>
+<ul>
+<li><strong>Slowest restore:</strong> Must apply the full backup plus every incremental in sequence.</li>
+<li><strong>Most complex restore:</strong> If any single incremental in the chain is missing or corrupted, all subsequent data is lost.</li>
+<li><strong>Higher risk:</strong> Longer dependency chain means more points of failure.</li>
+</ul>
+
+<!-- ===== DIFFERENTIAL ===== -->
+<h3>2.3 Differential Backup</h3>
+<p>A <strong>differential backup</strong> copies all data that has changed since the <em>last full backup</em>. Unlike incrementals, differentials are cumulative — each one grows larger as the week progresses.</p>
+
+<h4>How It Works</h4>
+<p>After a full backup on Sunday, Monday's differential backs up Monday's changes. Tuesday's differential backs up both Monday's <em>and</em> Tuesday's changes. By Saturday, the differential contains all changes for the entire week.</p>
+
+<div class="backup-timeline" role="img" aria-label="Differential backup diagram showing a large full backup on Sunday followed by progressively growing differential backups Monday through Saturday">
+<div class="day"><div class="bar full" style="height:100px;"></div><div class="label">Sun<br>Full</div></div>
+<div class="day"><div class="bar diff" style="height:20px;"></div><div class="label">Mon<br>Diff</div></div>
+<div class="day"><div class="bar diff" style="height:35px;"></div><div class="label">Tue<br>Diff</div></div>
+<div class="day"><div class="bar diff" style="height:48px;"></div><div class="label">Wed<br>Diff</div></div>
+<div class="day"><div class="bar diff" style="height:58px;"></div><div class="label">Thu<br>Diff</div></div>
+<div class="day"><div class="bar diff" style="height:68px;"></div><div class="label">Fri<br>Diff</div></div>
+<div class="day"><div class="bar diff" style="height:80px;"></div><div class="label">Sat<br>Diff</div></div>
+</div>
+
+<h4>Restore Process</h4>
+<p>To restore to any point, you need only <strong>two</strong> backup sets: the last full backup + the most recent differential. This is significantly simpler and faster than incremental restores.</p>
+
+<h4>Advantages</h4>
+<ul>
+<li><strong>Faster restore than incremental:</strong> Only two media sets needed (full + latest differential).</li>
+<li><strong>Simpler restore:</strong> No dependency chain beyond the last full.</li>
+<li><strong>Good balance:</strong> Middle ground between full and incremental.</li>
+</ul>
+
+<h4>Disadvantages</h4>
+<ul>
+<li><strong>Growing backup size:</strong> Each differential is larger than the previous one.</li>
+<li><strong>More storage than incremental:</strong> Cumulative changes mean redundant data across differentials.</li>
+<li><strong>Longer backup time than incremental:</strong> Especially toward the end of the cycle.</li>
+</ul>
+</section>
+
+<!-- ===== SECTION 4: COMPARISON MATRIX ===== -->
+<section id="comparison">
+<h2>3. Comparison Matrix</h2>
+
+<p>The following table provides a side-by-side comparison to help you select the right backup type for a given scenario. Use this as a reference when designing your Project 3 backup strategy.</p>
+
+<table>
+<caption>Backup Type Comparison Matrix</caption>
+<thead>
+<tr>
+<th>Characteristic</th>
+<th>Full</th>
+<th>Incremental</th>
+<th>Differential</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>What is backed up</strong></td>
+<td>All selected data</td>
+<td>Changes since last backup (any type)</td>
+<td>Changes since last full backup</td>
+</tr>
+<tr>
+<td><strong>Backup time</strong></td>
+<td>Longest</td>
+<td>Shortest</td>
+<td>Moderate (grows over cycle)</td>
+</tr>
+<tr>
+<td><strong>Storage per cycle</strong></td>
+<td>Highest</td>
+<td>Lowest</td>
+<td>Moderate</td>
+</tr>
+<tr>
+<td><strong>Restore time</strong></td>
+<td>Fastest</td>
+<td>Slowest</td>
+<td>Moderate</td>
+</tr>
+<tr>
+<td><strong>Restore complexity</strong></td>
+<td>Simplest (1 set)</td>
+<td>Most complex (full + all incrementals)</td>
+<td>Moderate (full + latest differential)</td>
+</tr>
+<tr>
+<td><strong>Media sets for restore</strong></td>
+<td>1</td>
+<td>1 + <em>n</em> (where <em>n</em> = number of incrementals)</td>
+<td>2 (full + latest differential)</td>
+</tr>
+<tr>
+<td><strong>Risk if one set is lost</strong></td>
+<td>Lose that day's recovery point only</td>
+<td>Lose that day forward (chain broken)</td>
+<td>Lose that day only; earlier differentials still valid</td>
+</tr>
+<tr>
+<td><strong>Best for</strong></td>
+<td>Small datasets; fastest recovery needed</td>
+<td>Large datasets; limited backup window</td>
+<td>Balance of speed and simple recovery</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Worked Example: Storage Over One Week</h3>
+<div class="card">
+<p><strong>Scenario:</strong> A file server has 100 GB of total data. The daily change rate is approximately 5% (5 GB of new/modified data per day). Compare total storage consumed over one week (Sunday–Saturday) for each strategy.</p>
+
+<table>
+<caption>Weekly Storage Comparison (100 GB dataset, 5% daily change rate)</caption>
+<thead>
+<tr><th>Strategy</th><th>Calculation</th><th>Total Storage</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>Daily Full</td>
+<td>7 × 100 GB</td>
+<td><strong>700 GB</strong></td>
+</tr>
+<tr>
+<td>Full + Daily Incremental</td>
+<td>100 GB + (6 × 5 GB)</td>
+<td><strong>130 GB</strong></td>
+</tr>
+<tr>
+<td>Full + Daily Differential</td>
+<td>100 GB + (5 + 10 + 15 + 20 + 25 + 30) GB</td>
+<td><strong>205 GB</strong></td>
+</tr>
+</tbody>
+</table>
+<p class="text-muted">Note: The differential grows each day because it accumulates all changes since the full. By Saturday the differential is 30 GB (6 days × 5 GB/day).</p>
+</div>
+</section>
+
+<!-- ===== SECTION 5: ROTATION SCHEMES ===== -->
+<section id="rotation-schemes">
+<h2>4. Backup Rotation Schemes</h2>
+
+<p>A rotation scheme defines <em>how long</em> backups are retained and <em>how media are reused</em> over time. Rotation schemes ensure you have recovery points at multiple granularities (daily, weekly, monthly) without consuming unlimited storage.</p>
+
+<h3>4.1 Grandfather-Father-Son (GFS)</h3>
+<p>GFS is the most widely used rotation scheme in enterprise environments. It organizes backups into three tiers:</p>
+
+<table>
+<caption>GFS Rotation Tiers</caption>
+<thead>
+<tr><th>Tier</th><th>Name</th><th>Frequency</th><th>Typical Retention</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>Daily</td><td><strong>Son</strong></td><td>Every business day</td><td>7–14 days</td><td>Short-term recovery (accidental deletion, recent corruption)</td></tr>
+<tr><td>Weekly</td><td><strong>Father</strong></td><td>Once per week (e.g., Friday)</td><td>4–5 weeks</td><td>Medium-term recovery; point-in-time restore from past weeks</td></tr>
+<tr><td>Monthly</td><td><strong>Grandfather</strong></td><td>Once per month (e.g., last Friday)</td><td>12 months or longer</td><td>Long-term archival; compliance; historical recovery</td></tr>
+</tbody>
+</table>
+
+<h4>How GFS Works in Practice</h4>
+<ol>
+<li><strong>Daily (Son):</strong> Run an incremental or differential backup each business day. Keep for 1–2 weeks, then overwrite/delete.</li>
+<li><strong>Weekly (Father):</strong> Promote one daily backup (typically Friday's or run a separate full) to "weekly" status. Keep for 4–5 weeks.</li>
+<li><strong>Monthly (Grandfather):</strong> Promote one weekly backup (typically the last of the month) to "monthly" status. Keep for 12+ months.</li>
+</ol>
+
+<p>The result: you can restore from yesterday, from any day in the past two weeks, from any week in the past month, or from any month in the past year — all without storing every daily backup indefinitely.</p>
+
+<h3>4.2 The 3-2-1 Rule</h3>
+<div class="card success">
+<h4 class="mt-0" style="color:var(--success-border);">The 3-2-1 Rule</h4>
+<p>Maintain at least:</p>
+<ul>
+<li><strong>3</strong> copies of your data (the original + 2 backups)</li>
+<li><strong>2</strong> different media types (e.g., local disk + cloud, or disk + tape)</li>
+<li><strong>1</strong> copy offsite (geographically separated from the primary site)</li>
+</ul>
+</div>
+
+<h4>Why Each Element Matters</h4>
+<table>
+<caption>3-2-1 Rule Rationale</caption>
+<thead>
+<tr><th>Element</th><th>Protects Against</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>3 copies</strong></td><td>Single point of failure; accidental deletion</td><td>Production data + local backup + offsite backup</td></tr>
+<tr><td><strong>2 media types</strong></td><td>Media-specific failures (e.g., all drives from same batch fail)</td><td>Internal disk + cloud object storage</td></tr>
+<tr><td><strong>1 offsite</strong></td><td>Site-wide disasters (fire, flood, theft, ransomware)</td><td>Cloud backup in a different region; tape stored at a secure facility</td></tr>
+</tbody>
+</table>
+
+<p>The 3-2-1 rule is a <em>principle</em>, not a rigid prescription. Some organizations extend it to <strong>3-2-1-1-0</strong> (add 1 immutable copy and 0 errors verified by testing). The core idea: never let a single event destroy all copies of your data.</p>
+
+<h3>4.3 Tower of Hanoi (Awareness)</h3>
+<details>
+<summary>Tower of Hanoi Rotation — Deeper Dive (Optional)</summary>
+<div class="details-body">
+<p>The Tower of Hanoi scheme uses a mathematical pattern (based on the classic puzzle) to determine media rotation. Media sets are labeled A, B, C, D, etc. Set A is used every other backup, Set B every fourth backup, Set C every eighth, and so on.</p>
+<p><strong>Pattern for 5 sets over 16 days:</strong> A B A C A B A D A B A C A B A E</p>
+<p><strong>Advantage:</strong> Provides more recent recovery points while still maintaining some older ones, using fewer media sets than GFS for equivalent coverage.</p>
+<p><strong>Disadvantage:</strong> Complex to manage manually; primarily used by automated backup software. Most administrators prefer GFS for its simplicity and clarity.</p>
+<p>For this course, awareness of the Tower of Hanoi scheme is sufficient. You will not be asked to implement it in Project 3.</p>
+</div>
+</details>
+</section>
+
+<!-- ===== SECTION 6: DESTINATIONS & MEDIA ===== -->
+<section id="destinations">
+<h2>5. Backup Destinations &amp; Media</h2>
+
+<p>Where you store your backups is as important as what you back up. Each destination has tradeoffs in speed, cost, capacity, and disaster resilience.</p>
+
+<table>
+<caption>Backup Destination Comparison</caption>
+<thead>
+<tr><th>Destination</th><th>Speed</th><th>Cost</th><th>Capacity</th><th>Disaster Resilience</th><th>Best For</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Local Disk</strong> (USB, internal)</td>
+<td>Fast</td>
+<td>Moderate</td>
+<td>Moderate</td>
+<td>Low (same site)</td>
+<td>Quick restores; first copy in 3-2-1</td>
+</tr>
+<tr>
+<td><strong>NAS / Network Storage</strong></td>
+<td>Fast (LAN speed)</td>
+<td>Moderate</td>
+<td>High (expandable)</td>
+<td>Low-Moderate (same site unless replicated)</td>
+<td>Centralized backup for multiple servers</td>
+</tr>
+<tr>
+<td><strong>Tape</strong> (LTO)</td>
+<td>Slow (sequential)</td>
+<td>Low per TB</td>
+<td>Very High</td>
+<td>High (portable, offsite storage)</td>
+<td>Long-term archival; air-gapped protection</td>
+</tr>
+<tr>
+<td><strong>Cloud / Offsite</strong></td>
+<td>Variable (WAN dependent)</td>
+<td>Ongoing (subscription)</td>
+<td>Virtually unlimited</td>
+<td>High (geographic separation)</td>
+<td>Offsite copy; DR; the "1" in 3-2-1</td>
+</tr>
+</tbody>
+</table>
+
+<details>
+<summary>Deeper Dive: Choosing Destinations for Different Backup Tiers</summary>
+<div class="details-body">
+<p>A well-designed strategy often uses <strong>multiple destinations</strong> mapped to backup tiers:</p>
+<ul>
+<li><strong>Daily backups (Son):</strong> Local disk or NAS for fast backup and fast restore of recent data.</li>
+<li><strong>Weekly backups (Father):</strong> NAS with replication to a second site, or cloud storage.</li>
+<li><strong>Monthly backups (Grandfather):</strong> Cloud cold storage or offsite tape for long-term retention at low cost.</li>
+</ul>
+<p>This tiered approach satisfies the 3-2-1 rule while optimizing cost: fast, expensive storage for frequently accessed recent backups; slow, cheap storage for rarely accessed archives.</p>
+</div>
+</details>
+
+<div class="card warning">
+<strong>RAID Is Not Backup:</strong> Remember from Week 10 — RAID provides <em>fault tolerance</em> against disk failure, but it does not protect against accidental deletion, ransomware, corruption, or site-wide disasters. RAID and backups serve complementary but different purposes.
+</div>
+</section>
+
+<!-- ===== SECTION 7: RETENTION POLICIES ===== -->
+<section id="retention">
+<h2>6. Retention Policies</h2>
+
+<p>A <strong>retention policy</strong> defines how long backup data is kept before it is overwritten or deleted. Retention must balance three competing concerns:</p>
+<ol>
+<li><strong>Recovery needs:</strong> How far back might you need to restore?</li>
+<li><strong>Storage costs:</strong> Longer retention = more storage consumed.</li>
+<li><strong>Compliance requirements:</strong> Regulations may mandate minimum retention periods.</li>
+</ol>
+
+<h3>Sample Retention Policy</h3>
+<table>
+<caption>Example Retention Policy for a Small Organization</caption>
+<thead>
+<tr><th>Backup Tier</th><th>Frequency</th><th>Retention Period</th><th>Rationale</th></tr>
+</thead>
+<tbody>
+<tr><td>Daily (Incremental)</td><td>Every business day</td><td>14 days</td><td>Recover from recent accidental changes</td></tr>
+<tr><td>Weekly (Full)</td><td>Every Sunday</td><td>4 weeks</td><td>Point-in-time restore from past month</td></tr>
+<tr><td>Monthly (Full)</td><td>First Sunday of month</td><td>12 months</td><td>Historical recovery; audit support</td></tr>
+<tr><td>Annual (Full)</td><td>January 1</td><td>7 years</td><td>Compliance / legal hold</td></tr>
+</tbody>
+</table>
+
+<details>
+<summary>Deeper Dive: Compliance Considerations</summary>
+<div class="details-body">
+<p>Various regulations specify minimum data retention periods. While the details vary by industry and jurisdiction, awareness of these is important for system administrators:</p>
+<ul>
+<li><strong>HIPAA</strong> (healthcare): Medical records typically retained 6–7 years.</li>
+<li><strong>PCI-DSS</strong> (payment card data): Audit logs retained for at least 1 year, with 3 months immediately available.</li>
+<li><strong>SOX</strong> (financial): Financial records retained 7 years.</li>
+<li><strong>FERPA</strong> (education): Student records retained for the life of the institution in many cases.</li>
+</ul>
+<p>For your Project 3 lab environment, you are not bound by these regulations, but your documentation should demonstrate awareness that real-world backup strategies must account for compliance requirements.</p>
+</div>
+</details>
+</section>
+
+<!-- ===== SECTION 8: DESIGNING A BACKUP SCHEDULE ===== -->
+<section id="schedule-design">
+<h2>7. Designing a Backup Schedule — Guided Exercise</h2>
+
+<p>Now let's put everything together. Designing a backup schedule follows a structured process. Walk through these steps for your own lab infrastructure as preparation for your Project 3 deliverable.</p>
+
+<h3>Step-by-Step Process</h3>
+<ol>
+<li><strong>Inventory systems:</strong> List all systems and data that need backup.</li>
+<li><strong>Assign criticality:</strong> Use your BIA from Module 15.1 to rank systems.</li>
+<li><strong>Determine RPO:</strong> What is the maximum acceptable data loss for each system?</li>
+<li><strong>Select backup type:</strong> Choose full, incremental, or differential (or a combination) based on RPO, storage, and backup window constraints.</li>
+<li><strong>Choose schedule:</strong> Define when backups run (time of day, day of week).</li>
+<li><strong>Select destination:</strong> Where will backups be stored? Apply the 3-2-1 rule.</li>
+<li><strong>Define retention:</strong> How long will each tier of backup be kept?</li>
+<li><strong>Document:</strong> Record all decisions in a backup schedule matrix.</li>
+</ol>
+
+<h3>Worked Example: Three-Server Lab Environment</h3>
+<p>Consider an environment similar to your Project 3 lab with a Linux server, a Windows server, and a pfSense firewall/router:</p>
+
+<table>
+<caption>Backup Schedule Matrix — Worked Example</caption>
+<thead>
+<tr>
+<th>System</th>
+<th>Backup Type</th>
+<th>Frequency</th>
+<th>Time Window</th>
+<th>Destination</th>
+<th>Retention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux Server (files &amp; configs)</td>
+<td>Full + Incremental</td>
+<td>Weekly Full (Sun 2:00 AM); Daily Incremental (Mon–Sat 2:00 AM)</td>
+<td>2:00–4:00 AM</td>
+<td>Local NAS + rsync to offsite</td>
+<td>Daily: 14 days; Weekly: 4 weeks</td>
+</tr>
+<tr>
+<td>Windows Server (System State + Data)</td>
+<td>Full + Incremental</td>
+<td>Weekly Full (Sun 3:00 AM); Daily Incremental (Mon–Sat 3:00 AM)</td>
+<td>3:00–5:00 AM</td>
+<td>Local disk + copy to NAS</td>
+<td>Daily: 14 days; Weekly: 4 weeks</td>
+</tr>
+<tr>
+<td>pfSense (Config)</td>
+<td>Config Export (Full)</td>
+<td>Weekly (Sun 1:00 AM)</td>
+<td>1:00–1:15 AM</td>
+<td>Local + copy to Linux server</td>
+<td>4 versions</td>
+</tr>
+<tr>
+<td>Splunk (Configs + Knowledge Objects)</td>
+<td>Full (tar of $SPLUNK_HOME/etc/)</td>
+<td>Daily (1:30 AM)</td>
+<td>1:30–2:00 AM</td>
+<td>Local (Linux server)</td>
+<td>14 days</td>
+</tr>
+</tbody>
+</table>
+
+<h4>Design Rationale</h4>
+<ul>
+<li><strong>Why weekly full + daily incremental?</strong> Balances storage efficiency (incrementals are small) with reasonable restore complexity (at most 6 incrementals to apply). Meets a 24-hour RPO.</li>
+<li><strong>Why 2:00–5:00 AM window?</strong> Lowest usage period; minimizes impact on production workloads and avoids conflicts between server backups.</li>
+<li><strong>Why NAS + offsite?</strong> Satisfies the 3-2-1 rule: original data + local backup (NAS) + offsite copy = 3 copies on 2 media types with 1 offsite.</li>
+<li><strong>Why only config export for pfSense?</strong> pfSense configurations are small (KB-sized XML files). A config export captures the entire router/firewall state. No large data volumes to protect.</li>
+<li><strong>Why daily for Splunk configs?</strong> Splunk configurations change as dashboards and alerts are added. Index data is large and protected by retention policies rather than traditional backup.</li>
+</ul>
+
+<h3>Your Turn: Blank Template</h3>
+<p>Use this template structure when documenting your Project 3 backup strategy. Fill in each column for every system in your lab environment:</p>
+
+<table>
+<caption>Backup Schedule Matrix — Template</caption>
+<thead>
+<tr>
+<th>System</th>
+<th>Backup Type</th>
+<th>Frequency</th>
+<th>Time Window</th>
+<th>Destination</th>
+<th>Retention</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+</tbody>
+</table>
+
+<div class="card">
+<strong>Tip:</strong> Your Project 3 specification provides a reference table for the expected backup strategy. Use the worked example above and the Project 3 specification together to build your documentation. Your justification narrative (explaining <em>why</em> you chose each option) is just as important as the table itself.
+</div>
+</section>
+
+<!-- ===== SECTION 9: KNOWLEDGE CHECK ===== -->
+<section id="knowledge-check">
+<h2>8. Knowledge Check</h2>
+<p>Test your understanding with these ungraded questions. Click "Check Answer" to see explanatory feedback.</p>
+
+<!-- Question 1 -->
+<div class="kc-question" id="kc1">
+<p class="q-stem">1. A backup that copies only the files that have changed since the last full backup is called a:</p>
+<label><input type="radio" name="kc1" value="a"> Full backup</label>
+<label><input type="radio" name="kc1" value="b"> Incremental backup</label>
+<label><input type="radio" name="kc1" value="c"> Differential backup</label>
+<label><input type="radio" name="kc1" value="d"> Snapshot</label>
+<button class="kc-btn" onclick="checkKC('kc1','c')">Check Answer</button>
+<div class="kc-feedback correct" id="kc1-correct">
+<strong>Correct!</strong> A differential backup copies all changes since the last <em>full</em> backup. An incremental backup copies changes since the last backup of <em>any</em> type. This distinction is the key difference between the two.
+</div>
+<div class="kc-feedback incorrect" id="kc1-incorrect">
+<strong>Not quite.</strong> The key phrase is "since the last <em>full</em> backup." That describes a <strong>differential</strong> backup. An incremental copies changes since the last backup of any type (full or incremental). Review Section 2.3 above.
+</div>
+</div>
+
+<!-- Question 2 -->
+<div class="kc-question" id="kc2">
+<p class="q-stem">2. A disaster occurs on Thursday evening. You have a full backup from Sunday and daily incremental backups from Monday through Thursday. How many backup sets do you need to restore to Thursday's state?</p>
+<label><input type="radio" name="kc2" value="a"> 1 (Thursday's incremental only)</label>
+<label><input type="radio" name="kc2" value="b"> 2 (Sunday's full + Thursday's incremental)</label>
+<label><input type="radio" name="kc2" value="c"> 5 (Sunday's full + Mon + Tue + Wed + Thu incrementals)</label>
+<label><input type="radio" name="kc2" value="d"> 4 (Mon + Tue + Wed + Thu incrementals)</label>
+<button class="kc-btn" onclick="checkKC('kc2','c')">Check Answer</button>
+<div class="kc-feedback correct" id="kc2-correct">
+<strong>Correct!</strong> With incremental backups, you need the full backup plus <em>every</em> incremental in the chain up to your target restore point. That's Sunday's full + Monday + Tuesday + Wednesday + Thursday = 5 sets total.
+</div>
+<div class="kc-feedback incorrect" id="kc2-incorrect">
+<strong>Not quite.</strong> Incremental restores require the entire chain: the last full backup plus all subsequent incrementals up to the desired restore point. You cannot skip any link in the chain. The answer is 5 sets: Sunday's full + 4 daily incrementals. If this were a <em>differential</em> strategy, you would only need 2 sets (full + Thursday's differential). Review Section 2.2.
+</div>
+</div>
+
+<!-- Question 3 -->
+<div class="kc-question" id="kc3">
+<p class="q-stem">3. Your server has 200 GB of data with a 4% daily change rate. Using a weekly full + daily incremental strategy, approximately how much total backup storage is consumed over one week (Sunday full + 6 daily incrementals)?</p>
+<label><input type="radio" name="kc3" value="a"> 200 GB</label>
+<label><input type="radio" name="kc3" value="b"> 248 GB</label>
+<label><input type="radio" name="kc3" value="c"> 296 GB</label>
+<label><input type="radio" name="kc3" value="d"> 1,400 GB</label>
+<button class="kc-btn" onclick="checkKC('kc3','b')">Check Answer</button>
+<div class="kc-feedback correct" id="kc3-correct">
+<strong>Correct!</strong> Full = 200 GB. Each incremental ≈ 4% of 200 GB = 8 GB. Six incrementals = 48 GB. Total = 200 + 48 = <strong>248 GB</strong>. Compare this to daily full backups which would consume 1,400 GB — incremental saves over 80% of storage!
+</div>
+<div class="kc-feedback incorrect" id="kc3-incorrect">
+<strong>Not quite.</strong> Calculate: Full backup = 200 GB. Daily change = 4% × 200 GB = 8 GB per incremental. Six incrementals = 6 × 8 GB = 48 GB. Total = 200 + 48 = <strong>248 GB</strong>. Review the worked example in Section 3.
+</div>
+</div>
+
+<!-- Question 4 -->
+<div class="kc-question" id="kc4">
+<p class="q-stem">4. The 3-2-1 rule states that you should maintain:</p>
+<label><input type="radio" name="kc4" value="a"> 3 full backups, 2 incremental backups, 1 differential backup</label>
+<label><input type="radio" name="kc4" value="b"> 3 copies of data, 2 different media types, 1 copy offsite</label>
+<label><input type="radio" name="kc4" value="c"> 3 backup servers, 2 network connections, 1 administrator</label>
+<label><input type="radio" name="kc4" value="d"> 3 daily backups, 2 weekly backups, 1 monthly backup</label>
+<button class="kc-btn" onclick="checkKC('kc4','b')">Check Answer</button>
+<div class="kc-feedback correct" id="kc4-correct">
+<strong>Correct!</strong> The 3-2-1 rule: <strong>3</strong> copies of your data, on <strong>2</strong> different media types, with <strong>1</strong> copy stored offsite. This ensures no single event (hardware failure, ransomware, fire) can destroy all copies.
+</div>
+<div class="kc-feedback incorrect" id="kc4-incorrect">
+<strong>Not quite.</strong> The 3-2-1 rule is: <strong>3</strong> total copies of data (original + 2 backups), stored on <strong>2</strong> different media types, with <strong>1</strong> copy offsite. Review Section 4.2.
+</div>
+</div>
+
+<!-- Question 5 -->
+<div class="kc-question" id="kc5">
+<p class="q-stem">5. In a Grandfather-Father-Son (GFS) rotation, the "Grandfather" tier typically represents:</p>
+<label><input type="radio" name="kc5" value="a"> Daily backups retained for one week</label>
+<label><input type="radio" name="kc5" value="b"> Weekly backups retained for one month</label>
+<label><input type="radio" name="kc5" value="c"> Monthly backups retained for one year or longer</label>
+<label><input type="radio" name="kc5" value="d"> Hourly backups retained for one day</label>
+<button class="kc-btn" onclick="checkKC('kc5','c')">Check Answer</button>
+<div class="kc-feedback correct" id="kc5-correct">
+<strong>Correct!</strong> In GFS: Son = daily (short-term), Father = weekly (medium-term), Grandfather = monthly (long-term, typically 12+ months). The grandfather tier provides the longest historical recovery points.
+</div>
+<div class="kc-feedback incorrect" id="kc5-incorrect">
+<strong>Not quite.</strong> GFS tiers: <strong>Son</strong> = daily backups (1–2 weeks retention), <strong>Father</strong> = weekly backups (4–5 weeks retention), <strong>Grandfather</strong> = monthly backups (12+ months retention). The grandfather is the longest-retained tier. Review Section 4.1.
+</div>
+</div>
+
+<!-- Question 6 -->
+<div class="kc-question" id="kc6">
+<p class="q-stem">6. A ransomware attack encrypts all data on your server and all files on the directly-attached USB backup drive. Which backup destination would have protected you?</p>
+<label><input type="radio" name="kc6" value="a"> A second USB drive attached to the same server</label>
+<label><input type="radio" name="kc6" value="b"> A RAID 5 array on the same server</label>
+<label><input type="radio" name="kc6" value="c"> An offsite cloud backup with immutable storage</label>
+<label><input type="radio" name="kc6" value="d"> A larger local disk partition</label>
+<button class="kc-btn" onclick="checkKC('kc6','c')">Check Answer</button>
+<div class="kc-feedback correct" id="kc6-correct">
+<strong>Correct!</strong> Ransomware can encrypt any storage the compromised system can reach. An offsite cloud backup with immutable (write-once) storage is isolated from the attack. This is exactly why the 3-2-1 rule requires an offsite copy — and why some organizations extend it to 3-2-1-1 (with an immutable copy).
+</div>
+<div class="kc-feedback incorrect" id="kc6-incorrect">
+<strong>Not quite.</strong> Ransomware encrypts everything accessible to the compromised system — including attached USB drives, local RAID arrays, and local disk partitions. Only a copy that is <strong>offsite and inaccessible</strong> to the compromised system (such as cloud storage with immutable/write-once settings) would survive. This illustrates why the "1 offsite" in the 3-2-1 rule is critical. Review Section 4.2 and Section 5.
+</div>
+</div>
+</section>
+
+<!-- ===== SECTION 10: PROJECT 3 CONNECTION ===== -->
+<section id="project3">
+<h2>9. Connection to Project 3</h2>
+
+<div class="card project">
+<h3 style="margin-top:0;color:#7d3c98;">How This Module Connects to Your Project 3 Deliverable</h3>
+<p><strong>Project 3, Part D.1: Backup Strategy Documentation</strong> requires you to document a comprehensive backup strategy for your lab infrastructure. The concepts from this module map directly to that deliverable:</p>
+
+<table>
+<caption>Mapping Module 15.2 Concepts to Project 3 Requirements</caption>
+<thead>
+<tr><th>Concept from This Module</th><th>Project 3 Application</th></tr>
+</thead>
+<tbody>
+<tr><td>Backup types (full, incremental, differential)</td><td>Select and justify a backup type for each system in your infrastructure (Linux Server, Windows Server, Splunk, pfSense)</td></tr>
+<tr><td>Comparison matrix tradeoffs</td><td>Explain <em>why</em> you chose your backup type based on storage, restore speed, and complexity tradeoffs</td></tr>
+<tr><td>GFS rotation / 3-2-1 rule</td><td>Design a retention policy and ensure your strategy follows the 3-2-1 principle (or document why a deviation is acceptable in a lab context)</td></tr>
+<tr><td>Backup destinations</td><td>Specify where each backup is stored (local, remote, or both) and justify the choice</td></tr>
+<tr><td>Backup schedule design</td><td>Complete the backup schedule matrix with frequency, time window, and retention for each system</td></tr>
+<tr><td>RPO-driven scheduling (from Module 15.1)</td><td>Connect your schedule frequency back to the RTO/RPO targets you documented</td></tr>
+</tbody>
+</table>
+
+<p><strong>Reference:</strong> The Project 3 specification provides an expected backup strategy table. Your documentation should match or exceed that level of detail, with a justification narrative explaining your design decisions.</p>
+
+<p><strong>Next Step:</strong> Module 15.3 will teach you how to <em>implement</em> this strategy using <code>tar</code>, <code>rsync</code>, <code>cron</code>, <code>wbadmin</code>, PowerShell, and Task Scheduler — turning your plan into working automation.</p>
+</div>
+</section>
+
+</main>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+function checkKC(qId, correctValue) {
+var radios = document.querySelectorAll('input[name="' + qId + '"]');
+var selected = null;
+for (var i = 0; i < radios.length; i++) {
+if (radios[i].checked) { selected = radios[i].value; break; }
+}
+if (selected === null) { return; }
+
+var correctEl = document.getElementById(qId + '-correct');
+var incorrectEl = document.getElementById(qId + '-incorrect');
+
+if (selected === correctValue) {
+correctEl.style.display = 'block';
+incorrectEl.style.display = 'none';
+} else {
+correctEl.style.display = 'none';
+incorrectEl.style.display = 'block';
+}
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 15.3 – Implementing Automated Backup Solutions | CSC 152</title>
+<style>
+:root {
+--primary: #2c3e50;
+--accent: #3498db;
+--accent-dark: #2980b9;
+--success: #27ae60;
+--warning: #f39c12;
+--danger: #e74c3c;
+--light-bg: #f8f9fa;
+--border: #dee2e6;
+--text: #2c3e50;
+--text-muted: #6c757d;
+--white: #ffffff;
+--nav-height: 56px;
+--callout-project: #e8f4fd;
+--callout-tip: #e8f8f0;
+--callout-warning: #fef9e7;
+--callout-note: #f4f0fa;
+--tab-inactive: #e9ecef;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+font-size: 16px;
+line-height: 1.7;
+color: var(--text);
+background: var(--white);
+padding-top: var(--nav-height);
+}
+
+/* Navigation */
+.nav-bar {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+height: var(--nav-height);
+background: var(--primary);
+display: flex;
+align-items: center;
+padding: 0 1rem;
+z-index: 1000;
+overflow-x: auto;
+white-space: nowrap;
+}
+
+.nav-bar a {
+color: var(--white);
+text-decoration: none;
+padding: 0.4rem 0.75rem;
+font-size: 0.85rem;
+border-radius: 4px;
+transition: background 0.2s;
+flex-shrink: 0;
+}
+
+.nav-bar a:hover,
+.nav-bar a:focus {
+background: var(--accent);
+outline: 2px solid var(--accent);
+outline-offset: 2px;
+}
+
+.nav-bar a:focus-visible {
+outline: 2px solid #ffffff;
+outline-offset: 2px;
+}
+
+/* Main Content */
+.container {
+max-width: 960px;
+margin: 0 auto;
+padding: 2rem 1.5rem;
+}
+
+h1 {
+font-size: 1.9rem;
+color: var(--primary);
+margin-bottom: 0.5rem;
+border-bottom: 3px solid var(--accent);
+padding-bottom: 0.5rem;
+}
+
+.module-meta {
+font-size: 0.9rem;
+color: var(--text-muted);
+margin-bottom: 2rem;
+}
+
+h2 {
+font-size: 1.5rem;
+color: var(--primary);
+margin-top: 2.5rem;
+margin-bottom: 1rem;
+padding-top: calc(var(--nav-height) + 1rem);
+margin-top: calc(-1 * var(--nav-height));
+padding-top: calc(var(--nav-height) + 1.5rem);
+border-bottom: 2px solid var(--border);
+padding-bottom: 0.4rem;
+}
+
+h3 {
+font-size: 1.25rem;
+color: var(--primary);
+margin-top: 1.5rem;
+margin-bottom: 0.75rem;
+}
+
+h4 {
+font-size: 1.05rem;
+color: var(--text);
+margin-top: 1.25rem;
+margin-bottom: 0.5rem;
+}
+
+p { margin-bottom: 1rem; }
+
+ul, ol {
+margin-bottom: 1rem;
+padding-left: 1.75rem;
+}
+
+li { margin-bottom: 0.4rem; }
+
+strong { color: var(--primary); }
+
+/* Code Blocks */
+pre {
+background: #1e1e1e;
+color: #d4d4d4;
+border-radius: 6px;
+padding: 1.25rem;
+overflow-x: auto;
+margin-bottom: 1.25rem;
+font-size: 0.88rem;
+line-height: 1.6;
+white-space: pre;
+}
+
+pre code {
+font-family: "Cascadia Code", "Fira Code", "Consolas", "Courier New", monospace;
+white-space: pre;
+}
+
+code {
+font-family: "Cascadia Code", "Fira Code", "Consolas", "Courier New", monospace;
+background: #f0f0f0;
+padding: 0.15rem 0.4rem;
+border-radius: 3px;
+font-size: 0.9em;
+}
+
+pre code {
+background: none;
+padding: 0;
+}
+
+.code-annotation {
+color: #6a9955;
+}
+
+/* Callout Boxes */
+.callout {
+border-radius: 8px;
+padding: 1.25rem 1.5rem;
+margin: 1.5rem 0;
+border-left: 5px solid;
+}
+
+.callout-project {
+background: var(--callout-project);
+border-color: var(--accent);
+}
+
+.callout-tip {
+background: var(--callout-tip);
+border-color: var(--success);
+}
+
+.callout-warning {
+background: var(--callout-warning);
+border-color: var(--warning);
+}
+
+.callout-note {
+background: var(--callout-note);
+border-color: #8e44ad;
+}
+
+.callout-title {
+font-weight: 700;
+margin-bottom: 0.5rem;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+
+/* Tables */
+table {
+width: 100%;
+border-collapse: collapse;
+margin-bottom: 1.5rem;
+font-size: 0.92rem;
+}
+
+th, td {
+padding: 0.7rem 1rem;
+border: 1px solid var(--border);
+text-align: left;
+}
+
+th {
+background: var(--primary);
+color: var(--white);
+font-weight: 600;
+}
+
+tr:nth-child(even) { background: var(--light-bg); }
+
+/* Tabs */
+.tab-container {
+margin: 1.5rem 0;
+border: 1px solid var(--border);
+border-radius: 8px;
+overflow: hidden;
+}
+
+.tab-buttons {
+display: flex;
+background: var(--tab-inactive);
+border-bottom: 1px solid var(--border);
+flex-wrap: wrap;
+}
+
+.tab-btn {
+padding: 0.75rem 1.25rem;
+border: none;
+background: var(--tab-inactive);
+cursor: pointer;
+font-size: 0.92rem;
+font-weight: 600;
+color: var(--text-muted);
+transition: all 0.2s;
+border-bottom: 3px solid transparent;
+flex-shrink: 0;
+}
+
+.tab-btn:hover {
+background: #dce1e5;
+}
+
+.tab-btn:focus-visible {
+outline: 2px solid var(--accent);
+outline-offset: -2px;
+}
+
+.tab-btn.active {
+background: var(--white);
+color: var(--accent);
+border-bottom-color: var(--accent);
+}
+
+.tab-panel {
+display: none;
+padding: 1.5rem;
+}
+
+.tab-panel.active {
+display: block;
+}
+
+/* Collapsible Sections */
+details {
+border: 1px solid var(--border);
+border-radius: 6px;
+margin-bottom: 1rem;
+overflow: hidden;
+}
+
+summary {
+padding: 1rem 1.25rem;
+background: var(--light-bg);
+cursor: pointer;
+font-weight: 600;
+color: var(--primary);
+transition: background 0.2s;
+list-style: none;
+}
+
+summary::-webkit-details-marker { display: none; }
+
+summary::before {
+content: "▸ ";
+display: inline-block;
+transition: transform 0.2s;
+}
+
+details[open] summary::before {
+content: "▾ ";
+}
+
+summary:hover { background: #e8ecf0; }
+
+summary:focus-visible {
+outline: 2px solid var(--accent);
+outline-offset: -2px;
+}
+
+details .details-content {
+padding: 1.25rem;
+}
+
+/* Knowledge Check */
+.quiz-question {
+background: var(--light-bg);
+border: 1px solid var(--border);
+border-radius: 8px;
+padding: 1.5rem;
+margin-bottom: 1.25rem;
+}
+
+.quiz-question p.q-text {
+font-weight: 600;
+margin-bottom: 0.75rem;
+}
+
+.quiz-option {
+display: block;
+margin-bottom: 0.5rem;
+}
+
+.quiz-option label {
+cursor: pointer;
+display: flex;
+align-items: flex-start;
+gap: 0.5rem;
+padding: 0.4rem 0;
+}
+
+.quiz-option input[type="radio"] {
+margin-top: 0.3rem;
+flex-shrink: 0;
+}
+
+.quiz-feedback {
+margin-top: 0.75rem;
+padding: 0.75rem 1rem;
+border-radius: 6px;
+display: none;
+font-size: 0.92rem;
+}
+
+.quiz-feedback.correct {
+background: #d4edda;
+border: 1px solid #c3e6cb;
+color: #155724;
+display: block;
+}
+
+.quiz-feedback.incorrect {
+background: #f8d7da;
+border: 1px solid #f5c6cb;
+color: #721c24;
+display: block;
+}
+
+.btn-check {
+background: var(--accent);
+color: var(--white);
+border: none;
+padding: 0.5rem 1.25rem;
+border-radius: 4px;
+cursor: pointer;
+font-size: 0.9rem;
+font-weight: 600;
+margin-top: 0.5rem;
+transition: background 0.2s;
+}
+
+.btn-check:hover { background: var(--accent-dark); }
+
+.btn-check:focus-visible {
+outline: 2px solid var(--primary);
+outline-offset: 2px;
+}
+
+/* Objectives List */
+.objectives-list {
+background: var(--light-bg);
+border: 1px solid var(--border);
+border-radius: 8px;
+padding: 1.25rem 1.5rem 1.25rem 2.5rem;
+margin-bottom: 1.5rem;
+}
+
+.objectives-list li {
+margin-bottom: 0.5rem;
+}
+
+/* Visual Separator */
+.section-divider {
+border: none;
+border-top: 2px solid var(--border);
+margin: 2.5rem 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+.container { padding: 1.5rem 1rem; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.3rem; }
+.tab-btn { padding: 0.6rem 0.9rem; font-size: 0.85rem; }
+pre { font-size: 0.8rem; padding: 1rem; }
+table { font-size: 0.82rem; }
+th, td { padding: 0.5rem 0.6rem; }
+}
+
+/* Print */
+@media print {
+.nav-bar { display: none; }
+body { padding-top: 0; }
+.tab-panel { display: block !important; }
+details { open: true; }
+details .details-content { display: block; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="nav-bar" role="navigation" aria-label="Module section navigation">
+<a href="#objectives">Objectives</a>
+<a href="#linux-tar">tar</a>
+<a href="#linux-rsync">rsync</a>
+<a href="#linux-cron">cron</a>
+<a href="#linux-script">Bash Script</a>
+<a href="#windows-wbadmin">wbadmin &amp; VSS</a>
+<a href="#windows-ps">PowerShell</a>
+<a href="#app-aware">App-Aware</a>
+<a href="#splunk-backup">Splunk</a>
+<a href="#knowledge-check">Check</a>
+<a href="#project3">Project 3</a>
+</nav>
+
+<!-- Main Content -->
+<main class="container" role="main">
+
+<h1>Module 15.3 – Implementing Automated Backup Solutions</h1>
+<p class="module-meta">CSC 152 – Network OS and Administration &nbsp;|&nbsp; Week 15: Disaster Recovery &amp; Backup Solutions &nbsp;|&nbsp; Est. Time: 1.5–2.0 hours</p>
+
+<!-- Section 0: Objectives -->
+<section id="objectives" aria-labelledby="obj-heading">
+<h2 id="obj-heading">Objectives &amp; Context</h2>
+
+<p>In Module 15.2 you designed a backup strategy—choosing backup types, schedules, destinations, and retention policies. Now it is time to <strong>implement</strong> that strategy. This module provides the hands-on technical skills to turn a plan on paper into working, automated backup solutions on both Linux and Windows servers.</p>
+
+<div class="callout callout-note">
+<p class="callout-title">🔗 From Planning to Implementation</p>
+<p>Module 15.2 answered <em>"What should we back up, when, and where?"</em> This module answers <em>"How do we make it happen automatically and reliably?"</em> Module 15.4 will then ask <em>"How do we verify it works and recover when needed?"</em></p>
+</div>
+
+<h3>Learning Objectives</h3>
+<ol class="objectives-list">
+<li>Create compressed archive backups using <code>tar</code> with proper naming conventions and verification</li>
+<li>Implement efficient incremental file synchronization using <code>rsync</code> (locally and over SSH)</li>
+<li>Schedule automated backup jobs using <code>cron</code> with proper environment configuration</li>
+<li>Write a complete Bash backup script incorporating error handling, logging, verification, and rotation</li>
+<li>Use <code>wbadmin</code> to create Windows Server backups and explain how VSS enables consistent backups of open files</li>
+<li>Automate Windows backup tasks using PowerShell and Task Scheduler</li>
+<li>Explain when application-aware backups (LVM snapshots, VSS, database dumps) are required</li>
+<li>Implement a Splunk configuration backup and describe a recovery scenario</li>
+</ol>
+
+<p><strong>CSLO Alignment:</strong> CSLO 4 (Describe disaster recovery and implement backup techniques – <em>primary</em>), CSLO 1 (Manage and maintain servers – <em>supporting</em>)</p>
+
+<p><strong>Prerequisites:</strong> Week 3–4 (Linux/Windows server administration), Week 5 (Bash and PowerShell scripting), Week 10 (LVM and storage management), Weeks 12–13 (Splunk installation and configuration)</p>
+</section>
+
+<hr class="section-divider">
+
+<!-- Tabbed Content: Linux / Windows / Splunk -->
+<div class="tab-container" role="tablist" aria-label="Platform-specific backup content">
+<div class="tab-buttons">
+<button class="tab-btn active" role="tab" aria-selected="true" aria-controls="panel-linux" id="tab-linux" tabindex="0">🐧 Linux Backup Tools</button>
+<button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-windows" id="tab-windows" tabindex="-1">🪟 Windows Backup Tools</button>
+<button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-appaware" id="tab-appaware" tabindex="-1">🗄️ App-Aware Backups</button>
+<button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-splunk" id="tab-splunk" tabindex="-1">🔍 Splunk Backup</button>
+</div>
+
+<!-- LINUX PANEL -->
+<div class="tab-panel active" role="tabpanel" id="panel-linux" aria-labelledby="tab-linux">
+
+<!-- tar Section -->
+<section id="linux-tar" aria-labelledby="tar-heading">
+<h2 id="tar-heading">Linux: Backup with tar</h2>
+
+<p><code>tar</code> (tape archive) is the foundational Linux backup tool. It bundles files and directories into a single archive file, optionally compressed, preserving permissions, ownership, and timestamps.</p>
+
+<h3>Creating Compressed Archives</h3>
+
+<p>The most common backup operation creates a gzip-compressed archive of a directory:</p>
+
+<pre><code><span class="code-annotation"># Create a gzip-compressed archive of /etc</span>
+<span class="code-annotation"># -c = create, -z = gzip compression, -f = filename</span>
+<span class="code-annotation"># Best practice: include a timestamp in the filename</span>
+tar -czf /backup/etc-backup-$(date +%Y%m%d-%H%M%S).tar.gz /etc</code></pre>
+
+<p>For better compression (slower but smaller files), use bzip2:</p>
+
+<pre><code><span class="code-annotation"># -j = bzip2 compression (better ratio, slower speed)</span>
+tar -cjf /backup/etc-backup-$(date +%Y%m%d-%H%M%S).tar.bz2 /etc</code></pre>
+
+<h4>Key Options for Backup Use</h4>
+<table>
+<thead>
+<tr><th>Option</th><th>Purpose</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-c</code></td><td>Create a new archive</td><td><code>tar -cf archive.tar /data</code></td></tr>
+<tr><td><code>-z</code></td><td>Compress with gzip (.tar.gz)</td><td><code>tar -czf archive.tar.gz /data</code></td></tr>
+<tr><td><code>-j</code></td><td>Compress with bzip2 (.tar.bz2)</td><td><code>tar -cjf archive.tar.bz2 /data</code></td></tr>
+<tr><td><code>-f</code></td><td>Specify archive filename</td><td>Always required</td></tr>
+<tr><td><code>-v</code></td><td>Verbose (list files processed)</td><td>Useful for debugging, noisy for cron</td></tr>
+<tr><td><code>-p</code></td><td>Preserve permissions</td><td>Important for system backups</td></tr>
+<tr><td><code>--exclude</code></td><td>Skip files/directories</td><td><code>--exclude='*.tmp'</code></td></tr>
+</tbody>
+</table>
+
+<h3>Extracting Archives (Restore)</h3>
+
+<pre><code><span class="code-annotation"># Extract to the current directory</span>
+tar -xzf /backup/etc-backup-20260428-020000.tar.gz
+
+<span class="code-annotation"># Extract to a specific directory (useful for test restores)</span>
+tar -xzf /backup/etc-backup-20260428-020000.tar.gz -C /tmp/restore-test/
+
+<span class="code-annotation"># Extract a single file from the archive</span>
+tar -xzf /backup/etc-backup-20260428-020000.tar.gz etc/hostname</code></pre>
+
+<h3>Verifying Archive Contents</h3>
+
+<p>Always verify backups. An archive that cannot be read is worthless.</p>
+
+<pre><code><span class="code-annotation"># List contents without extracting (-t = list)</span>
+tar -tzf /backup/etc-backup-20260428-020000.tar.gz
+
+<span class="code-annotation"># List with details (permissions, sizes, timestamps)</span>
+tar -tzvf /backup/etc-backup-20260428-020000.tar.gz
+
+<span class="code-annotation"># Test archive integrity (gzip test)</span>
+gzip -t /backup/etc-backup-20260428-020000.tar.gz
+echo "Exit code: $?"  <span class="code-annotation"># 0 = OK, non-zero = corrupted</span></code></pre>
+
+<h3>Naming Conventions</h3>
+
+<div class="callout callout-tip">
+<p class="callout-title">💡 Best Practice: Timestamp-Based Naming</p>
+<p>Always include the date (and optionally time) in backup filenames. This makes rotation and identification trivial:</p>
+<p><code>systemname-backuptype-YYYYMMDD-HHMMSS.tar.gz</code></p>
+<p>Example: <code>webserver-full-20260428-020000.tar.gz</code></p>
+</div>
+</section>
+
+<hr class="section-divider">
+
+<!-- rsync Section -->
+<section id="linux-rsync" aria-labelledby="rsync-heading">
+<h2 id="rsync-heading">Linux: Backup with rsync</h2>
+
+<p><code>rsync</code> takes a fundamentally different approach from <code>tar</code>. Instead of creating archive files, rsync <strong>synchronizes</strong> directory trees—copying only the differences (deltas) between source and destination. This makes it extremely efficient for incremental backups.</p>
+
+<h3>How rsync Works</h3>
+<ul>
+<li><strong>Delta transfer algorithm:</strong> rsync compares files by size and modification time (or checksum) and transfers only changed portions</li>
+<li><strong>First run:</strong> copies everything (like a full backup)</li>
+<li><strong>Subsequent runs:</strong> copies only changes (like an incremental backup)</li>
+<li><strong>Result:</strong> the destination is always a complete, usable mirror</li>
+</ul>
+
+<h3>Local rsync Backup</h3>
+
+<pre><code><span class="code-annotation"># Basic local sync: mirror /data to /backup/data-mirror</span>
+<span class="code-annotation"># -a = archive mode (preserves permissions, ownership, timestamps, symlinks)</span>
+<span class="code-annotation"># -v = verbose, -z = compress during transfer (useful for network)</span>
+rsync -av /data/ /backup/data-mirror/
+
+<span class="code-annotation"># With --delete: remove files from destination that no longer exist in source</span>
+<span class="code-annotation"># WARNING: --delete makes destination an exact mirror; deleted source files are gone</span>
+rsync -av --delete /data/ /backup/data-mirror/
+
+<span class="code-annotation"># Exclude patterns</span>
+rsync -av --exclude='*.tmp' --exclude='.cache/' /data/ /backup/data-mirror/</code></pre>
+
+<div class="callout callout-warning">
+<p class="callout-title">⚠️ Trailing Slash Matters</p>
+<p><code>rsync /data/ /backup/</code> copies the <em>contents</em> of /data into /backup. <code>rsync /data /backup/</code> (no trailing slash on source) copies the directory itself, creating /backup/data/. For backups, you usually want the trailing slash on the source.</p>
+</div>
+
+<h3>rsync Over SSH (Remote/Offsite Backups)</h3>
+
+<pre><code><span class="code-annotation"># Push local data to a remote backup server</span>
+rsync -avz /data/ backupuser@backup-server:/backup/webserver/data/
+
+<span class="code-annotation"># Pull data from a remote server to local backup storage</span>
+rsync -avz backupuser@production-server:/data/ /backup/production/data/
+
+<span class="code-annotation"># Specify SSH port if non-standard</span>
+rsync -avz -e 'ssh -p 2222' /data/ backupuser@backup-server:/backup/data/</code></pre>
+
+<h3>Space-Efficient Incrementals with --link-dest</h3>
+
+<p>The <code>--link-dest</code> option creates hard links to unchanged files from a previous backup, giving you what <em>looks like</em> a full backup for each run while using disk space only for changed files:</p>
+
+<pre><code><span class="code-annotation"># Each daily backup appears complete, but unchanged files are hard-linked</span>
+<span class="code-annotation"># to the previous backup (using minimal additional space)</span>
+
+BACKUP_BASE="/backup/daily"
+TODAY=$(date +%Y%m%d)
+YESTERDAY=$(date -d "yesterday" +%Y%m%d)
+
+rsync -av --delete \
+  --link-dest="$BACKUP_BASE/$YESTERDAY" \
+  /data/ \
+  "$BACKUP_BASE/$TODAY/"</code></pre>
+
+<h3>tar vs. rsync: When to Use Each</h3>
+
+<table>
+<thead>
+<tr><th>Criteria</th><th>tar</th><th>rsync</th></tr>
+</thead>
+<tbody>
+<tr><td>Output format</td><td>Single archive file (.tar.gz)</td><td>Directory mirror (regular files)</td></tr>
+<tr><td>Transfer efficiency</td><td>Always full copy</td><td>Delta transfer (changes only)</td></tr>
+<tr><td>Storage efficiency</td><td>Compressed; each backup is independent</td><td>Hard links share unchanged files</td></tr>
+<tr><td>Restore ease</td><td>Extract entire archive or specific files</td><td>Copy files directly (no extraction)</td></tr>
+<tr><td>Offsite/remote</td><td>Create locally, then transfer</td><td>Native SSH support (transfer + backup in one step)</td></tr>
+<tr><td>Best for</td><td>Archival, small datasets, single-file transfers</td><td>Large datasets, frequent backups, mirrors</td></tr>
+</tbody>
+</table>
+</section>
+
+<hr class="section-divider">
+
+<!-- cron Section -->
+<section id="linux-cron" aria-labelledby="cron-heading">
+<h2 id="cron-heading">Linux: Automating with cron</h2>
+
+<p>A backup that requires manual execution will eventually be forgotten. <code>cron</code> is the standard Linux job scheduler that runs commands at specified times automatically.</p>
+
+<h3>cron Syntax</h3>
+
+<pre><code><span class="code-annotation"># ┌───────────── minute (0-59)</span>
+<span class="code-annotation"># │ ┌───────────── hour (0-23)</span>
+<span class="code-annotation"># │ │ ┌───────────── day of month (1-31)</span>
+<span class="code-annotation"># │ │ │ ┌───────────── month (1-12)</span>
+<span class="code-annotation"># │ │ │ │ ┌───────────── day of week (0-7, 0 and 7 = Sunday)</span>
+<span class="code-annotation"># │ │ │ │ │</span>
+<span class="code-annotation"># * * * * * command-to-execute</span>
+
+<span class="code-annotation"># Examples:</span>
+0 2 * * *     <span class="code-annotation"># Every day at 2:00 AM</span>
+0 2 * * 0     <span class="code-annotation"># Every Sunday at 2:00 AM</span>
+30 3 1 * *    <span class="code-annotation"># 1st of every month at 3:30 AM</span>
+0 */6 * * *   <span class="code-annotation"># Every 6 hours (0:00, 6:00, 12:00, 18:00)</span>
+0 2 * * 1-5   <span class="code-annotation"># Weekdays at 2:00 AM</span></code></pre>
+
+<h3>Creating Backup cron Jobs</h3>
+
+<pre><code><span class="code-annotation"># Edit the root user's crontab</span>
+sudo crontab -e
+
+<span class="code-annotation"># Add a daily backup job at 2:00 AM</span>
+0 2 * * * /usr/local/bin/backup-script.sh
+
+<span class="code-annotation"># View current cron jobs</span>
+sudo crontab -l</code></pre>
+
+<h3>Environment Considerations</h3>
+
+<div class="callout callout-warning">
+<p class="callout-title">⚠️ cron Runs in a Minimal Environment</p>
+<p>cron jobs do <strong>not</strong> load your interactive shell's environment (no <code>.bashrc</code>, no full <code>PATH</code>). Common pitfalls:</p>
+<ul>
+<li><strong>PATH:</strong> Use full paths to commands (e.g., <code>/usr/bin/tar</code> not just <code>tar</code>) or set PATH at the top of your script</li>
+<li><strong>Output:</strong> Redirect stdout and stderr or cron will attempt to email output (which often fails): <code>command &gt;&gt; /var/log/backup.log 2&gt;&amp;1</code></li>
+<li><strong>Working directory:</strong> cron starts in the user's home directory; use <code>cd</code> or absolute paths</li>
+</ul>
+</div>
+
+<pre><code><span class="code-annotation"># Recommended crontab entry with logging</span>
+0 2 * * * /usr/local/bin/backup-script.sh >> /var/log/backup-cron.log 2>&1</code></pre>
+
+<h3>Verifying cron Execution</h3>
+
+<pre><code><span class="code-annotation"># Check system log for cron activity</span>
+grep CRON /var/log/syslog | tail -20
+
+<span class="code-annotation"># Or on RHEL/CentOS:</span>
+grep CRON /var/log/cron | tail -20</code></pre>
+</section>
+
+<hr class="section-divider">
+
+<!-- Bash Script Section -->
+<section id="linux-script" aria-labelledby="script-heading">
+<h2 id="script-heading">Linux: Complete Bash Backup Script</h2>
+
+<p>The following annotated script combines everything covered above into a production-ready backup solution. You can adapt this script for your Project 3 deliverable.</p>
+
+<pre><code>#!/bin/bash
+#=============================================================
+# backup-system.sh - Automated System Backup Script
+# Purpose: Create compressed backups with rotation, logging,
+#          verification, and basic error handling
+# Author:  [Your Name]
+# Date:    [Date]
+# Usage:   Run via cron: 0 2 * * * /usr/local/bin/backup-system.sh
+#=============================================================
+
+#-------------------------------------------------------------
+# CONFIGURATION VARIABLES
+# Modify these to match your environment
+#-------------------------------------------------------------
+BACKUP_SOURCE="/etc /home /var/log"        <span class="code-annotation"># Directories to back up</span>
+BACKUP_DEST="/backup"                       <span class="code-annotation"># Where backups are stored</span>
+BACKUP_PREFIX="server01-full"               <span class="code-annotation"># Naming prefix</span>
+RETENTION_DAYS=7                            <span class="code-annotation"># Delete backups older than this</span>
+MIN_SPACE_MB=500                            <span class="code-annotation"># Minimum free space required (MB)</span>
+LOG_FILE="/var/log/backup-system.log"       <span class="code-annotation"># Log file location</span>
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)           <span class="code-annotation"># Current timestamp</span>
+ARCHIVE_NAME="${BACKUP_PREFIX}-${TIMESTAMP}.tar.gz"
+ARCHIVE_PATH="${BACKUP_DEST}/${ARCHIVE_NAME}"
+
+#-------------------------------------------------------------
+# LOGGING FUNCTION
+# Writes timestamped messages to log file and stdout
+#-------------------------------------------------------------
+log_message() {
+    local MESSAGE="$1"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $MESSAGE" | tee -a "$LOG_FILE"
+}
+
+#-------------------------------------------------------------
+# ERROR HANDLING
+# Exit cleanly on errors and log the failure
+#-------------------------------------------------------------
+handle_error() {
+    log_message "ERROR: $1"
+    log_message "Backup FAILED. Exiting."
+    exit 1
+}
+
+#-------------------------------------------------------------
+# START BACKUP PROCESS
+#-------------------------------------------------------------
+log_message "========================================="
+log_message "Starting backup: $ARCHIVE_NAME"
+log_message "Source: $BACKUP_SOURCE"
+log_message "Destination: $BACKUP_DEST"
+
+#-------------------------------------------------------------
+# PRE-BACKUP CHECK: Verify backup destination exists
+#-------------------------------------------------------------
+if [ ! -d "$BACKUP_DEST" ]; then
+    handle_error "Backup destination $BACKUP_DEST does not exist"
+fi
+
+#-------------------------------------------------------------
+# PRE-BACKUP CHECK: Verify sufficient disk space
+#-------------------------------------------------------------
+AVAILABLE_MB=$(df -BM "$BACKUP_DEST" | awk 'NR==2 {print int($4)}')
+log_message "Available space: ${AVAILABLE_MB}MB (minimum required: ${MIN_SPACE_MB}MB)"
+
+if [ "$AVAILABLE_MB" -lt "$MIN_SPACE_MB" ]; then
+    handle_error "Insufficient disk space: ${AVAILABLE_MB}MB available, ${MIN_SPACE_MB}MB required"
+fi
+
+#-------------------------------------------------------------
+# EXECUTE BACKUP
+#-------------------------------------------------------------
+log_message "Creating archive: $ARCHIVE_PATH"
+
+tar -czf "$ARCHIVE_PATH" $BACKUP_SOURCE 2>> "$LOG_FILE"
+TAR_EXIT_CODE=$?
+
+if [ $TAR_EXIT_CODE -ne 0 ]; then
+    <span class="code-annotation"># Exit code 1 = files changed during archive (often acceptable)</span>
+    <span class="code-annotation"># Exit code 2 = fatal error</span>
+    if [ $TAR_EXIT_CODE -eq 2 ]; then
+        handle_error "tar encountered a fatal error (exit code: $TAR_EXIT_CODE)"
+    else
+        log_message "WARNING: tar exited with code $TAR_EXIT_CODE (files may have changed during backup)"
+    fi
+fi
+
+#-------------------------------------------------------------
+# POST-BACKUP VERIFICATION
+#-------------------------------------------------------------
+<span class="code-annotation"># Check that the archive file exists and has a reasonable size</span>
+if [ ! -f "$ARCHIVE_PATH" ]; then
+    handle_error "Archive file not found after backup: $ARCHIVE_PATH"
+fi
+
+ARCHIVE_SIZE=$(stat --format="%s" "$ARCHIVE_PATH")
+ARCHIVE_SIZE_MB=$((ARCHIVE_SIZE / 1024 / 1024))
+log_message "Archive size: ${ARCHIVE_SIZE_MB}MB ($ARCHIVE_SIZE bytes)"
+
+if [ "$ARCHIVE_SIZE" -lt 1024 ]; then
+    handle_error "Archive suspiciously small (${ARCHIVE_SIZE} bytes) - possible failure"
+fi
+
+<span class="code-annotation"># Verify archive integrity</span>
+gzip -t "$ARCHIVE_PATH" 2>> "$LOG_FILE"
+if [ $? -ne 0 ]; then
+    handle_error "Archive integrity check FAILED for $ARCHIVE_PATH"
+fi
+log_message "Archive integrity verified (gzip -t passed)"
+
+#-------------------------------------------------------------
+# ROTATION: Delete old backups beyond retention period
+#-------------------------------------------------------------
+log_message "Removing backups older than $RETENTION_DAYS days..."
+DELETED_COUNT=$(find "$BACKUP_DEST" -name "${BACKUP_PREFIX}-*.tar.gz" -mtime +$RETENTION_DAYS -delete -print | wc -l)
+log_message "Deleted $DELETED_COUNT old backup(s)"
+
+#-------------------------------------------------------------
+# COMPLETION SUMMARY
+#-------------------------------------------------------------
+REMAINING_COUNT=$(find "$BACKUP_DEST" -name "${BACKUP_PREFIX}-*.tar.gz" | wc -l)
+log_message "Backup completed successfully"
+log_message "Archive: $ARCHIVE_NAME (${ARCHIVE_SIZE_MB}MB)"
+log_message "Backups on disk: $REMAINING_COUNT"
+log_message "========================================="
+
+exit 0</code></pre>
+
+<h3>Making the Script Operational</h3>
+
+<pre><code><span class="code-annotation"># 1. Save the script</span>
+sudo nano /usr/local/bin/backup-system.sh
+
+<span class="code-annotation"># 2. Make it executable</span>
+sudo chmod 750 /usr/local/bin/backup-system.sh
+
+<span class="code-annotation"># 3. Create the backup destination and log file</span>
+sudo mkdir -p /backup
+sudo touch /var/log/backup-system.log
+
+<span class="code-annotation"># 4. Test manually first (always test before scheduling!)</span>
+sudo /usr/local/bin/backup-system.sh
+
+<span class="code-annotation"># 5. Check the log</span>
+cat /var/log/backup-system.log
+
+<span class="code-annotation"># 6. Schedule with cron (daily at 2:00 AM)</span>
+sudo crontab -e
+<span class="code-annotation"># Add: 0 2 * * * /usr/local/bin/backup-system.sh >> /var/log/backup-cron.log 2>&1</span></code></pre>
+
+<div class="callout callout-project">
+<p class="callout-title">📋 Adapting for Project 3</p>
+<p>For your Project 3 backup implementation, modify this script to match your environment:</p>
+<ul>
+<li>Change <code>BACKUP_SOURCE</code> to include your critical directories</li>
+<li>Set <code>BACKUP_DEST</code> to your chosen backup destination</li>
+<li>Adjust <code>RETENTION_DAYS</code> to match your retention policy from Module 15.2</li>
+<li>Add your Splunk configuration backup (see the Splunk tab)</li>
+<li>Capture a screenshot of the log output as evidence of successful execution</li>
+</ul>
+</div>
+
+</section>
+
+</div><!-- End Linux Panel -->
+
+<!-- WINDOWS PANEL -->
+<div class="tab-panel" role="tabpanel" id="panel-windows" aria-labelledby="tab-windows">
+
+<section id="windows-wbadmin" aria-labelledby="wbadmin-heading">
+<h2 id="wbadmin-heading">Windows: wbadmin &amp; Volume Shadow Copy Service (VSS)</h2>
+
+<h3>Windows Server Backup (wbadmin)</h3>
+
+<p><code>wbadmin</code> is the command-line interface to Windows Server Backup, the native backup solution included with Windows Server. It supports full server, system state, and file/folder backups.</p>
+
+<h4>Installing the Feature</h4>
+
+<pre><code><span class="code-annotation"># Install Windows Server Backup feature (PowerShell, run as Administrator)</span>
+Install-WindowsFeature Windows-Server-Backup -IncludeManagementTools</code></pre>
+
+<h4>Common wbadmin Commands</h4>
+
+<pre><code><span class="code-annotation"># Full server backup (bare-metal recovery capable) to a volume</span>
+wbadmin start backup -backupTarget:E: -include:C: -allCritical -quiet
+
+<span class="code-annotation"># System state backup (AD, registry, boot files, system files)</span>
+wbadmin start systemstatebackup -backupTarget:E: -quiet
+
+<span class="code-annotation"># Backup specific volumes</span>
+wbadmin start backup -backupTarget:E: -include:C:,D: -quiet
+
+<span class="code-annotation"># List available backups</span>
+wbadmin get versions
+
+<span class="code-annotation"># Get details of a specific backup</span>
+wbadmin get items -version:05/01/2026-02:00</code></pre>
+
+<table>
+<thead>
+<tr><th>Parameter</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-backupTarget:</code></td><td>Destination volume or network share</td></tr>
+<tr><td><code>-include:</code></td><td>Volumes or paths to include</td></tr>
+<tr><td><code>-allCritical</code></td><td>Include all critical volumes for bare-metal recovery</td></tr>
+<tr><td><code>-quiet</code></td><td>Suppress prompts (required for scripting)</td></tr>
+<tr><td><code>-vssFull</code></td><td>Full VSS backup (updates backup history on files)</td></tr>
+</tbody>
+</table>
+
+<h3>Volume Shadow Copy Service (VSS)</h3>
+
+<p>VSS solves a fundamental problem: <strong>how do you back up files that are open and being written to?</strong></p>
+
+<ul>
+<li><strong>The problem:</strong> If you copy a database file while the application is writing to it, the copy may be internally inconsistent (corrupted)</li>
+<li><strong>VSS solution:</strong> VSS coordinates with applications ("VSS Writers") to create a point-in-time consistent snapshot before the backup reads the data</li>
+<li><strong>How it works:</strong>
+<ol>
+<li>Backup application requests a shadow copy</li>
+<li>VSS tells applications to flush buffers and pause writes</li>
+<li>A point-in-time snapshot is created (nearly instantaneous)</li>
+<li>Applications resume normal operation</li>
+<li>Backup reads from the consistent snapshot</li>
+</ol>
+</li>
+<li><strong>Key point:</strong> wbadmin uses VSS automatically—you get application-consistent backups without stopping services</li>
+</ul>
+
+<div class="callout callout-tip">
+<p class="callout-title">💡 VSS = Consistent Backups of Open Files</p>
+<p>Without VSS, backing up an active SQL Server database or Exchange mailbox by copying files would produce a corrupted backup. VSS ensures the backup captures a consistent state even while the application is running. This is the Windows equivalent of LVM snapshots on Linux.</p>
+</div>
+</section>
+
+<hr class="section-divider">
+
+<section id="windows-ps" aria-labelledby="ps-heading">
+<h2 id="ps-heading">Windows: PowerShell &amp; Task Scheduler</h2>
+
+<h3>PowerShell Backup Script</h3>
+
+<pre><code><span class="code-annotation"># backup-server.ps1 - Windows Server Backup Script</span>
+<span class="code-annotation"># Schedule with Task Scheduler for automated execution</span>
+
+<span class="code-annotation"># --- Configuration ---</span>
+$BackupTarget = "E:"
+$LogFile = "C:\BackupLogs\backup-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+$RetentionDays = 7
+
+<span class="code-annotation"># --- Ensure log directory exists ---</span>
+$LogDir = Split-Path $LogFile
+if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force }
+
+<span class="code-annotation"># --- Logging function ---</span>
+function Write-Log {
+    param([string]$Message)
+    $Entry = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $Message"
+    Add-Content -Path $LogFile -Value $Entry
+    Write-Host $Entry
+}
+
+<span class="code-annotation"># --- Start backup ---</span>
+Write-Log "Starting Windows Server Backup to $BackupTarget"
+
+try {
+    <span class="code-annotation"># Run wbadmin for system state + critical volumes</span>
+    $Result = wbadmin start backup -backupTarget:$BackupTarget -allCritical -quiet 2>&1
+    $ExitCode = $LASTEXITCODE
+
+    if ($ExitCode -eq 0) {
+        Write-Log "Backup completed successfully"
+    } else {
+        Write-Log "ERROR: wbadmin exited with code $ExitCode"
+        Write-Log "Output: $Result"
+    }
+} catch {
+    Write-Log "EXCEPTION: $($_.Exception.Message)"
+}
+
+<span class="code-annotation"># --- Clean old logs ---</span>
+Get-ChildItem -Path $LogDir -Filter "backup-*.log" |
+    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$RetentionDays) } |
+    Remove-Item -Force
+
+Write-Log "Backup process complete"</code></pre>
+
+<h3>Scheduling with Task Scheduler</h3>
+
+<p>Task Scheduler is the Windows equivalent of cron. You can configure it via GUI or PowerShell:</p>
+
+<pre><code><span class="code-annotation"># Create a scheduled task to run the backup script daily at 2:00 AM</span>
+
+$Action = New-ScheduledTaskAction `
+    -Execute "PowerShell.exe" `
+    -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Scripts\backup-server.ps1"
+
+$Trigger = New-ScheduledTaskTrigger -Daily -At "2:00AM"
+
+$Settings = New-ScheduledTaskSettingsSet `
+    -StartWhenAvailable `
+    -DontStopOnIdleEnd `
+    -RestartCount 3 `
+    -RestartInterval (New-TimeSpan -Minutes 5)
+
+Register-ScheduledTask `
+    -TaskName "DailyServerBackup" `
+    -Action $Action `
+    -Trigger $Trigger `
+    -Settings $Settings `
+    -User "SYSTEM" `
+    -RunLevel Highest `
+    -Description "Automated daily server backup via wbadmin"</code></pre>
+
+<h4>Key Task Scheduler Settings</h4>
+<table>
+<thead>
+<tr><th>Setting</th><th>Purpose</th><th>Recommendation</th></tr>
+</thead>
+<tbody>
+<tr><td>Run whether user is logged on or not</td><td>Ensures backup runs unattended</td><td>Always enable for backup tasks</td></tr>
+<tr><td>Run with highest privileges</td><td>Required for system-level backups</td><td>Required for wbadmin</td></tr>
+<tr><td>Start when available</td><td>Runs missed jobs when system wakes</td><td>Enable (handles reboots during backup window)</td></tr>
+<tr><td>Stop task if running longer than</td><td>Prevents hung tasks</td><td>Set to 2–4 hours depending on data size</td></tr>
+</tbody>
+</table>
+
+<h3>Verifying Scheduled Task Execution</h3>
+
+<pre><code><span class="code-annotation"># Check task status</span>
+Get-ScheduledTask -TaskName "DailyServerBackup" | Get-ScheduledTaskInfo
+
+<span class="code-annotation"># View last run result (0 = success)</span>
+(Get-ScheduledTaskInfo -TaskName "DailyServerBackup").LastTaskResult
+
+<span class="code-annotation"># View task history in Event Viewer</span>
+Get-WinEvent -LogName "Microsoft-Windows-TaskScheduler/Operational" -MaxEvents 10</code></pre>
+
+</section>
+
+</div><!-- End Windows Panel -->
+
+<!-- APPLICATION-AWARE PANEL -->
+<div class="tab-panel" role="tabpanel" id="panel-appaware" aria-labelledby="tab-appaware">
+
+<section id="app-aware" aria-labelledby="appaware-heading">
+<h2 id="appaware-heading">Application-Aware Backups</h2>
+
+<p>Standard file-level backups (<code>tar</code>, <code>rsync</code>, file copy) work well for static files—configuration files, documents, web content. But they can produce <strong>inconsistent backups</strong> for applications that maintain complex internal state, particularly databases.</p>
+
+<h3>The Problem: Why File-Level Backups May Be Insufficient</h3>
+
+<ul>
+<li>A database engine keeps data in memory buffers and writes to disk asynchronously</li>
+<li>Copying database files while the engine is running may capture a partially-written transaction</li>
+<li>The resulting backup file may be internally inconsistent and <strong>unrestorable</strong></li>
+<li>This applies to: databases (MySQL, PostgreSQL, SQL Server), email servers, directory services (Active Directory), and any application with write-ahead logs</li>
+</ul>
+
+<h3>Solution 1: LVM Snapshots (Linux)</h3>
+
+<div class="callout callout-note">
+<p class="callout-title">🔗 Connection to Week 10</p>
+<p>In Week 10, you learned about Logical Volume Manager (LVM) and how it provides flexible storage management. LVM snapshots leverage that same technology to create point-in-time copies for backup purposes.</p>
+</div>
+
+<p>An LVM snapshot captures the state of a logical volume at a specific instant. The application continues running while you back up from the frozen snapshot:</p>
+
+<pre><code><span class="code-annotation"># 1. Create a snapshot of the data volume (requires free space in VG)</span>
+sudo lvcreate --size 5G --snapshot --name data-snap /dev/vg01/lv-data
+
+<span class="code-annotation"># 2. Mount the snapshot read-only</span>
+sudo mount -o ro /dev/vg01/data-snap /mnt/snapshot
+
+<span class="code-annotation"># 3. Back up from the snapshot (consistent point-in-time copy)</span>
+tar -czf /backup/data-snapshot-$(date +%Y%m%d).tar.gz /mnt/snapshot/
+
+<span class="code-annotation"># 4. Unmount and remove the snapshot</span>
+sudo umount /mnt/snapshot
+sudo lvremove -f /dev/vg01/data-snap</code></pre>
+
+<p><strong>Key points:</strong></p>
+<ul>
+<li>The snapshot is nearly instantaneous (copy-on-write mechanism)</li>
+<li>The original volume continues operating normally</li>
+<li>The snapshot only uses space for blocks that change after creation</li>
+<li>For database consistency, briefly pause writes (flush) before snapshotting</li>
+</ul>
+
+<h3>Solution 2: VSS Application-Aware Snapshots (Windows)</h3>
+
+<p>As covered in the Windows section, VSS coordinates with application-specific "writers" to ensure consistency:</p>
+
+<ul>
+<li><strong>SQL Server VSS Writer:</strong> ensures database transactions are complete before snapshot</li>
+<li><strong>Active Directory VSS Writer:</strong> ensures AD database consistency</li>
+<li><strong>Exchange VSS Writer:</strong> ensures mailbox database consistency</li>
+<li><code>wbadmin</code> invokes VSS automatically—no extra steps required</li>
+</ul>
+
+<h3>Solution 3: Database Dump Utilities (Awareness Level)</h3>
+
+<p>Database dump utilities export data in a logical format that is always consistent, regardless of ongoing writes:</p>
+
+<pre><code><span class="code-annotation"># MySQL/MariaDB: export all databases to a SQL dump file</span>
+mysqldump --all-databases --single-transaction > /backup/mysql-all-$(date +%Y%m%d).sql
+
+<span class="code-annotation"># PostgreSQL: export all databases</span>
+pg_dumpall > /backup/postgres-all-$(date +%Y%m%d).sql
+
+<span class="code-annotation"># These produce text files containing SQL statements to recreate the data</span>
+<span class="code-annotation"># --single-transaction ensures a consistent snapshot without locking tables</span></code></pre>
+
+<div class="callout callout-tip">
+<p class="callout-title">💡 When to Use Each Approach</p>
+<ul>
+<li><strong>LVM Snapshots:</strong> Fast, works for any application on the volume, good for large databases where dump is too slow</li>
+<li><strong>VSS (Windows):</strong> Automatic with wbadmin, application-aware, no extra scripting needed</li>
+<li><strong>Database Dumps:</strong> Portable, human-readable, easy to restore to different servers, but slower for large databases</li>
+<li><strong>For Project 3:</strong> If you have no databases running, standard file-level backups (tar/rsync) are appropriate. Document <em>why</em> file-level is sufficient for your environment.</li>
+</ul>
+</div>
+
+</section>
+
+</div><!-- End App-Aware Panel -->
+
+<!-- SPLUNK PANEL -->
+<div class="tab-panel" role="tabpanel" id="panel-splunk" aria-labelledby="tab-splunk">
+
+<section id="splunk-backup" aria-labelledby="splunk-heading">
+<h2 id="splunk-heading">Backing Up Splunk Configurations</h2>
+
+<p>Your Splunk deployment from Weeks 12–14 is critical infrastructure for Project 3. Losing your Splunk configuration means losing your dashboards, alerts, saved searches, forwarder configurations, and index definitions. This section covers what to back up, how to back it up, and how to recover.</p>
+
+<h3>Splunk Data Components: What Needs Backup?</h3>
+
+<table>
+<thead>
+<tr><th>Component</th><th>Location</th><th>Size</th><th>Backup Priority</th></tr>
+</thead>
+<tbody>
+<tr><td>Configurations</td><td><code>$SPLUNK_HOME/etc/</code></td><td>Small (MBs)</td><td><strong>Critical – always back up</strong></td></tr>
+<tr><td>Index data</td><td><code>$SPLUNK_HOME/var/lib/splunk/</code></td><td>Large (GBs+)</td><td>Conditional – see below</td></tr>
+<tr><td>Splunk binaries</td><td><code>$SPLUNK_HOME/bin/</code>, etc.</td><td>Medium</td><td>Low – reinstall from package</td></tr>
+</tbody>
+</table>
+
+<h4>What lives in $SPLUNK_HOME/etc/?</h4>
+<ul>
+<li><code>etc/system/local/</code> – Your custom system-level configurations (inputs.conf, outputs.conf, server.conf, etc.)</li>
+<li><code>etc/apps/</code> – Installed apps, dashboards, saved searches, alert definitions</li>
+<li><code>etc/users/</code> – Per-user settings, private saved searches</li>
+<li><code>etc/deployment-apps/</code> – Configurations pushed to forwarders (if using deployment server)</li>
+<li><code>etc/auth/</code> – Authentication configurations and certificates</li>
+</ul>
+
+<h4>Index Data: Back Up or Not?</h4>
+<ul>
+<li>Index data can be <strong>very large</strong> (gigabytes to terabytes in production)</li>
+<li>In a lab environment, index data may be small enough to include in backups</li>
+<li>In production, rely on <strong>retention policies</strong> and the ability to <strong>re-index from sources</strong> rather than backing up index data</li>
+<li>For Project 3: backing up configurations is sufficient; document your reasoning for not backing up index data (if applicable)</li>
+</ul>
+
+<h3>How to Back Up Splunk Configurations</h3>
+
+<pre><code><span class="code-annotation"># Typical Splunk installation path (Linux)</span>
+SPLUNK_HOME="/opt/splunk"
+
+<span class="code-annotation"># Create a compressed backup of all Splunk configurations</span>
+tar -czf /backup/splunk-etc-$(date +%Y%m%d-%H%M%S).tar.gz \
+    -C "$SPLUNK_HOME" etc/
+
+<span class="code-annotation"># Or use rsync for incremental configuration backup</span>
+rsync -av "$SPLUNK_HOME/etc/" /backup/splunk-etc-mirror/
+
+<span class="code-annotation"># For Universal Forwarders (on monitored hosts)</span>
+SPLUNK_HOME="/opt/splunkforwarder"
+tar -czf /backup/splunk-fwd-etc-$(date +%Y%m%d).tar.gz \
+    -C "$SPLUNK_HOME" etc/</code></pre>
+
+<div class="callout callout-tip">
+<p class="callout-title">💡 Integration with Your Backup Script</p>
+<p>Add Splunk configuration backup to the Bash backup script from the previous section. Simply add <code>$SPLUNK_HOME/etc</code> to your <code>BACKUP_SOURCE</code> variable, or create a separate Splunk-specific backup job.</p>
+</div>
+
+<h3>Recovery Scenario: Rebuilding Splunk from Configuration Backup</h3>
+
+<p>Imagine your Splunk server's disk fails completely. Here is the recovery procedure using your configuration backup:</p>
+
+<details>
+<summary>Step-by-Step Splunk Recovery Walkthrough</summary>
+<div class="details-content">
+<ol>
+<li><strong>Rebuild the base system:</strong> Reinstall the OS (Linux) and apply your standard hardening (documented in Project 3)</li>
+<li><strong>Install Splunk Enterprise:</strong> Download and install the same version of Splunk Enterprise
+<pre><code>sudo dpkg -i splunk-enterprise-*.deb
+<span class="code-annotation"># or: sudo rpm -i splunk-enterprise-*.rpm</span></code></pre>
+</li>
+<li><strong>Stop Splunk before restoring configurations:</strong>
+<pre><code>sudo /opt/splunk/bin/splunk stop</code></pre>
+</li>
+<li><strong>Restore configuration backup:</strong>
+<pre><code><span class="code-annotation"># Remove the default etc/ that was just installed</span>
+sudo rm -rf /opt/splunk/etc
+
+<span class="code-annotation"># Restore your backed-up configurations</span>
+sudo tar -xzf /backup/splunk-etc-20260428-020000.tar.gz -C /opt/splunk/
+
+<span class="code-annotation"># Fix ownership</span>
+sudo chown -R splunk:splunk /opt/splunk/etc</code></pre>
+</li>
+<li><strong>Start Splunk:</strong>
+<pre><code>sudo /opt/splunk/bin/splunk start --accept-license</code></pre>
+</li>
+<li><strong>Verify recovery:</strong>
+<ul>
+<li>Log into Splunk Web – confirm dashboards and saved searches are present</li>
+<li>Check that forwarders reconnect and data begins flowing</li>
+<li>Verify alerts are active</li>
+<li>Index data will rebuild as forwarders resend (or from monitored files)</li>
+</ul>
+</li>
+</ol>
+<p><strong>Key insight:</strong> Because Splunk configurations are small (megabytes), backing them up is cheap and fast. Recovery is straightforward—reinstall Splunk, restore <code>etc/</code>, and start the service. Your dashboards, alerts, and all customizations return immediately.</p>
+</div>
+</details>
+
+<h3>Connection to Project 3 Splunk Documentation</h3>
+
+<div class="callout callout-project">
+<p class="callout-title">📋 Project 3: Splunk Backup Documentation</p>
+<p>Your Project 3 submission should document your Splunk backup approach:</p>
+<ul>
+<li><strong>What you back up:</strong> <code>$SPLUNK_HOME/etc/</code> (configurations, apps, dashboards, alerts)</li>
+<li><strong>Why not index data:</strong> Brief justification (size, re-indexing capability, retention policies)</li>
+<li><strong>How you back it up:</strong> Show the command or script section that handles Splunk config backup</li>
+<li><strong>Recovery plan:</strong> Brief description of how you would rebuild Splunk from the config backup</li>
+</ul>
+</div>
+
+</section>
+
+</div><!-- End Splunk Panel -->
+
+</div><!-- End Tab Container -->
+
+<hr class="section-divider">
+
+<!-- Knowledge Check -->
+<section id="knowledge-check" aria-labelledby="kc-heading">
+<h2 id="kc-heading">Knowledge Check</h2>
+
+<p>Test your understanding of the backup implementation concepts covered in this module. These questions are <strong>ungraded</strong>—use them to identify areas that may need review before implementing your Project 3 backup solution.</p>
+
+<div class="quiz-question" id="q1">
+<p class="q-text">1. You need to create a daily backup of /var/www (50 GB) to a remote server. The data changes by about 2% daily. Which tool is most efficient for this scenario?</p>
+<div class="quiz-option"><label><input type="radio" name="q1" value="a"> <code>tar -czf</code> creating a full compressed archive each day and transferring via scp</label></div>
+<div class="quiz-option"><label><input type="radio" name="q1" value="b"> <code>rsync -avz</code> over SSH to synchronize only changed files</label></div>
+<div class="quiz-option"><label><input type="radio" name="q1" value="c"> <code>cp -r</code> to copy the entire directory to a mounted NFS share</label></div>
+<div class="quiz-option"><label><input type="radio" name="q1" value="d"> <code>dd</code> to create a block-level image of the partition</label></div>
+<button class="btn-check" onclick="checkAnswer('q1','b')" aria-label="Check answer for question 1">Check Answer</button>
+<div class="quiz-feedback" id="q1-feedback"></div>
+</div>
+
+<div class="quiz-question" id="q2">
+<p class="q-text">2. What does the following cron entry do? <code>30 3 * * 0 /usr/local/bin/backup-full.sh</code></p>
+<div class="quiz-option"><label><input type="radio" name="q2" value="a"> Runs the backup script every 30 minutes on the 3rd of each month</label></div>
+<div class="quiz-option"><label><input type="radio" name="q2" value="b"> Runs the backup script at 3:30 AM every day</label></div>
+<div class="quiz-option"><label><input type="radio" name="q2" value="c"> Runs the backup script at 3:30 AM every Sunday</label></div>
+<div class="quiz-option"><label><input type="radio" name="q2" value="d"> Runs the backup script at 12:30 AM every 3 hours on Sundays</label></div>
+<button class="btn-check" onclick="checkAnswer('q2','c')" aria-label="Check answer for question 2">Check Answer</button>
+<div class="quiz-feedback" id="q2-feedback"></div>
+</div>
+
+<div class="quiz-question" id="q3">
+<p class="q-text">3. Why does Windows Server Backup use Volume Shadow Copy Service (VSS)?</p>
+<div class="quiz-option"><label><input type="radio" name="q3" value="a"> VSS compresses backup data more efficiently than standard file copy</label></div>
+<div class="quiz-option"><label><input type="radio" name="q3" value="b"> VSS encrypts backup data in transit to prevent interception</label></div>
+<div class="quiz-option"><label><input type="radio" name="q3" value="c"> VSS creates application-consistent snapshots so open files are backed up in a valid state</label></div>
+<div class="quiz-option"><label><input type="radio" name="q3" value="d"> VSS enables backup to network shares that are otherwise inaccessible</label></div>
+<button class="btn-check" onclick="checkAnswer('q3','c')" aria-label="Check answer for question 3">Check Answer</button>
+<div class="quiz-feedback" id="q3-feedback"></div>
+</div>
+
+<div class="quiz-question" id="q4">
+<p class="q-text">4. When backing up a Splunk deployment for disaster recovery, which component is the highest priority to include in your backup?</p>
+<div class="quiz-option"><label><input type="radio" name="q4" value="a"> <code>$SPLUNK_HOME/var/lib/splunk/</code> (index data – contains all ingested events)</label></div>
+<div class="quiz-option"><label><input type="radio" name="q4" value="b"> <code>$SPLUNK_HOME/etc/</code> (configurations – contains apps, dashboards, inputs, outputs)</label></div>
+<div class="quiz-option"><label><input type="radio" name="q4" value="c"> <code>$SPLUNK_HOME/bin/</code> (binaries – contains the Splunk executable)</label></div>
+<div class="quiz-option"><label><input type="radio" name="q4" value="d"> <code>$SPLUNK_HOME/var/log/</code> (Splunk's own internal logs)</label></div>
+<button class="btn-check" onclick="checkAnswer('q4','b')" aria-label="Check answer for question 4">Check Answer</button>
+<div class="quiz-feedback" id="q4-feedback"></div>
+</div>
+
+<div class="quiz-question" id="q5">
+<p class="q-text">5. A backup script uses <code>tar</code> and exits with code 1 (not 0, not 2). What is the most likely explanation?</p>
+<div class="quiz-option"><label><input type="radio" name="q5" value="a"> The archive was created successfully with no issues</label></div>
+<div class="quiz-option"><label><input type="radio" name="q5" value="b"> Some files were changed or deleted while tar was reading them, but the archive was created</label></div>
+<div class="quiz-option"><label><input type="radio" name="q5" value="c"> tar encountered a fatal error and no archive was created</label></div>
+<div class="quiz-option"><label><input type="radio" name="q5" value="d"> The destination disk is full and the archive is incomplete</label></div>
+<button class="btn-check" onclick="checkAnswer('q5','b')" aria-label="Check answer for question 5">Check Answer</button>
+<div class="quiz-feedback" id="q5-feedback"></div>
+</div>
+
+<div class="quiz-question" id="q6">
+<p class="q-text">6. You want to create space-efficient daily backups where each day's backup appears to be a complete copy, but only changed files use additional disk space. Which rsync option enables this?</p>
+<div class="quiz-option"><label><input type="radio" name="q6" value="a"> <code>--delete</code></label></div>
+<div class="quiz-option"><label><input type="radio" name="q6" value="b"> <code>--compress</code></label></div>
+<div class="quiz-option"><label><input type="radio" name="q6" value="c"> <code>--link-dest</code></label></div>
+<div class="quiz-option"><label><input type="radio" name="q6" value="d"> <code>--exclude</code></label></div>
+<button class="btn-check" onclick="checkAnswer('q6','c')" aria-label="Check answer for question 6">Check Answer</button>
+<div class="quiz-feedback" id="q6-feedback"></div>
+</div>
+
+</section>
+
+<hr class="section-divider">
+
+<!-- Project 3 Connection -->
+<section id="project3" aria-labelledby="p3-heading">
+<h2 id="p3-heading">Connection to Project 3</h2>
+
+<div class="callout callout-project">
+<p class="callout-title">📋 Project 3: Backup Implementation Evidence</p>
+<p>Project 3 (Security Hardening &amp; Monitoring with Splunk, 75 pts, due Monday, May 18, 2026) requires you to implement and document a backup solution for your lab infrastructure. Based on this module, here is what you need to deliver:</p>
+
+<h4>Required Evidence</h4>
+<ol>
+<li><strong>Backup script or configuration:</strong> Include your actual backup script (Bash or PowerShell) or scheduled task configuration. Annotate it to explain what each section does.</li>
+<li><strong>Scheduled automation:</strong> Show your cron entry (Linux) or Task Scheduler configuration (Windows) proving the backup runs automatically.</li>
+<li><strong>Successful execution log:</strong> Capture a screenshot or copy of the log output showing at least one successful backup run.</li>
+<li><strong>Splunk configuration backup:</strong> Document what Splunk components you back up (<code>$SPLUNK_HOME/etc/</code>) and show the command or script section that performs this backup.</li>
+<li><strong>Recovery plan:</strong> Brief description (1–2 paragraphs) of how you would restore from your backup, including Splunk recovery.</li>
+</ol>
+
+<h4>Connecting to Your Module 15.2 Strategy</h4>
+<p>Your implementation should match the backup strategy you designed in Module 15.2:</p>
+<ul>
+<li>Does your script back up the systems and directories you identified?</li>
+<li>Does your cron/Task Scheduler schedule match the frequency you planned?</li>
+<li>Does your rotation logic (<code>RETENTION_DAYS</code>) match your retention policy?</li>
+<li>Is the backup destination consistent with what you documented?</li>
+</ul>
+
+<h4>What Comes Next</h4>
+<p>In Module 15.4, you will learn to <strong>verify</strong> your backup and perform a <strong>test restore</strong>—which is also required evidence for Project 3. Do not submit your project until you have tested that your backup can actually be restored.</p>
+</div>
+
+</section>
+
+</main>
+
+<!-- JavaScript -->
+<script>
+// Tab functionality
+(function() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            // Deactivate all
+            tabBtns.forEach(function(b) {
+                b.classList.remove('active');
+                b.setAttribute('aria-selected', 'false');
+                b.setAttribute('tabindex', '-1');
+            });
+            tabPanels.forEach(function(p) {
+                p.classList.remove('active');
+            });
+
+            // Activate clicked
+            btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
+            btn.setAttribute('tabindex', '0');
+            var panelId = btn.getAttribute('aria-controls');
+            document.getElementById(panelId).classList.add('active');
+        });
+
+        // Keyboard navigation for tabs
+        btn.addEventListener('keydown', function(e) {
+            var index = Array.from(tabBtns).indexOf(btn);
+            var newIndex = index;
+
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                newIndex = (index + 1) % tabBtns.length;
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                newIndex = (index - 1 + tabBtns.length) % tabBtns.length;
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                newIndex = 0;
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                newIndex = tabBtns.length - 1;
+            }
+
+            if (newIndex !== index) {
+                tabBtns[newIndex].click();
+                tabBtns[newIndex].focus();
+            }
+        });
+    });
+})();
+
+// Quiz functionality
+var feedbackData = {
+    q1: {
+        correct: 'Correct! rsync\'s delta transfer algorithm means only the 2% of changed data (about 1 GB) needs to be transferred each day, rather than the full 50 GB. This saves both time and bandwidth, especially over SSH to a remote server.',
+        incorrect: 'Not quite. For a 50 GB dataset with only 2% daily change, rsync is the most efficient choice because its delta transfer algorithm only sends changed file portions over the network. tar would create and transfer a full 50 GB archive each day.'
+    },
+    q2: {
+        correct: 'Correct! The cron fields are: minute(30) hour(3) day-of-month(*) month(*) day-of-week(0=Sunday). So this runs at 3:30 AM every Sunday—a common schedule for weekly full backups.',
+        incorrect: 'Not quite. Remember the cron field order: minute hour day-of-month month day-of-week. "30 3 * * 0" means minute 30, hour 3, any day of month, any month, day-of-week 0 (Sunday). This runs at 3:30 AM every Sunday.'
+    },
+    q3: {
+        correct: 'Correct! VSS coordinates with applications (via "VSS Writers") to flush memory buffers and create a point-in-time consistent snapshot. This ensures that open files—especially databases—are captured in a valid, restorable state.',
+        incorrect: 'Not quite. VSS (Volume Shadow Copy Service) exists specifically to solve the open-file consistency problem. It coordinates with applications to create a point-in-time snapshot so that even files being actively written to are captured in a consistent state.'
+    },
+    q4: {
+        correct: 'Correct! $SPLUNK_HOME/etc/ contains all your customizations: dashboards, saved searches, alerts, input/output configurations, and app settings. It is small (megabytes) and critical. Binaries can be reinstalled, and index data can often be re-ingested from sources.',
+        incorrect: 'Not quite. The highest priority is $SPLUNK_HOME/etc/ (configurations). This directory is small but contains everything that makes your Splunk instance unique: dashboards, alerts, saved searches, and all configuration files. Binaries can be reinstalled from the package, and index data can potentially be re-ingested.'
+    },
+    q5: {
+        correct: 'Correct! tar exit code 1 means "some files differ"—typically because files were modified or deleted while tar was reading them. The archive was still created and is usually usable. Exit code 2 indicates a fatal error. The backup script example handles this distinction.',
+        incorrect: 'Not quite. tar uses specific exit codes: 0 = complete success, 1 = some files changed during archiving (archive was created but may not include the latest version of those files), 2 = fatal error (archive may not have been created). Exit code 1 is common on active systems and is usually acceptable.'
+    },
+    q6: {
+        correct: 'Correct! --link-dest tells rsync to create hard links to files that are unchanged from a reference directory (typically yesterday\'s backup). Each day\'s backup directory contains every file, but unchanged files are just hard links—using no additional disk space.',
+        incorrect: 'Not quite. The --link-dest option is the key to space-efficient incremental backups with rsync. It creates hard links to unchanged files from a previous backup, so each backup appears complete but only changed files consume additional disk space.'
+    }
+};
+
+function checkAnswer(qId, correctAnswer) {
+    var feedbackEl = document.getElementById(qId + '-feedback');
+    var selected = document.querySelector('input[name="' + qId + '"]:checked');
+
+    if (!selected) {
+        feedbackEl.textContent = 'Please select an answer.';
+        feedbackEl.className = 'quiz-feedback incorrect';
+        return;
+    }
+
+    if (selected.value === correctAnswer) {
+        feedbackEl.textContent = feedbackData[qId].correct;
+        feedbackEl.className = 'quiz-feedback correct';
+    } else {
+        feedbackEl.textContent = feedbackData[qId].incorrect;
+        feedbackEl.className = 'quiz-feedback incorrect';
+    }
+}
+
+// Smooth scroll offset for fixed nav
+document.querySelectorAll('.nav-bar a').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        var href = this.getAttribute('href');
+        if (href && href.startsWith('#')) {
+            e.preventDefault();
+            var target = document.querySelector(href);
+            if (target) {
+                var offset = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-height')) || 56;
+                var top = target.getBoundingClientRect().top + window.pageYOffset - offset - 16;
+                window.scrollTo({ top: top, behavior: 'smooth' });
+                target.setAttribute('tabindex', '-1');
+                target.focus({ preventScroll: true });
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>
