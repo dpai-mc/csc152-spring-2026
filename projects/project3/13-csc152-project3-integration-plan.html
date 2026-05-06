@@ -640,8 +640,8 @@
         <span>inputs.conf created (auth.log, syslog, audit.log, ufw.log)</span>
       </label>
       <label class="check-item" id="ck-label-5">
-        <input type="checkbox" id="ck5" aria-label="splunk user added to adm group" />
-        <span>splunk user added to adm group</span>
+        <input type="checkbox" id="ck5" aria-label="splunkfwd user added to adm group" />
+        <span>splunkfwd user added to adm group</span>
       </label>
       <label class="check-item" id="ck-label-6">
         <input type="checkbox" id="ck6" aria-label="setfacl applied for audit.log read access" />
@@ -786,33 +786,43 @@
         <div class="alert alert-warning" role="note" style="margin: 0 0 14px;">
           <span class="alert-icon" aria-hidden="true">&#9888;</span>
           <div>
-            <strong>Version must match:</strong> Your Splunk Enterprise on splunk-vm is version <strong>10.2.2</strong>. The Universal Forwarder version must match exactly. The wget command below uses the 10.2.2 filename — do not substitute a different version.
+            <strong>Version note:</strong> The plan originally targeted version <strong>10.2.2</strong>, but Splunk skipped that release — only 10.2.1 and 10.2.3 exist. Install <strong>10.2.3</strong> instead. The Universal Forwarder download page requires a free Splunk account login to generate a valid wget link — log in at <code>splunk.com</code>, navigate to Downloads &rarr; Universal Forwarder, select version 10.2.3, Linux .deb, and copy the wget command shown.
           </div>
         </div>
 
         <div class="code-block" aria-label="Download and install Splunk Universal Forwarder">
           <div class="code-block-label">Terminal — linux-server (10.0.2.10)</div>
-          <pre><code># Create install directory
+          <pre><code># Update package lists first
+sudo apt update
+
+# Create install directory
 mkdir -p ~/splunk-forwarder && cd ~/splunk-forwarder
 
-# Download Splunk Universal Forwarder 10.2.2 for Linux (64-bit .deb)
-# If this URL fails, get the current 10.2.2 link from:
-#   splunk.com/en_us/download/universal-forwarder.html
-# Select version 10.2.2, Linux, .deb package, then copy the wget command shown
-wget -O splunkforwarder-10.2.2-linux-amd64.deb \
-  'https://download.splunk.com/products/universalforwarder/releases/10.2.2/linux/splunkforwarder-10.2.2-linux-amd64.deb'
+# Download Splunk Universal Forwarder 10.2.3 for Linux (64-bit .deb)
+# The URL below requires a login-authenticated token — get the full wget command
+# by logging into splunk.com, going to Downloads → Universal Forwarder,
+# selecting version 10.2.3, Linux, .deb package, then copying the wget command shown.
+# Example (your token hash will differ):
+wget -O splunkforwarder-10.2.3-4d61cf8a5c0c-linux-amd64.deb \
+  'https://download.splunk.com/products/universalforwarder/releases/10.2.3/linux/splunkforwarder-10.2.3-4d61cf8a5c0c-linux-amd64.deb'
 
 # Install
-sudo dpkg -i splunkforwarder-10.2.2-linux-amd64.deb
+sudo dpkg -i splunkforwarder-10.2.3-4d61cf8a5c0c-linux-amd64.deb
 
-# Start and accept license
+# Start and accept license (initializes the forwarder — required before boot-start)
 sudo /opt/splunkforwarder/bin/splunk start --accept-license \
   --answer-yes \
   --no-prompt \
   --seed-passwd 'ForwarderPass1!'
 
+# Stop before enabling boot-start (boot-start cannot be set while the forwarder is running)
+sudo /opt/splunkforwarder/bin/splunk stop
+
 # Enable boot-start
-sudo /opt/splunkforwarder/bin/splunk enable boot-start</code></pre>
+sudo /opt/splunkforwarder/bin/splunk enable boot-start
+
+# Start forwarder again
+sudo /opt/splunkforwarder/bin/splunk start</code></pre>
         </div>
 
         <div class="alert alert-info" role="note" style="margin: 14px 0 0;">
@@ -910,26 +920,40 @@ cat /opt/splunkforwarder/etc/system/local/inputs.conf</code></pre>
 
         <p>The Splunk forwarder runs as the <code>splunk</code> user and needs read access to system log files. Without this, the forwarder starts but cannot read the log files specified in <code>inputs.conf</code>.</p>
 
-        <div class="code-block" aria-label="Grant splunk user read access to log files">
+        <div class="note-box">
+          <strong>User name difference:</strong> The Universal Forwarder .deb package creates a system user named <code>splunkfwd</code> — not <code>splunk</code>. (The Splunk Enterprise installer uses <code>splunk</code>; the forwarder uses <code>splunkfwd</code>.) Confirm with <code>id splunkfwd</code> before running the commands below.
+        </div>
+
+        <div class="code-block" aria-label="Grant splunkfwd user read access to log files">
           <div class="code-block-label">Terminal — linux-server</div>
-          <pre><code># Add splunk user to adm group (gives read access to /var/log files)
-sudo usermod -aG adm splunk
+          <pre><code># Confirm the forwarder OS user (should return uid/gid info for splunkfwd)
+id splunkfwd
+
+# Add splunkfwd to adm group (gives read access to /var/log files)
+sudo usermod -aG adm splunkfwd
 
 # For audit log specifically (restricted permissions):
-sudo setfacl -m u:splunk:r /var/log/audit/audit.log
-# If setfacl not available:
+# Install acl tools if not already present
 sudo apt install -y acl
-sudo setfacl -m u:splunk:r /var/log/audit/audit.log
+sudo setfacl -m u:splunkfwd:r /var/log/audit/audit.log
 
-# Verify
-sudo -u splunk cat /var/log/auth.log | head -5
-sudo -u splunk cat /var/log/audit/audit.log | head -5</code></pre>
+# Verify read access
+sudo -u splunkfwd cat /var/log/auth.log | head -5
+sudo -u splunkfwd cat /var/log/audit/audit.log | head -5</code></pre>
+        </div>
+
+        <div class="expected-box" role="note">
+          <strong>Expected:</strong> Both commands should print log lines. If either returns <code>Permission denied</code>, the permission step did not apply correctly — re-run the relevant <code>usermod</code> or <code>setfacl</code> command and verify before continuing.
+        </div>
+
+        <div class="note-box" style="margin-top: 12px;">
+          <strong>acl install — services restart prompt:</strong> Installing the <code>acl</code> package may trigger a systemd prompt listing services that need to be restarted due to a kernel library update. Accept the default pre-selected services and confirm. This is normal and safe.
         </div>
 
         <div class="alert alert-warning" role="note" style="margin: 14px 0 0;">
           <span class="alert-icon" aria-hidden="true">&#9888;</span>
           <div>
-            <strong>Group membership requires restart:</strong> After running <code>usermod -aG adm splunk</code>, the forwarder service must be restarted before the new group membership takes effect. The restart in Section 6 will apply this change.
+            <strong>Group membership requires restart:</strong> After running <code>usermod -aG adm splunkfwd</code>, the forwarder service must be restarted before the new group membership takes effect. The restart in Section 6 will apply this change.
           </div>
         </div>
       </section>
@@ -937,6 +961,10 @@ sudo -u splunk cat /var/log/audit/audit.log | head -5</code></pre>
       <!-- ══ Section 6: Restart ══ -->
       <section class="section-card" id="restart" aria-labelledby="h-restart">
         <h2 id="h-restart"><span class="section-num" aria-hidden="true">6</span> Restart Forwarder and Verify Connection</h2>
+
+        <div class="note-box">
+          <strong>Splunk CLI credentials:</strong> The <code>splunk</code> management CLI requires authentication even for read-only commands like <code>list forward-server</code>. Use the forwarder admin credentials set during install in Section 2 — username <code>admin</code>, password <code>ForwarderPass1!</code>. Pass them inline with <code>-auth admin:ForwarderPass1!</code> to avoid the interactive prompt.
+        </div>
 
         <div class="code-block" aria-label="Restart forwarder and verify connection">
           <div class="code-block-label">Terminal — linux-server</div>
@@ -946,8 +974,8 @@ sudo /opt/splunkforwarder/bin/splunk restart
 # Check forwarder status
 sudo /opt/splunkforwarder/bin/splunk status
 
-# Check connections to Splunk
-sudo /opt/splunkforwarder/bin/splunk list forward-server
+# Check connections to Splunk (pass -auth to skip interactive login prompt)
+sudo /opt/splunkforwarder/bin/splunk list forward-server -auth admin:ForwarderPass1!
 
 # View forwarder logs for connection status
 sudo tail -50 /opt/splunkforwarder/var/log/splunk/splunkd.log | grep -i "tcpout\|connect\|error"</code></pre>
@@ -955,14 +983,15 @@ sudo tail -50 /opt/splunkforwarder/var/log/splunk/splunkd.log | grep -i "tcpout\
 
         <p>Expected output from <code>list forward-server</code>:</p>
 
-        <div class="expected-box" role="note">
-          <strong>Expected output:</strong>
-          <div class="code-block" style="margin-top:8px;">
-            <pre><code>Active forwards:
+        <div class="code-block" aria-label="Expected list forward-server output">
+          <div class="code-block-label">Expected output</div>
+          <pre><code>Active forwards:
     10.0.2.20:9997
 Configured but inactive forwards:
     (none)</code></pre>
-          </div>
+        </div>
+
+        <div class="expected-box" role="note">
           If <code>10.0.2.20:9997</code> appears under "Configured but inactive forwards" instead, the forwarder cannot reach splunk-vm. Check the network path and verify that Splunk Enterprise on splunk-vm is running and listening on port 9997.
         </div>
       </section>
@@ -1000,7 +1029,7 @@ logger -p auth.info "TEST: Integration 13 forwarder verification - $(date)"</cod
 
         <div class="code-block" aria-label="Splunk search for test event">
           <div class="code-block-label">Splunk Search — find the test event</div>
-          <pre><code">index=linux_logs "Integration 13 forwarder verification"</code></pre>
+          <pre><code>index=linux_logs "Integration 13 forwarder verification"</code></pre>
         </div>
 
         <div class="expected-box" role="note">
