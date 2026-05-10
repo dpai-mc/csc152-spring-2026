@@ -1178,10 +1178,10 @@ $policy = New-WBPolicy
 Add-WBSystemState -Policy $policy
 
 # Get the C: volume object — New-WBBackupTarget requires a WBVolume object, not a path string.
-# DriveLetter is returned as "C:" (with colon), so filter with -like to match reliably.
+# Use MountPath (not DriveLetter) to identify the volume — DriveLetter is not populated on Server Core/DC.
 # Windows Server Backup will store the backup in a WindowsImageBackup folder on this volume.
 # Note: For production use, a separate volume (D:) is recommended. C: is acceptable for lab use.
-$targetVolume = Get-WBVolume -AllVolumes | Where-Object { $_.DriveLetter -like "C*" }
+$targetVolume = Get-WBVolume -AllVolumes | Where-Object { $_.MountPath -eq "C:" }
 $targetVolume  # Verify: should show a WBVolume object, not empty
 
 $backupTarget = New-WBBackupTarget -Volume $targetVolume -PreserveExistingBackups $true
