@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 16.3 – Security &amp; Monitoring Synthesis</title>
+<style>
+:root {
+  --nav-bg: #1a2744;
+  --nav-text: #ffffff;
+  --nav-hover: #4fc3f7;
+  --heading-color: #1a2744;
+  --accent: #0d47a1;
+  --accent-light: #e3f2fd;
+  --border: #cfd8dc;
+  --bg-page: #ffffff;
+  --bg-section: #f8f9fa;
+  --bg-code: #263238;
+  --code-text: #e0e0e0;
+  --text-primary: #212121;
+  --text-secondary: #424242;
+  --success: #2e7d32;
+  --success-bg: #e8f5e9;
+  --error: #c62828;
+  --error-bg: #ffebee;
+  --warning: #f57f17;
+  --warning-bg: #fff8e1;
+  --focus-ring: #1565c0;
+  --layer1: #e8eaf6;
+  --layer2: #e3f2fd;
+  --layer3: #e0f7fa;
+  --layer4: #e8f5e9;
+  --layer5: #fff8e1;
+  --layer6: #fce4ec;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-page);
+}
+
+/* NAV BAR */
+.nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--nav-bg);
+  padding: 0.5rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+}
+.nav-bar a {
+  color: var(--nav-text);
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-bar a:hover { color: var(--nav-hover); background: rgba(255,255,255,0.1); }
+.nav-bar a:focus-visible {
+  outline: 3px solid var(--nav-hover);
+  outline-offset: 2px;
+}
+
+/* MAIN CONTENT */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+h1 { color: var(--heading-color); font-size: 1.8rem; margin-bottom: 0.25rem; }
+h2 { color: var(--heading-color); font-size: 1.4rem; margin: 2rem 0 0.75rem; padding-bottom: 0.3rem; border-bottom: 2px solid var(--accent); }
+h3 { color: var(--accent); font-size: 1.15rem; margin: 1.25rem 0 0.5rem; }
+h4 { font-size: 1rem; margin: 1rem 0 0.4rem; color: var(--text-secondary); }
+
+p { margin-bottom: 0.75rem; }
+ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+li { margin-bottom: 0.35rem; }
+
+.module-label {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 3px;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.objectives-box {
+  background: var(--accent-light);
+  border-left: 4px solid var(--accent);
+  padding: 1rem 1.25rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+}
+.objectives-box ul { margin-left: 1.25rem; }
+
+/* SECTION BACKGROUNDS */
+section { scroll-margin-top: 60px; }
+.alt-bg { background: var(--bg-section); padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0; }
+
+/* DEFENSE IN DEPTH LAYERS */
+.layer-stack { display: flex; flex-direction: column; gap: 0; margin: 1rem 0; }
+.layer {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  font-size: 0.9rem;
+}
+.layer:last-child { border-bottom: 1px solid var(--border); border-radius: 0 0 6px 6px; }
+.layer:first-child { border-radius: 6px 6px 0 0; }
+.layer-num { font-weight: 700; margin-right: 0.5rem; }
+.l1 { background: var(--layer1); }
+.l2 { background: var(--layer2); }
+.l3 { background: var(--layer3); }
+.l4 { background: var(--layer4); }
+.l5 { background: var(--layer5); }
+.l6 { background: var(--layer6); }
+
+/* COLLAPSIBLE */
+details {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin: 0.75rem 0;
+  background: #fff;
+}
+details[open] { background: var(--bg-section); }
+summary {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before { content: '▸'; transition: transform 0.2s; display: inline-block; }
+details[open] > summary::before { transform: rotate(90deg); }
+summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+.details-content { padding: 0.5rem 1rem 1rem; }
+
+/* TABLE */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.comparison-table th, .comparison-table td {
+  border: 1px solid var(--border);
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.comparison-table th {
+  background: var(--nav-bg);
+  color: #fff;
+  font-weight: 600;
+}
+.comparison-table tr:nth-child(even) { background: var(--bg-section); }
+.comparison-table caption {
+  caption-side: top;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+/* CODE BLOCKS */
+pre {
+  background: var(--bg-code);
+  color: var(--code-text);
+  padding: 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0.75rem 0;
+}
+code { font-family: 'Courier New', Courier, monospace; }
+p code, li code {
+  background: #eceff1;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+
+/* CASE STUDY */
+.case-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 1rem 0;
+}
+.case-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: #fff;
+  margin-bottom: 0.5rem;
+  border-radius: 0 4px 4px 0;
+}
+.step-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* KNOWLEDGE CHECK */
+.kc-question {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+.kc-question p.q-stem { font-weight: 600; margin-bottom: 0.75rem; }
+.kc-options { list-style: none; margin: 0; padding: 0; }
+.kc-options li { margin-bottom: 0.4rem; }
+.kc-options label { cursor: pointer; display: flex; align-items: flex-start; gap: 0.5rem; }
+.kc-options input[type="radio"] { margin-top: 0.25rem; }
+.kc-feedback {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  display: none;
+  font-size: 0.9rem;
+}
+.kc-feedback.correct { background: var(--success-bg); border-left: 4px solid var(--success); color: var(--success); }
+.kc-feedback.incorrect { background: var(--error-bg); border-left: 4px solid var(--error); color: var(--error); }
+.kc-btn {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.kc-btn:hover { background: var(--focus-ring); }
+.kc-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* SUMMARY BOX */
+.summary-box {
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+/* INFO BOX */
+.info-box {
+  background: var(--warning-bg);
+  border-left: 4px solid var(--warning);
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .nav-bar { padding: 0.4rem 0.5rem; }
+  .nav-bar a { font-size: 0.75rem; padding: 0.25rem 0.4rem; }
+  .container { padding: 1rem; }
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.2rem; }
+  pre { font-size: 0.78rem; padding: 0.75rem; }
+  .comparison-table { font-size: 0.8rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="nav-bar" aria-label="Module sections">
+  <a href="#objectives">Objectives</a>
+  <a href="#defense-in-depth">Defense in Depth</a>
+  <a href="#hardening-ref">Hardening Reference</a>
+  <a href="#monitoring-security">Monitoring</a>
+  <a href="#splunk-use-cases">Splunk SPL</a>
+  <a href="#mini-case">Mini-Case</a>
+  <a href="#knowledge-check">Knowledge Check</a>
+  <a href="#summary">Summary</a>
+</nav>
+
+<main class="container">
+
+<!-- §0 – OBJECTIVES & CONTEXT -->
+<section id="objectives">
+  <span class="module-label">Module 16.3</span>
+  <h1>Security &amp; Monitoring Synthesis</h1>
+  <p><strong>Week 16 of 17</strong> &bull; Estimated time: 30–40 minutes</p>
+
+  <div class="objectives-box" role="note" aria-label="Module objectives">
+    <h3>Module Objectives</h3>
+    <p>After completing this module you will be able to:</p>
+    <ul>
+      <li>Map the layered defense-in-depth model to specific controls implemented throughout this course.</li>
+      <li>Compare Linux and Windows Server hardening techniques across common security domains.</li>
+      <li>Explain how Splunk functions as a SIEM and completes the security lifecycle through monitoring and alerting.</li>
+      <li>Interpret SPL searches designed for security event detection.</li>
+      <li>Trace a brute-force attack scenario through multiple defense layers and identify each layer's response.</li>
+    </ul>
+  </div>
+
+  <div class="info-box" role="note">
+    <strong>Context:</strong> This module is a synthesis activity — no new graded assignments are introduced. Use this material to solidify your understanding before the final project submission and course wrap-up in Week 17.
+  </div>
+</section>
+
+<!-- §1 – DEFENSE IN DEPTH -->
+<section id="defense-in-depth">
+  <h2>§1 – Defense in Depth: The Complete Picture</h2>
+  <p>Defense in depth is a security strategy that employs multiple, independent layers of protection. If one layer fails, the next layer continues to protect the system. Throughout this course, you have implemented controls at every layer:</p>
+
+  <div class="layer-stack" role="list" aria-label="Defense in depth layers from outermost to innermost">
+    <div class="layer l1" role="listitem">
+      <span class="layer-num">Layer 1:</span>
+      <strong>Physical Security</strong> — Data center access controls, locked server rooms. In our lab environment, this corresponds to the hypervisor host security and vSphere access restrictions discussed in Weeks 1–2.
+    </div>
+    <div class="layer l2" role="listitem">
+      <span class="layer-num">Layer 2:</span>
+      <strong>Network Segmentation</strong> — VLANs, subnets, and isolated network zones. You configured pfSense interfaces and network segments in Weeks 3–4 to separate management, server, and client traffic.
+    </div>
+    <div class="layer l3" role="listitem">
+      <span class="layer-num">Layer 3:</span>
+      <strong>Firewalls &amp; Perimeter Controls</strong> — Stateful packet filtering and rule sets. pfSense firewall rules (Weeks 4–5) and Windows Firewall with Advanced Security (Week 10) control traffic flow between zones.
+    </div>
+    <div class="layer l4" role="listitem">
+      <span class="layer-num">Layer 4:</span>
+      <strong>OS Hardening</strong> — Minimizing attack surface through service reduction, patching, and secure configuration. Linux hardening (Weeks 6–7) and Windows Server hardening via Group Policy (Weeks 9–10) reduce vulnerabilities on each host.
+    </div>
+    <div class="layer l5" role="listitem">
+      <span class="layer-num">Layer 5:</span>
+      <strong>Authentication &amp; Authorization</strong> — Strong passwords, account lockout policies, least-privilege access. Active Directory policies (Weeks 9–11), SSH key-based authentication (Week 7), and sudo configuration enforce identity controls.
+    </div>
+    <div class="layer l6" role="listitem">
+      <span class="layer-num">Layer 6:</span>
+      <strong>Monitoring &amp; Alerting</strong> — Continuous visibility into system activity. Splunk deployment (Weeks 13–15) provides log aggregation, correlation, and real-time alerting — the layer that validates all other controls are working.
+    </div>
+  </div>
+
+  <h3>Why Layers Matter</h3>
+  <p>No single control is perfect. A firewall rule might be misconfigured; an OS patch might be delayed; a password might be compromised. Defense in depth ensures that an attacker must defeat <em>multiple independent controls</em> to achieve their objective. Monitoring (Layer 6) is uniquely important because it provides <strong>visibility</strong> — without it, you cannot know whether other layers have been breached.</p>
+</section>
+
+<!-- §2 – HARDENING QUICK REFERENCE -->
+<section id="hardening-ref">
+  <h2>§2 – Hardening Quick Reference (Linux vs. Windows)</h2>
+  <p>The following reference summarizes key hardening controls you have configured across both platforms in this course. Use the collapsible sections to review each domain.</p>
+
+  <details>
+    <summary>Remote Access Hardening</summary>
+    <div class="details-content">
+      <table class="comparison-table" aria-label="Remote access hardening comparison">
+        <caption>SSH (Linux) vs. RDP/WinRM (Windows Server)</caption>
+        <thead>
+          <tr><th scope="col">Domain</th><th scope="col">Linux (SSH)</th><th scope="col">Windows Server</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Protocol Security</td>
+            <td>Enforce SSH Protocol 2 only; disable root login (<code>PermitRootLogin no</code>); use key-based authentication</td>
+            <td>Enable Network Level Authentication (NLA) for RDP; use TLS for WinRM; restrict RDP access via GPO</td>
+          </tr>
+          <tr>
+            <td>Access Restriction</td>
+            <td><code>AllowUsers</code> / <code>AllowGroups</code> directives in <code>sshd_config</code>; change default port; use <code>fail2ban</code></td>
+            <td>Limit RDP access to specific security groups; enable account lockout policy; use Remote Desktop Gateway for external access</td>
+          </tr>
+          <tr>
+            <td>Encryption</td>
+            <td>Specify strong ciphers and MACs; disable weak key exchange algorithms</td>
+            <td>Configure TLS 1.2+ for RDP; disable older SSL/TLS protocols via registry or GPO</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Firewall Configuration</summary>
+    <div class="details-content">
+      <table class="comparison-table" aria-label="Firewall configuration comparison">
+        <caption>iptables/nftables (Linux) vs. Windows Firewall with Advanced Security</caption>
+        <thead>
+          <tr><th scope="col">Domain</th><th scope="col">Linux</th><th scope="col">Windows Server</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Default Policy</td>
+            <td>Set default INPUT policy to DROP; explicitly allow required services</td>
+            <td>Set all profiles (Domain, Private, Public) to block inbound by default; create allow rules per service</td>
+          </tr>
+          <tr>
+            <td>Rule Management</td>
+            <td><code>iptables</code>/<code>nftables</code> rules; persistent via <code>iptables-save</code> or <code>nft</code> rulesets</td>
+            <td>Windows Firewall rules via GUI, PowerShell (<code>New-NetFirewallRule</code>), or Group Policy</td>
+          </tr>
+          <tr>
+            <td>Logging</td>
+            <td>LOG target for denied packets; send to syslog → forwarded to Splunk</td>
+            <td>Enable firewall logging (dropped packets) in profile settings; logs forwarded via Splunk Universal Forwarder</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Service Minimization</summary>
+    <div class="details-content">
+      <table class="comparison-table" aria-label="Service minimization comparison">
+        <caption>Reducing Attack Surface</caption>
+        <thead>
+          <tr><th scope="col">Domain</th><th scope="col">Linux</th><th scope="col">Windows Server</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Identify Running Services</td>
+            <td><code>systemctl list-units --type=service --state=running</code></td>
+            <td><code>Get-Service | Where-Object {$_.Status -eq 'Running'}</code></td>
+          </tr>
+          <tr>
+            <td>Disable Unnecessary Services</td>
+            <td><code>systemctl disable --now &lt;service&gt;</code></td>
+            <td><code>Set-Service -Name &lt;svc&gt; -StartupType Disabled; Stop-Service &lt;svc&gt;</code></td>
+          </tr>
+          <tr>
+            <td>Installation Approach</td>
+            <td>Minimal install (netinst); add only required packages</td>
+            <td>Server Core installation; add only required Roles/Features</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Group Policy Security Baselines &amp; Audit Policies</summary>
+    <div class="details-content">
+      <table class="comparison-table" aria-label="Group Policy and audit policies comparison">
+        <caption>Windows GPO Security &amp; Linux Equivalents</caption>
+        <thead>
+          <tr><th scope="col">Domain</th><th scope="col">Linux</th><th scope="col">Windows Server (GPO)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Password Policy</td>
+            <td>PAM modules (<code>pam_pwquality</code>); <code>/etc/login.defs</code> for aging</td>
+            <td>Computer Configuration → Policies → Windows Settings → Account Policies → Password Policy (min length, complexity, history)</td>
+          </tr>
+          <tr>
+            <td>Account Lockout</td>
+            <td><code>pam_faillock</code> — deny after N failures; unlock after timeout</td>
+            <td>Account Lockout Policy — threshold, duration, reset counter</td>
+          </tr>
+          <tr>
+            <td>Audit/Logging Policy</td>
+            <td><code>auditd</code> rules in <code>/etc/audit/rules.d/</code>; monitor logins, file access, privilege escalation</td>
+            <td>Advanced Audit Policy Configuration — Logon/Logoff, Account Management, Object Access events</td>
+          </tr>
+          <tr>
+            <td>Security Baselines</td>
+            <td>CIS Benchmark scripts; OpenSCAP scanning</td>
+            <td>Microsoft Security Compliance Toolkit; import baseline GPOs</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+</section>
+
+<!-- §3 – MONITORING AS A SECURITY CONTROL -->
+<section id="monitoring-security">
+  <h2>§3 – Monitoring as a Security Control</h2>
+
+  <h3>Splunk as a SIEM</h3>
+  <p>A <strong>Security Information and Event Management (SIEM)</strong> system collects, normalizes, correlates, and analyzes security-relevant log data from across an infrastructure. Splunk fulfills this role in our course environment by:</p>
+  <ul>
+    <li><strong>Collecting</strong> — Universal Forwarders on Linux and Windows hosts send syslog, Windows Event Logs, firewall logs, and application logs to the Splunk indexer.</li>
+    <li><strong>Normalizing</strong> — Splunk's field extraction and Common Information Model (CIM) map disparate log formats into searchable, consistent fields.</li>
+    <li><strong>Correlating</strong> — Correlation searches combine events from multiple sources (e.g., firewall denies + authentication failures from the same source IP) to identify attack patterns.</li>
+    <li><strong>Alerting</strong> — Saved searches trigger alerts when thresholds are exceeded, enabling rapid incident response.</li>
+  </ul>
+
+  <h3>The Security Lifecycle</h3>
+  <p>Monitoring completes the security lifecycle by providing the <strong>Detect</strong> and <strong>Respond</strong> phases:</p>
+  <ol>
+    <li><strong>Prevent</strong> — Firewalls, hardening, authentication controls (Layers 1–5)</li>
+    <li><strong>Detect</strong> — Splunk identifies anomalies, policy violations, and attack indicators</li>
+    <li><strong>Respond</strong> — Alerts trigger investigation; automated actions (e.g., account lockout) contain threats</li>
+    <li><strong>Recover</strong> — Restore services; update controls based on lessons learned</li>
+    <li><strong>Review</strong> — Post-incident analysis; refine detection rules and hardening policies</li>
+  </ol>
+
+  <h3>Alerts and Correlation Searches</h3>
+  <p>In Splunk, a <strong>saved search</strong> runs on a schedule and evaluates results against trigger conditions. When the condition is met (e.g., more than 5 failed logins in 5 minutes from a single IP), the alert fires and can:</p>
+  <ul>
+    <li>Send an email notification to the security team</li>
+    <li>Log the alert to a summary index for trending</li>
+    <li>Trigger a webhook or script for automated response</li>
+    <li>Create a notable event in an incident review dashboard</li>
+  </ul>
+  <p>A <strong>correlation search</strong> goes further by joining events across multiple data sources — for example, correlating a VPN login from an unusual geography with subsequent privilege escalation events on a domain controller.</p>
+</section>
+
+<!-- §4 – SPLUNK SECURITY USE CASES -->
+<section id="splunk-use-cases">
+  <h2>§4 – Splunk Security Use Cases (SPL Examples)</h2>
+  <p>Below are example SPL searches relevant to our course infrastructure. Expand each use case to see the query and explanation.</p>
+
+  <details>
+    <summary>Failed Login Detection (Linux)</summary>
+    <div class="details-content">
+      <p>Detect multiple failed SSH login attempts from a single source IP within a 5-minute window:</p>
+<pre><code>index=linux_logs sourcetype=syslog "Failed password"
+| rex field=_raw "from (?&lt;src_ip&gt;\d+\.\d+\.\d+\.\d+)"
+| bin _time span=5m
+| stats count as failed_attempts by src_ip, _time
+| where failed_attempts &gt; 5
+| sort -failed_attempts</code></pre>
+      <p><strong>How it works:</strong> This search filters syslog events containing "Failed password," extracts the source IP using regex, bins events into 5-minute windows, counts failures per IP per window, and surfaces any IP exceeding 5 failures.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Failed Login Detection (Windows)</summary>
+    <div class="details-content">
+      <p>Detect failed logon events (Event ID 4625) on Windows domain controllers:</p>
+<pre><code>index=windows_logs sourcetype=WinEventLog:Security EventCode=4625
+| bin _time span=5m
+| stats count as failed_attempts by src_ip, Account_Name, _time
+| where failed_attempts &gt; 5
+| table _time, src_ip, Account_Name, failed_attempts
+| sort -failed_attempts</code></pre>
+      <p><strong>How it works:</strong> Windows logs failed logon attempts as Event ID 4625. This search aggregates them by source IP and target account, flagging brute-force patterns.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Service Stop/Start Events</summary>
+    <div class="details-content">
+      <p>Monitor critical service state changes on both platforms:</p>
+<pre><code>index=linux_logs sourcetype=syslog ("Started" OR "Stopped") 
+  (sshd OR apache2 OR named OR splunkd)
+| table _time, host, _raw</code></pre>
+<pre><code>index=windows_logs sourcetype=WinEventLog:System 
+  (EventCode=7036 OR EventCode=7045)
+| table _time, host, ServiceName, Message
+| sort -_time</code></pre>
+      <p><strong>Why it matters:</strong> Unexpected service stops may indicate an attacker disabling security controls (e.g., stopping the firewall service or audit daemon). New service installations (7045) may indicate persistence mechanisms.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Firewall Deny Logs</summary>
+    <div class="details-content">
+      <p>Aggregate blocked connection attempts from pfSense firewall logs:</p>
+<pre><code>index=firewall_logs sourcetype=pfsense action=block
+| stats count as blocked_attempts by src_ip, dest_ip, dest_port
+| where blocked_attempts &gt; 20
+| sort -blocked_attempts
+| head 20</code></pre>
+      <p><strong>How it works:</strong> This identifies source IPs generating a high volume of blocked connections — potential port scans or brute-force attempts being stopped at the perimeter.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Account Creation/Modification Alerts</summary>
+    <div class="details-content">
+      <p>Detect new account creation or group membership changes in Active Directory:</p>
+<pre><code>index=windows_logs sourcetype=WinEventLog:Security 
+  (EventCode=4720 OR EventCode=4722 OR EventCode=4732 OR EventCode=4728)
+| table _time, host, Account_Name, EventCode, Message
+| sort -_time</code></pre>
+      <p><strong>Event codes:</strong></p>
+      <ul>
+        <li><strong>4720</strong> — User account created</li>
+        <li><strong>4722</strong> — User account enabled</li>
+        <li><strong>4732</strong> — Member added to a local group</li>
+        <li><strong>4728</strong> — Member added to a global security group</li>
+      </ul>
+      <p>Unauthorized account creation or privilege escalation (adding a user to Domain Admins) is a critical indicator of compromise.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Linux Account &amp; Sudo Monitoring</summary>
+    <div class="details-content">
+      <p>Detect new user creation and sudo usage on Linux systems:</p>
+<pre><code>index=linux_logs sourcetype=syslog ("useradd" OR "usermod" OR "groupadd")
+| table _time, host, _raw
+| sort -_time</code></pre>
+<pre><code>index=linux_logs sourcetype=syslog source="/var/log/auth.log" "sudo:"
+  NOT "pam_unix(sudo:session)"
+| rex field=_raw "sudo:\s+(?&lt;sudo_user&gt;\S+)"
+| rex field=_raw "COMMAND=(?&lt;command&gt;.+)"
+| table _time, host, sudo_user, command
+| sort -_time</code></pre>
+      <p><strong>Why it matters:</strong> Monitoring sudo usage and account changes on Linux provides visibility equivalent to Windows audit policies for privilege escalation detection.</p>
+    </div>
+  </details>
+</section>
+
+<!-- §5 – MINI-CASE -->
+<section id="mini-case">
+  <h2>§5 – Mini-Case: Detecting a Brute Force Attack</h2>
+  <div class="alt-bg">
+    <h3>Scenario</h3>
+    <p>An external attacker targets the SSH service on your Linux web server. They use an automated tool to attempt thousands of username/password combinations. Let's trace how each defense-in-depth layer responds:</p>
+
+    <div class="case-flow" role="list" aria-label="Brute force attack response flow">
+      <div class="case-step" role="listitem">
+        <div class="step-icon">1</div>
+        <div>
+          <strong>Firewall (Layer 3) — First Contact</strong><br>
+          The pfSense firewall permits inbound SSH (port 22) to the web server per the rule set. However, it <em>logs</em> every connection attempt. The volume of connections from a single external IP begins generating firewall log entries forwarded to Splunk.
+        </div>
+      </div>
+      <div class="case-step" role="listitem">
+        <div class="step-icon">2</div>
+        <div>
+          <strong>OS Hardening (Layer 4) — Rate Limiting</strong><br>
+          The SSH daemon is configured with <code>MaxAuthTries 3</code>, disconnecting the attacker after 3 failed attempts per session. The attacker's tool reconnects repeatedly, but each session is limited. Additionally, <code>fail2ban</code> monitors <code>/var/log/auth.log</code> and bans the source IP after 5 failures within 10 minutes by adding a DROP rule to iptables.
+        </div>
+      </div>
+      <div class="case-step" role="listitem">
+        <div class="step-icon">3</div>
+        <div>
+          <strong>Authentication (Layer 5) — Account Lockout</strong><br>
+          PAM's <code>pam_faillock</code> module locks the targeted account after the configured threshold (e.g., 5 failures). Even if the attacker guesses the correct password after lockout, authentication is denied until the lockout period expires or an administrator intervenes.
+        </div>
+      </div>
+      <div class="case-step" role="listitem">
+        <div class="step-icon">4</div>
+        <div>
+          <strong>Monitoring (Layer 6) — Splunk Alert Fires</strong><br>
+          The saved search for failed SSH logins detects &gt;5 failures from the attacker's IP within a 5-minute window. The alert fires, sending a notification to the security team and logging a notable event. The correlation search also links the firewall deny logs (from fail2ban's block) with the authentication failures, confirming the attack pattern.
+        </div>
+      </div>
+      <div class="case-step" role="listitem">
+        <div class="step-icon">5</div>
+        <div>
+          <strong>Response — Incident Handling</strong><br>
+          The administrator reviews the Splunk alert, confirms the brute-force pattern, and takes additional action: adds a permanent firewall block for the attacker's IP range on pfSense, verifies no successful logins occurred, and documents the incident. The Splunk dashboard is updated to track the attacker's IP for future correlation.
+        </div>
+      </div>
+    </div>
+
+    <h3>Key Takeaway</h3>
+    <p>No single layer stopped the attack alone. The firewall permitted SSH traffic (by design — it's a legitimate service). OS hardening slowed the attacker. Authentication controls prevented credential compromise. But it was <strong>monitoring</strong> that provided the visibility to detect, confirm, and respond to the threat. This is defense in depth in action.</p>
+  </div>
+</section>
+
+<!-- §6 – KNOWLEDGE CHECK -->
+<section id="knowledge-check">
+  <h2>§6 – Knowledge Check (Ungraded)</h2>
+  <p>Test your understanding of the concepts covered in this module. Select your answer and check the feedback.</p>
+
+  <!-- Question 1 -->
+  <div class="kc-question" id="q1-container">
+    <p class="q-stem">1. A system administrator configures <code>pam_faillock</code> to lock accounts after 5 failed login attempts. Which defense-in-depth layer does this control belong to?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q1" value="a"> Layer 3 – Firewalls &amp; Perimeter Controls</label></li>
+      <li><label><input type="radio" name="q1" value="b"> Layer 4 – OS Hardening</label></li>
+      <li><label><input type="radio" name="q1" value="c"> Layer 5 – Authentication &amp; Authorization</label></li>
+      <li><label><input type="radio" name="q1" value="d"> Layer 6 – Monitoring &amp; Alerting</label></li>
+    </ul>
+    <button class="kc-btn" onclick="checkAnswer('q1','c')" aria-label="Check answer for question 1">Check Answer</button>
+    <div class="kc-feedback correct" id="q1-correct">
+      <strong>Correct!</strong> Account lockout policies are an authentication/authorization control (Layer 5). They enforce identity security by preventing unlimited password guessing, regardless of how strong or weak the password is.
+    </div>
+    <div class="kc-feedback incorrect" id="q1-incorrect">
+      <strong>Not quite.</strong> While <code>pam_faillock</code> is configured at the OS level, its function is to enforce authentication policy — specifically account lockout. This places it in Layer 5 (Authentication &amp; Authorization). OS Hardening (Layer 4) focuses on reducing attack surface through service minimization and secure configuration, not identity controls.
+    </div>
+  </div>
+
+  <!-- Question 2 -->
+  <div class="kc-question" id="q2-container">
+    <p class="q-stem">2. Which Splunk search would best detect unauthorized account creation in an Active Directory environment?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q2" value="a"> A search filtering for EventCode=4625 (failed logons)</label></li>
+      <li><label><input type="radio" name="q2" value="b"> A search filtering for EventCode=4720 (user account created)</label></li>
+      <li><label><input type="radio" name="q2" value="c"> A search filtering for EventCode=7036 (service state change)</label></li>
+      <li><label><input type="radio" name="q2" value="d"> A search filtering for firewall action=block events</label></li>
+    </ul>
+    <button class="kc-btn" onclick="checkAnswer('q2','b')" aria-label="Check answer for question 2">Check Answer</button>
+    <div class="kc-feedback correct" id="q2-correct">
+      <strong>Correct!</strong> Event ID 4720 is logged when a new user account is created in Active Directory. Monitoring for this event allows you to detect unauthorized account creation, which is a common persistence technique used by attackers after initial compromise.
+    </div>
+    <div class="kc-feedback incorrect" id="q2-incorrect">
+      <strong>Not quite.</strong> The correct answer is EventCode=4720, which specifically logs user account creation events. EventCode=4625 detects failed logons (brute force), 7036 detects service state changes, and firewall blocks detect network-level denials — none of these would reveal a new account being created.
+    </div>
+  </div>
+
+  <!-- Question 3 -->
+  <div class="kc-question" id="q3-container">
+    <p class="q-stem">3. In the brute-force mini-case scenario, what is the primary role of the monitoring layer (Splunk)?</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q3" value="a"> To block the attacker's IP address at the network perimeter</label></li>
+      <li><label><input type="radio" name="q3" value="b"> To lock the targeted user account after failed attempts</label></li>
+      <li><label><input type="radio" name="q3" value="c"> To provide visibility, correlate events across layers, and alert the security team</label></li>
+      <li><label><input type="radio" name="q3" value="d"> To enforce password complexity requirements</label></li>
+    </ul>
+    <button class="kc-btn" onclick="checkAnswer('q3','c')" aria-label="Check answer for question 3">Check Answer</button>
+    <div class="kc-feedback correct" id="q3-correct">
+      <strong>Correct!</strong> Monitoring's primary role is detection and visibility — it correlates firewall logs with authentication failures, confirms the attack pattern, and alerts the security team so they can respond. Blocking is done by the firewall (Layer 3), lockout by authentication controls (Layer 5), and password complexity by policy (Layer 5).
+    </div>
+    <div class="kc-feedback incorrect" id="q3-incorrect">
+      <strong>Not quite.</strong> While blocking (firewall/fail2ban), account lockout (PAM), and password policy are all important, they belong to other layers. Splunk's role as the monitoring layer is to provide <em>visibility</em> — detecting the attack pattern by correlating events from multiple sources and alerting the team to respond. Without monitoring, the other layers might stop the attack, but you would never know it happened.
+    </div>
+  </div>
+
+  <!-- Question 4 -->
+  <div class="kc-question" id="q4-container">
+    <p class="q-stem">4. Match the security control to its correct defense-in-depth layer. A Windows Group Policy that sets the minimum password length to 14 characters belongs to:</p>
+    <ul class="kc-options">
+      <li><label><input type="radio" name="q4" value="a"> Layer 2 – Network Segmentation</label></li>
+      <li><label><input type="radio" name="q4" value="b"> Layer 4 – OS Hardening</label></li>
+      <li><label><input type="radio" name="q4" value="c"> Layer 5 – Authentication &amp; Authorization</label></li>
+      <li><label><input type="radio" name="q4" value="d"> Layer 6 – Monitoring &amp; Alerting</label></li>
+    </ul>
+    <button class="kc-btn" onclick="checkAnswer('q4','c')" aria-label="Check answer for question 4">Check Answer</button>
+    <div class="kc-feedback correct" id="q4-correct">
+      <strong>Correct!</strong> Password policies — even when delivered via Group Policy — are authentication and authorization controls (Layer 5). They strengthen the identity verification process by requiring credentials that are harder to guess or crack.
+    </div>
+    <div class="kc-feedback incorrect" id="q4-incorrect">
+      <strong>Not quite.</strong> Although Group Policy is an OS management tool (which might suggest Layer 4), the <em>function</em> of a password length policy is to strengthen authentication. We classify controls by their security function, not their delivery mechanism. Password policies belong to Layer 5 – Authentication &amp; Authorization.
+    </div>
+  </div>
+</section>
+
+<!-- §7 – SUMMARY -->
+<section id="summary">
+  <h2>§7 – Summary &amp; What's Next</h2>
+  <div class="summary-box">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li><strong>Defense in depth</strong> uses multiple independent layers so that no single point of failure compromises the entire system.</li>
+      <li><strong>Hardening</strong> on both Linux and Windows follows the same principles — minimize services, enforce strong authentication, configure host firewalls, and enable audit logging — but uses platform-specific tools.</li>
+      <li><strong>Monitoring (Splunk as SIEM)</strong> is the layer that ties everything together: it provides the visibility to detect when preventive controls fail and enables timely response.</li>
+      <li><strong>SPL searches</strong> for security use cases follow a pattern: filter relevant events → extract key fields → aggregate by meaningful dimensions → apply thresholds → surface actionable results.</li>
+      <li>A real attack traverses multiple layers — each layer slows, limits, or stops the attacker, and monitoring ensures the security team knows what happened.</li>
+    </ul>
+  </div>
+
+  <h3>What's Next</h3>
+  <p>This completes the Week 16 learning modules. Looking ahead:</p>
+  <ul>
+    <li><strong>Week 17</strong> — Course wrap-up, final project submissions, and review. Ensure your Project 3 documentation is complete and reflects the defense-in-depth principles and Splunk monitoring configurations covered this week.</li>
+    <li>Review Module 16.1 (Infrastructure Review) and Module 16.2 (Splunk Advanced Topics) to ensure you have a complete picture of the course infrastructure and monitoring capabilities.</li>
+    <li>Use the Hardening Quick Reference in this module as a checklist when verifying your project configurations.</li>
+  </ul>
+</section>
+
+</main>
+
+<script>
+function checkAnswer(qName, correctValue) {
+  var radios = document.getElementsByName(qName);
+  var selected = null;
+  for (var i = 0; i < radios.length; i++) {
+    if (radios[i].checked) {
+      selected = radios[i].value;
+      break;
+    }
+  }
+  if (selected === null) { return; }
+
+  var correctEl = document.getElementById(qName + '-correct');
+  var incorrectEl = document.getElementById(qName + '-incorrect');
+
+  if (selected === correctValue) {
+    correctEl.style.display = 'block';
+    incorrectEl.style.display = 'none';
+  } else {
+    correctEl.style.display = 'none';
+    incorrectEl.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 16.2: Multi-Layer Troubleshooting Scenarios | CSC 152</title>
+<style>
+:root {
+--primary: #2d3b45;
+--primary-light: #3a4d57;
+--accent: #0772a1;
+--accent-light: #e8f4f8;
+--success: #2e7d32;
+--success-light: #e8f5e9;
+--warning: #f57c00;
+--warning-light: #fff3e0;
+--error: #c62828;
+--error-light: #ffebee;
+--neutral-50: #fafafa;
+--neutral-100: #f5f5f5;
+--neutral-200: #eeeeee;
+--neutral-300: #e0e0e0;
+--neutral-600: #757575;
+--neutral-700: #616161;
+--neutral-800: #424242;
+--neutral-900: #212121;
+--radius: 8px;
+--shadow: 0 2px 4px rgba(0,0,0,0.1);
+--shadow-md: 0 4px 8px rgba(0,0,0,0.12);
+--max-width: 960px;
+--nav-height: 56px;
+--font-mono: 'Courier New', Courier, monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box;}
+
+body {
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+line-height: 1.6;
+color: var(--neutral-900);
+background: var(--neutral-50);
+margin: 0;
+padding: 0;
+}
+
+/* Navigation */
+.nav-bar {
+position: sticky;
+top: 0;
+z-index: 1000;
+background: var(--primary);
+padding: 0 1rem;
+box-shadow: var(--shadow-md);
+}
+
+.nav-bar ul {
+list-style: none;
+margin: 0;
+padding: 0;
+display: flex;
+flex-wrap: wrap;
+gap: 0.25rem;
+max-width: var(--max-width);
+margin: 0 auto;
+}
+
+.nav-bar li {
+margin: 0;
+}
+
+.nav-bar a {
+display: block;
+color: #fff;
+text-decoration: none;
+padding: 0.75rem 0.75rem;
+font-size: 0.8rem;
+font-weight: 500;
+border-radius: 4px;
+transition: background 0.2s;
+}
+
+.nav-bar a:hover,
+.nav-bar a:focus {
+background: var(--accent);
+outline: 2px solid #fff;
+outline-offset: -2px;
+}
+
+/* Main content */
+.container {
+max-width: var(--max-width);
+margin: 0 auto;
+padding: 2rem 1.5rem 4rem;
+}
+
+/* Header */
+.module-header {
+margin-bottom: 2rem;
+padding-bottom: 1.5rem;
+border-bottom: 3px solid var(--accent);
+}
+
+.module-header .label {
+font-size: 0.85rem;
+color: var(--accent);
+font-weight: 600;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+margin-bottom: 0.25rem;
+}
+
+.module-header h1 {
+font-size: 1.75rem;
+color: var(--primary);
+margin: 0.25rem 0 0.75rem;
+}
+
+.module-meta {
+display: flex;
+flex-wrap: wrap;
+gap: 1.5rem;
+font-size: 0.85rem;
+color: var(--neutral-700);
+}
+
+.module-meta span {
+display: flex;
+align-items: center;
+gap: 0.35rem;
+}
+
+/* Sections */
+.section {
+margin-bottom: 2.5rem;
+scroll-margin-top: calc(var(--nav-height) + 16px);
+}
+
+.section h2 {
+font-size: 1.35rem;
+color: var(--primary);
+margin-bottom: 1rem;
+padding-bottom: 0.5rem;
+border-bottom: 2px solid var(--neutral-300);
+}
+
+.section h3 {
+font-size: 1.1rem;
+color: var(--primary-light);
+margin: 1.25rem 0 0.75rem;
+}
+
+/* Info boxes */
+.info-box {
+border-left: 4px solid var(--accent);
+background: var(--accent-light);
+padding: 1rem 1.25rem;
+border-radius: 0 var(--radius) var(--radius) 0;
+margin: 1rem 0;
+}
+
+.callout-tip {
+border-left-color: var(--success);
+background: var(--success-light);
+}
+
+.callout-warn {
+border-left-color: var(--warning);
+background: var(--warning-light);
+}
+
+/* Objectives list */
+.obj-list {
+list-style: none;
+padding: 0;
+margin: 1rem 0;
+}
+
+.obj-list li {
+padding: 0.5rem 0 0.5rem 1.75rem;
+position: relative;
+}
+
+.obj-list li::before {
+content: '✓';
+position: absolute;
+left: 0;
+color: var(--success);
+font-weight: 700;
+}
+
+/* Tables */
+.ref-table {
+width: 100%;
+border-collapse: collapse;
+margin: 1rem 0;
+font-size: 0.9rem;
+}
+
+.ref-table th, .ref-table td {
+padding: 0.6rem 0.75rem;
+text-align: left;
+border: 1px solid var(--neutral-300);
+}
+
+.ref-table th {
+background: var(--primary);
+color: #fff;
+font-weight: 600;
+}
+
+.ref-table tr:nth-child(even) {
+background: var(--neutral-100);
+}
+
+/* Code blocks */
+pre {
+background: var(--neutral-900);
+color: #f0f0f0;
+padding: 1rem 1.25rem;
+border-radius: var(--radius);
+overflow-x: auto;
+font-family: var(--font-mono);
+font-size: 0.85rem;
+line-height: 1.5;
+margin: 0.75rem 0;
+}
+
+code {
+font-family: var(--font-mono);
+font-size: 0.85em;
+}
+
+p code, li code {
+background: var(--neutral-200);
+padding: 0.15em 0.4em;
+border-radius: 3px;
+color: var(--primary);
+}
+
+/* Scenario cards */
+.scenario-card {
+border: 1px solid var(--neutral-300);
+border-radius: var(--radius);
+margin: 1.25rem 0;
+overflow: hidden;
+box-shadow: var(--shadow);
+}
+
+.scenario-header {
+background: var(--primary);
+color: #fff;
+padding: 0.75rem 1.25rem;
+font-weight: 600;
+font-size: 1rem;
+}
+
+.scenario-body {
+padding: 1.25rem;
+}
+
+.scenario-symptom {
+background: var(--warning-light);
+border-left: 4px solid var(--warning);
+padding: 0.75rem 1rem;
+border-radius: 0 var(--radius) var(--radius) 0;
+margin-bottom: 1rem;
+}
+
+.scenario-symptom strong {
+color: var(--warning);
+}
+
+/* Expandable/Collapsible */
+details {
+margin: 0.75rem 0;
+border: 1px solid var(--neutral-300);
+border-radius: var(--radius);
+overflow: hidden;
+}
+
+details[open] {
+box-shadow: var(--shadow);
+}
+
+summary {
+padding: 0.75rem 1rem;
+background: var(--neutral-100);
+cursor: pointer;
+font-weight: 600;
+color: var(--primary);
+user-select: none;
+transition: background 0.2s;
+list-style: none;
+}
+
+summary::-webkit-details-marker {
+display: none;
+}
+
+summary::before {
+content: '▶ ';
+font-size: 0.75em;
+transition: transform 0.2s;
+display: inline-block;
+margin-right: 0.5rem;
+}
+
+details[open] > summary::before {
+content: '▼ ';
+}
+
+summary:hover, summary:focus {
+background: var(--neutral-200);
+outline: 2px solid var(--accent);
+outline-offset: -2px;
+}
+
+details .detail-content {
+padding: 1rem 1.25rem;
+border-top: 1px solid var(--neutral-300);
+}
+
+/* Knowledge check */
+.kc-question {
+border: 1px solid var(--neutral-300);
+border-radius: var(--radius);
+padding: 1.25rem;
+margin: 1rem 0;
+background: #fff;
+}
+
+.kc-question p.q-stem {
+font-weight: 600;
+margin-bottom: 0.75rem;
+}
+
+.kc-options {
+list-style: none;
+padding: 0;
+margin: 0.5rem 0 1rem;
+}
+
+.kc-options li {
+margin: 0.4rem 0;
+}
+
+.kc-options label {
+display: flex;
+align-items: flex-start;
+gap: 0.5rem;
+cursor: pointer;
+padding: 0.4rem 0.5rem;
+border-radius: 4px;
+transition: background 0.15s;
+}
+
+.kc-options label:hover {
+background: var(--neutral-100);
+}
+
+.kc-options input[type="radio"] {
+margin-top: 0.25rem;
+flex-shrink: 0;
+}
+
+.kc-feedback {
+display: none;
+padding: 0.75rem 1rem;
+border-radius: var(--radius);
+margin-top: 0.75rem;
+font-size: 0.9rem;
+}
+
+.kc-feedback.correct {
+display: block;
+background: var(--success-light);
+border-left: 4px solid var(--success);
+}
+
+.kc-feedback.incorrect {
+display: block;
+background: var(--error-light);
+border-left: 4px solid var(--error);
+}
+
+.btn {
+display: inline-block;
+padding: 0.5rem 1.25rem;
+background: var(--accent);
+color: #fff;
+border: none;
+border-radius: var(--radius);
+font-size: 0.9rem;
+font-weight: 600;
+cursor: pointer;
+transition: background 0.2s, transform 0.1s;
+}
+
+.btn:hover, .btn:focus {
+background: var(--primary);
+outline: 2px solid var(--accent);
+outline-offset: 2px;
+}
+
+.btn:active {
+transform: scale(0.97);
+}
+
+/* Flowchart (text-based) */
+.flow-diagram {
+background: var(--neutral-100);
+border: 1px solid var(--neutral-300);
+border-radius: var(--radius);
+padding: 1.25rem;
+font-family: var(--font-mono);
+font-size: 0.8rem;
+overflow-x: auto;
+text-align: center;
+line-height: 1.4;
+}
+
+/* Progress indicator */
+.progress-bar {
+display: flex;
+gap: 0;
+margin: 1rem 0;
+border-radius: var(--radius);
+overflow: hidden;
+border: 1px solid var(--neutral-300);
+}
+
+.progress-step {
+flex: 1;
+text-align: center;
+padding: 0.4rem 0.25rem;
+font-size: 0.7rem;
+font-weight: 600;
+background: var(--neutral-200);
+color: var(--neutral-600);
+}
+
+.progress-step.completed {
+background: var(--success);
+color: #fff;
+}
+
+.progress-step.current {
+background: var(--accent);
+color: #fff;
+}
+
+/* CSLO badge */
+.cslo-badge {
+display: inline-block;
+font-size: 0.75rem;
+padding: 0.2rem 0.5rem;
+background: var(--accent-light);
+color: var(--accent);
+border-radius: 3px;
+font-weight: 600;
+margin: 0.15rem 0.25rem 0.15rem 0;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+.nav-bar a {
+padding: 0.6rem 0.5rem;
+font-size: 0.7rem;
+}
+.module-header h1 {
+font-size: 1.4rem;
+}
+.module-meta {
+flex-direction: column;
+gap: 0.5rem;
+}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav-bar" aria-label="Module navigation">
+<ul role="menubar">
+<li role="none"><a role="menuitem" href="#objectives">Objectives</a></li>
+<li role="none"><a role="menuitem" href="#methodology">Methodology</a></li>
+<li role="none"><a role="menuitem" href="#scenario1">Scenario 1</a></li>
+<li role="none"><a role="menuitem" href="#scenario2">Scenario 2</a></li>
+<li role="none"><a role="menuitem" href="#scenario3">Scenario 3</a></li>
+<li role="none"><a role="menuitem" href="#scenario4">Scenario 4</a></li>
+<li role="none"><a role="menuitem" href="#knowledge-check">Knowledge Check</a></li>
+<li role="none"><a role="menuitem" href="#summary">Summary</a></li>
+</ul>
+</nav>
+
+<main class="container">
+
+<!-- Module Header -->
+<header class="module-header">
+<div class="label">Module 16.2</div>
+<h1>Multi-Layer Troubleshooting Scenarios</h1>
+<div class="module-meta">
+<span>⏱ Estimated Time: 60–75 minutes</span>
+<span>📅 Week 16 of 17</span>
+<span>📖 No graded assignments this week</span>
+</div>
+<div style="margin-top:0.75rem;">
+<span class="cslo-badge">CSLO 1</span>
+<span class="cslo-badge">CSLO 2</span>
+<span class="cslo-badge">CSLO 3</span>
+<span class="cslo-badge">CSLO 4</span>
+</div>
+</header>
+
+<!-- Progress Bar -->
+<div class="progress-bar" aria-label="Week 16 module progress">
+<div class="progress-step completed">16.1 Integration</div>
+<div class="progress-step current">16.2 Troubleshooting</div>
+<div class="progress-step">16.3 Security</div>
+<div class="progress-step">16.4 Exam Prep</div>
+</div>
+
+<!-- §0 Objectives & Context -->
+<section class="section" id="objectives">
+<h2>§0 – Objectives &amp; Context</h2>
+
+<div class="info-box">
+<strong>Why this module matters:</strong> In professional IT environments, problems rarely confine themselves to a single service or layer. A user who "can't log in" might be experiencing a network issue, a DNS failure, an AD replication problem, or a simple account lockout. This module trains you to think systematically across layers—the skill that separates experienced administrators from beginners.
+</div>
+
+<h3>Module Objectives</h3>
+<ul class="obj-list">
+<li>Apply structured troubleshooting methodologies (bottom-up, top-down, divide-and-conquer) to multi-layer problems</li>
+<li>Identify service dependencies and trace failures across system layers</li>
+<li>Select appropriate diagnostic commands and log sources for each layer of the infrastructure stack</li>
+<li>Correlate symptoms to root causes using logical elimination</li>
+</ul>
+
+<h3>Connection to Active Work</h3>
+<p>The troubleshooting skills in this module directly support your <strong>Project 3</strong> work (due Monday, May 18, 2026). If you encounter issues with your multi-server infrastructure, the diagnostic pathways here will help you resolve them efficiently. These scenario types also appear on the <strong>Final Exam</strong> (Week 17).</p>
+</section>
+
+<!-- §1 Troubleshooting Methodology Review -->
+<section class="section" id="methodology">
+<h2>§1 – Troubleshooting Methodology Review</h2>
+
+<h3>The OSI/TCP-IP Model as a Diagnostic Framework</h3>
+<p>The OSI and TCP/IP models aren't just theoretical constructs—they provide a structured way to isolate where a problem exists. When a service fails, the issue must exist at <em>some</em> layer. By systematically testing each layer, you eliminate possibilities until the root cause is revealed.</p>
+
+<table class="ref-table">
+<thead>
+<tr>
+<th>OSI Layer</th>
+<th>Focus Area</th>
+<th>Key Diagnostic Tools</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 – Physical</td>
+<td>Cables, NICs, link status</td>
+<td><code>ip link</code>, <code>Get-NetAdapter</code>, link lights</td>
+</tr>
+<tr>
+<td>2 – Data Link</td>
+<td>MAC addressing, VLANs, switching</td>
+<td><code>arp</code>, <code>Get-NetNeighbor</code>, switch port status</td>
+</tr>
+<tr>
+<td>3 – Network</td>
+<td>IP addressing, routing, firewalls</td>
+<td><code>ping</code>, <code>traceroute</code>/<code>tracert</code>, <code>ip route</code></td>
+</tr>
+<tr>
+<td>4 – Transport</td>
+<td>Ports, TCP/UDP connectivity</td>
+<td><code>Test-NetConnection</code>, <code>ss</code>/<code>netstat</code>, <code>telnet</code></td>
+</tr>
+<tr>
+<td>5–7 – Session/Presentation/Application</td>
+<td>Service status, authentication, app logic</td>
+<td><code>systemctl</code>, <code>Get-Service</code>, <code>dcdiag</code>, logs</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Three Troubleshooting Approaches</h3>
+
+<div class="flow-diagram" role="img" aria-label="Diagram showing three troubleshooting approaches: bottom-up starts at physical layer, top-down starts at application layer, divide-and-conquer starts at network layer in the middle">
+Bottom-Up          Top-Down          Divide-and-Conquer
+─────────          ────────          ──────────────────
+Layer 7                ▼                    
+Layer 6                │                    
+Layer 5                │                    
+Layer 4                │              ──▶ Start Here (L3/L4)
+Layer 3                │                    │
+Layer 2                │                    │
+Layer 1  ▲             ▼              Go up or down based
+         │                            on results
+  Start Here      Start Here
+</div>
+
+<details>
+<summary>Bottom-Up Approach</summary>
+<div class="detail-content">
+<p><strong>Start at Layer 1 (Physical) and work upward.</strong></p>
+<ul>
+<li><strong>When to use:</strong> When you have no information about where the problem might be, or when you suspect a physical/network issue (new installation, cable changes, hardware replacement).</li>
+<li><strong>Process:</strong> Verify physical connectivity → check link status → verify IP configuration → test network reachability → verify service status → test application functionality.</li>
+<li><strong>Advantage:</strong> Thorough; won't miss lower-layer issues.</li>
+<li><strong>Disadvantage:</strong> Can be slow if the problem is at a higher layer.</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>Top-Down Approach</summary>
+<div class="detail-content">
+<p><strong>Start at Layer 7 (Application) and work downward.</strong></p>
+<ul>
+<li><strong>When to use:</strong> When users report a specific application or service failure and the underlying network was recently working. Good for service configuration issues.</li>
+<li><strong>Process:</strong> Check application/service status → verify service configuration → test transport connectivity → verify network routing → check physical layer.</li>
+<li><strong>Advantage:</strong> Fast if the problem is a service misconfiguration.</li>
+<li><strong>Disadvantage:</strong> May waste time testing services when the real issue is a disconnected cable.</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>Divide-and-Conquer Approach</summary>
+<div class="detail-content">
+<p><strong>Start in the middle (typically Layer 3/4) and go up or down based on results.</strong></p>
+<ul>
+<li><strong>When to use:</strong> When you have experience with the environment and can make an educated guess about the problem area. Most efficient for experienced administrators.</li>
+<li><strong>Process:</strong> Test network connectivity (ping/traceroute) → if that works, go up to services; if it fails, go down to physical/data link.</li>
+<li><strong>Advantage:</strong> Fastest on average; eliminates half the stack immediately.</li>
+<li><strong>Disadvantage:</strong> Requires experience to choose the right starting point.</li>
+</ul>
+</div>
+</details>
+
+<div class="info-box callout-tip">
+<strong>Pro Tip:</strong> In practice, experienced admins often use divide-and-conquer as their default. A quick <code>ping</code> to the target server immediately tells you whether the problem is below Layer 3 (ping fails) or above it (ping succeeds but the service doesn't work).
+</div>
+</section>
+
+<!-- §2 Scenario 1 -->
+<section class="section" id="scenario1">
+<h2>§2 – Scenario 1: "Users Can't Log In"</h2>
+
+<div class="scenario-card">
+<div class="scenario-header">🔒 Scenario 1: Active Directory Authentication Failure</div>
+<div class="scenario-body">
+
+<div class="scenario-symptom">
+<strong>Reported Symptom:</strong> Multiple users in the Accounting department report they cannot log in to their domain-joined Windows 10 workstations. They receive the error: <em>"The trust relationship between this workstation and the primary domain failed"</em> or <em>"There are currently no logon servers available to service the logon request."</em> Users in other departments are unaffected.
+</div>
+
+<p><strong>Recommended Approach:</strong> Divide-and-conquer — start with network connectivity to the domain controller, then branch up or down.</p>
+
+<h3>Diagnostic Pathway</h3>
+
+<details>
+<summary>Step 1: Verify Network Connectivity (Layer 3)</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Determine if the affected workstations can reach the domain controller at the network level.</p>
+<pre><code># From an affected workstation:
+ping 192.168.1.10    # DC IP address
+ping dc01.corp.local # DC hostname</code></pre>
+<p><strong>If ping to IP succeeds but hostname fails:</strong> DNS issue → go to Step 2.</p>
+<p><strong>If ping to IP fails:</strong> Network/physical issue → check cables, switch ports, VLAN assignments for the Accounting subnet.</p>
+<p><strong>If both succeed:</strong> Network is fine → go to Step 3 (service layer).</p>
+</div>
+</details>
+
+<details>
+<summary>Step 2: Verify DNS Resolution (Layer 7 – DNS Service)</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm workstations can resolve the domain controller and AD-related DNS records.</p>
+<pre><code># Test basic DNS resolution:
+nslookup dc01.corp.local
+nslookup corp.local
+
+# Test AD-specific SRV records:
+nslookup -type=SRV _ldap._tcp.dc._msdcs.corp.local
+nslookup -type=SRV _kerberos._tcp.corp.local</code></pre>
+<p><strong>If DNS fails:</strong> Check the workstation's DNS settings — are they pointing to the DC? Check if the DNS Server service is running on the DC.</p>
+<pre><code># On the DC (PowerShell):
+Get-Service DNS
+Resolve-DnsName corp.local</code></pre>
+<p><strong>Common cause:</strong> Workstations received a DHCP lease with incorrect DNS server (e.g., pointing to the router instead of the DC).</p>
+</div>
+</details>
+
+<details>
+<summary>Step 3: Verify AD Domain Services Status (Layer 7 – AD Service)</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm that Active Directory Domain Services is running and healthy.</p>
+<pre><code># On the Domain Controller (PowerShell):
+Get-Service NTDS
+Get-Service Netlogon
+Get-Service KDC
+
+# Run AD diagnostics:
+dcdiag /v
+
+# Check replication (if multiple DCs):
+repadmin /replsummary</code></pre>
+<p><strong>If services are stopped:</strong> Restart them and check Event Viewer for why they stopped.</p>
+<p><strong>If dcdiag shows errors:</strong> Focus on the specific test that failed (DNS, replication, SYSVOL).</p>
+</div>
+</details>
+
+<details>
+<summary>Step 4: Check Account-Level Issues (Application Layer)</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Determine if specific user accounts are locked out or disabled.</p>
+<pre><code># PowerShell – Check account status:
+Get-ADUser -Identity jsmith -Properties LockedOut,Enabled,LastLogonDate
+Search-ADAccount -LockedOut | Select-Object Name,SamAccountName
+
+# Check if it's all Accounting users:
+Get-ADUser -Filter * -SearchBase "OU=Accounting,DC=corp,DC=local" `
+  -Properties LockedOut | Where-Object {$_.LockedOut -eq $true}</code></pre>
+<p><strong>If accounts are locked:</strong> Investigate why — check security logs for failed login attempts (possible brute force or a service using old credentials).</p>
+<pre><code># Splunk search for failed logins:
+index=wineventlog EventCode=4740 OR EventCode=4625
+| stats count by Account_Name, src_ip
+| sort -count</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Step 5: Resolution and Documentation</summary>
+<div class="detail-content">
+<p><strong>Common root causes for this scenario:</strong></p>
+<ul>
+<li><strong>DNS misconfiguration:</strong> Workstations pointed to wrong DNS server after a DHCP scope change.</li>
+<li><strong>DC service failure:</strong> The Netlogon service crashed after a patch was applied.</li>
+<li><strong>Mass account lockout:</strong> A shared service account with an expired password caused cascading lockouts.</li>
+<li><strong>Network segmentation:</strong> A new firewall rule blocked Kerberos (TCP/UDP 88) or LDAP (TCP 389) traffic from the Accounting VLAN.</li>
+</ul>
+<p><strong>After resolution:</strong> Document the root cause, the fix applied, and any preventive measures (e.g., monitoring alert for Netlogon service status).</p>
+</div>
+</details>
+
+</div>
+</div>
+</section>
+
+<!-- §3 Scenario 2 -->
+<section class="section" id="scenario2">
+<h2>§3 – Scenario 2: "New PCs Not Getting Addresses"</h2>
+
+<div class="scenario-card">
+<div class="scenario-header">🌐 Scenario 2: DHCP Failure</div>
+<div class="scenario-body">
+
+<div class="scenario-symptom">
+<strong>Reported Symptom:</strong> Five new workstations deployed in the Engineering lab are receiving 169.254.x.x (APIPA) addresses instead of valid IPs from the DHCP server. Existing machines in the same room still have valid addresses and are working normally.
+</div>
+
+<p><strong>Recommended Approach:</strong> Bottom-up — new hardware deployment suggests starting with physical/network layer verification.</p>
+
+<h3>Diagnostic Pathway</h3>
+
+<details>
+<summary>Step 1: Verify Physical/Virtual Network Connectivity (Layer 1–2)</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm the new PCs are physically connected and on the correct network segment.</p>
+<pre><code># Check link status (Windows):
+Get-NetAdapter | Select-Object Name, Status, LinkSpeed
+
+# Check link status (if VMs):
+# Verify virtual switch assignment in Hyper-V or VMware
+Get-VMNetworkAdapter -VMName "ENG-PC01" | Select-Object SwitchName, Status</code></pre>
+<p><strong>Key questions:</strong></p>
+<ul>
+<li>Are the link lights active on the NIC and switch port?</li>
+<li>Are the new PCs connected to the same switch/VLAN as existing working machines?</li>
+<li>If VMs: Are they attached to the correct virtual switch?</li>
+</ul>
+<p><strong>If link is down:</strong> Check cable, switch port, or virtual switch configuration.</p>
+<p><strong>If link is up:</strong> Proceed to Step 2.</p>
+</div>
+</details>
+
+<details>
+<summary>Step 2: Verify DHCP Service Status (Layer 7 – Service)</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm the DHCP server is running and operational.</p>
+<pre><code># On the DHCP server (Windows):
+Get-Service DHCPServer
+
+# On the DHCP server (Linux):
+systemctl status isc-dhcp-server
+# or
+systemctl status dhcpd
+
+# Check DHCP server event logs (Windows):
+Get-WinEvent -LogName "Microsoft-Windows-Dhcp-Server/Operational" -MaxEvents 20</code></pre>
+<p><strong>If service is stopped:</strong> Start it and check logs for why it stopped.</p>
+<p><strong>If service is running:</strong> Proceed to Step 3.</p>
+</div>
+</details>
+
+<details>
+<summary>Step 3: Check DHCP Scope and Available Addresses</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Determine if the DHCP scope has available addresses to lease.</p>
+<pre><code># Windows DHCP Server (PowerShell):
+Get-DhcpServerv4Scope | Select-Object ScopeId, Name, State, StartRange, EndRange
+Get-DhcpServerv4ScopeStatistics | Select-Object ScopeId, Free, InUse, PercentageInUse
+
+# Linux (check lease file):
+cat /var/lib/dhcp/dhcpd.leases | grep -c "binding state active"</code></pre>
+<p><strong>If scope is exhausted (0 free):</strong> Expand the scope range, shorten lease duration, or reclaim unused leases.</p>
+<p><strong>If scope has addresses available:</strong> The problem is that DHCP Discover packets aren't reaching the server → proceed to Step 4.</p>
+</div>
+</details>
+
+<details>
+<summary>Step 4: Check Firewall Rules and DHCP Traffic</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Verify that DHCP broadcast traffic (UDP 67/68) is not being blocked.</p>
+<pre><code># Check Windows Firewall on the DHCP server:
+Get-NetFirewallRule | Where-Object {$_.DisplayName -like "*DHCP*"}
+
+# Check pfSense/Linux firewall logs for blocked UDP 67/68:
+# In Splunk:
+index=firewall dest_port=67 OR dest_port=68 action=blocked
+| table _time, src_ip, dest_ip, action
+
+# On Linux firewall:
+iptables -L -n -v | grep -E "67|68"</code></pre>
+<p><strong>If traffic is being blocked:</strong> Add firewall rules to permit DHCP traffic.</p>
+<p><strong>If traffic is not blocked:</strong> Proceed to Step 5.</p>
+</div>
+</details>
+
+<details>
+<summary>Step 5: Check DHCP Relay Agent (If Cross-Subnet)</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> If the new PCs are on a different subnet from the DHCP server, verify the relay agent is forwarding requests.</p>
+<pre><code># On the router/relay agent:
+# Check if ip helper-address is configured (Cisco):
+show running-config interface vlan 20
+# Look for: ip helper-address 192.168.1.5
+
+# On pfSense: Services → DHCP Relay
+# Verify the relay interface and destination server IP
+
+# Test by capturing traffic on the DHCP server:
+# Windows:
+netsh trace start capture=yes tracefile=dhcp.etl
+# Linux:
+tcpdump -i eth0 port 67 or port 68 -n</code></pre>
+<p><strong>Key insight:</strong> DHCP uses broadcast. If the new PCs are on a VLAN that doesn't have a relay agent pointing to the DHCP server, broadcasts will never cross the router.</p>
+<p><strong>Common cause for this scenario:</strong> New PCs were placed on a new VLAN (VLAN 20) but the router's DHCP relay (ip helper-address) was only configured for the original VLAN (VLAN 10). Existing machines work because they're on VLAN 10.</p>
+</div>
+</details>
+
+<details>
+<summary>Step 6: Resolution and Documentation</summary>
+<div class="detail-content">
+<p><strong>Common root causes for this scenario:</strong></p>
+<ul>
+<li><strong>VLAN mismatch:</strong> New PCs on a different VLAN without a corresponding DHCP scope or relay agent.</li>
+<li><strong>Scope exhaustion:</strong> All available IPs are leased (check for orphaned leases from decommissioned machines).</li>
+<li><strong>MAC filtering:</strong> DHCP server configured to only serve known MAC addresses (reservation-only mode).</li>
+<li><strong>Virtual switch misconfiguration:</strong> VMs attached to the wrong virtual network (internal vs. external switch).</li>
+</ul>
+<p><strong>After resolution:</strong> Verify all new PCs receive addresses, document the VLAN/scope configuration, and consider adding a Splunk alert for DHCP scope utilization above 90%.</p>
+</div>
+</details>
+
+</div>
+</div>
+</section>
+
+<!-- §4 Scenario 3 -->
+<section class="section" id="scenario3">
+<h2>§4 – Scenario 3: "Splunk Not Receiving Logs"</h2>
+
+<div class="scenario-card">
+<div class="scenario-header">📊 Scenario 3: Forwarder Communication Failure</div>
+<div class="scenario-body">
+
+<div class="scenario-symptom">
+<strong>Reported Symptom:</strong> You notice that your Splunk dashboard for the Linux web server (web01) has stopped updating. The last event received was 3 hours ago. The Splunk Enterprise (indexer) instance on <code>splunk01</code> is accessible via the web UI and other sources are still sending data normally.
+</div>
+
+<p><strong>Recommended Approach:</strong> Top-down — the Splunk indexer is working (other sources are fine), so the problem is likely at the forwarder or the path between forwarder and indexer.</p>
+
+<h3>Diagnostic Pathway</h3>
+
+<details>
+<summary>Step 1: Verify Universal Forwarder Service Status</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm the Splunk Universal Forwarder is running on web01.</p>
+<pre><code># SSH to web01 and check the forwarder service:
+sudo systemctl status SplunkForwarder
+
+# Or check the Splunk process directly:
+ps aux | grep splunkd
+
+# Check forwarder internal logs:
+sudo tail -50 /opt/splunkforwarder/var/log/splunk/splunkd.log</code></pre>
+<p><strong>If service is stopped:</strong> Start it with <code>sudo systemctl start SplunkForwarder</code> and check logs for why it stopped (disk full, crash, manual stop).</p>
+<p><strong>If service is running:</strong> Proceed to Step 2.</p>
+</div>
+</details>
+
+<details>
+<summary>Step 2: Verify Network Connectivity to Indexer (Layer 3–4)</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm the forwarder can reach the indexer on the receiving port.</p>
+<pre><code># Test basic connectivity:
+ping splunk01.corp.local
+
+# Test the specific receiving port (9997):
+# Using netcat:
+nc -zv splunk01.corp.local 9997
+
+# Or using bash:
+echo &gt; /dev/tcp/splunk01.corp.local/9997 &amp;&amp; echo "Port open" || echo "Port closed"
+
+# Check DNS resolution:
+nslookup splunk01.corp.local</code></pre>
+<p><strong>If ping fails:</strong> Network issue between web01 and splunk01 → check routing, interface status.</p>
+<p><strong>If ping succeeds but port 9997 is closed:</strong> Firewall blocking or receiving port not enabled → proceed to Step 3.</p>
+<p><strong>If port 9997 is open:</strong> Network path is fine → proceed to Step 4 (configuration).</p>
+</div>
+</details>
+
+<details>
+<summary>Step 3: Check Firewall Rules for Port 9997</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Verify that no firewall (host-based or network) is blocking TCP 9997.</p>
+<pre><code># On web01 (outbound):
+sudo iptables -L OUTPUT -n -v | grep 9997
+
+# On splunk01 (inbound):
+sudo iptables -L INPUT -n -v | grep 9997
+
+# On pfSense/network firewall – check via Splunk:
+index=firewall dest_port=9997
+| table _time, src_ip, dest_ip, action
+| sort -_time
+
+# On splunk01 – verify the receiving port is actually listening:
+sudo ss -tlnp | grep 9997</code></pre>
+<p><strong>If firewall is blocking:</strong> Add a rule to allow TCP 9997 from web01 to splunk01.</p>
+<p><strong>If port 9997 is not listening on splunk01:</strong> The receiving port is not enabled in Splunk → enable it via Splunk Web (Settings → Forwarding and Receiving → Receive Data → Add New on port 9997).</p>
+</div>
+</details>
+
+<details>
+<summary>Step 4: Verify inputs.conf on the Forwarder</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm the forwarder is configured to monitor the correct log files.</p>
+<pre><code># Check inputs.conf:
+sudo cat /opt/splunkforwarder/etc/system/local/inputs.conf
+
+# Expected content (example):
+# [monitor:///var/log/syslog]
+# disabled = false
+# index = linux
+# sourcetype = syslog
+
+# [monitor:///var/log/apache2/access.log]
+# disabled = false
+# index = web
+# sourcetype = access_combined</code></pre>
+<p><strong>Common issues:</strong></p>
+<ul>
+<li>A monitored file path was changed (e.g., log rotation moved the file).</li>
+<li><code>disabled = true</code> was set accidentally.</li>
+<li>The Splunk forwarder user doesn't have read permission on the log file.</li>
+</ul>
+<pre><code># Check permissions:
+ls -la /var/log/syslog
+ls -la /var/log/apache2/access.log
+
+# Verify the splunk user can read:
+sudo -u splunk cat /var/log/syslog | head -5</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Step 5: Verify outputs.conf Targeting</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm the forwarder knows where to send data.</p>
+<pre><code># Check outputs.conf:
+sudo cat /opt/splunkforwarder/etc/system/local/outputs.conf
+
+# Expected content:
+# [tcpout]
+# defaultGroup = default-autolb-group
+#
+# [tcpout:default-autolb-group]
+# server = splunk01.corp.local:9997
+#
+# [tcpout-server://splunk01.corp.local:9997]</code></pre>
+<p><strong>Common issues:</strong></p>
+<ul>
+<li>Server hostname is misspelled or uses an old IP that changed.</li>
+<li>Wrong port number specified.</li>
+<li>SSL/TLS mismatch between forwarder and indexer (if encryption is configured).</li>
+</ul>
+<p><strong>After fixing any configuration:</strong> Restart the forwarder:</p>
+<pre><code>sudo /opt/splunkforwarder/bin/splunk restart</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Step 6: Verify Data Flow and Resolution</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm data is now flowing after the fix.</p>
+<pre><code># On the Splunk indexer web UI, search:
+index=linux host=web01 earliest=-15m
+| stats count by sourcetype
+
+# Check the forwarder's internal metrics:
+index=_internal host=web01 source=*metrics.log group=tcpout_connections
+| table _time, destHost, destPort, status</code></pre>
+<p><strong>Common root causes for this scenario:</strong></p>
+<ul>
+<li><strong>Forwarder service crashed:</strong> Disk filled up on web01, causing splunkd to stop.</li>
+<li><strong>Firewall rule change:</strong> A security hardening script added iptables rules that blocked outbound 9997.</li>
+<li><strong>DNS change:</strong> splunk01's IP changed but DNS wasn't updated, and outputs.conf used the hostname.</li>
+<li><strong>Permission change:</strong> A system update changed log file permissions, preventing the forwarder from reading them.</li>
+</ul>
+</div>
+</details>
+
+</div>
+</div>
+</section>
+
+<!-- §5 Scenario 4 -->
+<section class="section" id="scenario4">
+<h2>§5 – Scenario 4: "Group Policy Not Applying"</h2>
+
+<div class="scenario-card">
+<div class="scenario-header">📋 Scenario 4: GPO Failure</div>
+<div class="scenario-body">
+
+<div class="scenario-symptom">
+<strong>Reported Symptom:</strong> You created a new Group Policy Object (GPO) called "Accounting-Drive-Map" that should map a network drive (H:) for all users in the Accounting OU. Users report that the drive does not appear after logging in and running <code>gpupdate /force</code>. Other GPOs linked to the same OU (like the desktop wallpaper policy) are working fine.
+</div>
+
+<p><strong>Recommended Approach:</strong> Top-down — GPOs are application-layer, and since other policies in the same OU work, the infrastructure (network, DNS, AD) is likely fine. Focus on the policy configuration itself.</p>
+
+<h3>Diagnostic Pathway</h3>
+
+<details>
+<summary>Step 1: Analyze gpresult Output</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Determine whether the GPO is being applied, denied, or not seen at all.</p>
+<pre><code># Run on the affected user's workstation:
+gpresult /r
+
+# For detailed HTML report:
+gpresult /h C:\Temp\gpreport.html
+
+# PowerShell equivalent:
+Get-GPResultantSetOfPolicy -ReportType Html -Path C:\Temp\gpreport.html</code></pre>
+<p><strong>What to look for:</strong></p>
+<ul>
+<li>Is "Accounting-Drive-Map" listed under <strong>Applied GPOs</strong>? → Policy is applying but the setting may be misconfigured.</li>
+<li>Is it listed under <strong>Denied GPOs</strong>? → Security filtering or WMI filter is blocking it → Step 3 or 4.</li>
+<li>Is it <strong>not listed at all</strong>? → Not linked to the correct OU, or not reaching the client → Step 2.</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>Step 2: Verify OU Targeting and GPO Link</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Confirm the GPO is linked to the correct OU and the user/computer is in that OU.</p>
+<pre><code># Verify where the user object resides:
+Get-ADUser -Identity jsmith -Properties DistinguishedName | Select-Object DistinguishedName
+
+# Expected: CN=John Smith,OU=Accounting,DC=corp,DC=local
+
+# Verify GPO links on the Accounting OU:
+Get-GPInheritance -Target "OU=Accounting,DC=corp,DC=local"
+
+# Check if the GPO is linked and enabled:
+(Get-GPO -Name "Accounting-Drive-Map").GpoStatus</code></pre>
+<p><strong>Common issues:</strong></p>
+<ul>
+<li>GPO is linked to the wrong OU (e.g., linked to "Accounting Computers" but it's a User Configuration policy, so it needs to be where the user objects are).</li>
+<li>GPO link is disabled.</li>
+<li>User object was moved to a different OU and no one updated the GPO link.</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>Step 3: Check Security Filtering</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Verify the user/group has permission to apply the GPO.</p>
+<pre><code># Check security filtering on the GPO:
+(Get-GPO -Name "Accounting-Drive-Map").GetSecurityInfo()
+
+# Or in PowerShell:
+Get-GPPermission -Name "Accounting-Drive-Map" -All |
+  Select-Object Trustee, Permission, Inherited</code></pre>
+<p><strong>Key requirement:</strong> The user (or a group they belong to) must have both <strong>"Read"</strong> and <strong>"Apply Group Policy"</strong> permissions.</p>
+<p><strong>Common mistake:</strong> When you change security filtering from "Authenticated Users" to a specific group, you must also ensure "Authenticated Users" (or "Domain Computers") retains <strong>Read</strong> permission. Without Read permission, the computer can't even download the GPO to evaluate it.</p>
+<pre><code># Fix: Add "Domain Computers" with Read permission:
+Set-GPPermission -Name "Accounting-Drive-Map" -TargetName "Domain Computers" `
+  -TargetType Group -PermissionLevel GpoRead</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Step 4: Check WMI Filters</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> Determine if a WMI filter is preventing the GPO from applying.</p>
+<pre><code># Check if a WMI filter is linked to the GPO:
+(Get-GPO -Name "Accounting-Drive-Map").WmiFilter
+
+# If a WMI filter exists, test it manually on the workstation:
+Get-WmiObject -Query "SELECT * FROM Win32_OperatingSystem WHERE Version LIKE '10%'"</code></pre>
+<p><strong>If the WMI query returns no results on the target machine:</strong> The filter is blocking the GPO. Either fix the WMI query or remove the filter if it's not needed.</p>
+</div>
+</details>
+
+<details>
+<summary>Step 5: Check AD Replication and DNS SRV Records</summary>
+<div class="detail-content">
+<p><strong>Goal:</strong> If the GPO was recently created, verify it has replicated to the DC that the workstation is authenticating against.</p>
+<pre><code># Check replication status:
+repadmin /replsummary
+repadmin /showrepl
+
+# Verify which DC the workstation is using:
+nltest /dsgetdc:corp.local
+
+# Check DNS SRV records for domain controllers:
+nslookup -type=SRV _ldap._tcp.dc._msdcs.corp.local
+
+# Force replication (if needed):
+repadmin /syncall /AdeP</code></pre>
+<p><strong>If replication is failing:</strong> The GPO exists on one DC but not the one the client is using. Fix replication first.</p>
+<p><strong>Also check SYSVOL replication:</strong> GPO files are stored in SYSVOL. If DFSR/FRS replication is broken, the policy files won't be available on all DCs.</p>
+<pre><code># Check SYSVOL share accessibility from the workstation:
+dir \\corp.local\SYSVOL\corp.local\Policies\</code></pre>
+</div>
+</details>
+
+<details>
+<summary>Step 6: Resolution and Documentation</summary>
+<div class="detail-content">
+<p><strong>Most likely root cause for this specific scenario:</strong> Security filtering was changed from "Authenticated Users" to "Accounting-Users" group, but "Domain Computers" Read permission was removed. The computer cannot download the GPO, so it never evaluates the user settings.</p>
+<p><strong>Fix applied:</strong></p>
+<pre><code># Restore Read permission for computers:
+Set-GPPermission -Name "Accounting-Drive-Map" -TargetName "Domain Computers" `
+  -TargetType Group -PermissionLevel GpoRead
+
+# Force policy update on affected workstation:
+gpupdate /force
+
+# Verify:
+gpresult /r | findstr "Accounting-Drive-Map"</code></pre>
+<p><strong>Lesson learned:</strong> When modifying GPO security filtering, always ensure the computer accounts can still <em>read</em> the GPO, even if they shouldn't <em>apply</em> it. This is a well-known GPO troubleshooting gotcha.</p>
+</div>
+</details>
+
+</div>
+</div>
+</section>
+
+<!-- §6 Knowledge Check -->
+<section class="section" id="knowledge-check">
+<h2>§6 – Knowledge Check (Ungraded)</h2>
+
+<div class="info-box">
+<strong>Instructions:</strong> For each mini-scenario below, select the most likely root cause and consider what your first diagnostic step would be. Click "Check Answer" to see the explanation. This is ungraded practice for the Final Exam.
+</div>
+
+<!-- Question 1 -->
+<div class="kc-question" id="kc-q1">
+<p class="q-stem">1. A user reports they can browse the internet but cannot access any shared folders on the file server (fs01.corp.local). Pinging fs01 by IP address (192.168.1.20) succeeds, but <code>ping fs01.corp.local</code> fails. What is the most likely issue?</p>
+<ul class="kc-options">
+<li><label><input type="radio" name="q1" value="a"> The file server's firewall is blocking SMB (port 445)</label></li>
+<li><label><input type="radio" name="q1" value="b"> DNS resolution is failing for internal domain names</label></li>
+<li><label><input type="radio" name="q1" value="c"> The user's account is locked out</label></li>
+<li><label><input type="radio" name="q1" value="d"> The file server's shared folder permissions are incorrect</label></li>
+</ul>
+<button class="btn" onclick="checkAnswer('q1','b','kc-q1-fb-correct','kc-q1-fb-incorrect')">Check Answer</button>
+<div class="kc-feedback" id="kc-q1-fb-correct">
+<strong>✓ Correct!</strong> Since ping-by-IP works but ping-by-hostname fails, this is clearly a DNS resolution issue. The first diagnostic step would be <code>nslookup fs01.corp.local</code> to confirm, then check the workstation's DNS server settings. The user can browse the internet because external DNS (via the router/ISP) may still work, but internal Active Directory DNS records are not resolving.
+</div>
+<div class="kc-feedback" id="kc-q1-fb-incorrect">
+<strong>✗ Not quite.</strong> The correct answer is <strong>B – DNS resolution is failing</strong>. The key clue is that ping-by-IP succeeds (so network connectivity is fine and the server is up) but ping-by-hostname fails. This isolates the problem to name resolution. Your first step: <code>nslookup fs01.corp.local</code>.
+</div>
+</div>
+
+<!-- Question 2 -->
+<div class="kc-question" id="kc-q2">
+<p class="q-stem">2. After applying security hardening changes to a Linux server, your Splunk dashboard shows the server stopped sending logs 30 minutes ago. The server is still reachable via SSH. What should you check first?</p>
+<ul class="kc-options">
+<li><label><input type="radio" name="q2" value="a"> Whether the Splunk Enterprise indexer is running</label></li>
+<li><label><input type="radio" name="q2" value="b"> Whether the iptables rules are blocking outbound port 9997</label></li>
+<li><label><input type="radio" name="q2" value="c"> Whether the server's IP address changed</label></li>
+<li><label><input type="radio" name="q2" value="d"> Whether the Splunk Universal Forwarder service is still running</label></li>
+</ul>
+<button class="btn" onclick="checkAnswer('q2','b','kc-q2-fb-correct','kc-q2-fb-incorrect')">Check Answer</button>
+<div class="kc-feedback" id="kc-q2-fb-correct">
+<strong>✓ Correct!</strong> The timing correlation is the key clue: logs stopped right after "security hardening changes." Hardening scripts commonly add restrictive firewall rules. Since SSH (port 22) still works but Splunk forwarding stopped, the most likely cause is new iptables rules blocking outbound TCP 9997. First step: <code>sudo iptables -L OUTPUT -n -v | grep 9997</code>. (Checking the forwarder service status would also be reasonable, but the timing correlation with firewall hardening makes iptables the best first check.)
+</div>
+<div class="kc-feedback" id="kc-q2-fb-incorrect">
+<strong>✗ Not quite.</strong> The correct answer is <strong>B – Check iptables rules for port 9997</strong>. The critical clue is the timing: logs stopped immediately after security hardening. Hardening often includes adding restrictive firewall rules. Since the server is still reachable via SSH (port 22 is allowed), but Splunk data stopped flowing, the most likely cause is new outbound firewall rules blocking TCP 9997.
+</div>
+</div>
+
+<!-- Question 3 -->
+<div class="kc-question" id="kc-q3">
+<p class="q-stem">3. A newly created GPO that enforces a screen lock timeout is not applying to computers in the "Servers" OU. Running <code>gpresult /r</code> on an affected server shows the GPO under "Denied GPOs" with the reason "Inaccessible" or "Access Denied." Other GPOs are applying normally. What is the most likely cause?</p>
+<ul class="kc-options">
+<li><label><input type="radio" name="q3" value="a"> AD replication has not completed yet</label></li>
+<li><label><input type="radio" name="q3" value="b"> The GPO's security filtering removed Read permission for computer accounts</label></li>
+<li><label><input type="radio" name="q3" value="c"> The DNS SRV records are missing</label></li>
+<li><label><input type="radio" name="q3" value="d"> The WMI filter is targeting the wrong OS version</label></li>
+</ul>
+<button class="btn" onclick="checkAnswer('q3','b','kc-q3-fb-correct','kc-q3-fb-incorrect')">Check Answer</button>
+<div class="kc-feedback" id="kc-q3-fb-correct">
+<strong>✓ Correct!</strong> "Inaccessible" or "Access Denied" in gpresult means the computer cannot read the GPO at all. This happens when security filtering is modified and "Authenticated Users" or "Domain Computers" loses Read permission. The fix: add "Domain Computers" with GpoRead permission to the GPO. This is one of the most common GPO troubleshooting issues in production environments.
+</div>
+<div class="kc-feedback" id="kc-q3-fb-incorrect">
+<strong>✗ Not quite.</strong> The correct answer is <strong>B – Security filtering removed Read permission</strong>. The "Inaccessible" status in gpresult specifically indicates the computer cannot read the GPO files. This occurs when security filtering is changed and the computer account's Read permission is inadvertently removed. Other GPOs work because they still have "Authenticated Users" with Read access.
+</div>
+</div>
+
+<!-- Question 4 -->
+<div class="kc-question" id="kc-q4">
+<p class="q-stem">4. A workstation that was working fine yesterday now cannot log in to the domain. The error says "no logon servers available." You can ping other workstations on the same subnet by IP, but cannot ping the domain controller by IP address. What troubleshooting approach and first step would you choose?</p>
+<ul class="kc-options">
+<li><label><input type="radio" name="q4" value="a"> Top-down: Check if the AD DS service is running on the DC</label></li>
+<li><label><input type="radio" name="q4" value="b"> Divide-and-conquer: Run <code>nslookup</code> to test DNS resolution</label></li>
+<li><label><input type="radio" name="q4" value="c"> Bottom-up: Check the physical cable and link status on the workstation</label></li>
+<li><label><input type="radio" name="q4" value="d"> Divide-and-conquer: Check network path to the DC with <code>tracert 192.168.1.10</code></label></li>
+</ul>
+<button class="btn" onclick="checkAnswer('q4','d','kc-q4-fb-correct','kc-q4-fb-incorrect')">Check Answer</button>
+<div class="kc-feedback" id="kc-q4-fb-correct">
+<strong>✓ Correct!</strong> Since you can ping other devices on the same subnet (Layer 1–2 is fine locally) but cannot ping the DC by IP (Layer 3 failure to the DC specifically), the issue is in the network path to the DC. Using <code>tracert</code> to the DC's IP will show where the path breaks—possibly a router issue, a VLAN problem, or the DC itself being down. This is divide-and-conquer: you've already established local connectivity works, now you're tracing the specific failing path.
+</div>
+<div class="kc-feedback" id="kc-q4-fb-incorrect">
+<strong>✗ Not quite.</strong> The correct answer is <strong>D – Divide-and-conquer with tracert to the DC</strong>. Key clues: local subnet pings work (so the workstation's physical connection and local network are fine), but the DC is unreachable by IP. This means the problem is in the network path to the DC. <code>tracert</code> will reveal where packets are being dropped—a router, firewall, or the DC itself may be down.
+</div>
+</div>
+
+</section>
+
+<!-- §7 Summary -->
+<section class="section" id="summary">
+<h2>§7 – Summary &amp; What's Next</h2>
+
+<h3>Key Troubleshooting Principles</h3>
+<ul>
+<li><strong>Choose your approach based on available information:</strong> Use bottom-up when you have no clues, top-down when you suspect a service issue, and divide-and-conquer when you can make an educated guess.</li>
+<li><strong>Follow the dependencies:</strong> Services depend on other services. AD needs DNS. DHCP needs network connectivity. Splunk forwarders need network access to the indexer. Always verify the lower layers before blaming the higher ones.</li>
+<li><strong>Correlate timing:</strong> "When did it stop working?" and "What changed?" are the two most powerful troubleshooting questions. Changes (patches, firewall rules, configuration edits) are the #1 cause of outages.</li>
+<li><strong>Use logs:</strong> Splunk, Event Viewer, journalctl, and application logs contain the evidence. Learn to search them efficiently.</li>
+<li><strong>Document everything:</strong> Record what you tried, what you found, and what fixed it. Future-you (and your colleagues) will thank you.</li>
+</ul>
+
+<h3>Commands Quick Reference</h3>
+<table class="ref-table">
+<thead>
+<tr><th>Task</th><th>Windows</th><th>Linux</th></tr>
+</thead>
+<tbody>
+<tr><td>Test connectivity</td><td><code>ping</code>, <code>Test-NetConnection</code></td><td><code>ping</code>, <code>nc -zv</code></td></tr>
+<tr><td>DNS lookup</td><td><code>nslookup</code>, <code>Resolve-DnsName</code></td><td><code>nslookup</code>, <code>dig</code></td></tr>
+<tr><td>Check services</td><td><code>Get-Service</code></td><td><code>systemctl status</code></td></tr>
+<tr><td>AD diagnostics</td><td><code>dcdiag</code>, <code>repadmin</code></td><td>N/A</td></tr>
+<tr><td>GPO results</td><td><code>gpresult /r</code></td><td>N/A</td></tr>
+<tr><td>Check firewall</td><td><code>Get-NetFirewallRule</code></td><td><code>iptables -L -n -v</code></td></tr>
+<tr><td>View logs</td><td><code>Get-WinEvent</code></td><td><code>journalctl</code>, <code>tail</code></td></tr>
+<tr><td>Splunk search</td><td colspan="2"><code>index=&lt;name&gt; | stats count by &lt;field&gt;</code></td></tr>
+</tbody>
+</table>
+
+<h3>What's Next</h3>
+<div class="info-box">
+<strong>Module 16.3: Security &amp; Monitoring Synthesis</strong> builds on the troubleshooting skills you practiced here by showing how security monitoring (including Splunk) serves as both a detective control and a troubleshooting tool. You'll see how defense-in-depth connects every layer of the infrastructure stack.
+</div>
+
+<div class="info-box callout-warn">
+<strong>Reminder:</strong> Project 3 is due <strong>Monday, May 18, 2026</strong>. If you're encountering issues with your multi-server infrastructure, use the troubleshooting pathways from this module to diagnose them systematically. Module 16.4 includes a detailed Project 3 completion checklist.
+</div>
+
+</section>
+
+</main>
+
+<script>
+function checkAnswer(qName, correctValue, correctId, incorrectId) {
+  var radios = document.getElementsByName(qName);
+  var selected = null;
+  for (var i = 0; i < radios.length; i++) {
+    if (radios[i].checked) {
+      selected = radios[i].value;
+      break;
+    }
+  }
+  if (selected === null) {
+    return;
+  }
+  var correctEl = document.getElementById(correctId);
+  var incorrectEl = document.getElementById(incorrectId);
+  // Reset
+  correctEl.className = 'kc-feedback';
+  incorrectEl.className = 'kc-feedback';
+  if (selected === correctValue) {
+    correctEl.className = 'kc-feedback correct';
+  } else {
+    incorrectEl.className = 'kc-feedback incorrect';
+  }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1969 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>
+            Module 16.1 – Infrastructure Integration: Seeing the Whole System
+        </title>
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+            }
+            :root {
+                --brand: #1a5276;
+                --brand-light: #2980b9;
+                --brand-bg: #eaf2f8;
+                --accent: #117a65;
+                --accent-light: #d4efdf;
+                --warn: #b9770e;
+                --warn-bg: #fef9e7;
+                --text: #1c1c1c;
+                --text-muted: #4a4a4a;
+                --bg: #ffffff;
+                --border: #d5d8dc;
+                --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+                --radius: 6px;
+                --nav-h: 52px;
+                --layer1: #2c3e50;
+                --layer2: #1a5276;
+                --layer3: #117a65;
+                --layer4: #6c3483;
+                --layer5: #8b5e0e;
+                --layer6: #922b21;
+            }
+            html {
+                scroll-behavior: smooth;
+            }
+            body {
+                margin: 0;
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Oxygen, sans-serif;
+                color: var(--text);
+                background: var(--bg);
+                line-height: 1.6;
+                font-size: 16px;
+            }
+            a {
+                color: var(--brand-light);
+                text-decoration: underline;
+            }
+            a:focus-visible,
+            button:focus-visible,
+            [tabindex="0"]:focus-visible {
+                outline: 3px solid var(--brand-light);
+                outline-offset: 2px;
+                border-radius: 3px;
+            }
+
+            /* NAV */
+            nav.top-nav {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                background: var(--brand);
+                padding: 0 1rem;
+                display: flex;
+                align-items: center;
+                height: var(--nav-h);
+                gap: 0.25rem;
+                flex-wrap: wrap;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            }
+            nav.top-nav a {
+                color: #fff;
+                text-decoration: none;
+                font-size: 0.82rem;
+                padding: 0.35rem 0.55rem;
+                border-radius: var(--radius);
+                white-space: nowrap;
+            }
+            nav.top-nav a:hover,
+            nav.top-nav a:focus-visible {
+                background: rgba(255, 255, 255, 0.18);
+                outline-color: #fff;
+            }
+
+            /* HEADER */
+            header.page-header {
+                background: linear-gradient(
+                    135deg,
+                    var(--brand) 0%,
+                    #1a6fa0 100%
+                );
+                color: #fff;
+                padding: 2.5rem 1.5rem 2rem;
+                text-align: center;
+            }
+            header .course-tag {
+                font-size: 0.85rem;
+                letter-spacing: 0.5px;
+                opacity: 0.9;
+                margin-bottom: 0.4rem;
+            }
+            h1 {
+                font-size: 1.75rem;
+                margin: 0 0 0.4rem;
+                line-height: 1.25;
+            }
+            header .subtitle {
+                font-size: 0.95rem;
+                opacity: 0.85;
+                margin: 0.3rem 0 0;
+            }
+            .meta-pills {
+                margin-top: 1rem;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+            .meta-pill {
+                background: rgba(255, 255, 255, 0.15);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 20px;
+                padding: 0.25rem 0.75rem;
+                font-size: 0.78rem;
+            }
+
+            /* MAIN */
+            main {
+                max-width: 54rem;
+                margin: 0 auto;
+                padding: 1.5rem 1.25rem 3rem;
+            }
+            section {
+                scroll-margin-top: calc(var(--nav-h) + 12px);
+                margin-bottom: 2.5rem;
+            }
+            h2 {
+                color: var(--brand);
+                font-size: 1.35rem;
+                border-bottom: 2px solid var(--brand-bg);
+                padding-bottom: 0.4rem;
+                margin-top: 0;
+            }
+            h3 {
+                color: var(--layer3);
+                font-size: 1.1rem;
+                margin: 1.2rem 0 0.5rem;
+            }
+            h4 {
+                font-size: 1rem;
+                margin: 0.8rem 0 0.3rem;
+            }
+            p,
+            li {
+                font-size: 0.97rem;
+            }
+            ul,
+            ol {
+                padding-left: 1.4rem;
+            }
+
+            /* CARDS & BOXES */
+            .info-box {
+                background: var(--brand-bg);
+                border-left: 4px solid var(--brand);
+                padding: 1rem 1.2rem;
+                border-radius: var(--radius);
+                margin: 1rem 0;
+            }
+            .warn-box {
+                background: var(--warn-bg);
+                border-left: 4px solid var(--warn);
+                padding: 1rem 1.2rem;
+                border-radius: var(--radius);
+                margin: 1rem 0;
+            }
+
+            /* COLLAPSIBLE */
+            details {
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                margin: 0.75rem 0;
+                background: #fafafa;
+            }
+            details[open] {
+                background: #fff;
+            }
+            summary {
+                cursor: pointer;
+                padding: 0.7rem 1rem;
+                font-weight: 600;
+                font-size: 0.95rem;
+                list-style: none;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            summary::before {
+                content: "▸";
+                transition: transform 0.2s;
+                font-size: 0.85rem;
+            }
+            details[open] > summary::before {
+                transform: rotate(90deg);
+            }
+            summary:focus-visible {
+                outline: 3px solid var(--brand-light);
+                outline-offset: -2px;
+            }
+            details .detail-body {
+                padding: 0.5rem 1rem 1rem;
+            }
+
+            /* STACK VISUAL */
+            .stack-container {
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+                margin: 1.2rem 0;
+            }
+            .stack-layer {
+                padding: 0.85rem 1rem;
+                color: #fff;
+                border-radius: var(--radius);
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.9rem;
+                margin-bottom: 3px;
+            }
+            .stack-layer .layer-num {
+                font-weight: 700;
+                font-size: 1.1rem;
+                min-width: 1.6rem;
+                text-align: center;
+            }
+            .stack-layer .layer-label {
+                font-weight: 600;
+                min-width: 9rem;
+            }
+            .stack-layer .layer-weeks {
+                font-size: 0.82rem;
+            }
+            .sl1 {
+                background: var(--layer1);
+            }
+            .sl2 {
+                background: var(--layer2);
+            }
+            .sl3 {
+                background: var(--layer3);
+            }
+            .sl4 {
+                background: var(--layer4);
+            }
+            .sl5 {
+                background: var(--layer5);
+            }
+            .sl6 {
+                background: var(--layer6);
+            }
+
+            /* DEPENDENCY MAP */
+            .dep-map {
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1.2rem;
+                background: #fdfdfd;
+                margin: 1rem 0;
+            }
+            .dep-map svg {
+                width: 100%;
+                height: auto;
+                max-height: 320px;
+                display: block;
+                margin: 0 auto;
+            }
+            .dep-node {
+                transition: opacity 0.2s;
+            }
+            .dep-node text {
+                font-size: 12px;
+                fill: #fff;
+                pointer-events: none;
+            }
+            .dep-edge {
+                stroke: #888;
+                stroke-width: 2;
+                fill: none;
+                marker-end: url(#arrowhead);
+                transition:
+                    stroke 0.2s,
+                    stroke-width 0.2s;
+            }
+            .dep-edge.highlight {
+                stroke: var(--brand-light);
+                stroke-width: 3.5;
+            }
+            .dep-node.highlight rect,
+            .dep-node.highlight ellipse {
+                stroke: var(--brand-light);
+                stroke-width: 3;
+            }
+            .dep-legend {
+                font-size: 0.82rem;
+                color: var(--text-muted);
+                margin-top: 0.6rem;
+                text-align: center;
+            }
+            .dep-controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+            .dep-btn {
+                background: var(--brand-bg);
+                border: 1px solid var(--brand);
+                color: var(--brand);
+                padding: 0.35rem 0.7rem;
+                border-radius: var(--radius);
+                font-size: 0.82rem;
+                cursor: pointer;
+                font-weight: 500;
+            }
+            .dep-btn:hover,
+            .dep-btn:focus-visible,
+            .dep-btn[aria-pressed="true"] {
+                background: var(--brand);
+                color: #fff;
+            }
+
+            /* TABS */
+            .tabs {
+                margin: 1rem 0;
+            }
+            .tab-list {
+                display: flex;
+                gap: 2px;
+                border-bottom: 2px solid var(--border);
+                margin-bottom: 0;
+            }
+            .tab-btn {
+                background: none;
+                border: none;
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+                cursor: pointer;
+                border-bottom: 3px solid transparent;
+                font-weight: 500;
+                color: var(--text-muted);
+            }
+            .tab-btn[aria-selected="true"] {
+                color: var(--brand);
+                border-bottom-color: var(--brand);
+            }
+            .tab-btn:hover {
+                color: var(--brand);
+            }
+            .tab-panel {
+                padding: 1rem 0.5rem;
+                display: none;
+                animation: fadeIn 0.25s;
+            }
+            .tab-panel.active {
+                display: block;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+
+            /* QUIZ */
+            .quiz-q {
+                background: #f9f9f9;
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1rem 1.2rem;
+                margin: 0.75rem 0;
+            }
+            .quiz-q p.q-stem {
+                font-weight: 600;
+                margin: 0 0 0.6rem;
+            }
+            .quiz-q label {
+                display: block;
+                padding: 0.3rem 0;
+                cursor: pointer;
+                font-size: 0.93rem;
+            }
+            .quiz-q input[type="radio"] {
+                margin-right: 0.5rem;
+            }
+            .quiz-feedback {
+                margin-top: 0.6rem;
+                padding: 0.6rem 0.8rem;
+                border-radius: var(--radius);
+                font-size: 0.9rem;
+                display: none;
+            }
+            .quiz-feedback.correct {
+                background: #d4efdf;
+                border: 1px solid #27ae60;
+                display: block;
+            }
+            .quiz-feedback.incorrect {
+                background: #fadbd8;
+                border: 1px solid #e74c3c;
+                display: block;
+            }
+            .check-btn {
+                background: var(--brand);
+                color: #fff;
+                border: none;
+                padding: 0.45rem 1rem;
+                border-radius: var(--radius);
+                cursor: pointer;
+                font-size: 0.88rem;
+                margin-top: 0.5rem;
+            }
+            .check-btn:hover {
+                background: var(--brand-light);
+            }
+
+            /* PROGRESS TRACKER */
+            .progress-track {
+                display: flex;
+                align-items: center;
+                gap: 0;
+                margin: 1rem 0;
+                flex-wrap: wrap;
+            }
+            .progress-step {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                flex: 1;
+                min-width: 60px;
+                position: relative;
+            }
+            .progress-step .dot {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.7rem;
+                color: #fff;
+                font-weight: 700;
+                z-index: 1;
+            }
+            .progress-step.completed .dot {
+                background: var(--accent);
+            }
+            .progress-step.current .dot {
+                background: var(--brand);
+                box-shadow: 0 0 0 4px var(--brand-bg);
+            }
+            .progress-step .step-label {
+                font-size: 0.68rem;
+                margin-top: 0.3rem;
+                text-align: center;
+                color: var(--text-muted);
+            }
+            .progress-step.current .step-label {
+                color: var(--brand);
+                font-weight: 600;
+            }
+            .progress-line {
+                flex: 1;
+                height: 3px;
+                background: var(--border);
+                min-width: 12px;
+            }
+            .progress-line.done {
+                background: var(--accent);
+            }
+
+            /* CASE SCENARIO */
+            .case-box {
+                background: #f4f6f9;
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1.2rem;
+                margin: 1rem 0;
+            }
+            .case-box h4 {
+                margin-top: 0;
+            }
+
+            /* CODE BLOCKS */
+            pre {
+                overflow-x: auto;
+                border-radius: var(--radius);
+            }
+            pre code {
+                font-size: 0.88rem;
+                line-height: 1.5;
+            }
+
+            /* FOOTER */
+            footer {
+                background: var(--brand-bg);
+                text-align: center;
+                padding: 1.2rem;
+                font-size: 0.8rem;
+                color: var(--text-muted);
+                border-top: 1px solid var(--border);
+            }
+
+            /* RESPONSIVE */
+            @media (max-width: 600px) {
+                h1 {
+                    font-size: 1.35rem;
+                }
+                nav.top-nav {
+                    height: auto;
+                    padding: 0.4rem 0.5rem;
+                }
+                nav.top-nav a {
+                    font-size: 0.75rem;
+                    padding: 0.3rem 0.4rem;
+                }
+                .stack-layer {
+                    flex-wrap: wrap;
+                }
+                .stack-layer .layer-label {
+                    min-width: auto;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- NAVIGATION -->
+        <nav class="top-nav" aria-label="Module sections">
+            <a href="#objectives">§0 Objectives</a>
+            <a href="#stack">§1 Stack</a>
+            <a href="#dependencies">§2 Dependencies</a>
+            <a href="#crossplatform">§3 Cross-Platform</a>
+            <a href="#case">§4 Case Study</a>
+            <a href="#check">§5 Knowledge Check</a>
+            <a href="#project3">§6 Project 3</a>
+            <a href="#summary">§7 Summary</a>
+        </nav>
+
+        <!-- HEADER -->
+        <header class="page-header" role="banner">
+            <div class="course-tag">CSC 152 · Week 16 of 17</div>
+            <h1>
+                Module 16.1 – Infrastructure Integration:<br />Seeing the Whole
+                System
+            </h1>
+            <p class="subtitle">
+                Network Operating Systems and Administration · Mendocino College
+            </p>
+            <div class="meta-pills">
+                <span class="meta-pill">📅 May 11–17, 2026</span>
+                <span class="meta-pill">⏱ ~45–60 min self-study</span>
+                <span class="meta-pill"
+                    >🎯 CSLO 1 · CSLO 2 · CSLO 3 · CSLO 4</span
+                >
+                <span class="meta-pill">🔗 Template Anchor Module</span>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <!-- §0 OBJECTIVES & CONTEXT -->
+            <section id="objectives">
+                <h2>§0 – Objectives &amp; Week Context</h2>
+
+                <h3>Your Course Journey</h3>
+                <div
+                    class="progress-track"
+                    aria-label="Course progress showing current position at Week 16: Synthesize"
+                >
+                    <div class="progress-step completed">
+                        <span class="dot">✓</span
+                        ><span class="step-label">Build<br />Wk 1-4</span>
+                    </div>
+                    <div class="progress-line done"></div>
+                    <div class="progress-step completed">
+                        <span class="dot">✓</span
+                        ><span class="step-label">Administer<br />Wk 5-7</span>
+                    </div>
+                    <div class="progress-line done"></div>
+                    <div class="progress-step completed">
+                        <span class="dot">✓</span
+                        ><span class="step-label">Connect<br />Wk 8-10</span>
+                    </div>
+                    <div class="progress-line done"></div>
+                    <div class="progress-step completed">
+                        <span class="dot">✓</span
+                        ><span class="step-label">Manage<br />Wk 11-13</span>
+                    </div>
+                    <div class="progress-line done"></div>
+                    <div class="progress-step completed">
+                        <span class="dot">✓</span
+                        ><span class="step-label">Secure<br />Wk 14-15</span>
+                    </div>
+                    <div class="progress-line done"></div>
+                    <div class="progress-step current">
+                        <span class="dot">16</span
+                        ><span class="step-label">Synthesize<br />Wk 16</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step">
+                        <span class="dot">17</span
+                        ><span class="step-label">Demonstrate<br />Wk 17</span>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Week 16 Focus:</strong> This is your integration and
+                    review week. No new graded assignments are introduced. Your
+                    energy should go toward completing Project 3 (due Monday,
+                    May 18) and preparing for the Final Exam (Week 17).
+                </div>
+
+                <h3>Module Objectives</h3>
+                <p>By completing this module, you will be able to:</p>
+                <ol>
+                    <li>
+                        <strong>Synthesize</strong> concepts from networking,
+                        directory services, security, and monitoring into a
+                        unified systems administration perspective.
+                    </li>
+                    <li>
+                        <strong>Identify and articulate</strong> the
+                        relationships and dependencies between course topics.
+                    </li>
+                    <li>
+                        <strong>Trace service dependencies</strong> to determine
+                        correct deployment order for infrastructure components.
+                    </li>
+                    <li>
+                        <strong>Explain</strong> how Linux and Windows coexist
+                        in enterprise environments with shared services.
+                    </li>
+                </ol>
+            </section>
+
+            <!-- §1 THE INFRASTRUCTURE STACK -->
+            <section id="stack">
+                <h2>§1 – The Infrastructure Stack</h2>
+                <p>
+                    Throughout this course, you've built expertise in individual
+                    technologies. Now it's time to see them as
+                    <strong>layers of a unified stack</strong>. Every production
+                    environment—from a small office to a global data
+                    center—relies on these layers working together.
+                </p>
+
+                <h3>Six-Layer Model</h3>
+                <div
+                    class="stack-container"
+                    role="list"
+                    aria-label="Infrastructure stack layers from bottom to top"
+                >
+                    <div class="stack-layer sl1" role="listitem">
+                        <span class="layer-num">1</span>
+                        <span class="layer-label">Virtual / Physical</span>
+                        <span class="layer-weeks"
+                            >Weeks 1–2, 13 · Hardware, hypervisors, VMs</span
+                        >
+                    </div>
+                    <div class="stack-layer sl2" role="listitem">
+                        <span class="layer-num">2</span>
+                        <span class="layer-label">Operating System</span>
+                        <span class="layer-weeks"
+                            >Weeks 3–5 · Linux &amp; Windows Server, CLI</span
+                        >
+                    </div>
+                    <div class="stack-layer sl3" role="listitem">
+                        <span class="layer-num">3</span>
+                        <span class="layer-label">Network Services</span>
+                        <span class="layer-weeks"
+                            >Weeks 8–9 · IP config, DNS, DHCP, firewalls</span
+                        >
+                    </div>
+                    <div class="stack-layer sl4" role="listitem">
+                        <span class="layer-num">4</span>
+                        <span class="layer-label">Directory / Identity</span>
+                        <span class="layer-weeks"
+                            >Weeks 6–7, 11–12 · AD DS, LDAP, users, GPO</span
+                        >
+                    </div>
+                    <div class="stack-layer sl5" role="listitem">
+                        <span class="layer-num">5</span>
+                        <span class="layer-label">Security</span>
+                        <span class="layer-weeks"
+                            >Weeks 14–15 · Hardening, encryption, backup</span
+                        >
+                    </div>
+                    <div class="stack-layer sl6" role="listitem">
+                        <span class="layer-num">6</span>
+                        <span class="layer-label">Monitoring</span>
+                        <span class="layer-weeks"
+                            >Weeks 9, 12–16 · Splunk, logs, alerts,
+                            dashboards</span
+                        >
+                    </div>
+                </div>
+
+                <details>
+                    <summary>Layer 1: Virtual / Physical — Details</summary>
+                    <div class="detail-body">
+                        <p>
+                            The foundation of every infrastructure. Without
+                            functional hardware or a hypervisor, nothing above
+                            can exist.
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>Physical:</strong> Server form factors
+                                (tower, rack, blade), CPU, RAM, storage, NICs,
+                                power/cooling (Weeks 1–2)
+                            </li>
+                            <li>
+                                <strong>Virtual:</strong> Type-1 hypervisors
+                                (Proxmox in our lab), VM creation, virtual
+                                networking and storage (Week 13)
+                            </li>
+                        </ul>
+                        <p>
+                            <em>Key insight:</em> A failure at this layer (disk
+                            crash, hypervisor panic) cascades upward through
+                            every other layer.
+                        </p>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Layer 2: Operating System — Details</summary>
+                    <div class="detail-body">
+                        <p>
+                            The OS provides the platform on which all services
+                            run. Both Linux and Windows Server were covered.
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>Linux:</strong> Ubuntu Server / Rocky
+                                Linux installation, file system hierarchy,
+                                package management (Week 3)
+                            </li>
+                            <li>
+                                <strong>Windows Server:</strong> Installation,
+                                Server Manager, roles and features, remote
+                                management (Week 4)
+                            </li>
+                            <li>
+                                <strong>CLI:</strong> Bash and PowerShell
+                                fundamentals, scripting, SSH/PS Remoting (Week
+                                5)
+                            </li>
+                        </ul>
+                        <p>
+                            <em>Key insight:</em> OS misconfiguration (wrong
+                            hostname, broken networking stack) prevents
+                            higher-layer services from starting.
+                        </p>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Layer 3: Network Services — Details</summary>
+                    <div class="detail-body">
+                        <p>
+                            Network services allow machines to communicate and
+                            discover each other.
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>IP addressing:</strong> Static/dynamic,
+                                IPv4/IPv6, interface configuration (Week 8)
+                            </li>
+                            <li>
+                                <strong>DNS:</strong> Name resolution, zones,
+                                forward/reverse lookups (Week 9)
+                            </li>
+                            <li>
+                                <strong>DHCP:</strong> Automatic address
+                                assignment, scopes, reservations (Week 9)
+                            </li>
+                            <li>
+                                <strong>Firewalls:</strong> iptables, Windows
+                                Firewall, pfSense, port/protocol rules (Week 9)
+                            </li>
+                        </ul>
+                        <p>
+                            <em>Key insight:</em> DNS is the single most
+                            critical network service—Active Directory, Splunk
+                            forwarders, and almost every application depend on
+                            it.
+                        </p>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Layer 4: Directory / Identity — Details</summary>
+                    <div class="detail-body">
+                        <p>
+                            Centralized identity management enables single
+                            sign-on, policy enforcement, and organized resource
+                            access.
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>Users &amp; Groups:</strong> Local
+                                account management, privilege models (Weeks 6–7)
+                            </li>
+                            <li>
+                                <strong>Active Directory:</strong> Domains, OUs,
+                                Group Policy Objects, domain-joined machines
+                                (Week 11)
+                            </li>
+                            <li>
+                                <strong>LDAP / OpenLDAP:</strong> Directory
+                                Information Tree, schema, authentication
+                                integration (Week 12)
+                            </li>
+                        </ul>
+                        <p>
+                            <em>Key insight:</em> AD DS requires functioning DNS
+                            (SRV records) and network connectivity to replicate
+                            between domain controllers.
+                        </p>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Layer 5: Security — Details</summary>
+                    <div class="detail-body">
+                        <p>
+                            Security is a cross-cutting concern applied at every
+                            layer, but Week 14–15 focused on dedicated hardening
+                            and recovery.
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>Hardening:</strong> Minimizing attack
+                                surface, patch management, SSH/TLS configuration
+                                (Week 14)
+                            </li>
+                            <li>
+                                <strong>Access Control:</strong> NTFS ACLs,
+                                Linux permissions, GPO security baselines (Weeks
+                                6–7, 11, 14)
+                            </li>
+                            <li>
+                                <strong>Backup &amp; DR:</strong>
+                                Full/incremental/differential backups, RTO/RPO,
+                                recovery procedures (Week 15)
+                            </li>
+                        </ul>
+                        <p>
+                            <em>Key insight:</em> Security without monitoring is
+                            "hope-based security." You need Layer 6 to validate
+                            that controls are working.
+                        </p>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Layer 6: Monitoring — Details</summary>
+                    <div class="detail-body">
+                        <p>
+                            Monitoring closes the loop: it tells you whether
+                            everything below is healthy and alerts you when it
+                            isn't.
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>Splunk Enterprise:</strong> Centralized
+                                log collection, indexing, SPL searches (Weeks
+                                12–13)
+                            </li>
+                            <li>
+                                <strong>Universal Forwarders:</strong> Agents on
+                                Linux/Windows sending logs to the indexer (Week
+                                13)
+                            </li>
+                            <li>
+                                <strong>Dashboards &amp; Alerts:</strong> Visual
+                                monitoring, threshold-based alerting, security
+                                use cases (Weeks 14–16)
+                            </li>
+                            <li>
+                                <strong>Syslog:</strong> pfSense and Linux
+                                rsyslog forwarding (Week 9)
+                            </li>
+                        </ul>
+                        <p>
+                            <em>Key insight:</em> Splunk forwarders depend on
+                            network connectivity (Layer 3) and a running OS
+                            (Layer 2). If the network is down, logs stop
+                            flowing.
+                        </p>
+                    </div>
+                </details>
+            </section>
+
+            <!-- §2 SERVICE DEPENDENCY MAP -->
+            <section id="dependencies">
+                <h2>§2 – Service Dependency Map</h2>
+                <p>
+                    Services don't exist in isolation. The diagram below shows
+                    critical dependencies between the services you've deployed
+                    this semester.
+                    <strong>Click a dependency path button</strong> to highlight
+                    how a failure in one service cascades to others.
+                </p>
+
+                <div
+                    class="dep-map"
+                    role="figure"
+                    aria-label="Interactive service dependency diagram"
+                >
+                    <div
+                        class="dep-controls"
+                        role="toolbar"
+                        aria-label="Dependency path selectors"
+                    >
+                        <button
+                            class="dep-btn"
+                            data-path="dns-ad"
+                            aria-pressed="false"
+                        >
+                            DNS → AD
+                        </button>
+                        <button
+                            class="dep-btn"
+                            data-path="dhcp-dns"
+                            aria-pressed="false"
+                        >
+                            DHCP → DNS
+                        </button>
+                        <button
+                            class="dep-btn"
+                            data-path="ad-gpo"
+                            aria-pressed="false"
+                        >
+                            AD → Group Policy
+                        </button>
+                        <button
+                            class="dep-btn"
+                            data-path="net-splunk"
+                            aria-pressed="false"
+                        >
+                            Network → Splunk
+                        </button>
+                        <button
+                            class="dep-btn"
+                            data-path="all"
+                            aria-pressed="false"
+                        >
+                            Show All
+                        </button>
+                        <button
+                            class="dep-btn"
+                            data-path="clear"
+                            aria-pressed="false"
+                        >
+                            Clear
+                        </button>
+                    </div>
+
+                    <svg
+                        viewBox="0 0 700 300"
+                        xmlns="http://www.w3.org/2000/svg"
+                        role="img"
+                        aria-label="Service dependency directed graph showing DNS, DHCP, Active Directory, Group Policy, Splunk, and Network Connectivity relationships"
+                    >
+                        <defs>
+                            <marker
+                                id="arrowhead"
+                                markerWidth="8"
+                                markerHeight="6"
+                                refX="8"
+                                refY="3"
+                                orient="auto"
+                            >
+                                <polygon points="0 0, 8 3, 0 6" fill="#888" />
+                            </marker>
+                            <marker
+                                id="arrowhead-hl"
+                                markerWidth="8"
+                                markerHeight="6"
+                                refX="8"
+                                refY="3"
+                                orient="auto"
+                            >
+                                <polygon
+                                    points="0 0, 8 3, 0 6"
+                                    fill="#2980b9"
+                                />
+                            </marker>
+                        </defs>
+                        <!-- Edges -->
+                        <path
+                            class="dep-edge"
+                            data-paths="net-splunk all"
+                            d="M 130,235 C 200,235 200,175 270,175"
+                        />
+                        <path
+                            class="dep-edge"
+                            data-paths="dhcp-dns all"
+                            d="M 130,235 C 180,200 220,130 270,110"
+                        />
+                        <path
+                            class="dep-edge"
+                            data-paths="dns-ad all"
+                            d="M 370,110 C 420,110 430,150 470,155"
+                        />
+                        <path
+                            class="dep-edge"
+                            data-paths="ad-gpo all"
+                            d="M 570,155 C 610,155 620,100 620,85"
+                        />
+                        <path
+                            class="dep-edge"
+                            data-paths="dhcp-dns all"
+                            d="M 180,70 C 220,80 240,95 270,100"
+                        />
+                        <path
+                            class="dep-edge"
+                            data-paths="net-splunk all"
+                            d="M 370,175 C 420,190 450,225 470,235"
+                        />
+                        <!-- Nodes -->
+                        <g
+                            class="dep-node"
+                            data-node="network"
+                            data-paths="net-splunk dhcp-dns all"
+                        >
+                            <rect
+                                x="40"
+                                y="210"
+                                width="90"
+                                height="50"
+                                rx="6"
+                                fill="var(--layer3)"
+                                stroke="var(--layer3)"
+                                stroke-width="2"
+                            />
+                            <text
+                                x="85"
+                                y="239"
+                                text-anchor="middle"
+                                font-weight="600"
+                            >
+                                Network
+                            </text>
+                            <text
+                                x="85"
+                                y="253"
+                                text-anchor="middle"
+                                font-size="10"
+                            >
+                                Connectivity
+                            </text>
+                        </g>
+                        <g
+                            class="dep-node"
+                            data-node="dhcp"
+                            data-paths="dhcp-dns all"
+                        >
+                            <rect
+                                x="100"
+                                y="45"
+                                width="80"
+                                height="50"
+                                rx="6"
+                                fill="var(--layer3)"
+                                stroke="var(--layer3)"
+                                stroke-width="2"
+                            />
+                            <text
+                                x="140"
+                                y="74"
+                                text-anchor="middle"
+                                font-weight="600"
+                            >
+                                DHCP
+                            </text>
+                            <text
+                                x="140"
+                                y="88"
+                                text-anchor="middle"
+                                font-size="10"
+                            >
+                                Wk 9
+                            </text>
+                        </g>
+                        <g
+                            class="dep-node"
+                            data-node="dns"
+                            data-paths="dns-ad dhcp-dns all"
+                        >
+                            <rect
+                                x="270"
+                                y="82"
+                                width="100"
+                                height="50"
+                                rx="6"
+                                fill="var(--layer3)"
+                                stroke="var(--layer3)"
+                                stroke-width="2"
+                            />
+                            <text
+                                x="320"
+                                y="111"
+                                text-anchor="middle"
+                                font-weight="600"
+                            >
+                                DNS
+                            </text>
+                            <text
+                                x="320"
+                                y="125"
+                                text-anchor="middle"
+                                font-size="10"
+                            >
+                                Wk 9
+                            </text>
+                        </g>
+                        <g
+                            class="dep-node"
+                            data-node="splunk"
+                            data-paths="net-splunk all"
+                        >
+                            <rect
+                                x="270"
+                                y="150"
+                                width="100"
+                                height="50"
+                                rx="6"
+                                fill="var(--layer6)"
+                                stroke="var(--layer6)"
+                                stroke-width="2"
+                            />
+                            <text
+                                x="320"
+                                y="179"
+                                text-anchor="middle"
+                                font-weight="600"
+                            >
+                                Splunk
+                            </text>
+                            <text
+                                x="320"
+                                y="193"
+                                text-anchor="middle"
+                                font-size="10"
+                            >
+                                Indexer Wk 12
+                            </text>
+                        </g>
+                        <g
+                            class="dep-node"
+                            data-node="ad"
+                            data-paths="dns-ad ad-gpo all"
+                        >
+                            <rect
+                                x="470"
+                                y="130"
+                                width="100"
+                                height="50"
+                                rx="6"
+                                fill="var(--layer4)"
+                                stroke="var(--layer4)"
+                                stroke-width="2"
+                            />
+                            <text
+                                x="520"
+                                y="159"
+                                text-anchor="middle"
+                                font-weight="600"
+                            >
+                                Active
+                            </text>
+                            <text
+                                x="520"
+                                y="173"
+                                text-anchor="middle"
+                                font-size="10"
+                            >
+                                Directory Wk 11
+                            </text>
+                        </g>
+                        <g
+                            class="dep-node"
+                            data-node="gpo"
+                            data-paths="ad-gpo all"
+                        >
+                            <rect
+                                x="560"
+                                y="55"
+                                width="100"
+                                height="50"
+                                rx="6"
+                                fill="var(--layer4)"
+                                stroke="var(--layer4)"
+                                stroke-width="2"
+                            />
+                            <text
+                                x="610"
+                                y="84"
+                                text-anchor="middle"
+                                font-weight="600"
+                            >
+                                Group
+                            </text>
+                            <text
+                                x="610"
+                                y="98"
+                                text-anchor="middle"
+                                font-size="10"
+                            >
+                                Policy Wk 11
+                            </text>
+                        </g>
+                        <g
+                            class="dep-node"
+                            data-node="forwarders"
+                            data-paths="net-splunk all"
+                        >
+                            <rect
+                                x="470"
+                                y="210"
+                                width="100"
+                                height="50"
+                                rx="6"
+                                fill="var(--layer6)"
+                                stroke="var(--layer6)"
+                                stroke-width="2"
+                            />
+                            <text
+                                x="520"
+                                y="239"
+                                text-anchor="middle"
+                                font-weight="600"
+                            >
+                                Forwarders
+                            </text>
+                            <text
+                                x="520"
+                                y="253"
+                                text-anchor="middle"
+                                font-size="10"
+                            >
+                                Wk 13
+                            </text>
+                        </g>
+                    </svg>
+                    <p class="dep-legend">
+                        Click a path button above to highlight dependencies.
+                        Arrows indicate "depends on" relationships (arrow points
+                        toward the dependency).
+                    </p>
+                </div>
+
+                <details>
+                    <summary>Understanding the Dependencies</summary>
+                    <div class="detail-body">
+                        <ul>
+                            <li>
+                                <strong>DNS → Active Directory:</strong> AD DS
+                                uses DNS SRV records for domain controller
+                                location, replication partner discovery, and
+                                site-aware authentication. Without DNS, clients
+                                cannot find a DC to log in.
+                            </li>
+                            <li>
+                                <strong>DHCP → DNS:</strong> DHCP can
+                                dynamically register A and PTR records in DNS
+                                (Dynamic DNS). Clients receiving addresses via
+                                DHCP rely on DNS to resolve domain resources.
+                                DHCP scopes often include DNS server addresses.
+                            </li>
+                            <li>
+                                <strong>AD → Group Policy:</strong> GPOs are
+                                stored in SYSVOL and linked to OUs within AD. If
+                                AD replication fails or the DC is unreachable,
+                                GPOs cannot be downloaded or applied to clients.
+                            </li>
+                            <li>
+                                <strong>Network → Splunk:</strong> Universal
+                                Forwarders transmit log data over TCP (typically
+                                port 9997). If network connectivity between a
+                                forwarder and the indexer is broken—whether by a
+                                cable fault, firewall rule, or routing
+                                issue—logs stop flowing and monitoring goes
+                                blind.
+                            </li>
+                        </ul>
+                    </div>
+                </details>
+            </section>
+
+            <!-- §3 CROSS-PLATFORM ADMINISTRATION -->
+            <section id="crossplatform">
+                <h2>§3 – Cross-Platform Administration</h2>
+                <p>
+                    Enterprise environments rarely run a single OS. Your course
+                    infrastructure includes both Linux and Windows servers
+                    working together. This section reviews how they coexist and
+                    how you administer across platforms.
+                </p>
+
+                <div class="tabs">
+                    <div
+                        class="tab-list"
+                        role="tablist"
+                        aria-label="Cross-platform topics"
+                    >
+                        <button
+                            class="tab-btn"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="tab-coexist"
+                            id="btn-coexist"
+                        >
+                            Coexistence
+                        </button>
+                        <button
+                            class="tab-btn"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="tab-bridge"
+                            id="btn-bridge"
+                        >
+                            Samba / Winbind
+                        </button>
+                        <button
+                            class="tab-btn"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="tab-scripting"
+                            id="btn-scripting"
+                        >
+                            Cross-Platform Scripting
+                        </button>
+                    </div>
+                    <div
+                        class="tab-panel active"
+                        role="tabpanel"
+                        id="tab-coexist"
+                        aria-labelledby="btn-coexist"
+                    >
+                        <h4>Linux &amp; Windows Coexistence</h4>
+                        <p>In a typical mixed environment:</p>
+                        <ul>
+                            <li>
+                                <strong>Windows Server</strong> handles Active
+                                Directory, Group Policy, and often DNS/DHCP for
+                                domain-joined clients.
+                            </li>
+                            <li>
+                                <strong>Linux servers</strong> run web services
+                                (Apache/Nginx), databases (MySQL/PostgreSQL),
+                                monitoring (Splunk), and network appliances
+                                (pfSense).
+                            </li>
+                            <li>
+                                Both platforms need to
+                                <strong>share identity</strong> (users log in
+                                once) and
+                                <strong>share files</strong> (cross-platform
+                                file access).
+                            </li>
+                        </ul>
+                        <p>
+                            The challenge: Windows uses NTLM/Kerberos
+                            authentication and SMB for file sharing, while Linux
+                            uses PAM, LDAP, and NFS. Bridging tools make them
+                            interoperate.
+                        </p>
+                    </div>
+                    <div
+                        class="tab-panel"
+                        role="tabpanel"
+                        id="tab-bridge"
+                        aria-labelledby="btn-bridge"
+                    >
+                        <h4>Samba &amp; Winbind</h4>
+                        <p>
+                            <strong>Samba</strong> is an open-source
+                            implementation of the SMB/CIFS protocol that lets
+                            Linux servers:
+                        </p>
+                        <ul>
+                            <li>
+                                Join an Active Directory domain as a member
+                                server
+                            </li>
+                            <li>
+                                Serve file shares accessible to Windows clients
+                            </li>
+                            <li>Act as a print server for Windows clients</li>
+                        </ul>
+                        <p>
+                            <strong>Winbind</strong> (part of the Samba suite)
+                            bridges AD identity into Linux:
+                        </p>
+                        <ul>
+                            <li>Maps AD users/groups to Linux UIDs/GIDs</li>
+                            <li>
+                                Allows Linux to authenticate users against AD
+                                via PAM
+                            </li>
+                            <li>
+                                Enables <code>getent passwd</code> to list AD
+                                users on Linux
+                            </li>
+                        </ul>
+                        <p>
+                            <em>Result:</em> A user with an AD account can log
+                            into Linux servers and access Samba file shares—all
+                            with a single set of credentials.
+                        </p>
+                    </div>
+                    <div
+                        class="tab-panel"
+                        role="tabpanel"
+                        id="tab-scripting"
+                        aria-labelledby="btn-scripting"
+                    >
+                        <h4>Bash + PowerShell Across Platforms</h4>
+                        <p>
+                            As a systems administrator, you'll often need to
+                            automate tasks on both platforms:
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>Bash:</strong> Native on Linux;
+                                available on Windows via WSL or Git Bash. Best
+                                for Linux file operations, service management,
+                                text processing.
+                            </li>
+                            <li>
+                                <strong>PowerShell:</strong> Native on Windows;
+                                available on Linux as PowerShell Core (pwsh).
+                                Best for AD management, Windows service control,
+                                .NET integration.
+                            </li>
+                        </ul>
+                        <p><strong>Common cross-platform pattern:</strong></p>
+                        <pre><code># Bash: Check if a service is running on Linux
+systemctl is-active --quiet splunkd && echo "Splunk OK" || echo "Splunk DOWN"
+
+# PowerShell: Check if a service is running on Windows
+if ((Get-Service -Name SplunkForwarder).Status -eq 'Running') {
+    Write-Output "Splunk OK"
+} else { Write-Output "Splunk DOWN" }</code></pre>
+                        <p>
+                            <em>Tip:</em> For Project 3 and beyond, consider
+                            which tool is best for each task rather than forcing
+                            one shell to do everything.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- §4 MINI-CASE: NEW BRANCH OFFICE -->
+            <section id="case">
+                <h2>§4 – Mini-Case: New Branch Office</h2>
+
+                <div class="case-box">
+                    <h4>Scenario</h4>
+                    <p>
+                        Mendocino Brewing Company is opening a new branch office
+                        in Ukiah. The IT team needs to deploy the following
+                        services for the branch:
+                    </p>
+                    <ul>
+                        <li>
+                            A <strong>Windows Server</strong> VM on the branch
+                            hypervisor (Proxmox)
+                        </li>
+                        <li>
+                            <strong>DNS</strong> (integrated with the existing
+                            domain)
+                        </li>
+                        <li>
+                            <strong>DHCP</strong> for automatic client
+                            addressing
+                        </li>
+                        <li>
+                            <strong>Active Directory</strong> (additional domain
+                            controller for the branch site)
+                        </li>
+                        <li>
+                            <strong>Group Policy</strong> objects for
+                            branch-specific settings
+                        </li>
+                        <li>
+                            <strong>Splunk Universal Forwarder</strong> sending
+                            logs to HQ's indexer
+                        </li>
+                        <li>
+                            <strong>Firewall rules</strong> on pfSense allowing
+                            necessary traffic
+                        </li>
+                    </ul>
+                    <p>
+                        <strong>Your task:</strong> Determine the correct
+                        deployment order. Think about which services depend on
+                        others being functional first.
+                    </p>
+                </div>
+
+                <details>
+                    <summary>
+                        Reveal: Correct Deployment Order &amp; Reasoning
+                    </summary>
+                    <div class="detail-body">
+                        <ol>
+                            <li>
+                                <strong>Hypervisor / VM creation</strong> —
+                                Nothing runs without compute resources (Layer
+                                1).
+                            </li>
+                            <li>
+                                <strong>Windows Server OS installation</strong>
+                                — The platform for all Windows-based services
+                                (Layer 2).
+                            </li>
+                            <li>
+                                <strong
+                                    >Network configuration &amp; firewall
+                                    rules</strong
+                                >
+                                — Static IP, default gateway, pfSense rules
+                                allowing AD replication (ports 389, 636, 88,
+                                445, 135, 49152–65535) and DNS (53). Without
+                                network connectivity, no service can communicate
+                                (Layer 3).
+                            </li>
+                            <li>
+                                <strong>DNS</strong> — Must be functional before
+                                promoting to DC. AD requires DNS SRV records.
+                                Configure the server to point to HQ's DNS first,
+                                then add the local DNS role (Layer 3).
+                            </li>
+                            <li>
+                                <strong>Active Directory (DC promotion)</strong>
+                                — Requires working DNS and network connectivity
+                                to replicate from HQ's existing DC (Layer 4).
+                            </li>
+                            <li>
+                                <strong>DHCP</strong> — Can now be configured
+                                with DNS server addresses pointing to the new
+                                local DC. Depends on DNS being available for
+                                dynamic updates (Layer 3, but configured after
+                                DNS/AD for proper integration).
+                            </li>
+                            <li>
+                                <strong>Group Policy</strong> — Created/linked
+                                after the DC is operational and OUs exist for
+                                the branch (Layer 4).
+                            </li>
+                            <li>
+                                <strong>Splunk Universal Forwarder</strong> —
+                                Installed last; requires network connectivity to
+                                HQ's indexer (port 9997 allowed through
+                                firewall) and a running OS to host the agent
+                                (Layer 6).
+                            </li>
+                        </ol>
+                        <div class="info-box">
+                            <strong>Key Principle:</strong> Always deploy from
+                            the bottom of the stack upward. Each layer depends
+                            on the layers below it being stable and functional.
+                        </div>
+                    </div>
+                </details>
+            </section>
+
+            <!-- §5 KNOWLEDGE CHECK -->
+            <section id="check">
+                <h2>§5 – Knowledge Check (Ungraded)</h2>
+                <p>
+                    Test your understanding of infrastructure integration.
+                    Select your answer and click "Check" for immediate feedback.
+                </p>
+
+                <div class="quiz-q" data-correct="c" id="q1">
+                    <p class="q-stem" id="q1-stem">
+                        1. A junior admin tries to promote a new server to a
+                        Domain Controller, but the promotion fails with "DNS
+                        zone not found." Which infrastructure layer is most
+                        likely the root cause?
+                    </p>
+                    <div role="group" aria-labelledby="q1-stem">
+                        <label
+                            ><input type="radio" name="q1" value="a" /> Layer 1
+                            – Virtual/Physical (hypervisor issue)</label
+                        >
+                        <label
+                            ><input type="radio" name="q1" value="b" /> Layer 2
+                            – Operating System (Windows not configured)</label
+                        >
+                        <label
+                            ><input type="radio" name="q1" value="c" /> Layer 3
+                            – Network Services (DNS not available or
+                            misconfigured)</label
+                        >
+                        <label
+                            ><input type="radio" name="q1" value="d" /> Layer 5
+                            – Security (firewall blocking)</label
+                        >
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q1')">
+                        Check
+                    </button>
+                    <div
+                        class="quiz-feedback"
+                        id="fb-q1"
+                        aria-live="polite"
+                    ></div>
+                </div>
+
+                <div class="quiz-q" data-correct="b" id="q2">
+                    <p class="q-stem" id="q2-stem">
+                        2. Which of the following represents the greatest single
+                        point of failure in a typical Windows domain
+                        environment?
+                    </p>
+                    <div role="group" aria-labelledby="q2-stem">
+                        <label
+                            ><input type="radio" name="q2" value="a" /> The DHCP
+                            server</label
+                        >
+                        <label
+                            ><input type="radio" name="q2" value="b" /> The DNS
+                            server (if only one exists)</label
+                        >
+                        <label
+                            ><input type="radio" name="q2" value="c" /> The
+                            Splunk indexer</label
+                        >
+                        <label
+                            ><input type="radio" name="q2" value="d" /> The file
+                            server</label
+                        >
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q2')">
+                        Check
+                    </button>
+                    <div
+                        class="quiz-feedback"
+                        id="fb-q2"
+                        aria-live="polite"
+                    ></div>
+                </div>
+
+                <div class="quiz-q" data-correct="d" id="q3">
+                    <p class="q-stem" id="q3-stem">
+                        3. Match the correct course week range to the "Directory
+                        / Identity" layer of the infrastructure stack:
+                    </p>
+                    <div role="group" aria-labelledby="q3-stem">
+                        <label
+                            ><input type="radio" name="q3" value="a" /> Weeks
+                            1–2 (Server Fundamentals &amp; Hardware)</label
+                        >
+                        <label
+                            ><input type="radio" name="q3" value="b" /> Weeks
+                            8–9 (Network Configuration &amp; Services)</label
+                        >
+                        <label
+                            ><input type="radio" name="q3" value="c" /> Weeks
+                            14–15 (Security &amp; Disaster Recovery)</label
+                        >
+                        <label
+                            ><input type="radio" name="q3" value="d" /> Weeks
+                            6–7, 11–12 (Users/Groups, AD, LDAP)</label
+                        >
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q3')">
+                        Check
+                    </button>
+                    <div
+                        class="quiz-feedback"
+                        id="fb-q3"
+                        aria-live="polite"
+                    ></div>
+                </div>
+
+                <div class="quiz-q" data-correct="a" id="q4">
+                    <p class="q-stem" id="q4-stem">
+                        4. In the New Branch Office scenario, why must firewall
+                        rules be configured BEFORE promoting the server to a
+                        Domain Controller?
+                    </p>
+                    <div role="group" aria-labelledby="q4-stem">
+                        <label
+                            ><input type="radio" name="q4" value="a" /> AD
+                            replication requires specific ports (389, 88, 445,
+                            etc.) to be open between the branch and HQ
+                            DCs</label
+                        >
+                        <label
+                            ><input type="radio" name="q4" value="b" /> The
+                            firewall software must be installed on the DC
+                            itself</label
+                        >
+                        <label
+                            ><input type="radio" name="q4" value="c" /> Group
+                            Policy cannot be created without firewall
+                            rules</label
+                        >
+                        <label
+                            ><input type="radio" name="q4" value="d" /> Splunk
+                            forwarders need the firewall configured first</label
+                        >
+                    </div>
+                    <button class="check-btn" onclick="checkAnswer('q4')">
+                        Check
+                    </button>
+                    <div
+                        class="quiz-feedback"
+                        id="fb-q4"
+                        aria-live="polite"
+                    ></div>
+                </div>
+            </section>
+
+            <!-- §6 CONNECTING TO PROJECT 3 -->
+            <section id="project3">
+                <h2>§6 – Connecting to Project 3</h2>
+                <p>
+                    Project 3 (Multi-Server Infrastructure with Monitoring)
+                    requires you to build exactly the kind of integrated stack
+                    described in this module. Here's how the concepts map:
+                </p>
+
+                <div class="info-box">
+                    <strong>Project 3 Integration Checklist</strong>
+                    <ul>
+                        <li>
+                            ✅ <strong>Layer 1:</strong> Multiple VMs deployed
+                            on Proxmox (Linux + Windows)
+                        </li>
+                        <li>
+                            ✅ <strong>Layer 2:</strong> OS configured with
+                            correct hostnames, static IPs, and updated packages
+                        </li>
+                        <li>
+                            ✅ <strong>Layer 3:</strong> DNS resolving all
+                            server names; DHCP serving client addresses;
+                            firewall rules allowing inter-server communication
+                        </li>
+                        <li>
+                            ✅ <strong>Layer 4:</strong> Active Directory
+                            functional with domain-joined machines; users and
+                            groups organized in OUs
+                        </li>
+                        <li>
+                            ✅ <strong>Layer 5:</strong> Security hardening
+                            applied; backup procedures documented
+                        </li>
+                        <li>
+                            ✅ <strong>Layer 6:</strong> Splunk indexer
+                            receiving logs from forwarders; at least three
+                            dashboards; one alert configured
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="warn-box">
+                    <strong>Before submitting Project 3</strong>, verify that
+                    your services work <em>together</em>, not just individually.
+                    Test the full dependency chain: Can a DHCP client get an
+                    address, resolve DNS names, authenticate to AD, and have its
+                    logs appear in Splunk? That end-to-end verification
+                    demonstrates true integration.
+                </div>
+
+                <p>
+                    Refer to the Project 3 Detailed Specification and Module
+                    16.4 (Project 3 Completion Guide) for the full submission
+                    checklist and common troubleshooting tips.
+                </p>
+            </section>
+
+            <!-- §7 SUMMARY -->
+            <section id="summary">
+                <h2>§7 – Summary &amp; What's Next</h2>
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li>
+                        Infrastructure is a
+                        <strong>stack of interdependent layers</strong>—failures
+                        cascade upward.
+                    </li>
+                    <li>
+                        <strong>DNS</strong> is the most critical network
+                        service; it underpins Active Directory, DHCP dynamic
+                        updates, and service discovery.
+                    </li>
+                    <li>
+                        Always deploy services <strong>bottom-up</strong>:
+                        physical/virtual → OS → network → directory → security →
+                        monitoring.
+                    </li>
+                    <li>
+                        Cross-platform environments require
+                        <strong>bridging tools</strong> (Samba/Winbind) and
+                        <strong>multi-shell fluency</strong> (Bash +
+                        PowerShell).
+                    </li>
+                    <li>
+                        Monitoring (Splunk) <strong>validates</strong> that all
+                        lower layers are functioning correctly.
+                    </li>
+                </ul>
+
+                <h3>What's Next</h3>
+                <p>
+                    <strong
+                        >Module 16.2 – Multi-Layer Troubleshooting
+                        Scenarios</strong
+                    >
+                    will present realistic failure scenarios that span multiple
+                    layers. You'll apply structured troubleshooting
+                    methodologies to diagnose cascading failures—the same skills
+                    tested on the Final Exam and used daily in professional IT
+                    roles.
+                </p>
+
+                <div class="info-box">
+                    <strong>Recommended sequence this week:</strong> Module 16.1
+                    (today) → 16.2 (Troubleshooting) → 16.3 (Security &amp;
+                    Monitoring) → 16.4 (Project Guide). Complete Project 3 by
+                    Monday, May 18.
+                </div>
+            </section>
+        </main>
+
+        <footer role="contentinfo">
+            <p>
+                CSC 152 – Network Operating Systems and Administration ·
+                Mendocino College · Week 16, Module 16.1<br />
+                Instructor: David Pai · Spring 2026
+            </p>
+        </footer>
+
+        <script>
+            /* === TABS === */
+            (function () {
+                const tabBtns = document.querySelectorAll(".tab-btn");
+                const panels = document.querySelectorAll(".tab-panel");
+                tabBtns.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        tabBtns.forEach((b) => {
+                            b.setAttribute("aria-selected", "false");
+                        });
+                        panels.forEach((p) => p.classList.remove("active"));
+                        btn.setAttribute("aria-selected", "true");
+                        document
+                            .getElementById(btn.getAttribute("aria-controls"))
+                            .classList.add("active");
+                    });
+                    btn.addEventListener("keydown", (e) => {
+                        const idx = [...tabBtns].indexOf(btn);
+                        let next = -1;
+                        if (e.key === "ArrowRight")
+                            next = (idx + 1) % tabBtns.length;
+                        else if (e.key === "ArrowLeft")
+                            next = (idx - 1 + tabBtns.length) % tabBtns.length;
+                        if (next >= 0) {
+                            e.preventDefault();
+                            tabBtns[next].focus();
+                            tabBtns[next].click();
+                        }
+                    });
+                });
+            })();
+
+            /* === DEPENDENCY MAP === */
+            (function () {
+                const btns = document.querySelectorAll(".dep-btn");
+                const edges = document.querySelectorAll(".dep-edge");
+                const nodes = document.querySelectorAll(".dep-node");
+                function clearAll() {
+                    edges.forEach((e) => e.classList.remove("highlight"));
+                    nodes.forEach((n) => n.classList.remove("highlight"));
+                    btns.forEach((b) =>
+                        b.setAttribute("aria-pressed", "false"),
+                    );
+                }
+                function highlightPath(path) {
+                    edges.forEach((e) => {
+                        const paths = e.getAttribute("data-paths") || "";
+                        if (paths.split(" ").includes(path))
+                            e.classList.add("highlight");
+                    });
+                    nodes.forEach((n) => {
+                        const paths = n.getAttribute("data-paths") || "";
+                        if (paths.split(" ").includes(path))
+                            n.classList.add("highlight");
+                    });
+                }
+                btns.forEach((btn) => {
+                    btn.addEventListener("click", () => {
+                        const path = btn.getAttribute("data-path");
+                        clearAll();
+                        if (path === "clear") return;
+                        btn.setAttribute("aria-pressed", "true");
+                        highlightPath(path);
+                    });
+                });
+            })();
+
+            /* === QUIZ === */
+            const feedback = {
+                q1: {
+                    c: "Correct! DNS is a Layer 3 (Network Services) component. AD promotion requires DNS to locate existing domain infrastructure via SRV records. If DNS is unavailable or the zone doesn't exist, the promotion cannot proceed.",
+                    wrong: 'Not quite. While other layers could cause issues, the error message "DNS zone not found" directly points to Layer 3 – Network Services. AD relies on DNS SRV records to find domain controllers and register its own services.',
+                },
+                q2: {
+                    b: "Correct! DNS is the foundation that Active Directory, DHCP dynamic updates, client name resolution, and virtually every network service depends on. A single DNS server with no redundancy is the most dangerous SPOF in a domain environment.",
+                    wrong: "Not quite. While all services matter, DNS is uniquely critical because Active Directory literally cannot function without it—clients can't locate domain controllers, authentication fails, and Group Policy stops applying. DHCP failure is serious but clients retain leases temporarily; Splunk failure loses visibility but doesn't break authentication.",
+                },
+                q3: {
+                    d: "Correct! The Directory/Identity layer spans user and group management (Weeks 6–7), Active Directory (Week 11), and LDAP/OpenLDAP (Week 12). These weeks collectively cover centralized identity and access management.",
+                    wrong: "Not quite. The Directory/Identity layer covers centralized user management, Active Directory, and LDAP—which were taught in Weeks 6–7 (Users & Groups, Permissions), Week 11 (AD DS), and Week 12 (LDAP/OpenLDAP).",
+                },
+                q4: {
+                    a: "Correct! AD replication between domain controllers requires multiple ports to be open (LDAP 389, Kerberos 88, SMB 445, RPC, etc.). If the branch firewall blocks these ports, the new DC cannot replicate the AD database from HQ, and promotion will fail or result in an isolated, incomplete directory.",
+                    wrong: "Not quite. The key reason is that AD replication requires specific network ports (389, 88, 445, 135, dynamic RPC) to be open between the new branch DC and the existing HQ DC. Without these firewall rules, the DC promotion process cannot replicate the Active Directory database.",
+                },
+            };
+            function checkAnswer(qId) {
+                const q = document.getElementById(qId);
+                const correct = q.getAttribute("data-correct");
+                const selected = q.querySelector(
+                    'input[name="' + qId + '"]:checked',
+                );
+                const fb = document.getElementById("fb-" + qId);
+                if (!selected) {
+                    fb.textContent = "Please select an answer.";
+                    fb.className = "quiz-feedback incorrect";
+                    return;
+                }
+                const val = selected.value;
+                if (val === correct) {
+                    fb.textContent = feedback[qId][correct];
+                    fb.className = "quiz-feedback correct";
+                } else {
+                    fb.textContent = feedback[qId].wrong;
+                    fb.className = "quiz-feedback incorrect";
+                }
+            }
+        </script>
+    </body>
+</html>
