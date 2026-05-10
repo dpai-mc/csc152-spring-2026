@@ -1168,55 +1168,29 @@ Get-WindowsFeature Windows-Server-Backup | Select Name, InstallState</code></pre
         </div>
 
         <!-- Step 2 -->
-        <h3>Step 2 &#8212; Create backup directory and configure policy</h3>
-        <div class="code-block" aria-label="PowerShell: Configure System State backup policy">
-          <div class="code-block-label">PowerShell &#8212; dc01</div>
-          <pre><code># Create a new backup policy
-$policy = New-WBPolicy
+        <h3>Step 2 &#8212; Run an immediate System State backup</h3>
+        <p>Because this lab VM has only one disk, Windows Server Backup cannot save a scheduled policy with C: as both the source and the backup target. Use <code>wbadmin</code> instead &#8212; the command-line tool handles the same-volume scenario without restriction and is the standard approach for one-time System State backups.</p>
+        <div class="code-block" aria-label="PowerShell: Run System State backup with wbadmin">
+          <div class="code-block-label">PowerShell &#8212; dc01 (Run as Administrator)</div>
+          <pre><code># Run an immediate System State backup to C: (takes approximately 5&#8211;15 minutes)
+# wbadmin stores the backup in C:\WindowsImageBackup\ automatically.
+wbadmin start systemstatebackup -backupTarget:C: -quiet</code></pre>
+        </div>
 
-# Add System State (includes AD DS, DNS, Registry, SYSVOL)
-Add-WBSystemState -Policy $policy
-
-# Get the C: volume object — New-WBBackupTarget requires a WBVolume object, not a path string.
-# Use MountPath (not DriveLetter) to identify the volume — DriveLetter is not populated on Server Core/DC.
-# Windows Server Backup will store the backup in a WindowsImageBackup folder on this volume.
-# Note: For production use, a separate volume (D:) is recommended. C: is acceptable for lab use.
-$targetVolume = Get-WBVolume -AllVolumes | Where-Object { $_.MountPath -eq "C:" }
-$targetVolume  # Verify: should show a WBVolume object, not empty
-
-$backupTarget = New-WBBackupTarget -Volume $targetVolume -PreserveExistingBackups $true
-Add-WBBackupTarget -Policy $policy -Target $backupTarget
-
-# Schedule daily at 3 AM
-Set-WBSchedule -Policy $policy -Schedule 03:00
-
-# Save the policy
-Set-WBPolicy -Policy $policy
-
-# Verify policy was saved
-Get-WBPolicy | Select-Object *</code></pre>
+        <div class="alert alert-info" role="note" aria-label="Production note on scheduled backups">
+          <span class="alert-icon" aria-hidden="true">&#128161;</span>
+          <div>In production, System State backups are typically scheduled to run nightly to a <strong>separate volume or network share</strong>. With a dedicated target you can use the <code>WBPolicy</code> PowerShell cmdlets (<code>New-WBPolicy</code>, <code>Set-WBSchedule</code>, <code>Set-WBPolicy</code>) to configure and save a recurring schedule. The single-disk constraint in this lab prevents that, so <code>wbadmin</code> is used here instead.</div>
         </div>
 
         <!-- Step 3 -->
-        <h3>Step 3 &#8212; Run an immediate backup to test</h3>
-        <div class="code-block" aria-label="PowerShell: Start Windows Server Backup">
-          <div class="code-block-label">PowerShell &#8212; dc01</div>
-          <pre><code># Run backup now (System State takes approximately 5&#8211;15 minutes)
-Start-WBBackup -Policy (Get-WBPolicy)
-
-# Monitor job status while it runs
-Get-WBJob -Previous 1</code></pre>
-        </div>
-
-        <!-- Step 4 -->
-        <h3>Step 4 &#8212; Verify the backup completed successfully</h3>
+        <h3>Step 3 &#8212; Verify the backup completed successfully</h3>
         <div class="code-block" aria-label="PowerShell: Verify backup success">
           <div class="code-block-label">PowerShell &#8212; dc01</div>
-          <pre><code># Check backup history summary
+          <pre><code># Check backup history summary — look for LastBackupResultDetail: The operation completed successfully.
 Get-WBSummary
 
-# List backed-up versions
-Get-WBBackupSet -BackupTarget (Get-WBBackupTarget -Policy (Get-WBPolicy))</code></pre>
+# List available backup versions on C:
+wbadmin get versions -backupTarget:C:</code></pre>
         </div>
         <div class="note-box">
           <strong>Screenshot required:</strong> Capture <code>Get-WBSummary</code> output showing <em>LastBackupResultDetail: The operation completed successfully.</em> and the <em>LastBackupTime</em> timestamp. This is your primary evidence for D.2 credit.
