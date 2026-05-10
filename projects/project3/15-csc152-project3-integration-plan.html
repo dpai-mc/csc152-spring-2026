@@ -1167,29 +1167,21 @@ Install-WindowsFeature Windows-Server-Backup -IncludeManagementTools
 Get-WindowsFeature Windows-Server-Backup | Select Name, InstallState</code></pre>
         </div>
 
-        <div class="alert alert-warning" role="note" aria-label="New PowerShell session required">
-          <span class="alert-icon" aria-hidden="true">&#9888;&#65039;</span>
-          <div><strong>Before continuing:</strong> Close this PowerShell window and open a <strong>new</strong> PowerShell session as Administrator. The <code>WB*</code> cmdlets (New-WBPolicy, Add-WBSystemState, etc.) are only available in a session started <em>after</em> the feature is installed. Running them in the same session that ran <code>Install-WindowsFeature</code> will produce a "not recognized" error.</div>
-        </div>
-
         <!-- Step 2 -->
         <h3>Step 2 &#8212; Create backup directory and configure policy</h3>
         <div class="code-block" aria-label="PowerShell: Configure System State backup policy">
-          <div class="code-block-label">PowerShell &#8212; dc01 (new session, Run as Administrator)</div>
-          <pre><code># Create backup destination directory
-New-Item -ItemType Directory -Path "C:\Backups" -Force
-
-# Note: For proper System State backup, ideally use a separate volume (D:)
-# In this lab, we use a folder on C:\ — acceptable for educational purposes.
-
-# Create a new backup policy
+          <div class="code-block-label">PowerShell &#8212; dc01</div>
+          <pre><code># Create a new backup policy
 $policy = New-WBPolicy
 
 # Add System State (includes AD DS, DNS, Registry, SYSVOL)
 Add-WBSystemState -Policy $policy
 
-# Set backup target location (folder-based, lab use)
-$backupTarget = New-WBBackupTarget -VolumePath "C:" -PreserveExistingBackups $true
+# Get the C: volume object — New-WBBackupTarget requires a WBVolume object, not a path string.
+# Windows Server Backup will store the backup in a WindowsImageBackup folder on this volume.
+# Note: For production use, a separate volume (D:) is recommended. C: is acceptable for lab use.
+$targetVolume = Get-WBVolume -AllVolumes | Where-Object { $_.DriveLetter -eq "C" }
+$backupTarget = New-WBBackupTarget -Volume $targetVolume -PreserveExistingBackups $true
 Add-WBBackupTarget -Policy $policy -Target $backupTarget
 
 # Schedule daily at 3 AM
