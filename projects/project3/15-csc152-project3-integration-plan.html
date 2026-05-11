@@ -1292,8 +1292,9 @@ wbadmin get versions -backupTarget:D:</code></pre>
         <div class="code-block" aria-label="Bash: Verify Linux backup integrity">
           <div class="code-block-label">bash &#8212; linux-server</div>
           <pre><code># Integrity check — test all .tar.gz files in /backup
-# sudo is required because /backup is root-owned (chmod 700)
-for f in $(sudo ls /backup/*.tar.gz); do
+# sudo find is used because shell glob expansion runs as the current user
+# and cannot read the root-owned /backup directory (chmod 700)
+for f in $(sudo find /backup -maxdepth 1 -name "*.tar.gz" | sort); do
   echo -n "Testing $f ... "
   if sudo tar -tzf "$f" &gt; /dev/null 2&gt;&1; then
     echo "OK"
@@ -1306,8 +1307,8 @@ done</code></pre>
         <p>After confirming integrity, perform a partial test restore to verify the archive can actually be read back:</p>
         <div class="code-block" aria-label="Bash: Test partial restore of /etc/hostname">
           <div class="code-block-label">bash &#8212; linux-server (partial restore test)</div>
-          <pre><code># Identify the most recent /etc backup (sudo required to list /backup)
-LATEST_ETC=$(sudo ls -t /backup/etc_*.tar.gz | head -1)
+          <pre><code># Identify the most recent /etc backup (sudo find avoids the shell glob permission issue)
+LATEST_ETC=$(sudo find /backup -maxdepth 1 -name "etc_*.tar.gz" | sort | tail -1)
 echo "Testing: ${LATEST_ETC}"
 
 # List contents (confirm /etc/hostname is inside)
