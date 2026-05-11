@@ -1154,7 +1154,7 @@ sudo crontab -l</code></pre>
       ════════════════════════════════════════════════════════════════ -->
       <section class="section-card" id="s3-windows" aria-labelledby="s3-heading">
         <h2 id="s3-heading"><span class="section-num" aria-hidden="true">3</span> Windows Server Backup (System State) <span class="pts-chip">D.2 &#8212; 3 pts</span></h2>
-        <p>On <strong>dc01</strong>, open PowerShell as Administrator. You will install the Windows Server Backup feature, configure a System State backup policy, run an immediate backup, and verify the result.</p>
+        <p>On <strong>dc01</strong>, you will add a dedicated backup disk in Proxmox, bring it online in Windows Server, run an immediate System State backup to that disk, and verify the result. Windows Server Backup requires that the backup target be a <em>separate</em> volume from any volume included in the backup &#8212; because the system state includes <code>C:</code>, you cannot back up to <code>C:</code>.</p>
 
         <!-- Step 1 -->
         <h3>Step 1 &#8212; Install Windows Server Backup feature</h3>
@@ -1168,22 +1168,56 @@ Get-WindowsFeature Windows-Server-Backup | Select Name, InstallState</code></pre
         </div>
 
         <!-- Step 2 -->
-        <h3>Step 2 &#8212; Run an immediate System State backup</h3>
-        <p>Because this lab VM has only one disk, Windows Server Backup cannot save a scheduled policy with C: as both the source and the backup target. Use <code>wbadmin</code> instead &#8212; the command-line tool handles the same-volume scenario without restriction and is the standard approach for one-time System State backups.</p>
+        <h3>Step 2 &#8212; Add a backup disk to dc01 in Proxmox</h3>
+        <p>In the <strong>Proxmox web UI</strong>, add a second virtual disk to dc01. A 20 GiB disk is sufficient for several System State backups.</p>
+        <ol class="step-list">
+          <li>In Proxmox, select <strong>dc01</strong> in the left panel, then click <strong>Hardware</strong>.</li>
+          <li>Click <strong>Add &#8594; Hard Disk</strong>.</li>
+          <li>Set <strong>Storage</strong> to the same pool used by the existing disk (e.g., <em>local-lvm</em>).</li>
+          <li>Set <strong>Disk size (GiB)</strong> to <code>20</code>. Leave bus/controller at the default (same type as the existing disk).</li>
+          <li>Click <strong>Add</strong>. The new disk appears immediately in the Hardware list &#8212; no VM reboot required.</li>
+        </ol>
+        <div class="note-box">
+          <strong>Screenshot required:</strong> Capture the Proxmox Hardware tab for dc01 showing both the original disk and the new 20 GiB disk before proceeding.
+        </div>
+
+        <!-- Step 3 -->
+        <h3>Step 3 &#8212; Bring the new disk online and format it in Windows Server</h3>
+        <p>Run the following PowerShell block to initialize the raw disk, create a partition, and format it as NTFS with the label <em>Backup</em>. This will assign it drive letter <strong>D:</strong>.</p>
+        <div class="code-block" aria-label="PowerShell: Initialize and format the backup disk">
+          <div class="code-block-label">PowerShell &#8212; dc01 (Run as Administrator)</div>
+          <pre><code># Find the new uninitialized disk and bring it online
+Get-Disk | Where-Object PartitionStyle -EQ 'RAW' |
+  Initialize-Disk -PartitionStyle MBR -PassThru |
+  New-Partition -AssignDriveLetter -UseMaximumSize |
+  Format-Volume -FileSystem NTFS -NewFileSystemLabel "Backup" -Confirm:$false
+
+# Confirm D: is available and has enough free space
+Get-Volume | Where-Object DriveLetter -NE $null |
+  Select-Object DriveLetter, FileSystemLabel,
+    @{N='SizeGB';E={[math]::Round($_.Size/1GB,1)}},
+    @{N='FreeGB';E={[math]::Round($_.SizeRemaining/1GB,1)}}</code></pre>
+        </div>
+        <div class="note-box">
+          <strong>Expected output:</strong> You should see a row for <strong>D:</strong> labeled <em>Backup</em> with approximately 19&#8211;20 GB free. If the disk does not appear, open <strong>Disk Management</strong> (diskmgmt.msc) and check that it is online and initialized.
+        </div>
+
+        <!-- Step 4 -->
+        <h3>Step 4 &#8212; Run an immediate System State backup to D:</h3>
+        <p>With D: available as a dedicated target, run the System State backup using <code>wbadmin</code>. The backup is stored automatically in <code>D:\WindowsImageBackup\</code> and takes approximately 5&#8211;15 minutes.</p>
         <div class="code-block" aria-label="PowerShell: Run System State backup with wbadmin">
           <div class="code-block-label">PowerShell &#8212; dc01 (Run as Administrator)</div>
-          <pre><code># Run an immediate System State backup to C: (takes approximately 5&#8211;15 minutes)
-# wbadmin stores the backup in C:\WindowsImageBackup\ automatically.
-wbadmin start systemstatebackup -backupTarget:C: -quiet</code></pre>
+          <pre><code># Run an immediate System State backup to D:
+wbadmin start systemstatebackup -backupTarget:D: -quiet</code></pre>
         </div>
 
         <div class="alert alert-info" role="note" aria-label="Production note on scheduled backups">
           <span class="alert-icon" aria-hidden="true">&#128161;</span>
-          <div>In production, System State backups are typically scheduled to run nightly to a <strong>separate volume or network share</strong>. With a dedicated target you can use the <code>WBPolicy</code> PowerShell cmdlets (<code>New-WBPolicy</code>, <code>Set-WBSchedule</code>, <code>Set-WBPolicy</code>) to configure and save a recurring schedule. The single-disk constraint in this lab prevents that, so <code>wbadmin</code> is used here instead.</div>
+          <div>In production, System State backups are typically scheduled to run nightly. With a dedicated target volume you can use the <code>WBPolicy</code> PowerShell cmdlets (<code>New-WBPolicy</code>, <code>Add-WBSystemState</code>, <code>Set-WBSchedule</code>, <code>Set-WBPolicy</code>) to configure and save a recurring schedule to D:. For this lab, a single on-demand backup is sufficient to demonstrate the concept and earn D.2 credit.</div>
         </div>
 
-        <!-- Step 3 -->
-        <h3>Step 3 &#8212; Verify the backup completed successfully</h3>
+        <!-- Step 5 -->
+        <h3>Step 5 &#8212; Verify the backup completed successfully</h3>
         <div class="code-block" aria-label="PowerShell: Verify backup success">
           <div class="code-block-label">PowerShell &#8212; dc01</div>
           <pre><code># Check backup history summary — look for LastBackupResultDetail: The operation completed successfully.
@@ -1348,7 +1382,7 @@ Get-WBSummary | Select-Object LastBackupTime, LastBackupResultDetail, NextBackup
               <tr>
                 <td>dc01</td>
                 <td>System State (AD DS, DNS, SYSVOL, Registry)</td>
-                <td>C:\Backups\</td>
+                <td>D:\WindowsImageBackup\</td>
                 <td>Daily 3:00 AM</td>
                 <td>[date]</td>
                 <td>[pass / fail]</td>
