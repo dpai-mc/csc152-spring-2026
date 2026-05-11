@@ -1211,6 +1211,10 @@ Get-Volume | Where-Object DriveLetter -NE $null |
 wbadmin start systemstatebackup -backupTarget:D: -quiet</code></pre>
         </div>
 
+        <div class="note-box">
+          <strong>This will take a while:</strong> System State backups typically take <strong>5&#8211;15 minutes</strong> to complete. Progress is displayed in the PowerShell window as the backup runs &#8212; do not close the window or interrupt the process. When it finishes you will see a completion message with a timestamp before the prompt returns.
+        </div>
+
         <div class="alert alert-info" role="note" aria-label="Production note on scheduled backups">
           <span class="alert-icon" aria-hidden="true">&#128161;</span>
           <div>In production, System State backups are typically scheduled to run nightly. With a dedicated target volume you can use the <code>WBPolicy</code> PowerShell cmdlets (<code>New-WBPolicy</code>, <code>Add-WBSystemState</code>, <code>Set-WBSchedule</code>, <code>Set-WBPolicy</code>) to configure and save a recurring schedule to D:. For this lab, a single on-demand backup is sufficient to demonstrate the concept and earn D.2 credit.</div>
@@ -1288,9 +1292,10 @@ wbadmin get versions -backupTarget:D:</code></pre>
         <div class="code-block" aria-label="Bash: Verify Linux backup integrity">
           <div class="code-block-label">bash &#8212; linux-server</div>
           <pre><code># Integrity check — test all .tar.gz files in /backup
-for f in /backup/*.tar.gz; do
+# sudo is required because /backup is root-owned (chmod 700)
+for f in $(sudo ls /backup/*.tar.gz); do
   echo -n "Testing $f ... "
-  if tar -tzf "$f" &gt; /dev/null 2&gt;&1; then
+  if sudo tar -tzf "$f" &gt; /dev/null 2&gt;&1; then
     echo "OK"
   else
     echo "CORRUPTED - investigate immediately"
@@ -1301,8 +1306,8 @@ done</code></pre>
         <p>After confirming integrity, perform a partial test restore to verify the archive can actually be read back:</p>
         <div class="code-block" aria-label="Bash: Test partial restore of /etc/hostname">
           <div class="code-block-label">bash &#8212; linux-server (partial restore test)</div>
-          <pre><code># Identify the most recent /etc backup
-LATEST_ETC=$(ls -t /backup/etc_*.tar.gz | head -1)
+          <pre><code># Identify the most recent /etc backup (sudo required to list /backup)
+LATEST_ETC=$(sudo ls -t /backup/etc_*.tar.gz | head -1)
 echo "Testing: ${LATEST_ETC}"
 
 # List contents (confirm /etc/hostname is inside)
@@ -1324,17 +1329,19 @@ echo "Expected: linux-server"</code></pre>
         <span class="sub-label" aria-label="Windows verification">dc01</span>
         <div class="code-block" aria-label="PowerShell: Verify Windows backup">
           <div class="code-block-label">PowerShell &#8212; dc01</div>
-          <pre><code># Check backup set details
-$backupSet = Get-WBBackupSet -BackupTarget (Get-WBBackupTarget -Policy (Get-WBPolicy))
-$backupSet | Select-Object BackupTime, BackupTarget, RecoveryTargets
+          <pre><code># List available backup versions on the backup drive (use your actual drive letter)
+wbadmin get versions -backupTarget:D:
 
 # Primary verification — confirm success status
 Get-WBSummary | Select-Object LastBackupTime, LastBackupResultDetail, NextBackupTime</code></pre>
         </div>
+        <div class="note-box">
+          <strong>Why not Get-WBBackupSet?</strong> The <code>Get-WBBackupSet</code> cmdlet requires a saved <em>scheduled policy</em> (created via <code>New-WBPolicy</code>). Because this backup was run directly with <code>wbadmin</code>, no policy exists and that cmdlet will error. Use <code>wbadmin get versions</code> instead &#8212; it reads backup metadata directly from the target drive regardless of how the backup was initiated.
+        </div>
         <p>The backup is considered <strong>verified</strong> when:</p>
         <ul class="prose-list">
+          <li><code>wbadmin get versions</code> lists at least one version with <strong>System State</strong> in the recoverable items</li>
           <li><code>LastBackupResultDetail</code> shows <strong>"The operation completed successfully."</strong></li>
-          <li><code>BackupSet</code> contains <strong>System State</strong> as a recovery target</li>
         </ul>
 
         <!-- 5c: pfSense -->
